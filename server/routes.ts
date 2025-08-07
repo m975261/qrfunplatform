@@ -46,7 +46,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate QR code with room link
       const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] || `${req.protocol}://${req.get('host')}`;
-      const roomLink = `${baseUrl}?room=${code}`;
+      const roomLink = `https://${baseUrl}?room=${code}`;
+      console.log('Generated QR code URL:', roomLink);
       const qrCode = await QRCode.toDataURL(roomLink);
 
       res.json({ room: updatedRoom, qrCode, player: hostPlayer });
