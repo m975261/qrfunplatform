@@ -281,8 +281,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
     
-    // Initialize game
+    // Initialize game with verified deck
     const deck = UnoGameLogic.createDeck();
+    
+    // Verify deck composition in development
+    if (process.env.NODE_ENV === 'development') {
+      UnoGameLogic.verifyDeckComposition(deck);
+    }
+    
     const { hands, remainingDeck } = UnoGameLogic.dealInitialHands(deck, gamePlayers.length);
     
     // Update room with game state

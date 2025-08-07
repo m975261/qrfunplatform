@@ -5,18 +5,18 @@ export class UnoGameLogic {
     const deck: Card[] = [];
     const colors = ["red", "blue", "green", "yellow"] as const;
     
-    // Number cards (0-9)
+    // Number cards (0-9) - Official UNO Distribution
     for (const color of colors) {
-      // One 0 card per color
+      // One 0 card per color (4 total)
       deck.push({ type: "number", color, number: 0 });
       
-      // Two of each number 1-9 per color
+      // Two of each number 1-9 per color (72 total)
       for (let number = 1; number <= 9; number++) {
         deck.push({ type: "number", color, number });
         deck.push({ type: "number", color, number });
       }
       
-      // Action cards (2 of each per color)
+      // Action cards (2 of each per color - 24 total)
       deck.push({ type: "skip", color });
       deck.push({ type: "skip", color });
       deck.push({ type: "reverse", color });
@@ -25,13 +25,48 @@ export class UnoGameLogic {
       deck.push({ type: "draw2", color });
     }
     
-    // Wild cards (4 of each)
+    // Wild cards (8 total)
     for (let i = 0; i < 4; i++) {
       deck.push({ type: "wild", color: "wild" });
       deck.push({ type: "wild4", color: "wild" });
     }
     
+    // Verify deck size (should be 108 cards)
+    if (deck.length !== 108) {
+      console.warn(`Warning: UNO deck has ${deck.length} cards instead of 108`);
+    }
+    
     return this.shuffleDeck(deck);
+  }
+  
+  // Utility function to verify deck composition
+  static verifyDeckComposition(deck: Card[]): void {
+    const counts = {
+      numbers: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 },
+      skip: 0,
+      reverse: 0,
+      draw2: 0,
+      wild: 0,
+      wild4: 0
+    };
+    
+    deck.forEach(card => {
+      if (card.type === "number") {
+        counts.numbers[card.number!]++;
+      } else {
+        counts[card.type]++;
+      }
+    });
+    
+    console.log("UNO Deck Composition:");
+    console.log("Number 0:", counts.numbers[0], "(should be 4)");
+    console.log("Numbers 1-9:", Object.entries(counts.numbers).slice(1).map(([num, count]) => `${num}: ${count}`).join(", "), "(each should be 8)");
+    console.log("Skip:", counts.skip, "(should be 8)");
+    console.log("Reverse:", counts.reverse, "(should be 8)");
+    console.log("Draw 2:", counts.draw2, "(should be 8)");
+    console.log("Wild:", counts.wild, "(should be 4)");
+    console.log("Wild Draw 4:", counts.wild4, "(should be 4)");
+    console.log("Total cards:", deck.length, "(should be 108)");
   }
   
   static shuffleDeck(deck: Card[]): Card[] {
