@@ -1,5 +1,4 @@
 import { Card } from "@shared/schema";
-import { Ban, Undo, Palette } from "lucide-react";
 
 interface GameCardProps {
   card: Card;
@@ -14,39 +13,39 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
     switch (card.color) {
       case "red":
         return {
-          bg: "bg-uno-red",
-          border: "border-red-600",
-          shadow: "shadow-red-400/50"
+          bg: "bg-red-600",
+          border: "border-red-700",
+          shadow: "shadow-red-500/30"
         };
       case "blue":
         return {
-          bg: "bg-uno-blue", 
-          border: "border-blue-600",
-          shadow: "shadow-blue-400/50"
+          bg: "bg-blue-600", 
+          border: "border-blue-700",
+          shadow: "shadow-blue-500/30"
         };
       case "green":
         return {
-          bg: "bg-uno-green",
-          border: "border-green-600", 
-          shadow: "shadow-green-400/50"
+          bg: "bg-green-600",
+          border: "border-green-700", 
+          shadow: "shadow-green-500/30"
         };
       case "yellow":
         return {
-          bg: "bg-uno-yellow",
+          bg: "bg-yellow-500",
           border: "border-yellow-600",
-          shadow: "shadow-yellow-400/50"
+          shadow: "shadow-yellow-500/30"
         };
       case "wild":
         return {
-          bg: "bg-gradient-to-br from-red-500 via-yellow-500 via-green-500 to-blue-500",
-          border: "border-gray-800",
-          shadow: "shadow-gray-600/50"
+          bg: "bg-black",
+          border: "border-gray-900",
+          shadow: "shadow-black/40"
         };
       default:
         return {
-          bg: "bg-gray-400",
-          border: "border-gray-500", 
-          shadow: "shadow-gray-400/50"
+          bg: "bg-gray-600",
+          border: "border-gray-700", 
+          shadow: "shadow-gray-500/30"
         };
     }
   };
@@ -54,85 +53,135 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
   const getSizeClasses = () => {
     switch (size) {
       case "small":
-        return "w-12 h-16";
+        return "w-12 h-16 sm:w-14 sm:h-18";
       case "large":
-        return "w-20 h-28";
+        return "w-20 h-28 sm:w-24 sm:h-32";
       default:
-        return "w-16 h-24";
+        return "w-16 h-24 sm:w-18 sm:h-26";
     }
   };
 
-  const getContentSize = () => {
+  const getNumberSize = () => {
+    switch (size) {
+      case "small":
+        return "text-lg font-black";
+      case "large":
+        return "text-4xl font-black";
+      default:
+        return "text-2xl font-black";
+    }
+  };
+
+  const getCornerSize = () => {
     switch (size) {
       case "small":
         return "text-xs";
       case "large":
-        return "text-2xl";
+        return "text-sm";
       default:
-        return "text-lg";
+        return "text-xs";
     }
   };
 
-  const getIconSize = () => {
+  const getActionTextSize = () => {
     switch (size) {
       case "small":
-        return "w-3 h-3";
+        return "text-xs";
       case "large":
-        return "w-8 h-8";
+        return "text-lg";
       default:
-        return "w-5 h-5";
+        return "text-sm";
     }
   };
 
   const getCardContent = () => {
-    const iconClass = getIconSize();
-    
     switch (card.type) {
       case "number":
         return (
-          <div className="flex flex-col items-center">
-            <span className={`font-black ${getContentSize()} ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
-              {card.number}
-            </span>
+          <div className="w-full h-full flex items-center justify-center">
+            {/* Main oval content area */}
+            <div className="relative w-3/4 h-3/4 bg-white rounded-full flex items-center justify-center shadow-inner">
+              <span className={`${getNumberSize()} text-black ${card.number === 6 || card.number === 9 ? 'underline decoration-2' : ''}`}>
+                {card.number}
+              </span>
+            </div>
           </div>
         );
       case "skip":
         return (
-          <div className="flex flex-col items-center">
-            <Ban className={iconClass} />
-            <span className="text-xs font-bold mt-1">SKIP</span>
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="relative w-3/4 h-3/4 bg-white rounded-full flex items-center justify-center shadow-inner">
+              {/* Skip symbol - circle with diagonal line */}
+              <div className="relative">
+                <div className="w-8 h-8 border-4 border-black rounded-full"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-10 h-1 bg-black rotate-45 rounded"></div>
+                </div>
+              </div>
+            </div>
           </div>
         );
       case "reverse":
         return (
-          <div className="flex flex-col items-center">
-            <Undo className={iconClass} />
-            <span className="text-xs font-bold mt-1">REVERSE</span>
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="relative w-3/4 h-3/4 bg-white rounded-full flex items-center justify-center shadow-inner">
+              {/* Reverse arrows */}
+              <div className="flex space-x-1">
+                <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 9H17a1 1 0 110 2h-5.586l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+                <svg className="w-6 h-6 text-black rotate-180" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 9H17a1 1 0 110 2h-5.586l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
           </div>
         );
       case "draw2":
         return (
-          <div className="flex flex-col items-center">
-            <span className={`font-black ${getContentSize()}`}>+2</span>
-            <span className="text-xs font-bold">DRAW TWO</span>
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="relative w-3/4 h-3/4 bg-white rounded-full flex items-center justify-center shadow-inner">
+              <span className={`${getNumberSize()} text-black`}>+2</span>
+            </div>
           </div>
         );
       case "wild":
         return (
-          <div className="flex flex-col items-center">
-            <Palette className={iconClass} />
-            <span className="text-xs font-bold mt-1">WILD</span>
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="relative w-3/4 h-3/4 bg-white rounded-full flex items-center justify-center shadow-inner">
+              {/* Wild card symbol - four colored quarters */}
+              <div className="relative w-8 h-8">
+                <div className="absolute top-0 left-0 w-4 h-4 bg-red-500 rounded-tl-full"></div>
+                <div className="absolute top-0 right-0 w-4 h-4 bg-blue-500 rounded-tr-full"></div>
+                <div className="absolute bottom-0 left-0 w-4 h-4 bg-yellow-500 rounded-bl-full"></div>
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-br-full"></div>
+              </div>
+            </div>
           </div>
         );
       case "wild4":
         return (
-          <div className="flex flex-col items-center">
-            <span className={`font-black ${getContentSize()}`}>+4</span>
-            <span className="text-xs font-bold">WILD DRAW</span>
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="relative w-3/4 h-3/4 bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
+              {/* Wild Draw Four */}
+              <div className="relative w-6 h-6 mb-1">
+                <div className="absolute top-0 left-0 w-3 h-3 bg-red-500 rounded-tl-full"></div>
+                <div className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-tr-full"></div>
+                <div className="absolute bottom-0 left-0 w-3 h-3 bg-yellow-500 rounded-bl-full"></div>
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-br-full"></div>
+              </div>
+              <span className="text-black font-black text-sm">+4</span>
+            </div>
           </div>
         );
       default:
-        return "?";
+        return (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="relative w-3/4 h-3/4 bg-white rounded-full flex items-center justify-center shadow-inner">
+              <span className="text-black font-bold">?</span>
+            </div>
+          </div>
+        );
     }
   };
 
@@ -143,32 +192,54 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
       <button
         className={`
           ${colors.bg} ${getSizeClasses()} ${colors.border} ${colors.shadow}
-          rounded-2xl border-4 shadow-lg relative cursor-pointer
-          flex items-center justify-center text-white font-bold
+          rounded-xl border-4 shadow-lg relative cursor-pointer
           ${!disabled ? "hover:scale-105 hover:-translate-y-1 transition-all duration-200" : ""}
           ${disabled ? "opacity-50 cursor-not-allowed" : ""}
-          overflow-hidden
         `}
         onClick={onClick}
         disabled={disabled}
       >
-        {/* UNO Card Background Pattern */}
-        <div className="absolute inset-2 rounded-xl bg-white/20 border-2 border-white/30"></div>
-        
         {/* Card Content */}
-        <div className="relative z-10 text-center">
-          {getCardContent()}
-        </div>
+        {getCardContent()}
 
-        {/* Small corner symbols */}
-        {card.type === "number" && (
+        {/* Corner symbols for number cards and some action cards */}
+        {(card.type === "number" || card.type === "draw2") && (
           <>
-            <div className={`absolute top-1 left-1 text-xs font-bold opacity-80 ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
-              {card.number}
+            {/* Top-left corner */}
+            <div className={`absolute top-1 left-1 ${getCornerSize()} font-bold text-white`}>
+              {card.type === "number" ? (
+                <span className={card.number === 6 || card.number === 9 ? 'underline' : ''}>
+                  {card.number}
+                </span>
+              ) : (
+                "+2"
+              )}
             </div>
-            <div className={`absolute bottom-1 right-1 text-xs font-bold opacity-80 rotate-180 ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
-              {card.number}
+            {/* Bottom-right corner (rotated) */}
+            <div className={`absolute bottom-1 right-1 ${getCornerSize()} font-bold text-white rotate-180`}>
+              {card.type === "number" ? (
+                <span className={card.number === 6 || card.number === 9 ? 'underline' : ''}>
+                  {card.number}
+                </span>
+              ) : (
+                "+2"
+              )}
             </div>
+          </>
+        )}
+
+        {/* Special corner symbols for action cards */}
+        {card.type === "skip" && (
+          <>
+            <div className="absolute top-1 left-1 text-white text-xs font-bold">⊘</div>
+            <div className="absolute bottom-1 right-1 text-white text-xs font-bold rotate-180">⊘</div>
+          </>
+        )}
+
+        {card.type === "reverse" && (
+          <>
+            <div className="absolute top-1 left-1 text-white text-xs font-bold">↻</div>
+            <div className="absolute bottom-1 right-1 text-white text-xs font-bold rotate-180">↻</div>
           </>
         )}
       </button>
@@ -178,28 +249,50 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
   return (
     <div className={`
       ${colors.bg} ${getSizeClasses()} ${colors.border} ${colors.shadow}
-      rounded-2xl border-4 shadow-lg relative
-      flex items-center justify-center text-white font-bold
+      rounded-xl border-4 shadow-lg relative
       ${disabled ? "opacity-50" : ""}
-      overflow-hidden
     `}>
-      {/* UNO Card Background Pattern */}
-      <div className="absolute inset-2 rounded-xl bg-white/20 border-2 border-white/30"></div>
-      
       {/* Card Content */}
-      <div className="relative z-10 text-center">
-        {getCardContent()}
-      </div>
+      {getCardContent()}
 
-      {/* Small corner symbols */}
-      {card.type === "number" && (
+      {/* Corner symbols for number cards and some action cards */}
+      {(card.type === "number" || card.type === "draw2") && (
         <>
-          <div className={`absolute top-1 left-1 text-xs font-bold opacity-80 ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
-            {card.number}
+          {/* Top-left corner */}
+          <div className={`absolute top-1 left-1 ${getCornerSize()} font-bold text-white`}>
+            {card.type === "number" ? (
+              <span className={card.number === 6 || card.number === 9 ? 'underline' : ''}>
+                {card.number}
+              </span>
+            ) : (
+              "+2"
+            )}
           </div>
-          <div className={`absolute bottom-1 right-1 text-xs font-bold opacity-80 rotate-180 ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
-            {card.number}
+          {/* Bottom-right corner (rotated) */}
+          <div className={`absolute bottom-1 right-1 ${getCornerSize()} font-bold text-white rotate-180`}>
+            {card.type === "number" ? (
+              <span className={card.number === 6 || card.number === 9 ? 'underline' : ''}>
+                {card.number}
+              </span>
+            ) : (
+              "+2"
+            )}
           </div>
+        </>
+      )}
+
+      {/* Special corner symbols for action cards */}
+      {card.type === "skip" && (
+        <>
+          <div className="absolute top-1 left-1 text-white text-xs font-bold">⊘</div>
+          <div className="absolute bottom-1 right-1 text-white text-xs font-bold rotate-180">⊘</div>
+        </>
+      )}
+
+      {card.type === "reverse" && (
+        <>
+          <div className="absolute top-1 left-1 text-white text-xs font-bold">↻</div>
+          <div className="absolute bottom-1 right-1 text-white text-xs font-bold rotate-180">↻</div>
         </>
       )}
     </div>
