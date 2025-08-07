@@ -309,41 +309,43 @@ export default function RoomLobby() {
                     </div>
                   )}
                   
-                  {/* Player Info and Controls Below Avatar */}
+                  {/* Player Info Below Avatar */}
                   {player && (
                     <div className="absolute top-24 left-1/2 -translate-x-1/2 text-center">
                       {/* Player Nickname */}
-                      <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-md mb-2">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-md">
                         <div className="text-xs font-semibold text-gray-800">
                           {player.nickname}
                         </div>
                       </div>
-                      
-                      {/* Control Buttons */}
-                      <div className="flex items-center justify-center space-x-1">
-                        {/* Edit Button for Current Player */}
-                        {player.id === playerId && (
-                          <button
-                            onClick={() => setShowNicknameEditor(true)}
-                            className="w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md transition-colors"
-                            title="Edit nickname"
-                          >
-                            E
-                          </button>
-                        )}
-                        
-                        {/* Kick Button for Host */}
-                        {isHost && player.id !== playerId && (
-                          <button
-                            onClick={() => kickPlayer(player.id)}
-                            className="w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md transition-colors"
-                            title={isOnline ? "Remove player" : "Remove offline player"}
-                          >
-                            K
-                          </button>
-                        )}
-                      </div>
                     </div>
+                  )}
+                  
+                  {/* Control Buttons Attached to Avatar */}
+                  {player && (
+                    <>
+                      {/* Edit Button for Current Player - Bottom Right of Avatar */}
+                      {player.id === playerId && (
+                        <button
+                          onClick={() => setShowNicknameEditor(true)}
+                          className="absolute bottom-1 right-1 w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
+                          title="Edit nickname"
+                        >
+                          E
+                        </button>
+                      )}
+                      
+                      {/* Kick Button for Host - Bottom Left of Avatar */}
+                      {isHost && player.id !== playerId && (
+                        <button
+                          onClick={() => kickPlayer(player.id)}
+                          className="absolute bottom-1 left-1 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
+                          title={isOnline ? "Remove player" : "Remove offline player"}
+                        >
+                          K
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
