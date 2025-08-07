@@ -292,7 +292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       deck: remainingDeck,
       discardPile,
       currentPlayerIndex: 0,
-      currentColor: discardPile[0].color === "wild" ? "red" : discardPile[0].color
+      currentColor: discardPile[0].color === "wild" ? "red" : discardPile[0].color,
+      pendingDraw: 0
     });
     
     // Update player hands
@@ -323,12 +324,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const card = playerHand[cardIndex];
     const topCard = (room.discardPile || [])[0];
     
-    if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined)) {
+    if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw)) {
       return;
     }
     
+    // Check UNO penalty - if player has 2 cards and doesn't have UNO called, and they're not calling UNO this turn
+    let shouldApplyUnoPenalty = false;
+    if (playerHand.length === 2 && !player.hasCalledUno) {
+      shouldApplyUnoPenalty = true;
+    }
+    
     // Remove card from player's hand
-    const newHand = playerHand.filter((_, index) => index !== cardIndex);
+    let newHand = playerHand.filter((_, index) => index !== cardIndex);
+    
+    // Apply UNO penalty if needed
+    if (shouldApplyUnoPenalty) {
+      const deck = room.deck || [];
+      const penaltyCards = deck.splice(0, 2);
+      newHand = [...newHand, ...penaltyCards];
+      await storage.updateRoom(connection.roomId, { deck });
+    }
+    
     await storage.updatePlayer(connection.playerId, { 
       hand: newHand,
       hasCalledUno: newHand.length === 1 ? player.hasCalledUno : false
@@ -339,16 +355,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Apply card effects
     const effect = UnoGameLogic.getCardEffect(card);
-    let nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
-      currentPlayerIndex, 
-      gamePlayers.length, 
-      room.direction || "clockwise", 
-      effect.skip
-    );
-    
+    let nextPlayerIndex = currentPlayerIndex;
     let newDirection = room.direction;
-    if (effect.reverse) {
-      newDirection = room.direction === "clockwise" ? "counterclockwise" : "clockwise";
+    let newPendingDraw = room.pendingDraw || 0;
+    
+    // Handle stacking draw cards
+    if (effect.draw > 0) {
+      if (room.pendingDraw && room.pendingDraw > 0) {
+        // Stack the draw effect
+        newPendingDraw = room.pendingDraw + effect.draw;
+      } else {
+        // Start new draw effect
+        newPendingDraw = effect.draw;
+      }
+      nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+        currentPlayerIndex, 
+        gamePlayers.length, 
+        room.direction || "clockwise", 
+        true // Skip next player, they must draw
+      );
+    } else {
+      // Normal card, resolve any pending draws first
+      if (room.pendingDraw && room.pendingDraw > 0) {
+        // Current player couldn't stack, so they must draw the pending cards
+        const roomData = await storage.getRoom(connection.roomId);
+        const deck = roomData?.deck || [];
+        const drawnCards = deck.splice(0, room.pendingDraw);
+        const currentPlayerHand = [...newHand, ...drawnCards];
+        
+        await storage.updatePlayer(connection.playerId, { hand: currentPlayerHand });
+        await storage.updateRoom(connection.roomId, { deck });
+        newPendingDraw = 0;
+      }
+      
+      // Handle other effects
+      if (effect.reverse) {
+        newDirection = room.direction === "clockwise" ? "counterclockwise" : "clockwise";
+      }
+      
+      nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+        currentPlayerIndex, 
+        gamePlayers.length, 
+        newDirection || "clockwise", 
+        effect.skip
+      );
     }
     
     // Update room state
@@ -356,20 +406,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       discardPile: newDiscardPile,
       currentPlayerIndex: nextPlayerIndex,
       direction: newDirection,
-      currentColor: effect.chooseColor ? room.currentColor : card.color
+      currentColor: effect.chooseColor ? room.currentColor : card.color,
+      pendingDraw: newPendingDraw
     });
-    
-    // Handle draw effects
-    if (effect.draw > 0) {
-      const nextPlayer = gamePlayers[nextPlayerIndex];
-      const roomData = await storage.getRoom(connection.roomId);
-      const deck = roomData?.deck || [];
-      const drawnCards = deck.splice(0, effect.draw);
-      const nextPlayerHand = [...(nextPlayer.hand || []), ...drawnCards];
-      
-      await storage.updatePlayer(nextPlayer.id, { hand: nextPlayerHand });
-      await storage.updateRoom(connection.roomId, { deck });
-    }
     
     // Check for win condition
     if (newHand.length === 0) {
@@ -437,11 +476,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const deck = room.deck || [];
     if (deck.length === 0) return;
     
-    const drawnCard = deck.pop()!;
-    const newHand = [...(player.hand || []), drawnCard];
+    // Handle pending draw effects first
+    let drawAmount = 1;
+    let clearPendingDraw = false;
+    
+    if (room.pendingDraw && room.pendingDraw > 0) {
+      drawAmount = room.pendingDraw;
+      clearPendingDraw = true;
+    }
+    
+    const drawnCards = deck.splice(0, drawAmount);
+    const newHand = [...(player.hand || []), ...drawnCards];
     
     await storage.updatePlayer(connection.playerId, { hand: newHand });
-    await storage.updateRoom(connection.roomId, { deck });
+    await storage.updateRoom(connection.roomId, { 
+      deck,
+      pendingDraw: clearPendingDraw ? 0 : room.pendingDraw
+    });
     
     // Move to next player
     const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
@@ -458,15 +509,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!connection.playerId) return;
     
     const player = await storage.getPlayer(connection.playerId);
-    if (!player || (player.hand || []).length !== 1) return;
+    if (!player) return;
     
-    await storage.updatePlayer(connection.playerId, { hasCalledUno: true });
-    
-    if (connection.roomId) {
-      broadcastToRoom(connection.roomId, {
-        type: 'uno_called',
-        player: player.nickname
-      });
+    // Allow UNO call when player has 2 cards (before playing second-to-last card)
+    if ((player.hand || []).length === 2) {
+      await storage.updatePlayer(connection.playerId, { hasCalledUno: true });
+      
+      if (connection.roomId) {
+        broadcastToRoom(connection.roomId, {
+          type: 'uno_called',
+          player: player.nickname
+        });
+      }
     }
   }
 

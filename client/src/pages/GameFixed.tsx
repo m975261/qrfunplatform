@@ -87,18 +87,22 @@ export default function Game() {
 
   const handleUnoCall = () => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
-    if (player?.hand?.length === 2) {
+    if (player?.hand?.length === 2 && !hasCalledUno) {
       callUno();
       setHasCalledUno(true);
       toast({
         title: "UNO!",
         description: "You called UNO! Now play your second-to-last card.",
       });
+    } else if (hasCalledUno) {
+      toast({
+        title: "Already Called",
+        description: "You've already called UNO for this hand.",
+      });
     } else {
       toast({
-        title: "Invalid UNO Call",
-        description: "You can only call UNO when you have exactly two cards.",
-        variant: "destructive",
+        title: "UNO Available",
+        description: "Call UNO when you have exactly 2 cards before playing your second-to-last card.",
       });
     }
   };
@@ -308,18 +312,22 @@ export default function Game() {
                 </div>
               </div>
 
-              {/* UNO Button - Make it more visible */}
-              {currentPlayer.hand?.length === 2 && (
-                <div className="mt-3">
-                  <Button
-                    size="lg"
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold animate-bounce shadow-lg"
-                    onClick={handleUnoCall}
-                  >
-                    🎯 CALL UNO! 🎯
-                  </Button>
-                </div>
-              )}
+              {/* UNO Button - Always available */}
+              <div className="mt-3">
+                <Button
+                  size="lg"
+                  className={`text-white font-bold shadow-lg ${
+                    currentPlayer.hand?.length === 2 && !hasCalledUno 
+                      ? 'bg-red-600 hover:bg-red-700 animate-bounce' 
+                      : hasCalledUno && currentPlayer.hand?.length === 1
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-gray-600 hover:bg-gray-700'
+                  }`}
+                  onClick={handleUnoCall}
+                >
+                  {hasCalledUno && currentPlayer.hand?.length === 1 ? '✅ UNO CALLED' : '🎯 CALL UNO!'}
+                </Button>
+              </div>
             </div>
             
             {/* Player's Cards */}

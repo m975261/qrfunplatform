@@ -60,7 +60,26 @@ export class UnoGameLogic {
     };
   }
   
-  static canPlayCard(card: Card, topCard: Card, currentColor?: string): boolean {
+  static canPlayCard(card: Card, topCard: Card, currentColor?: string, pendingDraw?: number): boolean {
+    // If there's a pending draw effect, only allow stacking cards
+    if (pendingDraw && pendingDraw > 0) {
+      // Can only play +2 on +2, or +4 on either +2 or +4
+      if (topCard.type === "draw2" && card.type === "draw2") {
+        return true;
+      }
+      if (topCard.type === "wild4" && card.type === "wild4") {
+        return true;
+      }
+      if (topCard.type === "draw2" && card.type === "wild4") {
+        return true;
+      }
+      // Cannot play +2 on +4
+      if (topCard.type === "wild4" && card.type === "draw2") {
+        return false;
+      }
+      return false;
+    }
+    
     // Wild cards can always be played
     if (card.type === "wild" || card.type === "wild4") {
       return true;

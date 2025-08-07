@@ -20,6 +20,7 @@ export const rooms = pgTable("rooms", {
   currentColor: varchar("current_color", { enum: ["red", "blue", "green", "yellow"] }),
   deck: jsonb("deck").$type<any[]>().default([]),
   discardPile: jsonb("discard_pile").$type<any[]>().default([]),
+  pendingDraw: integer("pending_draw").default(0),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
