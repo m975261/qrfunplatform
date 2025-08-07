@@ -330,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const card = playerHand[cardIndex];
     const topCard = (room.discardPile || [])[0];
     
-    if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw)) {
+    if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0)) {
       return;
     }
     

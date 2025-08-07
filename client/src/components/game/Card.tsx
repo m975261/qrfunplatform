@@ -5,7 +5,7 @@ interface GameCardProps {
   onClick?: () => void;
   disabled?: boolean;
   interactive?: boolean;
-  size?: "small" | "medium" | "large";
+  size?: "extra-small" | "small" | "medium" | "large";
 }
 
 export default function GameCard({ card, onClick, disabled = false, interactive = false, size = "medium" }: GameCardProps) {

@@ -255,18 +255,18 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Other Players positioned at screen corners - completely away from circle */}
+      {/* Other Players positioned at clock positions around circle */}
       {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
         const filteredIndex = gamePlayers.filter((p: any) => p.id !== playerId && !p.isSpectator).indexOf(player);
         
-        // Position players at corners: top-left, top-right, bottom-right
+        // Position players at clock positions: 12, 3, 6, 9 o'clock
         const positions = [
-          "top-20 left-4",      // Player 1: top-left
-          "top-20 right-4",     // Player 2: top-right  
-          "bottom-32 right-4"   // Player 3: bottom-right (above player hand)
+          "top-4 left-1/2 transform -translate-x-1/2",     // 12 o'clock
+          "top-1/2 right-4 transform -translate-y-1/2",    // 3 o'clock  
+          "bottom-20 left-1/2 transform -translate-x-1/2"  // 6 o'clock (above player hand)
         ];
         
-        const positionClass = positions[filteredIndex] || "top-20 left-4";
+        const positionClass = positions[filteredIndex] || "top-1/2 left-4 transform -translate-y-1/2"; // 9 o'clock fallback
         const isPlayerTurn = currentGamePlayer?.id === player.id;
 
         return (
