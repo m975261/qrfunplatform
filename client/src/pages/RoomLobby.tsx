@@ -54,10 +54,10 @@ export default function RoomLobby() {
   const handleStartGame = () => {
     const players = gameState?.players?.filter((p: any) => !p.isSpectator) || [];
     console.log("Starting game with players:", players);
-    if (players.length < 2) {
+    if (players.length < 1) {
       toast({
-        title: "Not Enough Players",
-        description: "Need at least 2 players to start the game.",
+        title: "No Players",
+        description: "No players found in the room.",
         variant: "destructive",
       });
       return;
@@ -210,12 +210,12 @@ export default function RoomLobby() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="text-gray-600">
-                {gamePlayers.length >= 2 ? "All players ready? Let's start the game!" : "Waiting for more players..."}
+                {gamePlayers.length >= 1 ? "Ready to start the game!" : "Waiting for players..."}
               </div>
               {isHost && (
                 <Button
                   onClick={handleStartGame}
-                  disabled={gamePlayers.length < 2}
+                  disabled={gamePlayers.length < 1}
                   className="bg-gradient-to-r from-uno-green to-emerald-500 hover:scale-105 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   <Play className="mr-2 h-4 w-4" />
