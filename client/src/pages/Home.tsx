@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,21 @@ export default function Home() {
   const [roomCode, setRoomCode] = useState("");
   const [showQRScanner, setShowQRScanner] = useState(false);
   const { toast } = useToast();
+
+  // Check for room parameter in URL (from QR code)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomFromUrl = urlParams.get('room');
+    if (roomFromUrl) {
+      setRoomCode(roomFromUrl.toUpperCase());
+      // Clear the URL parameter after extracting it
+      window.history.replaceState({}, document.title, window.location.pathname);
+      toast({
+        title: "Room Code Detected",
+        description: `Room code ${roomFromUrl.toUpperCase()} found! Enter your nickname to join.`,
+      });
+    }
+  }, [toast]);
 
   const createRoomMutation = useMutation({
     mutationFn: async (hostNickname: string) => {
