@@ -45,29 +45,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedRoom = await storage.updateRoom(room.id, { hostId: hostPlayer.id });
 
       // Generate QR code with room link - iOS-friendly format
-      // Check for deployment domain first (replit.app domain)
-      const deploymentDomain = process.env.REPLIT_DEPLOYMENT_ID ? 
-        process.env.REPL_SLUG + '.replit.app' : null;
-      
-      const domain = deploymentDomain || process.env.REPLIT_DOMAINS?.split(',')[0];
+      // Always force HTTPS protocol for QR codes to ensure iOS recognition
+      let domain;
       let roomLink;
       
-      if (domain) {
-        // Ensure proper https:// prefix for iOS recognition
+      // Try to get deployment domain first
+      if (process.env.REPL_SLUG && process.env.REPLIT_DEPLOYMENT_ID) {
+        domain = `${process.env.REPL_SLUG}.replit.app`;
+        roomLink = `https://${domain}?room=${code}`;
+      } else if (process.env.REPLIT_DOMAINS) {
+        domain = process.env.REPLIT_DOMAINS.split(',')[0];
         roomLink = `https://${domain}?room=${code}`;
       } else {
-        // Force HTTPS for QR codes, even in development
-        const host = req.get('host');
+        // Fallback: use host but ensure HTTPS
+        const host = req.get('host') || 'localhost:5000';
         roomLink = `https://${host}?room=${code}`;
       }
+      
+      // Double-check HTTPS prefix is present and add explicit URL formatting for iOS
+      if (!roomLink.startsWith('https://')) {
+        roomLink = 'https://' + roomLink.replace(/^https?:\/\//, '');
+      }
+      
+      // Ensure URL is properly formatted for iOS Safari recognition
+      roomLink = roomLink.replace(/([^:]\/)\/+/g, "$1");
       console.log('Generated QR code URL:', roomLink);
       console.log('Environment - REPL_SLUG:', process.env.REPL_SLUG, 'DEPLOYMENT_ID:', process.env.REPLIT_DEPLOYMENT_ID);
       
       // Generate QR code with additional options for better iOS recognition
       const qrCode = await QRCode.toDataURL(roomLink, {
         errorCorrectionLevel: 'M',
-        type: 'image/png',
-        quality: 0.92,
         margin: 1,
         color: {
           dark: '#000000',
