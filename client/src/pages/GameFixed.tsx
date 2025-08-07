@@ -124,7 +124,7 @@ export default function Game() {
   const topCard = room.discardPile?.[0];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative">
       {/* Floating emojis */}
       {floatingEmojis.map((emoji) => (
         <div
@@ -137,36 +137,35 @@ export default function Game() {
       ))}
 
       {/* Header */}
-      <div className="absolute top-2 md:top-4 left-2 md:left-4 right-2 md:right-4 z-10">
+      <div className="absolute top-4 left-4 right-4 z-10">
         <div className="flex items-center justify-between">
-          <div className="bg-white/95 backdrop-blur-sm px-2 md:px-4 py-2 rounded-xl shadow-lg">
-            <div className="text-xs md:text-sm font-medium text-gray-800">
-              Room <span className="font-mono text-red-600">{room.code}</span>
+          <div className="bg-slate-800/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-slate-700/50">
+            <div className="text-sm font-medium text-white">
+              Room <span className="font-mono text-blue-400">{room.code}</span>
             </div>
           </div>
 
-          <div className="bg-white/95 backdrop-blur-sm px-2 md:px-4 py-2 rounded-xl shadow-lg">
+          <div className="bg-slate-800/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-slate-700/50">
             <div className="flex items-center space-x-2">
-              <Users className="h-3 w-3 md:h-4 md:w-4 text-gray-600" />
-              <span className="text-xs md:text-sm text-gray-600">{players.length} players</span>
-              {isMyTurn && <span className="text-xs text-red-600 font-bold">YOUR TURN</span>}
+              <Users className="h-4 w-4 text-slate-400" />
+              <span className="text-sm text-slate-300">{players.length} players</span>
             </div>
           </div>
 
-          <div className="flex space-x-1">
+          <div className="flex space-x-2">
             <Button
               variant="outline"
               size="sm"
-              className="bg-white/95 backdrop-blur-sm p-2"
+              className="bg-slate-800/90 border-slate-700 text-slate-300 hover:bg-slate-700"
               onClick={() => setShowChat(!showChat)}
             >
-              <MessageCircle className="h-3 w-3 md:h-4 md:w-4" />
+              <MessageCircle className="h-4 w-4" />
             </Button>
             
             <Button
               variant="outline"
               size="sm"
-              className="bg-red-50 hover:bg-red-100 border-red-200 text-red-700 text-xs p-2"
+              className="bg-red-900/50 border-red-700 text-red-300 hover:bg-red-800/50"
               onClick={() => {
                 if (confirm("Are you sure you want to exit the game?")) {
                   exitGame();
@@ -179,22 +178,25 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Circular Game Area */}
+      {/* Central Game Area */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative">
-          {/* Main Game Circle */}
-          <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full bg-gradient-to-br from-yellow-300 via-orange-400 to-red-500 shadow-2xl flex items-center justify-center relative border-4 border-white/30">
+          {/* Game Circle */}
+          <div className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
             
             {/* Inner Circle */}
-            <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-yellow-200 to-orange-300 shadow-inner flex items-center justify-center relative border-2 border-white/50">
+            <div className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
               
               {/* Draw Pile */}
-              <div className="absolute -left-6 sm:-left-8 md:-left-12 top-1/2 transform -translate-y-1/2">
-                <div className="relative cursor-pointer" onClick={drawCard}>
-                  <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-14 md:h-18 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-white shadow-xl"></div>
-                  <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-14 md:h-18 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-white shadow-xl absolute -top-0.5 -left-0.5"></div>
+              <div className="absolute -left-16 md:-left-20 top-1/2 transform -translate-y-1/2">
+                <div className="relative cursor-pointer group" onClick={drawCard}>
+                  <div className="w-12 h-16 md:w-16 md:h-20 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
+                  <div className="w-12 h-16 md:w-16 md:h-20 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-white font-bold text-xs">UNO</div>
+                  </div>
                 </div>
-                <div className="text-xs text-center mt-1 text-white font-bold">DRAW</div>
+                <div className="text-xs text-center mt-2 text-blue-300 font-bold">DRAW</div>
               </div>
 
               {/* Current Card */}
@@ -214,15 +216,15 @@ export default function Game() {
               </div>
 
               {/* Direction Indicator */}
-              <div className="absolute -right-6 sm:-right-8 md:-right-12 top-1/2 transform -translate-y-1/2">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center shadow-lg">
+              <div className="absolute -right-16 md:-right-20 top-1/2 transform -translate-y-1/2">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center shadow-lg border-2 border-purple-400">
                   {room.direction === 1 ? (
-                    <ArrowRight className="text-white h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                    <ArrowRight className="text-white h-5 w-5 md:h-6 md:w-6" />
                   ) : (
-                    <ArrowLeft className="text-white h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                    <ArrowLeft className="text-white h-5 w-5 md:h-6 md:w-6" />
                   )}
                 </div>
-                <div className="text-xs text-center mt-1 text-white font-bold">
+                <div className="text-xs text-center mt-2 text-purple-300 font-bold">
                   {room.direction === 1 ? "CW" : "CCW"}
                 </div>
               </div>
@@ -280,81 +282,74 @@ export default function Game() {
         );
       })}
 
-      {/* Current Player at Bottom */}
+      {/* Player Hand Bar - Fixed at Bottom */}
       {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-4xl px-2">
-          <div className={`bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-xl ${isMyTurn ? 'ring-2 ring-green-500' : ''}`}>
-            <div className="text-center mb-2 sm:mb-3 md:mb-4 relative">
-              {isMyTurn && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-bounce">
-                  YOUR TURN
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/80 backdrop-blur-md border-t border-slate-700/50">
+          <div className="container mx-auto px-4 py-4">
+            {/* Player Info and UNO Button */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                  isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 ring-2 ring-green-400 ring-offset-2 ring-offset-slate-800' : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                }`}>
+                  {currentPlayer.nickname[0].toUpperCase()}
                 </div>
-              )}
-              <div className="flex items-center justify-center space-x-2">
-                {/* Player Avatar */}
-                <div className="relative">
-                  <div className={`w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-base ${
-                    isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 animate-pulse' : 'bg-gradient-to-br from-green-400 to-green-600'
-                  }`}>
-                    {currentPlayer.nickname[0].toUpperCase()}
+                <div>
+                  <div className={`font-semibold text-white ${isMyTurn ? 'text-green-400' : ''}`}>
+                    {currentPlayer.nickname} {isMyTurn && '⭐'}
                   </div>
-                  {isMyTurn && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className={`font-semibold text-xs sm:text-sm md:text-base text-gray-800 ${isMyTurn ? 'text-green-600 animate-pulse' : ''}`}>
-                    {currentPlayer.nickname} (You) {isMyTurn && '⭐'}
-                  </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-slate-400">
                     {currentPlayer.hand?.length || 0} cards
                   </div>
                 </div>
               </div>
 
-              {/* UNO Button - Always available */}
-              <div className="mt-3">
+              <div className="flex items-center space-x-3">
+                {isMyTurn && (
+                  <div className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/30">
+                    YOUR TURN
+                  </div>
+                )}
                 <Button
-                  size="lg"
-                  className={`text-white font-bold shadow-lg ${
+                  variant="outline"
+                  size="sm"
+                  className={`font-bold border-2 transition-all ${
                     currentPlayer.hand?.length === 2 && !hasCalledUno 
-                      ? 'bg-red-600 hover:bg-red-700 animate-bounce' 
+                      ? 'bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse' 
                       : hasCalledUno && currentPlayer.hand?.length === 1
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-gray-600 hover:bg-gray-700'
+                      ? 'bg-green-600 border-green-500 text-white hover:bg-green-700'
+                      : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
                   }`}
                   onClick={handleUnoCall}
                 >
-                  {hasCalledUno && currentPlayer.hand?.length === 1 ? '✅ UNO CALLED' : '🎯 CALL UNO!'}
+                  {hasCalledUno && currentPlayer.hand?.length === 1 ? 'UNO!' : 'CALL UNO'}
                 </Button>
               </div>
             </div>
             
             {/* Player's Cards */}
-            <div className="mt-4">
+            <div className="overflow-x-auto">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div className="flex justify-center">
-                  <div className="flex flex-wrap gap-3 justify-center max-w-5xl">
-                    {currentPlayer.hand.map((card: any, index: number) => (
-                      <div 
-                        key={index} 
-                        className={`transition-all duration-200 ${
-                          isMyTurn ? 'hover:scale-110 hover:-translate-y-3 cursor-pointer' : 'opacity-75'
-                        }`}
-                      >
-                        <GameCard 
-                          card={card}
-                          size="medium"
-                          interactive={isMyTurn}
-                          disabled={!isMyTurn}
-                          onClick={() => isMyTurn && handlePlayCard(index)}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                <div className="flex space-x-3 pb-2 min-w-max">
+                  {currentPlayer.hand.map((card: any, index: number) => (
+                    <div 
+                      key={index} 
+                      className={`transition-all duration-200 ${
+                        isMyTurn ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer' : 'opacity-60'
+                      }`}
+                    >
+                      <GameCard 
+                        card={card}
+                        size="medium"
+                        interactive={isMyTurn}
+                        disabled={!isMyTurn}
+                        onClick={() => isMyTurn && handlePlayCard(index)}
+                      />
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="text-center text-gray-500 text-sm">No cards in hand</div>
+                <div className="text-center text-slate-400 text-sm py-4">No cards in hand</div>
               )}
             </div>
           </div>
