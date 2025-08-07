@@ -1031,7 +1031,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     for (const p of players) {
       await storage.updatePlayer(p.id, {
         hand: [],
-        hasCalledUno: false
+        hasCalledUno: false,
+        finishPosition: null // Clear finish positions for new game
       });
     }
     

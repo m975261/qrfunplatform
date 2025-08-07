@@ -87,6 +87,15 @@ export function useSocket(autoConnect: boolean = true) {
               needsContinue: false
             }));
             break;
+          case 'room_reset':
+            // Handle room reset after play again
+            console.log("Room reset for new game");
+            setGameState((prev: any) => ({
+              ...prev,
+              gameEndData: null,
+              needsContinue: false
+            }));
+            break;
           case 'error':
             // Handle server errors (like room not found)
             console.log("WebSocket error:", message.message);

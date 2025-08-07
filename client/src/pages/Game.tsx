@@ -31,6 +31,7 @@ export default function Game() {
     kickPlayer,
     continueGame,
     replacePlayer,
+    playAgain,
     isConnected
   } = useSocket();
 
@@ -439,8 +440,11 @@ export default function Game() {
           winner={gameEndData?.winner || gamePlayers.find((p: any) => (p.hand?.length || 0) === 0)?.nickname || "Someone"}
           rankings={gameEndData?.rankings}
           onPlayAgain={() => {
-            // Navigate back to lobby - server will handle game reset
+            // Call server-side play again to reset the room state
+            playAgain();
             setShowGameEnd(false);
+            setGameEndData(null);
+            // Navigate back to lobby to see the reset room
             if (roomId) {
               window.location.href = `/room/${roomId}`;
             } else {
