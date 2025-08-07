@@ -49,17 +49,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let domain;
       let roomLink;
       
-      // Try to get deployment domain first
+      // Try to get deployment domain first - use a redirect endpoint for iOS compatibility
       if (process.env.REPL_SLUG && process.env.REPLIT_DEPLOYMENT_ID) {
         domain = `${process.env.REPL_SLUG}.replit.app`;
-        roomLink = `https://${domain}/?room=${code}`;
+        roomLink = `https://${domain}/join/${code}`;
       } else if (process.env.REPLIT_DOMAINS) {
         domain = process.env.REPLIT_DOMAINS.split(',')[0];
-        roomLink = `https://${domain}/?room=${code}`;
+        roomLink = `https://${domain}/join/${code}`;
       } else {
         // Fallback: use host but ensure HTTPS
         const host = req.get('host') || 'localhost:5000';
-        roomLink = `https://${host}/?room=${code}`;
+        roomLink = `https://${host}/join/${code}`;
       }
       
       // Double-check HTTPS prefix is present and add explicit URL formatting for iOS
@@ -155,6 +155,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ error: "Failed to get room state" });
     }
+  });
+
+  // iOS-friendly redirect endpoint for QR codes
+  app.get("/join/:code", (req, res) => {
+    const { code } = req.params;
+    // Redirect to the main app with room parameter
+    res.redirect(302, `/?room=${code.toUpperCase()}`);
   });
 
   const httpServer = createServer(app);
