@@ -10,7 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Session Management (Latest)
+### UNO Call System Fixed (Latest - Aug 7, 2025)
+- Fixed critical UNO call bug where players received penalty cards even after calling UNO correctly
+- Added comprehensive debugging system with detailed console logging for UNO workflow
+- Implemented fresh player data retrieval to prevent race conditions in card play logic
+- Enhanced penalty animation system with proper timing (6 seconds total) and initial count display
+- Verified UNO call workflow: Call UNO → Play card → No penalty (working correctly)
+
+### Session Management 
 - Implemented browser fingerprinting to detect same user accessing from multiple tabs/browsers
 - Automatic session management: old sessions become offline when new session starts from same device
 - Enhanced connection tracking with user fingerprints and session IDs

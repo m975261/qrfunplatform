@@ -577,11 +577,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // CRITICAL: Get fresh player data to ensure we have the latest hasCalledUno status
     const player = await storage.getPlayer(connection.playerId);
     if (!player) {
-      console.error(`Player not found: ${connection.playerId}`);
       return;
     }
-    
-    console.log(`PLAY CARD DEBUG: ${player.nickname} has hasCalledUno: ${player.hasCalledUno}, hand size: ${(player.hand || []).length}`);
     
     const players = await storage.getPlayersByRoom(connection.roomId);
     const gamePlayers = players.filter(p => !p.isSpectator).sort((a, b) => (a.position || 0) - (b.position || 0));
@@ -607,13 +604,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Check UNO penalty - apply only if player went from 2 cards to 1 card without calling UNO
     let shouldApplyUnoPenalty = false;
-    console.log(`UNO check for ${player.nickname}: hand size ${currentHandSize} -> ${newHand.length}, hasCalledUno: ${player.hasCalledUno}`);
-    
     if (currentHandSize === 2 && newHand.length === 1 && !player.hasCalledUno) {
       shouldApplyUnoPenalty = true;
-      console.log(`UNO PENALTY applied to ${player.nickname}: went from 2 to 1 card without calling UNO`);
-    } else if (currentHandSize === 2 && newHand.length === 1 && player.hasCalledUno) {
-      console.log(`${player.nickname} successfully went from 2 to 1 card with UNO called - NO PENALTY`);
     }
     
     // Apply UNO penalty if needed (2 random cards from deck)
@@ -642,8 +634,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       newUnoStatus = true; // Keep UNO status if successfully down to 1 card
     }
     
-    console.log(`${player.nickname}: Hand size ${currentHandSize} -> ${newHand.length}, UNO status ${player.hasCalledUno} -> ${newUnoStatus}`);
-    
     await storage.updatePlayer(connection.playerId, { 
       hand: newHand,
       hasCalledUno: newUnoStatus
@@ -662,8 +652,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (effect.draw > 0) {
       // Stack the draw effect - pass the penalty to next player
       newPendingDraw = (room.pendingDraw || 0) + effect.draw;
-      
-      console.log(`${card.type} card played by ${player.nickname}, stacking ${effect.draw} cards. New pending draw: ${newPendingDraw}`);
       
       // Move to next player (they can either draw or stack)
       nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
@@ -806,8 +794,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         drawnCard: drawnCard // Include the actual card for debugging
       });
       
-      console.log(`${player.nickname} drew penalty card ${i + 1}/${penaltyAmount}: ${drawnCard.type} ${drawnCard.color}`);
-      
       await broadcastRoomState(roomId);
     }
     
@@ -828,8 +814,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Wait 1.5 seconds before ending animation to complete 6 second total
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    console.log(`Penalty animation completed for ${player.nickname}: ${penaltyAmount} cards drawn, final hand size: ${currentHand.length}`);
     
     // End penalty animation
     broadcastToRoom(roomId, {
@@ -924,24 +908,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const player = await storage.getPlayer(connection.playerId);
     if (!player) return;
     
-    console.log(`${player.nickname} attempting to call UNO. Current hand size: ${(player.hand || []).length}, hasCalledUno: ${player.hasCalledUno}`);
-    
     // Allow UNO call when player has 2 cards (before playing second-to-last card)
     if ((player.hand || []).length === 2) {
-      const updateResult = await storage.updatePlayer(connection.playerId, { hasCalledUno: true });
-      console.log(`UNO called successfully by ${player.nickname}. Setting hasCalledUno to true. Update result:`, updateResult?.hasCalledUno);
+      await storage.updatePlayer(connection.playerId, { hasCalledUno: true });
       
       // Broadcast UNO call for visual feedback
       broadcastToRoom(connection.roomId!, {
         type: 'uno_called_success',
         player: player.nickname
       });
-      
-      // Verify the update worked
-      const verifyPlayer = await storage.getPlayer(connection.playerId);
-      console.log(`VERIFICATION: ${player.nickname} hasCalledUno after update: ${verifyPlayer?.hasCalledUno}`);
-    } else {
-      console.log(`UNO call rejected for ${player.nickname}. Must have exactly 2 cards, but has ${(player.hand || []).length}`);
     }
   }
 
