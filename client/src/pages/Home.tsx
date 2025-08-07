@@ -22,25 +22,41 @@ export default function Home() {
   const [popupNickname, setPopupNickname] = useState("");
   const { toast } = useToast();
 
-  // Check for room parameter in URL (from shared links)
+  // Check for existing player session and room parameter in URL
   useEffect(() => {
+    const existingPlayerId = localStorage.getItem("playerId");
+    const existingNickname = localStorage.getItem("playerNickname");
+    const existingRoomId = localStorage.getItem("currentRoomId");
+    
+    // If user has an existing session, redirect to their room
+    if (existingPlayerId && existingNickname && existingRoomId) {
+      console.log("Found existing session, redirecting to room:", { existingPlayerId, existingNickname, existingRoomId });
+      setLocation(`/room/${existingRoomId}`);
+      return;
+    }
+    
+    // Check for room parameter in URL (from shared links)
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room') || urlParams.get('code');
     
     if (roomFromUrl) {
       const cleanCode = roomFromUrl.replace(/[^0-9]/g, ''); // Remove non-digits
       if (cleanCode.length === 5) {
+        // If user already has a nickname from previous session, use it
+        if (existingNickname) {
+          setPopupNickname(existingNickname);
+        }
         setQrDetectedCode(cleanCode);
         setShowNicknamePopup(true);
         // Clear the URL parameter after extracting it
         window.history.replaceState({}, document.title, window.location.pathname);
         toast({
           title: "Room Link Detected",
-          description: `Joining room ${cleanCode}! Enter your nickname.`,
+          description: `Joining room ${cleanCode}! ${existingNickname ? 'Using saved nickname.' : 'Enter your nickname.'}`,
         });
       }
     }
-  }, [toast]);
+  }, [toast, setLocation]);
 
   const createRoomMutation = useMutation({
     mutationFn: async (hostNickname: string) => {
@@ -50,6 +66,7 @@ export default function Home() {
     onSuccess: (data) => {
       localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", popupNickname);
+      localStorage.setItem("currentRoomId", data.room.id);
       setShowHostPopup(false);
       setLocation(`/room/${data.room.id}?code=${data.room.code}`);
       // Room created - no toast notification needed
@@ -72,6 +89,7 @@ export default function Home() {
     onSuccess: (data) => {
       localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", popupNickname);
+      localStorage.setItem("currentRoomId", data.room.id);
       if (data.room.status === "waiting") {
         setLocation(`/room/${data.room.id}`);
       } else {

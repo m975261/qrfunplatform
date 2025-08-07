@@ -63,6 +63,8 @@ export default function RoomLobby() {
   };
 
   const handleLeaveRoom = () => {
+    // Clear current room session when leaving
+    localStorage.removeItem("currentRoomId");
     setLocation("/");
   };
 

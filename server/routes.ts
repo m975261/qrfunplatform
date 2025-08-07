@@ -167,6 +167,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // WebSocket endpoint - must be before any catch-all routes
+  app.get("/ws", (req, res) => {
+    // This will be handled by the WebSocket server
+    res.status(426).send('Upgrade Required');
+  });
+
   // iOS-friendly redirect endpoints for QR codes
   app.get("/join/:code", (req, res) => {
     const { code } = req.params;

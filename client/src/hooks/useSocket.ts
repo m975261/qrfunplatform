@@ -99,6 +99,8 @@ export function useSocket(autoConnect: boolean = true) {
     
     socketRef.current.onerror = (error) => {
       console.error("WebSocket error:", error);
+      console.error("WebSocket readyState:", socketRef.current?.readyState);
+      console.error("WebSocket URL was:", wsUrl);
       setIsConnected(false);
     };
   };

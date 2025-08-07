@@ -427,12 +427,16 @@ export default function Game() {
           onPlayAgain={() => {
             setShowGameEnd(false);
             setGameEndData(null);
+            // Clear current room session when playing again
+            localStorage.removeItem("currentRoomId");
             // Go back to lobby instead of continuing game
             window.location.href = `/`;
           }}
           onBackToLobby={() => {
             setShowGameEnd(false);
             setGameEndData(null);
+            // Clear current room session when exiting game
+            localStorage.removeItem("currentRoomId");
             exitGame();
           }}
         />
