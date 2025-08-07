@@ -133,17 +133,23 @@ export default function RoomLobby() {
     });
   };
 
+  // Handle case where room/player data is stale (server restart)
+  useEffect(() => {
+    if (roomError && roomId && playerId) {
+      console.log("Room not found, clearing stale data and redirecting to home");
+      localStorage.removeItem("currentRoomId");
+      localStorage.removeItem("playerId");
+      setLocation("/");
+    }
+  }, [roomError, roomId, playerId, setLocation]);
+
   if (!gameState) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center">
-        <div className="text-white text-xl">
-          <div>Loading...</div>
-          <div className="text-sm mt-2">
-            Player ID: {playerId ? playerId.substring(0, 8) + '...' : 'None'}
-          </div>
-          <div className="text-sm">
-            Connected: {isConnected ? 'Yes' : 'No'}
-          </div>
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mb-4 mx-auto"></div>
+          <p className="text-xl">Connecting to room...</p>
+          <p className="text-sm mt-2 opacity-75">Please wait while we establish your connection</p>
         </div>
       </div>
     );

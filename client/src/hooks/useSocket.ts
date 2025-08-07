@@ -79,6 +79,15 @@ export function useSocket(autoConnect: boolean = true) {
             alert(message.message || "You have been removed from the room");
             window.location.href = "/";
             break;
+          case 'error':
+            // Handle server errors (like room not found)
+            console.log("WebSocket error:", message.message);
+            if (message.message?.includes('Room not found') || message.message?.includes('session expired')) {
+              localStorage.removeItem("currentRoomId");
+              localStorage.removeItem("playerId");
+              window.location.href = "/";
+            }
+            break;
           case 'heartbeat_ack':
             // Server acknowledged our heartbeat - connection is stable
             break;
