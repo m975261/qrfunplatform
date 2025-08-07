@@ -244,12 +244,17 @@ export default function RoomLobby() {
                   Scan this QR code or share room code: <strong>{room?.code}</strong>
                 </p>
                 <p className="text-xs text-gray-500 mb-4">
-                  💡 iOS: If QR scan doesn't open directly, copy the URL from search results
+                  💡 iOS: If QR doesn't work, use "Copy Room Link" instead
                 </p>
-                <Button onClick={handleCopyLink} className="w-full">
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy Room Link
-                </Button>
+                <div className="space-y-2">
+                  <Button onClick={handleCopyLink} className="w-full">
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy Room Link
+                  </Button>
+                  <div className="text-xs text-gray-500 px-2">
+                    Share room code: <span className="font-mono bg-gray-100 px-1 rounded">{room?.code}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

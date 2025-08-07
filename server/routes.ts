@@ -44,10 +44,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update room with host ID
       const updatedRoom = await storage.updateRoom(room.id, { hostId: hostPlayer.id });
 
-      // Generate QR code with room link - ensure https:// prefix for iOS compatibility
+      // Generate QR code with room link - iOS-friendly format
       const domain = process.env.REPLIT_DOMAINS?.split(',')[0];
-      const baseUrl = domain ? `https://${domain}` : `${req.protocol}://${req.get('host')}`;
-      const roomLink = baseUrl.startsWith('http') ? `${baseUrl}?room=${code}` : `https://${baseUrl}?room=${code}`;
+      let roomLink;
+      if (domain) {
+        // Ensure proper https:// prefix for iOS recognition
+        roomLink = `https://${domain}?room=${code}`;
+      } else {
+        roomLink = `${req.protocol}://${req.get('host')}/?room=${code}`;
+      }
       console.log('Generated QR code URL:', roomLink);
       const qrCode = await QRCode.toDataURL(roomLink);
 
