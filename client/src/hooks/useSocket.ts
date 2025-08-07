@@ -14,6 +14,7 @@ export function useSocket(autoConnect: boolean = true) {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
   const hasJoinedRoomRef = useRef<string | null>(null);
+  const lastActivityRef = useRef<number>(Date.now());
 
   const connect = () => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -26,12 +27,17 @@ export function useSocket(autoConnect: boolean = true) {
       setIsConnected(true);
       console.log("WebSocket connected successfully");
       
-      // Start heartbeat
+      // Start heartbeat - more frequent to handle tab switching
       heartbeatIntervalRef.current = setInterval(() => {
         if (socketRef.current?.readyState === WebSocket.OPEN) {
-          socketRef.current.send(JSON.stringify({ type: 'heartbeat' }));
+          lastActivityRef.current = Date.now();
+          socketRef.current.send(JSON.stringify({ 
+            type: 'heartbeat',
+            timestamp: lastActivityRef.current,
+            tabVisible: !document.hidden // Track if tab is currently visible
+          }));
         }
-      }, 25000); // Send heartbeat every 25 seconds
+      }, 15000); // Send heartbeat every 15 seconds
     };
     
     socketRef.current.onmessage = (event) => {
@@ -205,7 +211,37 @@ export function useSocket(autoConnect: boolean = true) {
       connect();
     }
     
+    // Handle tab visibility changes
+    const handleVisibilityChange = () => {
+      if (!document.hidden && socketRef.current?.readyState === WebSocket.OPEN) {
+        // Tab became visible - send immediate heartbeat
+        lastActivityRef.current = Date.now();
+        socketRef.current.send(JSON.stringify({ 
+          type: 'heartbeat',
+          timestamp: lastActivityRef.current,
+          tabVisible: true
+        }));
+      }
+    };
+    
+    // Handle user activity to maintain connection
+    const handleUserActivity = () => {
+      lastActivityRef.current = Date.now();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('mousemove', handleUserActivity);
+    document.addEventListener('keydown', handleUserActivity);
+    document.addEventListener('click', handleUserActivity);
+    document.addEventListener('scroll', handleUserActivity);
+    
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('mousemove', handleUserActivity);
+      document.removeEventListener('keydown', handleUserActivity);
+      document.removeEventListener('click', handleUserActivity);
+      document.removeEventListener('scroll', handleUserActivity);
+      
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }

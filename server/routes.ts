@@ -12,6 +12,8 @@ interface SocketConnection {
   playerId?: string;
   roomId?: string;
   lastSeen?: number;
+  tabVisible?: boolean;
+  lastActivity?: number;
 }
 
 const connections = new Map<string, SocketConnection>();
@@ -268,9 +270,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await handleSendEmoji(connection, message);
             break;
           case 'heartbeat':
-            // Update last seen time
+            // Update last seen time and handle tab visibility
             connection.lastSeen = Date.now();
-            ws.send(JSON.stringify({ type: 'heartbeat_ack' }));
+            connection.tabVisible = message.tabVisible !== false; // Default to true if not specified
+            connection.lastActivity = message.timestamp || Date.now();
+            ws.send(JSON.stringify({ 
+              type: 'heartbeat_ack',
+              serverTime: Date.now()
+            }));
             break;
         }
       } catch (error) {
@@ -792,12 +799,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const players = await storage.getPlayersByRoom(roomId);
     const messages = await storage.getMessagesByRoom(roomId, 20);
     
-    // Add online status to players - check active connections with recent heartbeat
+    // Add online status to players - more lenient for background tabs
     const playersWithStatus = players.map(player => {
       const activeConnection = Array.from(connections.values()).find(conn => 
         conn.playerId === player.id && 
         conn.ws.readyState === WebSocket.OPEN &&
-        (!conn.lastSeen || Date.now() - conn.lastSeen < 60000) // Active within last 60 seconds
+        (!conn.lastSeen || Date.now() - conn.lastSeen < 120000) // Active within last 2 minutes (more lenient)
       );
       return {
         ...player,
