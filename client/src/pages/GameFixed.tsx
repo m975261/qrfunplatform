@@ -121,6 +121,8 @@ export default function Game() {
   const currentPlayer = players.find((p: any) => p.id === playerId);
   const currentGamePlayer = gamePlayers[room.currentPlayerIndex || 0];
   const isMyTurn = currentGamePlayer?.id === playerId;
+  const isPaused = room.status === "paused";
+  const isHost = currentPlayer?.id === room?.hostId;
   const topCard = room.discardPile?.[0];
 
   return (
@@ -237,31 +239,11 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Direction Indicator - positioned near center circle */}
+      {/* Direction Indicator - big purple arrow near center */}
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-        <div className="relative">
-          {/* Curved arrow indicator */}
-          <div className="absolute -top-20 -left-4">
-            <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-2 border border-slate-700/50">
-              <div className="flex items-center space-x-2">
-                {room.direction === 1 ? (
-                  <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9 9 0 0 1-9-9 9 9 0 0 1 9-9z"/>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 12 2 2 4-4"/>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3"/>
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9 9 9 0 0 0-9-9z"/>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m15 12-2-2-4 4"/>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16v-4l-3-3"/>
-                  </svg>
-                )}
-                <span className="text-xs text-purple-300 font-bold">
-                  {room.direction === 1 ? "↻" : "↺"}
-                </span>
-              </div>
-            </div>
+        <div className="absolute -top-16 -left-6">
+          <div className="text-purple-500 text-4xl font-bold">
+            {room.direction === 1 ? "↻" : "↺"}
           </div>
         </div>
       </div>
@@ -292,6 +274,10 @@ export default function Game() {
                   }`}>
                     {player.nickname?.[0]?.toUpperCase()}
                   </div>
+                  {/* Online/Offline status indicator */}
+                  <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-slate-800 ${
+                    player.isOnline !== false ? 'bg-green-500' : 'bg-red-500'
+                  }`}></div>
                   {isPlayerTurn && (
                     <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   )}
@@ -303,6 +289,13 @@ export default function Game() {
                     {player.nickname}
                   </div>
                   <div className="text-xs text-slate-400">{player.hand?.length || 0} cards</div>
+                  <div className="text-xs">
+                    <span className={`${
+                      player.isOnline !== false ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {player.isOnline !== false ? 'Online' : 'Offline'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

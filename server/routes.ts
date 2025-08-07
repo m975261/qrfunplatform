@@ -11,6 +11,7 @@ interface SocketConnection {
   ws: WebSocket;
   playerId?: string;
   roomId?: string;
+  lastSeen?: number;
 }
 
 const connections = new Map<string, SocketConnection>();
@@ -246,6 +247,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     ws.on('close', () => {
       console.log('WebSocket connection closed:', connectionId);
+      const connection = connections.get(connectionId);
+      if (connection?.playerId && connection?.roomId) {
+        handlePlayerDisconnect(connection.playerId, connection.roomId);
+      }
       connections.delete(connectionId);
     });
     
@@ -695,14 +700,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await broadcastRoomState(connection.roomId);
   }
 
+  async function handlePlayerDisconnect(playerId: string, roomId: string) {
+    const room = await storage.getRoom(roomId);
+    const players = await storage.getPlayersByRoom(roomId);
+    const disconnectedPlayer = await storage.getPlayer(playerId);
+    
+    if (!room || !disconnectedPlayer) return;
+    
+    // Mark player as offline
+    await storage.updatePlayer(playerId, { 
+      socketId: null
+    });
+    
+    // If game is in progress and player is not a spectator, pause the game
+    if (room.status === "playing" && !disconnectedPlayer.isSpectator) {
+      await storage.updateRoom(roomId, { 
+        status: "paused"
+      });
+      
+      // Send system message
+      await storage.createMessage({
+        roomId,
+        message: `Game paused: ${disconnectedPlayer.nickname} disconnected. Host can continue or manage players.`,
+        type: "system"
+      });
+      
+      broadcastToRoom(roomId, {
+        type: 'game_paused',
+        reason: `${disconnectedPlayer.nickname} disconnected`,
+        needsHostAction: true
+      });
+    }
+    
+    await broadcastRoomState(roomId);
+  }
+
   async function broadcastRoomState(roomId: string) {
     const room = await storage.getRoom(roomId);
     const players = await storage.getPlayersByRoom(roomId);
     const messages = await storage.getMessagesByRoom(roomId, 20);
     
+    // Add online status to players
+    const playersWithStatus = players.map(player => ({
+      ...player,
+      isOnline: Array.from(connections.values()).some(conn => 
+        conn.playerId === player.id && conn.ws.readyState === WebSocket.OPEN
+      )
+    }));
+    
     const gameState = {
       room,
-      players,
+      players: playersWithStatus,
       messages,
       timestamp: Date.now()
     };
