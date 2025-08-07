@@ -91,8 +91,9 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
       case "number":
         return (
           <div className="flex flex-col items-center">
-            <span className={`font-black ${getContentSize()}`}>{card.number}</span>
-            <span className={`font-black ${getContentSize()} transform rotate-180 mt-1`}>{card.number}</span>
+            <span className={`font-black ${getContentSize()} ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
+              {card.number}
+            </span>
           </div>
         );
       case "skip":
@@ -162,10 +163,10 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
         {/* Small corner symbols */}
         {card.type === "number" && (
           <>
-            <div className="absolute top-1 left-1 text-xs font-bold opacity-80">
+            <div className={`absolute top-1 left-1 text-xs font-bold opacity-80 ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
               {card.number}
             </div>
-            <div className="absolute bottom-1 right-1 text-xs font-bold opacity-80 rotate-180">
+            <div className={`absolute bottom-1 right-1 text-xs font-bold opacity-80 rotate-180 ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
               {card.number}
             </div>
           </>
@@ -193,10 +194,10 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
       {/* Small corner symbols */}
       {card.type === "number" && (
         <>
-          <div className="absolute top-1 left-1 text-xs font-bold opacity-80">
+          <div className={`absolute top-1 left-1 text-xs font-bold opacity-80 ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
             {card.number}
           </div>
-          <div className="absolute bottom-1 right-1 text-xs font-bold opacity-80 rotate-180">
+          <div className={`absolute bottom-1 right-1 text-xs font-bold opacity-80 rotate-180 ${card.number === 6 || card.number === 9 ? 'underline' : ''}`}>
             {card.number}
           </div>
         </>

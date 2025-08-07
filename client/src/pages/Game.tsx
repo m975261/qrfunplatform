@@ -40,6 +40,7 @@ export default function Game() {
   const [gameEndData, setGameEndData] = useState<any>(null);
   const [pendingWildCard, setPendingWildCard] = useState<number | null>(null);
   const [timer, setTimer] = useState(30);
+  const [hasCalledUno, setHasCalledUno] = useState(false);
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
 
   useEffect(() => {
@@ -63,21 +64,7 @@ export default function Game() {
     }
   }, [gameState?.room?.status, gameState?.gameEndData, gameState?.needsContinue]);
 
-  // Timer countdown
-  useEffect(() => {
-    if (gameState?.room?.status === "playing") {
-      const interval = setInterval(() => {
-        setTimer(prev => {
-          if (prev <= 1) {
-            return 30; // Reset timer
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
-      return () => clearInterval(interval);
-    }
-  }, [gameState?.room?.status]);
+  // Timer countdown will be set up after variables are declared
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -102,19 +89,40 @@ export default function Game() {
 
   const handleUnoCall = () => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
-    if (player?.hand?.length === 1) {
+    if (player?.hand?.length === 2) {
       callUno();
+      setHasCalledUno(true);
       toast({
         title: "UNO!",
-        description: "You called UNO!",
+        description: "You called UNO! Now play your second-to-last card.",
       });
     } else {
       toast({
         title: "Invalid UNO Call",
-        description: "You can only call UNO when you have exactly one card.",
+        description: "You can only call UNO when you have exactly two cards.",
         variant: "destructive",
       });
     }
+  };
+
+  const handlePlayCardWithUnoCheck = (cardIndex: number) => {
+    const player = gameState?.players?.find((p: any) => p.id === playerId);
+    
+    // Check if player should have called UNO (playing second-to-last card without calling UNO)
+    if (player?.hand?.length === 2 && !hasCalledUno) {
+      toast({
+        title: "UNO Penalty!",
+        description: "You didn't call UNO! Draw 2 cards as penalty.",
+        variant: "destructive",
+      });
+      // Draw 2 penalty cards
+      drawCard();
+      drawCard();
+      return;
+    }
+    
+    // Normal card play
+    handlePlayCard(cardIndex);
   };
 
   if (!gameState || !gameState.room) {
@@ -133,6 +141,26 @@ export default function Game() {
   const currentGamePlayer = gamePlayers[room.currentPlayerIndex || 0];
   const isMyTurn = currentGamePlayer?.id === playerId;
   const topCard = room.discardPile?.[0];
+
+  // Timer countdown - only for current player's turn
+  useEffect(() => {
+    if (gameState?.room?.status === "playing" && isMyTurn) {
+      const interval = setInterval(() => {
+        setTimer(prev => {
+          if (prev <= 1) {
+            // Auto draw card and pass turn when timer expires
+            drawCard();
+            return 30;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    } else if (!isMyTurn) {
+      setTimer(30); // Reset timer when it's not your turn
+    }
+  }, [gameState?.room?.status, isMyTurn, drawCard]);
 
   // Arrange players for display (current player at bottom)
   const getPlayersArranged = () => {
@@ -279,16 +307,18 @@ export default function Game() {
               </div>
             </div>
 
-            {/* UNO Button */}
-            <div className="mt-6 text-center">
-              <Button
-                onClick={handleUnoCall}
-                disabled={currentPlayer?.hand?.length !== 1}
-                className="bg-gradient-to-r from-uno-red to-red-500 hover:scale-110 transition-all shadow-lg animate-bounce-gentle"
-              >
-                UNO!
-              </Button>
-            </div>
+            {/* UNO Button - Show when player has 2 cards */}
+            {currentPlayer?.hand?.length === 2 && isMyTurn && (
+              <div className="mt-6 text-center">
+                <Button
+                  onClick={handleUnoCall}
+                  className="bg-gradient-to-r from-uno-red to-red-500 hover:scale-110 transition-all shadow-lg animate-pulse text-white font-bold text-xl px-8 py-3"
+                >
+                  🔥 UNO! 🔥
+                </Button>
+                <p className="text-xs text-gray-600 mt-1">Click before playing your second-to-last card!</p>
+              </div>
+            )}
           </CardContent>
         </UICard>
       </div>
@@ -304,8 +334,17 @@ export default function Game() {
                     {currentPlayer.nickname[0].toUpperCase()}
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-800">{currentPlayer.nickname} (You)</div>
-                    <div className="text-xs text-gray-500">{currentPlayer.hand?.length || 0} cards</div>
+                    <div className={`font-semibold text-gray-800 ${isMyTurn ? 'animate-pulse' : ''}`}>
+                      {currentPlayer.nickname} (You) {isMyTurn && '⭐'}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {currentPlayer.hand?.length || 0} cards
+                      {isMyTurn && (
+                        <span className="ml-2 text-uno-red font-bold">
+                          • Your Turn! ({timer}s)
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -316,7 +355,7 @@ export default function Game() {
                   <GameCard
                     key={index}
                     card={card}
-                    onClick={() => handlePlayCard(index)}
+                    onClick={() => handlePlayCardWithUnoCheck(index)}
                     disabled={!isMyTurn}
                     interactive
                   />
@@ -371,8 +410,16 @@ export default function Game() {
         <GameEndModal
           winner={gameEndData?.winner || gamePlayers.find((p: any) => (p.hand?.length || 0) === 0)?.nickname || "Someone"}
           rankings={gameEndData?.rankings}
-          onPlayAgain={() => setShowGameEnd(false)}
-          onBackToLobby={() => window.location.href = "/"}
+          onPlayAgain={() => {
+            // Host can restart the game
+            if (room?.hostId === playerId) {
+              // TODO: Add restart game functionality to socket hook
+            }
+            setShowGameEnd(false);
+          }}
+          onBackToLobby={() => {
+            window.location.href = "/";
+          }}
         />
       )}
 

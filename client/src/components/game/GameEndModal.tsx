@@ -90,7 +90,7 @@ export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLo
               className="w-full"
             >
               <Home className="mr-2 h-4 w-4" />
-              Back to Lobby
+              Back to Home
             </Button>
           </div>
         </CardContent>

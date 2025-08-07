@@ -46,11 +46,15 @@ export default function PlayerArea({ player, position, isCurrentTurn }: PlayerAr
                   {player?.nickname?.[0]?.toUpperCase() || "?"}
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-800">{player?.nickname || "Player"}</div>
-                  <div className="text-xs text-gray-500">{cardCount} cards</div>
+                  <div className={`font-semibold text-gray-800 ${isCurrentTurn ? 'animate-pulse text-uno-red' : ''}`}>
+                    {player?.nickname || "Player"} {isCurrentTurn && '⭐'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {cardCount} cards {isCurrentTurn && '• Their Turn!'}
+                  </div>
                 </div>
                 {isCurrentTurn && (
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse-slow" title="Current turn"></div>
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" title="Current turn"></div>
                 )}
               </div>
               <div className="flex space-x-1">
@@ -68,11 +72,15 @@ export default function PlayerArea({ player, position, isCurrentTurn }: PlayerAr
                   {player?.nickname?.[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-gray-800">{player?.nickname || "Player"}</div>
-                  <div className="text-xs text-gray-500">{cardCount} cards</div>
+                  <div className={`font-semibold text-gray-800 ${isCurrentTurn ? 'animate-pulse text-uno-red' : ''}`}>
+                    {player?.nickname || "Player"} {isCurrentTurn && '⭐'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {cardCount} cards {isCurrentTurn && '• Their Turn!'}
+                  </div>
                 </div>
                 {isCurrentTurn && (
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse-slow" title="Current turn"></div>
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" title="Current turn"></div>
                 )}
               </div>
               <div className="flex flex-col space-y-1">
