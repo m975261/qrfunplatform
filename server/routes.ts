@@ -45,16 +45,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedRoom = await storage.updateRoom(room.id, { hostId: hostPlayer.id });
 
       // Generate QR code with room link - iOS-friendly format
-      const domain = process.env.REPLIT_DOMAINS?.split(',')[0];
+      // Check for deployment domain first (replit.app domain)
+      const deploymentDomain = process.env.REPLIT_DEPLOYMENT_ID ? 
+        process.env.REPL_SLUG + '.replit.app' : null;
+      
+      const domain = deploymentDomain || process.env.REPLIT_DOMAINS?.split(',')[0];
       let roomLink;
+      
       if (domain) {
         // Ensure proper https:// prefix for iOS recognition
         roomLink = `https://${domain}?room=${code}`;
       } else {
-        roomLink = `${req.protocol}://${req.get('host')}/?room=${code}`;
+        // Force HTTPS for QR codes, even in development
+        const host = req.get('host');
+        roomLink = `https://${host}?room=${code}`;
       }
       console.log('Generated QR code URL:', roomLink);
-      const qrCode = await QRCode.toDataURL(roomLink);
+      console.log('Environment - REPL_SLUG:', process.env.REPL_SLUG, 'DEPLOYMENT_ID:', process.env.REPLIT_DEPLOYMENT_ID);
+      
+      // Generate QR code with additional options for better iOS recognition
+      const qrCode = await QRCode.toDataURL(roomLink, {
+        errorCorrectionLevel: 'M',
+        type: 'image/png',
+        quality: 0.92,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
 
       res.json({ room: updatedRoom, qrCode, player: hostPlayer });
     } catch (error) {
