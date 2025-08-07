@@ -52,6 +52,8 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
 
   const getSizeClasses = () => {
     switch (size) {
+      case "extra-small":
+        return "w-12 h-16 sm:w-14 sm:h-18";
       case "small":
         return "w-16 h-22 sm:w-18 sm:h-24";
       case "large":

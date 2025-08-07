@@ -178,8 +178,8 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - positioned much lower */}
-      <div className="absolute inset-0 flex items-center justify-center pb-20">
+      {/* Central Game Area - centered */}
+      <div className="absolute inset-0 flex items-center justify-center pb-32">
         <div className="relative">
           {/* Game Circle */}
           <div className="w-48 h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
@@ -202,27 +202,31 @@ export default function Game() {
               {/* Current Card */}
               <div className="flex flex-col items-center">
                 {topCard ? (
-                  <GameCard 
-                    card={topCard} 
-                    size="small"
-                    interactive={false}
-                    onClick={() => {}}
-                  />
+                  <div className="flex flex-col items-center">
+                    <GameCard 
+                      card={topCard} 
+                      size="small"
+                      interactive={false}
+                      onClick={() => {}}
+                    />
+                    {/* Current Color Indicator for Wild Cards */}
+                    {room.currentColor && (topCard?.type === 'wild' || topCard?.type === 'wild4') && (
+                      <div className="mt-2 px-3 py-1 bg-slate-800/90 rounded-full border border-slate-600">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-3 h-3 rounded-full border border-white shadow-lg ${
+                            room.currentColor === 'red' ? 'bg-red-500' :
+                            room.currentColor === 'blue' ? 'bg-blue-500' :
+                            room.currentColor === 'green' ? 'bg-green-500' :
+                            'bg-yellow-500'
+                          }`}></div>
+                          <span className="text-xs text-white font-bold">Play {room.currentColor}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-white shadow-xl flex items-center justify-center">
                     <div className="text-white font-bold text-xs">?</div>
-                  </div>
-                )}
-                {/* Current Color Indicator for Wild Cards */}
-                {room.currentColor && (topCard?.type === 'wild' || topCard?.type === 'wild_draw_four') && (
-                  <div className="mt-2 flex items-center space-x-1">
-                    <div className={`w-4 h-4 rounded-full border-2 border-white shadow-lg ${
-                      room.currentColor === 'red' ? 'bg-red-500' :
-                      room.currentColor === 'blue' ? 'bg-blue-500' :
-                      room.currentColor === 'green' ? 'bg-green-500' :
-                      'bg-yellow-500'
-                    }`}></div>
-                    <span className="text-xs text-white font-bold capitalize">{room.currentColor}</span>
                   </div>
                 )}
               </div>
@@ -343,7 +347,7 @@ export default function Game() {
             {/* Player's Cards */}
             <div className="overflow-x-auto">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div className="flex space-x-3 pb-2 min-w-max">
+                <div className="flex space-x-2 pb-2 min-w-max">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
@@ -353,7 +357,7 @@ export default function Game() {
                     >
                       <GameCard 
                         card={card}
-                        size="medium"
+                        size="extra-small"
                         interactive={isMyTurn}
                         disabled={!isMyTurn}
                         onClick={() => isMyTurn && handlePlayCard(index)}
