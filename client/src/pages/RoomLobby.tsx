@@ -240,8 +240,11 @@ export default function RoomLobby() {
                 <div className="bg-white p-4 rounded-xl mb-4">
                   <img src={qrCodeData} alt="Room QR Code" className="w-full max-w-48 mx-auto" />
                 </div>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 mb-2">
                   Scan this QR code or share room code: <strong>{room?.code}</strong>
+                </p>
+                <p className="text-xs text-gray-500 mb-4">
+                  💡 iOS: If QR scan doesn't open directly, copy the URL from search results
                 </p>
                 <Button onClick={handleCopyLink} className="w-full">
                   <Copy className="mr-2 h-4 w-4" />
