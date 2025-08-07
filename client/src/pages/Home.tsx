@@ -52,10 +52,7 @@ export default function Home() {
       localStorage.setItem("playerNickname", popupNickname);
       setShowHostPopup(false);
       setLocation(`/room/${data.room.id}?code=${data.room.code}`);
-      toast({
-        title: "Room Created",
-        description: `Room ${data.room.code} created! Share the QR code or room code with friends.`,
-      });
+      // Room created - no toast notification needed
     },
     onError: () => {
       toast({
@@ -105,10 +102,7 @@ export default function Home() {
       } else {
         setLocation(`/game/${data.room.id}`);
       }
-      toast({
-        title: "Joined Room",
-        description: `Welcome to room ${data.room.code}! ${data.player.isSpectator ? 'You are watching as a spectator.' : 'You can play in this game!'}`,
-      });
+      // Room joined - no toast notification needed
     },
     onError: () => {
       toast({

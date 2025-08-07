@@ -45,10 +45,7 @@ export default function RoomLobby() {
   const handleCopyLink = () => {
     const roomLink = `${window.location.origin}/?room=${gameState?.room?.code}`;
     navigator.clipboard.writeText(roomLink);
-    toast({
-      title: "Link Copied",
-      description: "Room link copied to clipboard!",
-    });
+    // Link copied - no toast notification needed
   };
 
   const handleStartGame = () => {
