@@ -70,48 +70,53 @@ export default function RoomLobby() {
     setLocation("/");
   };
 
-  const kickPlayer = (playerIdToKick: string) => {
-    if (!currentPlayer?.id || !gameState?.room?.id) return;
+  const kickPlayer = async (playerIdToKick: string) => {
+    if (!playerId || !gameState?.room?.id) return;
     
-    fetch(`/api/rooms/${gameState.room.id}/players/${playerIdToKick}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${currentPlayer.id}`,
-        'Content-Type': 'application/json'
-      }
-    }).then(response => {
+    try {
+      const response = await fetch(`/api/rooms/${gameState.room.id}/kick`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${playerId}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ playerIdToKick })
+      });
+
       if (response.ok) {
         toast({
           title: "Player Removed",
-          description: "The player has been kicked from the room.",
+          description: "Player has been removed from the room.",
         });
       } else {
         toast({
           title: "Error",
-          description: "Failed to kick player.",
+          description: "Failed to remove player.",
           variant: "destructive",
         });
       }
-    }).catch(() => {
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to kick player.",
+        description: "Failed to remove player.",
         variant: "destructive",
       });
-    });
+    }
   };
 
-  const takePlayerSlot = (position: number) => {
-    if (!currentPlayer?.id || !gameState?.room?.id || currentPlayer.position !== null) return;
+  const takePlayerSlot = async (position: number) => {
+    if (!playerId || !gameState?.room?.id) return;
     
-    fetch(`/api/rooms/${gameState.room.id}/take-slot`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${currentPlayer.id}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ position })
-    }).then(response => {
+    try {
+      const response = await fetch(`/api/rooms/${gameState.room.id}/take-slot`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${playerId}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ position })
+      });
+
       if (response.ok) {
         toast({
           title: "Slot Taken",
@@ -124,13 +129,13 @@ export default function RoomLobby() {
           variant: "destructive",
         });
       }
-    }).catch(() => {
+    } catch (error) {
       toast({
         title: "Error", 
         description: "Failed to take player slot.",
         variant: "destructive",
       });
-    });
+    }
   };
 
   // Handle case where room/player data is stale (server restart)
@@ -183,6 +188,23 @@ export default function RoomLobby() {
 
   const playerSlots = getPlayerSlots();
 
+  // Check if player is online based on gameState
+  const isPlayerOnline = (player: any) => {
+    if (!gameState?.onlineStatus || !player) return false;
+    return gameState.onlineStatus.includes(`${player.position}: online`);
+  };
+
+  // Get position class for avatar placement (12, 3, 6, 9 o'clock)
+  const getPositionClass = (position: number) => {
+    const positions = [
+      'top-4 left-1/2 -translate-x-1/2', // 12 o'clock
+      'right-4 top-1/2 -translate-y-1/2', // 3 o'clock  
+      'bottom-4 left-1/2 -translate-x-1/2', // 6 o'clock
+      'left-4 top-1/2 -translate-y-1/2' // 9 o'clock
+    ];
+    return positions[position] || positions[0];
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red p-4">
       <div className="max-w-4xl mx-auto">
@@ -232,85 +254,97 @@ export default function RoomLobby() {
           </CardContent>
         </Card>
 
-        {/* Player Slots */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {playerSlots.map((player, index) => (
-            <Card key={index} className="bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardContent className="p-6">
-                {player ? (
-                  <div className="flex items-center space-x-4">
-                    <div className="relative">
-                      <div className={`w-16 h-16 bg-gradient-to-br ${
-                        index === 0 ? 'from-uno-green to-emerald-500' :
-                        index === 1 ? 'from-uno-blue to-blue-500' :
-                        index === 2 ? 'from-uno-red to-red-500' :
-                        'from-uno-yellow to-yellow-500'
-                      } rounded-full flex items-center justify-center text-white text-xl font-bold`}>
-                        {player.nickname[0].toUpperCase()}
-                      </div>
+        {/* Central Game Area with 4 Fixed Avatar Positions */}
+        <div className="relative w-80 h-80 mx-auto mb-8 bg-white/10 backdrop-blur-sm rounded-full border-2 border-white/20">
+          {/* UNO Logo in Center */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="w-20 h-20 bg-gradient-to-br from-uno-red to-uno-yellow rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-lg">UNO</span>
+            </div>
+          </div>
+
+          {/* 4 Fixed Avatar Positions */}
+          {[0, 1, 2, 3].map((position) => {
+            const player = playerSlots[position];
+            const isOnline = player ? isPlayerOnline(player) : false;
+            
+            return (
+              <div
+                key={position}
+                className={`absolute ${getPositionClass(position)} w-20 h-20`}
+              >
+                <div className="relative">
+                  {player ? (
+                    // Player Avatar
+                    <div className="w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg border-4 border-white/20">
+                      {player.nickname[0].toUpperCase()}
+                      {/* Online/Offline indicator */}
+                      <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
+                        isOnline ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                      {/* Host crown */}
                       {player.id === room?.hostId && (
-                        <div className="absolute -top-1 -right-1 bg-uno-yellow text-white text-xs px-2 py-0.5 rounded-full font-medium">
-                          <Crown className="h-3 w-3" />
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          <Crown className="w-6 h-6 text-yellow-400 fill-yellow-400" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <div className={`font-semibold text-gray-800 ${
-                        player.id === playerId ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''
-                      }`}
-                        onClick={() => {
-                          if (player.id === playerId) {
-                            setShowNicknameEditor(true);
-                          }
-                        }}
-                      >
-                        {player.nickname}
-                        {player.id === playerId && (
-                          <span className="text-xs text-blue-600 ml-1">(click to edit)</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-500">Ready to play</div>
+                  ) : (
+                    // Empty Slot
+                    <div 
+                      className="w-20 h-20 bg-gray-300/50 rounded-full flex items-center justify-center border-4 border-white/30 cursor-pointer hover:bg-gray-300/70 transition-colors"
+                      onClick={() => currentPlayer?.isSpectator && takePlayerSlot(position)}
+                    >
+                      {currentPlayer?.isSpectator ? (
+                        <div className="text-center">
+                          <Plus className="w-8 h-8 text-gray-600 mx-auto" />
+                          <div className="text-xs text-gray-700 font-medium">Join</div>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
+                          <div className="text-xs text-gray-600">Empty</div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-4 h-4 rounded-full ${
-                        player.isOnline !== false ? 'bg-green-500' : 'bg-red-500'
-                      }`} title={player.isOnline !== false ? 'Online' : 'Offline'}></div>
-                      {isHost && player.id !== currentPlayer?.id && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50"
-                          onClick={() => kickPlayer(player.id)}
-                          title={player.isOnline === false ? "Remove offline player" : "Kick player"}
+                  )}
+                  
+                  {/* Player Info Below Avatar */}
+                  {player && (
+                    <div className="absolute top-24 left-1/2 -translate-x-1/2 text-center min-w-24">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-md">
+                        <div 
+                          className="text-xs font-semibold text-gray-800 hover:bg-gray-100 px-1 rounded cursor-pointer"
+                          onClick={() => {
+                            if (player.id === playerId) {
+                              setShowNicknameEditor(true);
+                            }
+                          }}
                         >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div 
-                    className="border-2 border-dashed border-gray-300 hover:border-uno-blue cursor-pointer transition-all group h-16 rounded-xl"
-                    onClick={() => {
-                      if (currentPlayer?.isSpectator || currentPlayer?.position === null) {
-                        // Spectators or players without position can take this spot
-                        takePlayerSlot(index);
-                      }
-                    }}
-                  >
-                    <div className="flex items-center justify-center h-full text-gray-400 group-hover:text-uno-blue transition-all">
-                      <div className="text-center">
-                        <Plus className="h-6 w-6 mx-auto mb-1" />
-                        <div className="text-sm font-medium">
-                          {(currentPlayer?.isSpectator || currentPlayer?.position === null) ? "Click to join" : "Waiting for player..."}
+                          {player.nickname}
+                          {player.id === playerId && (
+                            <span className="text-blue-600 ml-1">✏️</span>
+                          )}
                         </div>
+                        <div className="text-xs text-gray-600 mt-1">P{position + 1}</div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  )}
+                  
+                  {/* Kick Button for Host */}
+                  {player && isHost && player.id !== playerId && (
+                    <button
+                      onClick={() => kickPlayer(player.id)}
+                      className="absolute -top-2 -left-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors"
+                      title={isOnline ? "Remove player" : "Remove offline player"}
+                    >
+                      K
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Game Controls */}
@@ -318,13 +352,13 @@ export default function RoomLobby() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="text-gray-600">
-                {gamePlayers.length >= 2 ? "All players ready? Let's start the game!" : "Waiting for more players..."}
+                {gamePlayers.length < 2 ? "Need at least 2 players to start" : `${gamePlayers.length}/4 players ready`}
               </div>
               {isHost && (
-                <Button
+                <Button 
                   onClick={handleStartGame}
                   disabled={gamePlayers.length < 2}
-                  className="bg-gradient-to-r from-uno-green to-emerald-500 hover:scale-105 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="bg-uno-green hover:bg-green-600 text-white"
                 >
                   <Play className="mr-2 h-4 w-4" />
                   Start Game
@@ -334,50 +368,43 @@ export default function RoomLobby() {
           </CardContent>
         </Card>
 
-        {/* QR Code Modal */}
+        {/* QR Code Display */}
         {showQRCode && qrCodeData && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <Card className="max-w-sm w-full mx-4">
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Share Room</h3>
-                  <Button variant="ghost" size="sm" onClick={() => setShowQRCode(false)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="bg-white p-4 rounded-xl mb-4">
-                  <img src={qrCodeData} alt="Room QR Code" className="w-full max-w-48 mx-auto" />
-                </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  Scan this QR code or share room code: <strong>{room?.code}</strong>
-                </p>
-                <p className="text-xs text-gray-500 mb-4">
-                  💡 iOS: If QR doesn't work, use "Copy Room Link" instead
-                </p>
-                <div className="space-y-2">
-                  <Button onClick={handleCopyLink} className="w-full">
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy Room Link
-                  </Button>
-                  <div className="text-xs text-gray-500 px-2">
-                    Share room code: <span className="font-mono bg-gray-100 px-1 rounded">{room?.code}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="bg-white/95 backdrop-blur-sm shadow-xl mt-6">
+            <CardContent className="p-6 text-center">
+              <h3 className="text-lg font-semibold mb-4">Scan to Join Room {room?.code}</h3>
+              <img 
+                src={qrCodeData} 
+                alt={`QR Code for room ${room?.code}`}
+                className="mx-auto mb-4"
+              />
+              <Button
+                onClick={handleCopyLink}
+                variant="outline"
+                className="mr-2"
+              >
+                Copy Link
+              </Button>
+              <Button
+                onClick={() => setShowQRCode(false)}
+                variant="outline"
+              >
+                Close
+              </Button>
+            </CardContent>
+          </Card>
         )}
 
         {/* Nickname Editor Modal */}
-        {currentPlayer && (
+        {showNicknameEditor && currentPlayer && (
           <NicknameEditor
             currentNickname={currentPlayer.nickname}
-            playerId={playerId!}
+            playerId={currentPlayer.id}
             isOpen={showNicknameEditor}
             onClose={() => setShowNicknameEditor(false)}
             onNicknameChanged={(newNickname) => {
-              // The component will handle the server update and broadcast
-              console.log("Nickname updated to:", newNickname);
+              // The WebSocket will handle the real-time update
+              setShowNicknameEditor(false);
             }}
           />
         )}
