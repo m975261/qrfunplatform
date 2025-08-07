@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a full-stack multiplayer UNO card game built with React, Express, and WebSocket for real-time gameplay. The application supports up to 4 players per room with classic UNO rules including all action cards (Skip, Reverse, Draw Two, Wild, Draw Four). Players can create rooms, join via room codes, QR code scanning, or QR code photo upload, and play in real-time with synchronized game state. Spectators can watch ongoing games and interact via animated emojis. The app features seamless QR code integration with direct room joining through nickname popup dialogs.
+This is a full-stack multiplayer UNO card game built with React, Express, and WebSocket for real-time gameplay. The application supports up to 4 players per room with classic UNO rules including all action cards (Skip, Reverse, Draw Two, Wild, Draw Four). Players can create rooms using 5-digit codes in format AABCC (e.g., 22033, 44055, 55066), join via room codes, QR code scanning, or QR code photo upload, and play in real-time with synchronized game state. Spectators can watch ongoing games and interact via animated emojis. The app features seamless QR code integration with direct room joining through nickname popup dialogs.
 
 ## User Preferences
 

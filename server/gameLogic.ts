@@ -113,11 +113,24 @@ export class UnoGameLogic {
   }
   
   static generateRoomCode(): string {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let result = "";
-    for (let i = 0; i < 6; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    // Generate codes like 22033, 44055, 55066 - format: AABCC where A and B are repeated digits
+    const digits = "0123456789";
+    
+    // First two digits are the same
+    const firstDigit = digits.charAt(Math.floor(Math.random() * digits.length));
+    
+    // Third digit is different from first
+    let secondDigit;
+    do {
+      secondDigit = digits.charAt(Math.floor(Math.random() * digits.length));
+    } while (secondDigit === firstDigit);
+    
+    // Last two digits are the same and different from the middle digit
+    let thirdDigit;
+    do {
+      thirdDigit = digits.charAt(Math.floor(Math.random() * digits.length));
+    } while (thirdDigit === secondDigit);
+    
+    return `${firstDigit}${firstDigit}${secondDigit}${thirdDigit}${thirdDigit}`;
   }
 }

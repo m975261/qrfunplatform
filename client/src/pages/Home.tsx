@@ -140,7 +140,7 @@ export default function Home() {
       });
       return;
     }
-    setQrDetectedCode(roomCode.toUpperCase());
+    setQrDetectedCode(roomCode);
     setShowNicknamePopup(true);
   };
 
@@ -190,21 +190,21 @@ export default function Home() {
         
         // Check for different URL patterns
         if (result.includes('/r/')) {
-          const match = result.match(/\/r\/([A-Z0-9]{6})/);
+          const match = result.match(/\/r\/([0-9]{5})/);
           roomCode = match ? match[1] : '';
         } else if (result.includes('/game?code=')) {
-          const match = result.match(/code=([A-Z0-9]{6})/);
+          const match = result.match(/code=([0-9]{5})/);
           roomCode = match ? match[1] : '';
         } else if (result.includes('room=')) {
-          const match = result.match(/room=([A-Z0-9]{6})/);
+          const match = result.match(/room=([0-9]{5})/);
           roomCode = match ? match[1] : '';
-        } else if (/^[A-Z0-9]{6}$/.test(result)) {
+        } else if (/^[0-9]{5}$/.test(result)) {
           // Direct room code
           roomCode = result;
         }
         
         if (roomCode) {
-          setQrDetectedCode(roomCode.toUpperCase());
+          setQrDetectedCode(roomCode);
           setShowNicknamePopup(true);
         } else {
           toast({
@@ -236,21 +236,21 @@ export default function Home() {
     let roomCode = '';
     
     if (result.includes('/r/')) {
-      const match = result.match(/\/r\/([A-Z0-9]{6})/);
+      const match = result.match(/\/r\/([0-9]{5})/);
       roomCode = match ? match[1] : '';
     } else if (result.includes('/game?code=')) {
-      const match = result.match(/code=([A-Z0-9]{6})/);
+      const match = result.match(/code=([0-9]{5})/);
       roomCode = match ? match[1] : '';
     } else if (result.includes('room=')) {
-      const match = result.match(/room=([A-Z0-9]{6})/);
+      const match = result.match(/room=([0-9]{5})/);
       roomCode = match ? match[1] : '';
-    } else if (/^[A-Z0-9]{6}$/.test(result)) {
+    } else if (/^[0-9]{5}$/.test(result)) {
       // Direct room code
       roomCode = result;
     }
     
     if (roomCode) {
-      setQrDetectedCode(roomCode.toUpperCase());
+      setQrDetectedCode(roomCode);
       setShowQRScanner(false);
       setShowNicknamePopup(true);
     } else {
@@ -290,9 +290,9 @@ export default function Home() {
                   type="text"
                   placeholder="Room Code"
                   value={roomCode}
-                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  maxLength={6}
-                  className="flex-1 text-center font-mono font-medium uppercase"
+                  onChange={(e) => setRoomCode(e.target.value)}
+                  maxLength={5}
+                  className="flex-1 text-center font-mono font-medium"
                 />
                 <Button
                   onClick={handleJoinRoom}
