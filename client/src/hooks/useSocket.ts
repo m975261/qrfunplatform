@@ -72,6 +72,10 @@ export function useSocket(autoConnect: boolean = true) {
             // Remove notification - just log silently
             console.log("UNO called by:", message.player);
             break;
+          case 'uno_called_success':
+            // Show success feedback when UNO is called
+            console.log("UNO successfully called by:", message.player);
+            break;
           case 'kicked':
             // Player was kicked from room
             localStorage.removeItem("currentRoomId");
