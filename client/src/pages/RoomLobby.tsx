@@ -10,6 +10,8 @@ import { useSocket } from "@/hooks/useSocket";
 export default function RoomLobby() {
   const [, params] = useRoute("/room/:roomId");
   const [, setLocation] = useLocation();
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   const { toast } = useToast();
   const { gameState, joinRoom, startGame, isConnected } = useSocket();
   const roomId = params?.roomId;
@@ -19,6 +21,13 @@ export default function RoomLobby() {
     queryKey: ["/api/rooms", roomId],
     enabled: !!roomId,
   });
+
+  // Set QR code data when room data is available
+  useEffect(() => {
+    if (roomData?.qrCode) {
+      setQRCodeData(roomData.qrCode);
+    }
+  }, [roomData]);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -108,6 +117,15 @@ export default function RoomLobby() {
                   Copy Link
                 </Button>
                 <Button
+                  onClick={() => setShowQRCode(!showQRCode)}
+                  variant="outline"
+                  size="sm"
+                  className="bg-uno-green text-white hover:bg-green-600"
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  QR Code
+                </Button>
+                <Button
                   onClick={handleLeaveRoom}
                   variant="outline"
                   size="sm"
@@ -157,7 +175,7 @@ export default function RoomLobby() {
                     <div className="flex items-center justify-center h-full text-gray-400 group-hover:text-uno-blue transition-all">
                       <div className="text-center">
                         <Plus className="h-6 w-6 mx-auto mb-1" />
-                        <div className="text-sm font-medium">Join Game</div>
+                        <div className="text-sm font-medium">Waiting for player...</div>
                       </div>
                     </div>
                   </div>
@@ -187,6 +205,32 @@ export default function RoomLobby() {
             </div>
           </CardContent>
         </Card>
+
+        {/* QR Code Modal */}
+        {showQRCode && qrCodeData && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <Card className="max-w-sm w-full mx-4">
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Share Room</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setShowQRCode(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="bg-white p-4 rounded-xl mb-4">
+                  <img src={qrCodeData} alt="Room QR Code" className="w-full max-w-48 mx-auto" />
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Scan this QR code or share room code: <strong>{room?.code}</strong>
+                </p>
+                <Button onClick={handleCopyLink} className="w-full">
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Room Link
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

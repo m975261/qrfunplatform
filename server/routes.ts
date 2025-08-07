@@ -97,7 +97,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const players = await storage.getPlayersByRoom(room.id);
       const messages = await storage.getMessagesByRoom(room.id, 20);
 
-      res.json({ room, players, messages });
+      // Generate QR code for sharing
+      const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] || `${req.protocol}://${req.get('host')}`;
+      const roomLink = `${baseUrl}?room=${room.code}`;
+      const qrCode = await QRCode.toDataURL(roomLink);
+
+      res.json({ room, players, messages, qrCode });
     } catch (error) {
       res.status(500).json({ error: "Failed to get room state" });
     }
