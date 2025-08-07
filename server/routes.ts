@@ -52,14 +52,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Try to get deployment domain first
       if (process.env.REPL_SLUG && process.env.REPLIT_DEPLOYMENT_ID) {
         domain = `${process.env.REPL_SLUG}.replit.app`;
-        roomLink = `https://${domain}?room=${code}`;
+        roomLink = `https://${domain}/?room=${code}`;
       } else if (process.env.REPLIT_DOMAINS) {
         domain = process.env.REPLIT_DOMAINS.split(',')[0];
-        roomLink = `https://${domain}?room=${code}`;
+        roomLink = `https://${domain}/?room=${code}`;
       } else {
         // Fallback: use host but ensure HTTPS
         const host = req.get('host') || 'localhost:5000';
-        roomLink = `https://${host}?room=${code}`;
+        roomLink = `https://${host}/?room=${code}`;
       }
       
       // Double-check HTTPS prefix is present and add explicit URL formatting for iOS
@@ -70,9 +70,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ensure URL is properly formatted for iOS Safari recognition
       roomLink = roomLink.replace(/([^:]\/)\/+/g, "$1");
       
-      // Add explicit web scheme for maximum iOS compatibility
+      // Add explicit web scheme for maximum iOS compatibility  
       if (!roomLink.includes('://')) {
         roomLink = 'https://' + roomLink;
+      }
+      
+      // iOS Camera app fix: ensure standard URL format
+      roomLink = roomLink.replace(/([^:])(\/\/+)/g, '$1//');
+      
+      // Alternative approach: Create a more iOS-friendly URL format
+      if (roomLink.includes('replit.app')) {
+        // Ensure the URL follows a pattern iOS Camera recognizes as a web link
+        roomLink = roomLink.replace(/\?\s*/, '?').replace(/\s+/g, '');
       }
       
       console.log('Generated QR code URL:', roomLink);
