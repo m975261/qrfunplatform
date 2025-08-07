@@ -189,11 +189,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
   console.log('WebSocket server created on path /ws');
+
+  // Periodic status broadcast to keep all clients synchronized
+  setInterval(async () => {
+    const activeRooms = new Set<string>();
+    connections.forEach(conn => {
+      if (conn.roomId) activeRooms.add(conn.roomId);
+    });
+    
+    for (const roomId of activeRooms) {
+      await broadcastRoomState(roomId);
+    }
+  }, 15000); // Broadcast every 15 seconds
   
   wss.on('connection', (ws: WebSocket, req) => {
     console.log('New WebSocket connection from:', req.socket.remoteAddress);
     const connectionId = Math.random().toString(36).substring(7);
     connections.set(connectionId, { ws });
+    
+    // Set up heartbeat to keep connection alive
+    const heartbeat = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.ping();
+      } else {
+        clearInterval(heartbeat);
+      }
+    }, 30000); // Ping every 30 seconds
+    
+    ws.on('pong', () => {
+      const connection = connections.get(connectionId);
+      if (connection) {
+        connection.lastSeen = Date.now();
+      }
+    });
     
     ws.on('message', async (data: Buffer) => {
       try {
@@ -239,6 +267,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'send_emoji':
             await handleSendEmoji(connection, message);
             break;
+          case 'heartbeat':
+            // Update last seen time
+            connection.lastSeen = Date.now();
+            ws.send(JSON.stringify({ type: 'heartbeat_ack' }));
+            break;
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -247,9 +280,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     ws.on('close', () => {
       console.log('WebSocket connection closed:', connectionId);
+      clearInterval(heartbeat);
       const connection = connections.get(connectionId);
       if (connection?.playerId && connection?.roomId) {
-        handlePlayerDisconnect(connection.playerId, connection.roomId);
+        // Wait a bit before marking as disconnected to allow for reconnection
+        setTimeout(() => {
+          // Check if player has reconnected with a different connection
+          const hasActiveConnection = Array.from(connections.values())
+            .some(conn => conn.playerId === connection.playerId && conn.ws.readyState === WebSocket.OPEN);
+          
+          if (!hasActiveConnection && connection.playerId && connection.roomId) {
+            handlePlayerDisconnect(connection.playerId, connection.roomId);
+          }
+        }, 5000);
       }
       connections.delete(connectionId);
     });
@@ -741,14 +784,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const players = await storage.getPlayersByRoom(roomId);
     const messages = await storage.getMessagesByRoom(roomId, 20);
     
-    // Add online status to players - check both socketId and active connections
+    // Add online status to players - check active connections with recent heartbeat
     const playersWithStatus = players.map(player => {
-      const hasActiveConnection = Array.from(connections.values()).some(conn => 
-        conn.playerId === player.id && conn.ws.readyState === WebSocket.OPEN
+      const activeConnection = Array.from(connections.values()).find(conn => 
+        conn.playerId === player.id && 
+        conn.ws.readyState === WebSocket.OPEN &&
+        (!conn.lastSeen || Date.now() - conn.lastSeen < 60000) // Active within last 60 seconds
       );
       return {
         ...player,
-        isOnline: hasActiveConnection
+        isOnline: !!activeConnection
       };
     });
     
@@ -759,6 +804,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: Date.now()
     };
     
+    console.log(`Broadcasting room state to ${roomId}:`, {
+      playerCount: playersWithStatus.length,
+      onlineStatus: playersWithStatus.map(p => `${p.nickname}: ${p.isOnline ? 'online' : 'offline'}`).join(', ')
+    });
+
     broadcastToRoom(roomId, {
       type: 'room_state',
       data: gameState

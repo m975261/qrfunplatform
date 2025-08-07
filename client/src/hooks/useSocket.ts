@@ -12,6 +12,7 @@ export function useSocket(autoConnect: boolean = true) {
   const [floatingEmojis, setFloatingEmojis] = useState<any[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
   const hasJoinedRoomRef = useRef<string | null>(null);
 
   const connect = () => {
@@ -24,6 +25,13 @@ export function useSocket(autoConnect: boolean = true) {
     socketRef.current.onopen = () => {
       setIsConnected(true);
       console.log("WebSocket connected successfully");
+      
+      // Start heartbeat
+      heartbeatIntervalRef.current = setInterval(() => {
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({ type: 'heartbeat' }));
+        }
+      }, 25000); // Send heartbeat every 25 seconds
     };
     
     socketRef.current.onmessage = (event) => {
@@ -58,6 +66,9 @@ export function useSocket(autoConnect: boolean = true) {
             // Handle UNO call
             console.log("UNO called by:", message.player);
             break;
+          case 'heartbeat_ack':
+            // Server acknowledged our heartbeat - connection is stable
+            break;
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
@@ -67,6 +78,12 @@ export function useSocket(autoConnect: boolean = true) {
     socketRef.current.onclose = (event) => {
       setIsConnected(false);
       console.log("WebSocket closed:", event.code, event.reason);
+      
+      // Clear heartbeat
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
+      
       // Don't reconnect automatically on code 1006 (abnormal closure) if it's due to HMR
       if (event.code !== 1006 || !event.reason.includes('HMR')) {
         // Attempt to reconnect after 3 seconds
@@ -191,6 +208,9 @@ export function useSocket(autoConnect: boolean = true) {
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
       }
       if (socketRef.current) {
         socketRef.current.close();
