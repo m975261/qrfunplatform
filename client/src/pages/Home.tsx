@@ -22,18 +22,23 @@ export default function Home() {
   const [popupNickname, setPopupNickname] = useState("");
   const { toast } = useToast();
 
-  // Check for room parameter in URL (from QR code)
+  // Check for room parameter in URL (from shared links)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const roomFromUrl = urlParams.get('room');
+    const roomFromUrl = urlParams.get('room') || urlParams.get('code');
+    
     if (roomFromUrl) {
-      setRoomCode(roomFromUrl.toUpperCase());
-      // Clear the URL parameter after extracting it
-      window.history.replaceState({}, document.title, window.location.pathname);
-      toast({
-        title: "Room Code Detected",
-        description: `Room code ${roomFromUrl.toUpperCase()} found! Enter your nickname to join.`,
-      });
+      const cleanCode = roomFromUrl.replace(/[^0-9]/g, ''); // Remove non-digits
+      if (cleanCode.length === 5) {
+        setQrDetectedCode(cleanCode);
+        setShowNicknamePopup(true);
+        // Clear the URL parameter after extracting it
+        window.history.replaceState({}, document.title, window.location.pathname);
+        toast({
+          title: "Room Link Detected",
+          description: `Joining room ${cleanCode}! Enter your nickname.`,
+        });
+      }
     }
   }, [toast]);
 
@@ -69,7 +74,7 @@ export default function Home() {
     },
     onSuccess: (data) => {
       localStorage.setItem("playerId", data.player.id);
-      localStorage.setItem("playerNickname", nickname);
+      localStorage.setItem("playerNickname", popupNickname);
       if (data.room.status === "waiting") {
         setLocation(`/room/${data.room.id}`);
       } else {
@@ -93,7 +98,7 @@ export default function Home() {
     },
     onSuccess: (data) => {
       localStorage.setItem("playerId", data.player.id);
-      localStorage.setItem("playerNickname", nickname);
+      localStorage.setItem("playerNickname", popupNickname);
       setShowNicknamePopup(false);
       if (data.room.status === "waiting") {
         setLocation(`/room/${data.room.id}`);

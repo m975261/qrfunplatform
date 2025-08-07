@@ -165,18 +165,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // iOS-friendly redirect endpoints for QR codes
   app.get("/join/:code", (req, res) => {
     const { code } = req.params;
-    res.redirect(302, `/?room=${code.toUpperCase()}`);
+    res.redirect(302, `/?room=${code}`);
   });
   
   app.get("/r/:code", (req, res) => {
     const { code } = req.params;
-    res.redirect(302, `/?room=${code.toUpperCase()}`);
+    res.redirect(302, `/?room=${code}`);
   });
   
   app.get("/game", (req, res) => {
     const { code } = req.query;
     if (code && typeof code === 'string') {
-      res.redirect(302, `/?room=${code.toUpperCase()}`);
+      res.redirect(302, `/?room=${code}`);
     } else {
       res.redirect(302, '/');
     }
