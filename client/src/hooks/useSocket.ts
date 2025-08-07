@@ -63,7 +63,7 @@ export function useSocket(autoConnect: boolean = true) {
             }
             break;
           case 'uno_called':
-            // Handle UNO call
+            // Remove notification - just log silently
             console.log("UNO called by:", message.player);
             break;
           case 'heartbeat_ack':

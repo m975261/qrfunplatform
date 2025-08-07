@@ -239,11 +239,15 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Direction Indicator - big purple arrow under center circle */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-        <div className="absolute top-28 -left-6">
-          <div className="text-purple-500 text-4xl font-bold">
-            {room.direction === 1 ? "↻" : "↺"}
+      {/* Direction Indicator - positioned directly below the center circle */}
+      <div className="absolute inset-0 flex items-center justify-center pb-32 pointer-events-none">
+        <div className="relative">
+          <div className="absolute top-[300px] md:top-[340px] lg:top-[380px] left-1/2 transform -translate-x-1/2 z-10">
+            <div className="bg-purple-600/90 rounded-full w-12 h-12 flex items-center justify-center shadow-lg border-2 border-purple-400">
+              <div className="text-white text-2xl font-bold">
+                {room.direction === "clockwise" ? "↻" : "↺"}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -423,7 +427,8 @@ export default function Game() {
           onPlayAgain={() => {
             setShowGameEnd(false);
             setGameEndData(null);
-            continueGame();
+            // Go back to lobby instead of continuing game
+            window.location.href = `/`;
           }}
           onBackToLobby={() => {
             setShowGameEnd(false);

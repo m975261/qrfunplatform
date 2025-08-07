@@ -197,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (conn.roomId) activeRooms.add(conn.roomId);
     });
     
-    for (const roomId of activeRooms) {
+    for (const roomId of Array.from(activeRooms)) {
       await broadcastRoomState(roomId);
     }
   }, 15000); // Broadcast every 15 seconds
@@ -400,9 +400,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateRoom(connection.roomId, { deck });
     }
     
+    // Reset UNO call status if player now has more than 1 card (penalty applied or drew cards)
+    const shouldResetUno = newHand.length > 1;
+    
     await storage.updatePlayer(connection.playerId, { 
       hand: newHand,
-      hasCalledUno: newHand.length === 1 ? player.hasCalledUno : false
+      hasCalledUno: shouldResetUno ? false : player.hasCalledUno
     });
     
     // Add card to discard pile
@@ -521,16 +524,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Handle pending draw effects first
     let drawAmount = 1;
     let clearPendingDraw = false;
+    const currentHandSize = (player.hand || []).length;
     
     if (room.pendingDraw && room.pendingDraw > 0) {
       drawAmount = room.pendingDraw;
       clearPendingDraw = true;
     }
     
+    // Check if player had exactly 2 cards and didn't call UNO - apply penalty
+    if (currentHandSize === 2 && !player.hasCalledUno) {
+      drawAmount += 2; // Add 2 penalty cards
+    }
+    
     const drawnCards = deck.splice(0, drawAmount);
     const newHand = [...(player.hand || []), ...drawnCards];
     
-    await storage.updatePlayer(connection.playerId, { hand: newHand });
+    // Reset UNO call if player now has more than 1 card  
+    await storage.updatePlayer(connection.playerId, { 
+      hand: newHand,
+      hasCalledUno: newHand.length > 1 ? false : player.hasCalledUno
+    });
     // Always move to next player after drawing - turn is over
     const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
       currentPlayerIndex, 
@@ -556,12 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if ((player.hand || []).length === 2) {
       await storage.updatePlayer(connection.playerId, { hasCalledUno: true });
       
-      if (connection.roomId) {
-        broadcastToRoom(connection.roomId, {
-          type: 'uno_called',
-          player: player.nickname
-        });
-      }
+      // Remove the broadcast notification - just update the status silently
     }
   }
 
