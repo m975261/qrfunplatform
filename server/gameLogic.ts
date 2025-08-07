@@ -71,27 +71,55 @@ export class UnoGameLogic {
   
   static shuffleDeck(deck: Card[]): Card[] {
     const shuffled = [...deck];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    
+    // Use Fisher-Yates shuffle with extra randomization passes for better mixing
+    for (let pass = 0; pass < 3; pass++) {
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
     }
+    
     return shuffled;
   }
   
   static dealInitialHands(deck: Card[], playerCount: number): { hands: Card[][], remainingDeck: Card[] } {
     const hands: Card[][] = Array(playerCount).fill(null).map(() => []);
+    const shuffledDeck = [...deck]; // Work with a copy
     let deckIndex = 0;
     
-    // Deal 7 cards to each player
+    // Deal 7 cards to each player in random order
     for (let card = 0; card < 7; card++) {
       for (let player = 0; player < playerCount; player++) {
-        hands[player].push(deck[deckIndex++]);
+        if (deckIndex < shuffledDeck.length) {
+          hands[player].push(shuffledDeck[deckIndex++]);
+        }
       }
     }
     
     return {
       hands,
-      remainingDeck: deck.slice(deckIndex)
+      remainingDeck: shuffledDeck.slice(deckIndex)
+    };
+  }
+
+  static findFirstNumberCard(deck: Card[]): { firstCard: Card, remainingDeck: Card[] } {
+    // Find the first number card in the deck to start the discard pile
+    // This ensures we never start with special cards like +2, +4, Wild, etc.
+    for (let i = 0; i < deck.length; i++) {
+      const card = deck[i];
+      if (card.type === "number") {
+        // Remove this card from the deck and return it along with the remaining deck
+        const remainingDeck = [...deck.slice(0, i), ...deck.slice(i + 1)];
+        return { firstCard: card, remainingDeck };
+      }
+    }
+    
+    // Fallback: if somehow no number cards are found, create a red 0
+    console.warn("No number cards found in deck, using fallback red 0");
+    return {
+      firstCard: { type: "number", color: "red", number: 0 },
+      remainingDeck: deck
     };
   }
   

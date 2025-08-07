@@ -542,14 +542,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const { hands, remainingDeck } = UnoGameLogic.dealInitialHands(deck, gamePlayers.length);
     
+    // Find a number card for the first discard (never start with special cards)
+    const { firstCard, remainingDeck: finalDeck } = UnoGameLogic.findFirstNumberCard(remainingDeck);
+    const discardPile = [firstCard];
+    
     // Update room with game state
-    const discardPile = [remainingDeck.pop()!];
     await storage.updateRoom(connection.roomId, {
       status: "playing",
-      deck: remainingDeck,
+      deck: finalDeck,
       discardPile,
       currentPlayerIndex: 0,
-      currentColor: discardPile[0].color === "wild" ? "red" : discardPile[0].color,
+      currentColor: firstCard.color as "red" | "blue" | "green" | "yellow", // Number cards always have a valid color
       pendingDraw: 0
     });
     
