@@ -26,11 +26,7 @@ export default function NicknameEditor({
 
   const handleUpdateNickname = async () => {
     if (!newNickname.trim()) {
-      toast({
-        title: "Error",
-        description: "Nickname cannot be empty.",
-        variant: "destructive",
-      });
+      // Removed toast notification as requested
       return;
     }
 
@@ -54,10 +50,7 @@ export default function NicknameEditor({
         // Notify parent component
         onNicknameChanged(newNickname.trim());
         
-        toast({
-          title: "Success",
-          description: "Nickname updated successfully!",
-        });
+        // Removed toast notification as requested
         
         onClose();
       } else {
@@ -65,11 +58,7 @@ export default function NicknameEditor({
       }
     } catch (error) {
       console.error("Error updating nickname:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update nickname. Please try again.",
-        variant: "destructive",
-      });
+      // Removed toast notification as requested
     } finally {
       setIsUpdating(false);
     }

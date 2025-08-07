@@ -32,6 +32,7 @@ export default function Game() {
     kickPlayer,
     continueGame,
     replacePlayer,
+    playAgain,
     isConnected
   } = useSocket();
 
@@ -92,23 +93,11 @@ export default function Game() {
     if (player?.hand?.length === 2 && !hasCalledUno) {
       callUno();
       setHasCalledUno(true);
-      toast({
-        title: "UNO!",
-        description: "You called UNO! Now play your second-to-last card.",
-        duration: 1000,
-      });
+      // Removed toast notification as requested
     } else if (hasCalledUno) {
-      toast({
-        title: "Already Called",
-        description: "You've already called UNO for this hand.",
-        duration: 1000,
-      });
+      // Already called - no notification needed
     } else {
-      toast({
-        title: "UNO Available",
-        description: "Call UNO when you have exactly 2 cards before playing your second-to-last card.",
-        duration: 1000,
-      });
+      // UNO available - no notification needed
     }
   };
 
@@ -563,12 +552,16 @@ export default function Game() {
           winner={gameEndData.winner}
           rankings={gameEndData.rankings}
           onPlayAgain={() => {
+            // Call server-side play again to reset the room state
+            playAgain();
             setShowGameEnd(false);
             setGameEndData(null);
-            // Clear current room session when playing again
-            localStorage.removeItem("currentRoomId");
-            // Go back to lobby instead of continuing game
-            window.location.href = `/`;
+            // Navigate back to lobby to see the reset room
+            if (roomId) {
+              window.location.href = `/room/${roomId}`;
+            } else {
+              window.location.href = `/`;
+            }
           }}
           onBackToLobby={() => {
             setShowGameEnd(false);

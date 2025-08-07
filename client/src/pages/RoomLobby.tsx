@@ -379,31 +379,41 @@ export default function RoomLobby() {
           </CardContent>
         </Card>
 
-        {/* QR Code Display */}
+        {/* QR Code Modal - Fixed position popup that doesn't affect layout */}
         {showQRCode && qrCodeData && (
-          <Card className="bg-white/95 backdrop-blur-sm shadow-xl mt-6">
-            <CardContent className="p-6 text-center">
-              <h3 className="text-lg font-semibold mb-4">Scan to Join Room {room?.code}</h3>
-              <img 
-                src={qrCodeData} 
-                alt={`QR Code for room ${room?.code}`}
-                className="mx-auto mb-4"
-              />
-              <Button
-                onClick={handleCopyLink}
-                variant="outline"
-                className="mr-2"
-              >
-                Copy Link
-              </Button>
-              <Button
-                onClick={() => setShowQRCode(false)}
-                variant="outline"
-              >
-                Close
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <Card className="max-w-sm w-full mx-4 animate-slide-up">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-lg font-semibold mb-4">Scan to Join Room {room?.code}</h3>
+                <div className="bg-white p-4 rounded-lg inline-block shadow-lg mb-4">
+                  <img 
+                    src={qrCodeData} 
+                    alt={`QR Code for room ${room?.code}`}
+                    className="w-48 h-48"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={handleCopyLink}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-uno-blue text-white hover:bg-blue-600"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy Link
+                  </Button>
+                  <Button
+                    onClick={() => setShowQRCode(false)}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Nickname Editor Modal */}

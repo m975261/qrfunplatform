@@ -90,18 +90,9 @@ export default function Game() {
     if (player?.hand?.length === 2) {
       callUno();
       setHasCalledUno(true);
-      toast({
-        title: "UNO!",
-        description: "You called UNO! Now play your second-to-last card.",
-        duration: 1000,
-      });
+      // Removed toast notification as requested
     } else {
-      toast({
-        title: "Invalid UNO Call",
-        description: "You can only call UNO when you have exactly two cards.",
-        variant: "destructive",
-        duration: 1000,
-      });
+      // Invalid call - no notification needed
     }
   };
 
@@ -448,11 +439,13 @@ export default function Game() {
           winner={gameEndData?.winner || gamePlayers.find((p: any) => (p.hand?.length || 0) === 0)?.nickname || "Someone"}
           rankings={gameEndData?.rankings}
           onPlayAgain={() => {
-            // Host can restart the game
-            if (room?.hostId === playerId) {
-              // TODO: Add restart game functionality to socket hook
-            }
+            // Navigate back to lobby - server will handle game reset
             setShowGameEnd(false);
+            if (roomId) {
+              window.location.href = `/room/${roomId}`;
+            } else {
+              window.location.href = `/`;
+            }
           }}
           onBackToLobby={() => {
             window.location.href = "/";

@@ -420,6 +420,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'send_emoji':
             await handleSendEmoji(connection, message);
             break;
+          case 'play_again':
+            await handlePlayAgain(connection, message);
+            break;
           case 'heartbeat':
             // Update last seen time and handle tab visibility
             connection.lastSeen = Date.now();
@@ -847,12 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updatePlayer(connection.playerId, { finishPosition });
       await storage.updateRoom(connection.roomId, { status: "waiting" });
       
-      // Send system message
-      await storage.createMessage({
-        roomId: connection.roomId,
-        message: `${player.nickname} left the game`,
-        type: "system"
-      });
+      // Removed system message as requested by user
       
       broadcastToRoom(connection.roomId, {
         type: 'player_left',
@@ -889,12 +887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (room.status === "playing") {
       await storage.updateRoom(connection.roomId, { status: "paused" });
       
-      // Send system message about game pause
-      await storage.createMessage({
-        roomId: connection.roomId,
-        message: `Game paused: ${targetPlayer.nickname} was removed. Host can continue or manage players.`,
-        type: "system"
-      });
+      // Removed system message as requested by user
       
       broadcastToRoom(connection.roomId, {
         type: 'game_paused',
@@ -931,12 +924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (activePlayers.length >= 2) {
       await storage.updateRoom(connection.roomId, { status: "playing" });
       
-      // Send system message
-      await storage.createMessage({
-        roomId: connection.roomId,
-        message: "Game continues with remaining players",
-        type: "system"
-      });
+      // Removed system message as requested by user
       
       broadcastToRoom(connection.roomId, {
         type: 'game_continued'
@@ -971,12 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove the left player completely
       await storage.deletePlayer(leftPlayer.id);
       
-      // Send system message
-      await storage.createMessage({
-        roomId: connection.roomId,
-        message: `${playerToReplace.nickname} joined the game replacing the previous player`,
-        type: "system"
-      });
+      // Removed system message as requested by user
       
       broadcastToRoom(connection.roomId, {
         type: 'player_replaced',
@@ -990,12 +973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         position: targetPosition
       });
       
-      // Send system message
-      await storage.createMessage({
-        roomId: connection.roomId,
-        message: `${playerToReplace.nickname} joined as a player`,
-        type: "system"
-      });
+      // Removed system message as requested by user
       
       broadcastToRoom(connection.roomId, {
         type: 'spectator_joined',
@@ -1006,6 +984,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     await broadcastRoomState(connection.roomId);
 
+  }
+
+  async function handlePlayAgain(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const room = await storage.getRoom(connection.roomId);
+    const player = await storage.getPlayer(connection.playerId);
+    
+    if (!room || !player) return;
+    
+    // Only allow play again if game is finished
+    if (room.status !== "finished") return;
+    
+    // Reset room to waiting state, keeping all existing players
+    await storage.updateRoom(connection.roomId, {
+      status: "waiting",
+      currentPlayerIndex: 0,
+      currentColor: null,
+      pendingDraw: 0,
+      direction: "clockwise",
+      deck: [],
+      discardPile: []
+    });
+    
+    // Reset all players' game state but keep them in the room
+    const players = await storage.getPlayersByRoom(connection.roomId);
+    for (const p of players) {
+      await storage.updatePlayer(p.id, {
+        hand: [],
+        hasCalledUno: false
+      });
+    }
+    
+    // Removed system message as requested by user
+    
+    // Broadcast updated room state
+    broadcastToRoom(connection.roomId, {
+      type: 'room_reset'
+    });
+    
+    await broadcastRoomState(connection.roomId);
   }
 
   async function handlePlayerDisconnect(playerId: string, roomId: string) {
@@ -1027,11 +1046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Send system message
-      await storage.createMessage({
-        roomId,
-        message: `Game paused: ${disconnectedPlayer.nickname} disconnected. Host can continue or manage players.`,
-        type: "system"
-      });
+      // Removed system message as requested by user
       
       broadcastToRoom(roomId, {
         type: 'game_paused',

@@ -244,6 +244,10 @@ export function useSocket(autoConnect: boolean = true) {
     });
   };
 
+  const playAgain = () => {
+    sendMessage({ type: 'play_again' });
+  };
+
   const exitGame = () => {
     sendMessage({ type: 'exit_game' });
   };
@@ -336,6 +340,7 @@ export function useSocket(autoConnect: boolean = true) {
     kickPlayer,
     continueGame,
     replacePlayer,
+    playAgain,
     connect: manualConnect
   };
 }
