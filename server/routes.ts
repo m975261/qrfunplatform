@@ -266,6 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     connection.playerId = playerId;
     connection.roomId = roomId;
+    connection.lastSeen = Date.now();
     
     // Update player's socket ID
     await storage.updatePlayer(playerId, { socketId: connectionId });
@@ -740,13 +741,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const players = await storage.getPlayersByRoom(roomId);
     const messages = await storage.getMessagesByRoom(roomId, 20);
     
-    // Add online status to players
-    const playersWithStatus = players.map(player => ({
-      ...player,
-      isOnline: Array.from(connections.values()).some(conn => 
+    // Add online status to players - check both socketId and active connections
+    const playersWithStatus = players.map(player => {
+      const hasActiveConnection = Array.from(connections.values()).some(conn => 
         conn.playerId === player.id && conn.ws.readyState === WebSocket.OPEN
-      )
-    }));
+      );
+      return {
+        ...player,
+        isOnline: hasActiveConnection
+      };
+    });
     
     const gameState = {
       room,

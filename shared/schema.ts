@@ -13,7 +13,7 @@ export const rooms = pgTable("rooms", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: varchar("code", { length: 6 }).notNull().unique(),
   hostId: varchar("host_id").notNull(),
-  status: varchar("status", { enum: ["waiting", "playing", "finished"] }).notNull().default("waiting"),
+  status: varchar("status", { enum: ["waiting", "playing", "finished", "paused"] }).notNull().default("waiting"),
   maxPlayers: integer("max_players").notNull().default(4),
   currentPlayerIndex: integer("current_player_index").default(0),
   direction: varchar("direction", { enum: ["clockwise", "counterclockwise"] }).default("clockwise"),

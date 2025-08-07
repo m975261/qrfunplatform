@@ -239,9 +239,9 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Direction Indicator - big purple arrow near center */}
+      {/* Direction Indicator - big purple arrow under center circle */}
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-        <div className="absolute -top-16 -left-6">
+        <div className="absolute top-28 -left-6">
           <div className="text-purple-500 text-4xl font-bold">
             {room.direction === 1 ? "↻" : "↺"}
           </div>
