@@ -895,12 +895,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         needsHostAction: true
       });
     } else {
-      // Send system message for lobby kick
-      await storage.createMessage({
-        roomId: connection.roomId,
-        message: `${targetPlayer.nickname} was removed from the room`,
-        type: "system"
-      });
+      // Removed system message as requested by user
       
       broadcastToRoom(connection.roomId, {
         type: 'player_kicked',
@@ -922,7 +917,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
     
     if (activePlayers.length >= 2) {
-      await storage.updateRoom(connection.roomId, { status: "playing" });
+      // Ensure proper player positions and game state
+      const sortedPlayers = activePlayers.sort((a, b) => (a.position || 0) - (b.position || 0));
+      
+      // Update current player index to match active players
+      let currentPlayerIndex = room.currentPlayerIndex || 0;
+      
+      // Make sure currentPlayerIndex points to an active player
+      while (currentPlayerIndex < sortedPlayers.length) {
+        const currentPlayer = sortedPlayers[currentPlayerIndex];
+        if (currentPlayer && !currentPlayer.hasLeft && !currentPlayer.isSpectator) {
+          break;
+        }
+        currentPlayerIndex = (currentPlayerIndex + 1) % sortedPlayers.length;
+      }
+      
+      await storage.updateRoom(connection.roomId, { 
+        status: "playing",
+        currentPlayerIndex: currentPlayerIndex
+      });
       
       // Removed system message as requested by user
       
@@ -948,12 +961,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const leftPlayer = players.find(p => p.position === targetPosition && p.hasLeft);
     
     if (leftPlayer) {
-      // Replace the left player - spectator takes their position and hand
+      // Replace the left player - spectator takes their position, hand, and game state
       await storage.updatePlayer(connection.playerId, {
         isSpectator: false,
         position: targetPosition,
         hand: leftPlayer.hand || [],
-        hasLeft: false
+        hasLeft: false,
+        hasCalledUno: leftPlayer.hasCalledUno || false,
+        finishPosition: null // Clear any finish position since they're back in game
       });
       
       // Remove the left player completely
@@ -967,10 +982,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         position: targetPosition
       });
     } else {
-      // Regular join to empty position
+      // Regular join to empty position - initialize game state
       await storage.updatePlayer(connection.playerId, {
         isSpectator: false,
-        position: targetPosition
+        position: targetPosition,
+        hand: [], // Empty hand for new player
+        hasCalledUno: false,
+        finishPosition: null
       });
       
       // Removed system message as requested by user

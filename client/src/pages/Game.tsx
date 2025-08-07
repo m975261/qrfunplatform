@@ -316,7 +316,7 @@ export default function Game() {
                 {topCard && (
                   <GameCard 
                     card={topCard} 
-                    size={getCardSize()} 
+                    size="medium" 
                   />
                 )}
               </div>
@@ -385,7 +385,7 @@ export default function Game() {
                     onClick={() => handlePlayCardWithUnoCheck(index)}
                     disabled={!isMyTurn}
                     interactive
-                    size={getCardSize()}
+                    size="small"
                   />
                 </div>
               )) || []}
@@ -481,7 +481,10 @@ export default function Game() {
                       <Button
                         key={spectator.id}
                         onClick={() => {
-                          replacePlayer(spectator.id); 
+                          // Find the first available position (kicked player's position)
+                          const kickedPlayers = gamePlayers.filter((p: any) => p.hasLeft);
+                          const targetPosition = kickedPlayers.length > 0 ? kickedPlayers[0].position : 0;
+                          replacePlayer(targetPosition); 
                           setShowContinuePrompt(false);
                         }}
                         variant="outline"

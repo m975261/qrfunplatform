@@ -15,7 +15,7 @@ export default function RoomLobby() {
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
   const { toast } = useToast();
-  const { gameState, joinRoom, startGame, isConnected } = useSocket();
+  const { gameState, joinRoom, startGame, replacePlayer, isConnected } = useSocket();
   const roomId = params?.roomId;
   const playerId = localStorage.getItem("playerId");
 
@@ -107,35 +107,8 @@ export default function RoomLobby() {
   const takePlayerSlot = async (position: number) => {
     if (!playerId || !gameState?.room?.id) return;
     
-    try {
-      const response = await fetch(`/api/rooms/${gameState.room.id}/take-slot`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${playerId}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ position })
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Slot Taken",
-          description: `You've joined as Player ${position + 1}!`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to take player slot.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error", 
-        description: "Failed to take player slot.",
-        variant: "destructive",
-      });
-    }
+    // Use the replacePlayer WebSocket function instead of HTTP API
+    replacePlayer(position);
   };
 
   // Handle case where room/player data is stale (server restart)
