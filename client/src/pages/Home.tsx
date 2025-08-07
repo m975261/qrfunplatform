@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Upload, Camera, ArrowRight } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -16,6 +17,8 @@ export default function Home() {
   const [nickname, setNickname] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showNicknamePopup, setShowNicknamePopup] = useState(false);
+  const [qrDetectedCode, setQrDetectedCode] = useState("");
   const { toast } = useToast();
 
   // Check for room parameter in URL (from QR code)
@@ -75,6 +78,36 @@ export default function Home() {
     },
   });
 
+  // Direct join from QR code mutation
+  const directJoinMutation = useMutation({
+    mutationFn: async ({ code, nickname }: { code: string; nickname: string }) => {
+      const response = await apiRequest("POST", `/api/rooms/${code}/join`, { nickname });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      localStorage.setItem("playerId", data.player.id);
+      localStorage.setItem("playerNickname", nickname);
+      setShowNicknamePopup(false);
+      if (data.room.status === "waiting") {
+        setLocation(`/room/${data.room.id}`);
+      } else {
+        setLocation(`/game/${data.room.id}`);
+      }
+      toast({
+        title: "Joined Room",
+        description: `Welcome to room ${data.room.code}! ${data.player.isSpectator ? 'You are watching as a spectator.' : 'You can play in this game!'}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to join room. The room might not exist or be full.",
+        variant: "destructive",
+      });
+      setShowNicknamePopup(false);
+    },
+  });
+
   const handleCreateRoom = () => {
     if (!nickname.trim()) {
       toast({
@@ -97,6 +130,18 @@ export default function Home() {
       return;
     }
     joinRoomMutation.mutate({ code: roomCode.toUpperCase(), nickname });
+  };
+
+  const handleDirectJoin = () => {
+    if (!nickname.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a nickname.",
+        variant: "destructive",
+      });
+      return;
+    }
+    directJoinMutation.mutate({ code: qrDetectedCode, nickname });
   };
 
   const handleQRUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,11 +192,8 @@ export default function Home() {
         }
         
         if (roomCode) {
-          setRoomCode(roomCode.toUpperCase());
-          toast({
-            title: "QR Code Scanned",
-            description: `Room code ${roomCode.toUpperCase()} found! Enter your nickname to join.`,
-          });
+          setQrDetectedCode(roomCode.toUpperCase());
+          setShowNicknamePopup(true);
         } else {
           toast({
             title: "Invalid QR Code",
@@ -196,12 +238,9 @@ export default function Home() {
     }
     
     if (roomCode) {
-      setRoomCode(roomCode.toUpperCase());
+      setQrDetectedCode(roomCode.toUpperCase());
       setShowQRScanner(false);
-      toast({
-        title: "Room Code Found",
-        description: `Room code ${roomCode.toUpperCase()} detected from QR code.`,
-      });
+      setShowNicknamePopup(true);
     } else {
       toast({
         title: "Invalid QR Code",
@@ -310,6 +349,61 @@ export default function Home() {
           onClose={() => setShowQRScanner(false)}
         />
       )}
+
+      {/* Nickname Popup for Direct QR Join */}
+      <Dialog open={showNicknamePopup} onOpenChange={setShowNicknamePopup}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center font-fredoka text-2xl bg-gradient-to-r from-uno-red to-uno-yellow bg-clip-text text-transparent">
+              Join Room {qrDetectedCode}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label htmlFor="popup-nickname" className="text-sm font-medium text-gray-700 mb-2">
+                Enter Your Nickname
+              </Label>
+              <Input
+                id="popup-nickname"
+                type="text"
+                placeholder="Your nickname..."
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                maxLength={20}
+                className="text-center font-medium"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleDirectJoin();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => setShowNicknamePopup(false)}
+                variant="outline"
+                className="flex-1"
+                disabled={directJoinMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDirectJoin}
+                disabled={directJoinMutation.isPending || !nickname.trim()}
+                className="flex-1 bg-gradient-to-r from-uno-green to-emerald-500 hover:scale-105 transition-all"
+              >
+                {directJoinMutation.isPending ? (
+                  <ArrowRight className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                )}
+                Join Room
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
