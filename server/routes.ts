@@ -600,6 +600,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let shouldApplyUnoPenalty = false;
     if (currentHandSize === 2 && newHand.length === 1 && !player.hasCalledUno) {
       shouldApplyUnoPenalty = true;
+      console.log(`UNO penalty applied to ${player.nickname}: went from 2 to 1 card without calling UNO`);
+    } else if (currentHandSize === 2 && newHand.length === 1 && player.hasCalledUno) {
+      console.log(`${player.nickname} successfully went from 2 to 1 card with UNO called - no penalty`);
     }
     
     // Apply UNO penalty if needed (2 random cards from deck)
@@ -617,12 +620,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
     
-    // Reset UNO call status if player now has more than 1 card (penalty applied or drew cards)
-    const shouldResetUno = newHand.length > 1;
+    // Reset UNO call status logic:
+    // - If player has more than 1 card after penalties, reset UNO call
+    // - If player successfully went from 2 to 1 card with UNO called, keep UNO status true
+    // - If player has exactly 1 card and didn't get penalized, they successfully called UNO
+    let newUnoStatus = player.hasCalledUno;
+    if (newHand.length > 1) {
+      newUnoStatus = false; // Reset UNO if player has more than 1 card
+    } else if (newHand.length === 1 && player.hasCalledUno && !shouldApplyUnoPenalty) {
+      newUnoStatus = true; // Keep UNO status if successfully down to 1 card
+    }
+    
+    console.log(`${player.nickname}: Hand size ${currentHandSize} -> ${newHand.length}, UNO status ${player.hasCalledUno} -> ${newUnoStatus}`);
     
     await storage.updatePlayer(connection.playerId, { 
       hand: newHand,
-      hasCalledUno: shouldResetUno ? false : player.hasCalledUno
+      hasCalledUno: newUnoStatus
     });
     
     // Add card to discard pile
