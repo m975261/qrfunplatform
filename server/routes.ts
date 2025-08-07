@@ -122,9 +122,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         nickname: z.string().min(1).max(20)
       }).parse(req.body);
 
-      const room = await storage.getRoomByCode(code.toUpperCase());
+      let room = await storage.getRoomByCode(code.toUpperCase());
       if (!room) {
-        return res.status(404).json({ error: "Room not found" });
+        // If room doesn't exist, create it automatically
+        console.log(`Room ${code} not found, creating new room`);
+        room = await storage.createRoom({
+          code: code.toUpperCase(),
+          hostId: "", // Will be set when first player joins
+          status: "waiting"
+        });
       }
 
       const existingPlayers = await storage.getPlayersByRoom(room.id);
@@ -139,8 +145,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : null
       });
 
+      // Set this player as host if room had no host
+      if (!room.hostId || room.hostId === "") {
+        await storage.updateRoom(room.id, { hostId: player.id });
+        const updatedRoom = await storage.getRoom(room.id);
+        if (updatedRoom) room = updatedRoom;
+      }
+
       res.json({ player, room });
     } catch (error) {
+      console.error("Join room error:", error);
       res.status(400).json({ error: "Failed to join room" });
     }
   });

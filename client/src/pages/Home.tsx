@@ -45,6 +45,8 @@ export default function Home() {
         // If user already has a nickname from previous session, auto-join without popup
         if (existingNickname) {
           console.log("Auto-joining with saved nickname:", existingNickname);
+          setQrDetectedCode(cleanCode);
+          setPopupNickname(existingNickname);
           directJoinMutation.mutate({ code: cleanCode, nickname: existingNickname });
           return;
         }
@@ -92,8 +94,14 @@ export default function Home() {
     },
     onSuccess: (data) => {
       localStorage.setItem("playerId", data.player.id);
-      localStorage.setItem("playerNickname", popupNickname);
+      localStorage.setItem("playerNickname", data.player.nickname);
       localStorage.setItem("currentRoomId", data.room.id);
+      
+      // Clear room code input
+      setRoomCode("");
+      
+      console.log("Successfully joined room:", data);
+      
       if (data.room.status === "waiting") {
         setLocation(`/room/${data.room.id}`);
       } else {
@@ -117,14 +125,17 @@ export default function Home() {
     },
     onSuccess: (data) => {
       localStorage.setItem("playerId", data.player.id);
-      localStorage.setItem("playerNickname", popupNickname);
+      localStorage.setItem("playerNickname", data.player.nickname);
+      localStorage.setItem("currentRoomId", data.room.id);
       setShowNicknamePopup(false);
+      
+      console.log("Successfully joined room via link:", data);
+      
       if (data.room.status === "waiting") {
         setLocation(`/room/${data.room.id}`);
       } else {
         setLocation(`/game/${data.room.id}`);
       }
-      // Room joined - no toast notification needed
     },
     onError: () => {
       toast({
@@ -180,6 +191,8 @@ export default function Home() {
     if (existingNickname) {
       // Auto-join with saved nickname
       console.log("Auto-joining with saved nickname:", existingNickname);
+      setQrDetectedCode(roomCode);
+      setPopupNickname(existingNickname);
       joinRoomMutation.mutate({ code: roomCode, nickname: existingNickname });
       return;
     }
