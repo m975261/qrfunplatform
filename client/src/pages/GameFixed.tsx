@@ -233,21 +233,23 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Players positioned around the edges - away from circle */}
-      {gamePlayers.map((player: any, index: number) => {
-        if (player.id === playerId) return null; // Skip current player
+      {/* Other Players positioned at screen corners - completely away from circle */}
+      {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
+        const filteredIndex = gamePlayers.filter(p => p.id !== playerId && !p.isSpectator).indexOf(player);
         
-        const position = index === 0 ? "top" : index === 1 ? "left" : "right";
-        const positionClass = 
-          position === "top" ? "top-4 left-1/2 transform -translate-x-1/2" :
-          position === "left" ? "left-4 top-1/4 transform -translate-y-1/2" :
-          "right-4 top-1/4 transform -translate-y-1/2";
-
+        // Position players at corners: top-left, top-right, bottom-right
+        const positions = [
+          "top-20 left-4",      // Player 1: top-left
+          "top-20 right-4",     // Player 2: top-right  
+          "bottom-32 right-4"   // Player 3: bottom-right (above player hand)
+        ];
+        
+        const positionClass = positions[filteredIndex] || "top-20 left-4";
         const isPlayerTurn = currentGamePlayer?.id === player.id;
 
         return (
           <div key={player.id} className={`absolute z-20 ${positionClass}`}>
-            <div className={`bg-slate-800/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border min-w-[100px] ${
+            <div className={`bg-slate-800/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border min-w-[120px] ${
               isPlayerTurn ? 'border-green-400 ring-1 ring-green-400/50' : 'border-slate-600'
             }`}>
               <div className="flex items-center space-x-2">
