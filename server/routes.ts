@@ -191,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const players = await storage.getPlayersByRoom(connection.roomId);
     const gamePlayers = players.filter(p => !p.isSpectator);
     
-    if (!room || room.hostId !== connection.playerId || gamePlayers.length < 1) {
+    if (!room || room.hostId !== connection.playerId || gamePlayers.length < 2) {
       return;
     }
     
