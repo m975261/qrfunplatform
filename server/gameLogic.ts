@@ -160,7 +160,12 @@ export class UnoGameLogic {
     }
   }
   
-  static getNextPlayerIndex(currentIndex: number, playerCount: number, direction: string, skip = false): number {
+  static getNextPlayerIndex(currentIndex: number, playerCount: number, direction: string, skip = false, isReverse = false): number {
+    // Special 2-player rule: Skip and Reverse both result in same player playing again
+    if (playerCount === 2 && (skip || isReverse)) {
+      return currentIndex; // Same player plays again
+    }
+    
     const step = direction === "clockwise" ? 1 : -1;
     const skipStep = skip ? step * 2 : step;
     return (currentIndex + skipStep + playerCount) % playerCount;

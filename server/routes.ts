@@ -626,7 +626,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentPlayerIndex, 
         gamePlayers.length, 
         room.direction || "clockwise", 
-        false // Don't skip, next player gets a chance to stack
+        false, // Don't skip, next player gets a chance to stack
+        false
       );
     } else {
       // Handle other effects first
@@ -638,7 +639,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentPlayerIndex, 
         gamePlayers.length, 
         newDirection || "clockwise", 
-        effect.skip
+        effect.skip,
+        effect.reverse
       );
       
       // Clear pending draw since this is not a draw card
@@ -747,7 +749,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
       currentPlayerIndex, 
       gamePlayers.length, 
-      room.direction || "clockwise"
+      room.direction || "clockwise",
+      false,
+      false
     );
     
     await storage.updateRoom(connection.roomId, { 
