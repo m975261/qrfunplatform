@@ -69,7 +69,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Ensure URL is properly formatted for iOS Safari recognition
       roomLink = roomLink.replace(/([^:]\/)\/+/g, "$1");
+      
+      // Add explicit web scheme for maximum iOS compatibility
+      if (!roomLink.includes('://')) {
+        roomLink = 'https://' + roomLink;
+      }
+      
       console.log('Generated QR code URL:', roomLink);
+      console.log('QR code URL length:', roomLink.length);
       console.log('Environment - REPL_SLUG:', process.env.REPL_SLUG, 'DEPLOYMENT_ID:', process.env.REPLIT_DEPLOYMENT_ID);
       
       // Generate QR code with additional options for better iOS recognition
