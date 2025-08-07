@@ -247,36 +247,36 @@ export default function Game() {
 
         return (
           <div key={player.id} className={`absolute z-20 ${positionClass}`}>
-            <div className={`bg-white/90 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-lg max-w-xs relative ${isPlayerTurn ? 'ring-2 ring-red-500 animate-pulse' : ''}`}>
+            <div className={`bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border max-w-xs relative ${
+              isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-slate-600'
+            }`}>
               {isPlayerTurn && (
-                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-bounce">
-                  YOUR TURN
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-bounce">
+                  TURN
                 </div>
               )}
-              <div className="flex items-center space-x-2 mb-2">
+              <div className="flex items-center space-x-2">
                 {/* Player Avatar */}
                 <div className="relative">
-                  <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm ${
-                    isPlayerTurn ? 'bg-gradient-to-br from-red-400 to-red-600 animate-pulse' : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                    isPlayerTurn ? 'bg-gradient-to-br from-green-400 to-green-600 ring-2 ring-green-400' : 'bg-gradient-to-br from-blue-400 to-blue-600'
                   }`}>
                     {player.nickname?.[0]?.toUpperCase()}
                   </div>
                   {isPlayerTurn && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
                   )}
                 </div>
                 <div>
-                  <div className={`font-semibold text-xs md:text-sm text-gray-800 ${isPlayerTurn ? 'text-red-600 animate-pulse' : ''}`}>
+                  <div className={`font-semibold text-sm ${
+                    isPlayerTurn ? 'text-green-400' : 'text-white'
+                  }`}>
                     {player.nickname} {isPlayerTurn && '⭐'}
                   </div>
-                  <div className="text-xs text-gray-500">{player.hand?.length || 0} cards</div>
+                  <div className="text-xs text-slate-400">{player.hand?.length || 0} cards</div>
                 </div>
               </div>
-              <div className="flex justify-center space-x-1">
-                {Array(Math.min(player.hand?.length || 0, 8)).fill(null).map((_, i) => (
-                  <div key={i} className="w-3 h-4 md:w-4 md:h-6 bg-gradient-to-br from-gray-700 to-gray-900 rounded border border-white shadow-sm"></div>
-                ))}
-              </div>
+
             </div>
           </div>
         );
