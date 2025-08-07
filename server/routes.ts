@@ -164,6 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const room = await storage.getRoom(req.params.roomId);
       if (!room) {
+        console.log(`Room ${req.params.roomId} not found via HTTP GET`);
         return res.status(404).json({ error: "Room not found" });
       }
 
@@ -463,6 +464,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { playerId, roomId, userFingerprint, sessionId } = message;
     
     console.log("handleJoinRoom called:", { playerId, roomId, connectionId, userFingerprint, sessionId });
+    
+    // Ensure room and player exist before proceeding
+    const room = await storage.getRoom(roomId);
+    const player = await storage.getPlayer(playerId);
+    
+    if (!room) {
+      console.log(`Room ${roomId} not found, cannot join via WebSocket`);
+      connection.ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Room not found. Please join via the main interface.'
+      }));
+      return;
+    }
+    
+    if (!player) {
+      console.log(`Player ${playerId} not found, cannot join room`);
+      connection.ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Player session expired. Please rejoin the room.'
+      }));
+      return;
+    }
     
     // Check if same user (fingerprint) has other active connections for this player
     if (userFingerprint && playerId) {

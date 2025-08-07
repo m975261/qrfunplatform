@@ -19,7 +19,7 @@ export default function RoomLobby() {
   const roomId = params?.roomId;
   const playerId = localStorage.getItem("playerId");
 
-  const { data: roomData } = useQuery({
+  const { data: roomData, isLoading: isLoadingRoom, error: roomError } = useQuery({
     queryKey: ["/api/rooms", roomId],
     enabled: !!roomId,
   });
