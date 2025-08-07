@@ -49,17 +49,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let domain;
       let roomLink;
       
-      // Try to get deployment domain first - use a redirect endpoint for iOS compatibility
+      // iOS Camera app requires very specific URL patterns to recognize as web links
+      // Use standard path format for maximum compatibility
       if (process.env.REPL_SLUG && process.env.REPLIT_DEPLOYMENT_ID) {
         domain = `${process.env.REPL_SLUG}.replit.app`;
-        roomLink = `https://${domain}/join/${code}`;
+        roomLink = `https://${domain}/r/${code}`;
       } else if (process.env.REPLIT_DOMAINS) {
         domain = process.env.REPLIT_DOMAINS.split(',')[0];
-        roomLink = `https://${domain}/join/${code}`;
+        roomLink = `https://${domain}/r/${code}`;
       } else {
         // Fallback: use host but ensure HTTPS
         const host = req.get('host') || 'localhost:5000';
-        roomLink = `https://${host}/join/${code}`;
+        roomLink = `https://${host}/r/${code}`;
       }
       
       // Double-check HTTPS prefix is present and add explicit URL formatting for iOS
@@ -157,10 +158,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // iOS-friendly redirect endpoint for QR codes
+  // iOS-friendly redirect endpoints for QR codes
   app.get("/join/:code", (req, res) => {
     const { code } = req.params;
-    // Redirect to the main app with room parameter
+    res.redirect(302, `/?room=${code.toUpperCase()}`);
+  });
+  
+  app.get("/r/:code", (req, res) => {
+    const { code } = req.params;
     res.redirect(302, `/?room=${code.toUpperCase()}`);
   });
 
