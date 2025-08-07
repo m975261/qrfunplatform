@@ -24,13 +24,14 @@ export default function RoomLobby() {
 
   // Set QR code data when room data is available
   useEffect(() => {
-    if (roomData?.qrCode) {
-      setQRCodeData(roomData.qrCode);
+    if (roomData && 'qrCode' in roomData) {
+      setQRCodeData(roomData.qrCode as string);
     }
   }, [roomData]);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
+      console.log("Joining room via WebSocket:", { playerId, roomId });
       joinRoom(playerId, roomId);
     }
   }, [roomId, playerId, isConnected, joinRoom]);
@@ -52,6 +53,7 @@ export default function RoomLobby() {
 
   const handleStartGame = () => {
     const players = gameState?.players?.filter((p: any) => !p.isSpectator) || [];
+    console.log("Starting game with players:", players);
     if (players.length < 2) {
       toast({
         title: "Not Enough Players",
@@ -70,7 +72,15 @@ export default function RoomLobby() {
   if (!gameState) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">
+          <div>Loading...</div>
+          <div className="text-sm mt-2">
+            Player ID: {playerId ? playerId.substring(0, 8) + '...' : 'None'}
+          </div>
+          <div className="text-sm">
+            Connected: {isConnected ? 'Yes' : 'No'}
+          </div>
+        </div>
       </div>
     );
   }
@@ -80,6 +90,16 @@ export default function RoomLobby() {
   const gamePlayers = players.filter((p: any) => !p.isSpectator);
   const currentPlayer = players.find((p: any) => p.id === playerId);
   const isHost = currentPlayer?.id === room?.hostId;
+
+  // Debug logging
+  console.log("RoomLobby state:", {
+    room,
+    players: players.length,
+    gamePlayers: gamePlayers.length,
+    currentPlayer: currentPlayer?.nickname,
+    isHost,
+    playerId
+  });
 
   const getPlayerSlots = () => {
     const slots = Array(4).fill(null);

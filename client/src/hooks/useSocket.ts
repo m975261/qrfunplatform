@@ -88,6 +88,7 @@ export function useSocket() {
   };
 
   const joinRoom = (playerId: string, roomId: string) => {
+    console.log("Sending join_room message:", { playerId, roomId });
     sendMessage({
       type: 'join_room',
       playerId,

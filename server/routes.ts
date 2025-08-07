@@ -171,12 +171,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function handleJoinRoom(connection: SocketConnection, message: any, connectionId: string) {
     const { playerId, roomId } = message;
     
+    console.log("handleJoinRoom called:", { playerId, roomId, connectionId });
+    
     connection.playerId = playerId;
     connection.roomId = roomId;
     
     // Update player's socket ID
     await storage.updatePlayer(playerId, { socketId: connectionId });
     
+    console.log("Broadcasting room state to all players in room:", roomId);
     // Broadcast room state to all players
     await broadcastRoomState(roomId);
   }
