@@ -8,6 +8,14 @@ This is a full-stack multiplayer UNO card game built with React, Express, and We
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### Session Management (Latest)
+- Implemented browser fingerprinting to detect same user accessing from multiple tabs/browsers
+- Automatic session management: old sessions become offline when new session starts from same device
+- Enhanced connection tracking with user fingerprints and session IDs
+- Improved online status detection to show most recent active session per user
+
 ## System Architecture
 
 ### Frontend Architecture

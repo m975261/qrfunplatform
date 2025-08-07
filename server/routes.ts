@@ -14,6 +14,8 @@ interface SocketConnection {
   lastSeen?: number;
   tabVisible?: boolean;
   lastActivity?: number;
+  userFingerprint?: string;
+  sessionId?: string;
 }
 
 const connections = new Map<string, SocketConnection>();
@@ -310,13 +312,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   async function handleJoinRoom(connection: SocketConnection, message: any, connectionId: string) {
-    const { playerId, roomId } = message;
+    const { playerId, roomId, userFingerprint, sessionId } = message;
     
-    console.log("handleJoinRoom called:", { playerId, roomId, connectionId });
+    console.log("handleJoinRoom called:", { playerId, roomId, connectionId, userFingerprint, sessionId });
+    
+    // Check if same user (fingerprint) has other active connections for this player
+    if (userFingerprint && playerId) {
+      const existingConnections = Array.from(connections.entries()).filter(([id, conn]) => 
+        conn.playerId === playerId && 
+        conn.userFingerprint === userFingerprint &&
+        id !== connectionId &&
+        conn.ws.readyState === WebSocket.OPEN
+      );
+      
+      // Close old connections from same user/device
+      existingConnections.forEach(([oldConnectionId, oldConnection]) => {
+        console.log(`Closing old connection ${oldConnectionId} for user ${userFingerprint}`);
+        oldConnection.ws.close(1000, 'New session started');
+        connections.delete(oldConnectionId);
+      });
+    }
     
     connection.playerId = playerId;
     connection.roomId = roomId;
     connection.lastSeen = Date.now();
+    connection.userFingerprint = userFingerprint;
+    connection.sessionId = sessionId;
     
     // Update player's socket ID
     await storage.updatePlayer(playerId, { socketId: connectionId });
@@ -799,16 +820,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const players = await storage.getPlayersByRoom(roomId);
     const messages = await storage.getMessagesByRoom(roomId, 20);
     
-    // Add online status to players - more lenient for background tabs
+    // Add online status to players - check for active connections (only latest per user)
     const playersWithStatus = players.map(player => {
-      const activeConnection = Array.from(connections.values()).find(conn => 
+      // Find the most recent connection for this player (in case of multiple devices)
+      const playerConnections = Array.from(connections.values()).filter(conn => 
         conn.playerId === player.id && 
         conn.ws.readyState === WebSocket.OPEN &&
-        (!conn.lastSeen || Date.now() - conn.lastSeen < 120000) // Active within last 2 minutes (more lenient)
+        (!conn.lastSeen || Date.now() - conn.lastSeen < 120000)
       );
+      
+      // Sort by lastSeen to get the most recent active connection
+      const mostRecentConnection = playerConnections
+        .sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))[0];
+      
       return {
         ...player,
-        isOnline: !!activeConnection
+        isOnline: !!mostRecentConnection
       };
     });
     
