@@ -133,8 +133,10 @@ export default function Game() {
   };
 
   const isPlayerOnline = (player: any) => {
-    if (!gameState?.onlineStatus || !player) return false;
-    return gameState.onlineStatus.includes(`${player.position}: online`);
+    if (!gameState?.players || !player) return false;
+    // Find the player in gameState.players and check their isOnline property
+    const playerData = gameState.players.find((p: any) => p.id === player.id);
+    return playerData?.isOnline || false;
   };
 
   const getPositionClass = (position: number) => {
@@ -208,8 +210,8 @@ export default function Game() {
             {/* Inner Circle */}
             <div className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
               
-              {/* Draw Pile - Moved to 8 o'clock position */}
-              <div className="absolute -left-16 top-6 transform">
+              {/* Draw Pile - Positioned at 8 o'clock to avoid avatar overlap */}
+              <div className="absolute -left-20 top-3 transform">
                 <div className="relative cursor-pointer group" onClick={drawCard}>
                   <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
                   <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>

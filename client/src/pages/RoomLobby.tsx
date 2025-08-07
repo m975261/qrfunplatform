@@ -190,8 +190,10 @@ export default function RoomLobby() {
 
   // Check if player is online based on gameState
   const isPlayerOnline = (player: any) => {
-    if (!gameState?.onlineStatus || !player) return false;
-    return gameState.onlineStatus.includes(`${player.position}: online`);
+    if (!gameState?.players || !player) return false;
+    // Find the player in gameState.players and check their isOnline property
+    const playerData = gameState.players.find((p: any) => p.id === player.id);
+    return playerData?.isOnline || false;
   };
 
   // Get position class for avatar placement (12, 3, 6, 9 o'clock)
