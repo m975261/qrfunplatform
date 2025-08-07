@@ -70,6 +70,69 @@ export default function RoomLobby() {
     setLocation("/");
   };
 
+  const kickPlayer = (playerIdToKick: string) => {
+    if (!currentPlayer?.id || !gameState?.room?.id) return;
+    
+    fetch(`/api/rooms/${gameState.room.id}/players/${playerIdToKick}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${currentPlayer.id}`,
+        'Content-Type': 'application/json'
+      }
+    }).then(response => {
+      if (response.ok) {
+        toast({
+          title: "Player Removed",
+          description: "The player has been kicked from the room.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to kick player.",
+          variant: "destructive",
+        });
+      }
+    }).catch(() => {
+      toast({
+        title: "Error",
+        description: "Failed to kick player.",
+        variant: "destructive",
+      });
+    });
+  };
+
+  const takePlayerSlot = (position: number) => {
+    if (!currentPlayer?.id || !gameState?.room?.id || currentPlayer.position !== null) return;
+    
+    fetch(`/api/rooms/${gameState.room.id}/take-slot`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${currentPlayer.id}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ position })
+    }).then(response => {
+      if (response.ok) {
+        toast({
+          title: "Slot Taken",
+          description: `You've joined as Player ${position + 1}!`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to take player slot.",
+          variant: "destructive",
+        });
+      }
+    }).catch(() => {
+      toast({
+        title: "Error", 
+        description: "Failed to take player slot.",
+        variant: "destructive",
+      });
+    });
+  };
+
   if (!gameState) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center">
@@ -202,14 +265,39 @@ export default function RoomLobby() {
                       </div>
                       <div className="text-sm text-gray-500">Ready to play</div>
                     </div>
-                    <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-4 h-4 rounded-full ${
+                        player.isOnline !== false ? 'bg-green-500' : 'bg-red-500'
+                      }`} title={player.isOnline !== false ? 'Online' : 'Offline'}></div>
+                      {isHost && player.id !== currentPlayer?.id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:bg-red-50"
+                          onClick={() => kickPlayer(player.id)}
+                          title={player.isOnline === false ? "Remove offline player" : "Kick player"}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-gray-300 hover:border-uno-blue cursor-pointer transition-all group h-16 rounded-xl">
+                  <div 
+                    className="border-2 border-dashed border-gray-300 hover:border-uno-blue cursor-pointer transition-all group h-16 rounded-xl"
+                    onClick={() => {
+                      if (currentPlayer?.isSpectator || currentPlayer?.position === null) {
+                        // Spectators or players without position can take this spot
+                        takePlayerSlot(index);
+                      }
+                    }}
+                  >
                     <div className="flex items-center justify-center h-full text-gray-400 group-hover:text-uno-blue transition-all">
                       <div className="text-center">
                         <Plus className="h-6 w-6 mx-auto mb-1" />
-                        <div className="text-sm font-medium">Waiting for player...</div>
+                        <div className="text-sm font-medium">
+                          {(currentPlayer?.isSpectator || currentPlayer?.position === null) ? "Click to join" : "Waiting for player..."}
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -72,6 +72,13 @@ export function useSocket(autoConnect: boolean = true) {
             // Remove notification - just log silently
             console.log("UNO called by:", message.player);
             break;
+          case 'kicked':
+            // Player was kicked from room
+            localStorage.removeItem("currentRoomId");
+            localStorage.removeItem("playerId");
+            alert(message.message || "You have been removed from the room");
+            window.location.href = "/";
+            break;
           case 'heartbeat_ack':
             // Server acknowledged our heartbeat - connection is stable
             break;

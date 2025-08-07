@@ -192,10 +192,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // WebSocket endpoint - must be before any catch-all routes
+  // Kick player from room (host only)
+  app.delete("/api/rooms/:roomId/players/:playerId", async (req, res) => {
+    try {
+      const { roomId, playerId } = req.params;
+      const hostId = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!hostId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      if (room.hostId !== hostId) {
+        return res.status(403).json({ error: "Only the host can kick players" });
+      }
+
+      const playerToKick = await storage.getPlayer(playerId);
+      if (!playerToKick || playerToKick.roomId !== roomId) {
+        return res.status(404).json({ error: "Player not found in this room" });
+      }
+
+      // Remove the player
+      await storage.deletePlayer(playerId);
+      
+      // Close WebSocket connection if player is online
+      // Find and close connections for this player
+      connections.forEach((connection, connId) => {
+        if (connection.playerId === playerId && connection.ws.readyState === WebSocket.OPEN) {
+          connection.ws.send(JSON.stringify({
+            type: 'kicked',
+            message: 'You have been removed from the room'
+          }));
+          connection.ws.close();
+          connections.delete(connId);
+        }
+      });
+
+      // Broadcast updated room state
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: "Player kicked successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to kick player" });
+    }
+  });
+
+  // Take player slot (for spectators to join as players)
+  app.post("/api/rooms/:roomId/take-slot", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { position } = z.object({
+        position: z.number().min(0).max(3)
+      }).parse(req.body);
+      const playerId = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!playerId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      const player = await storage.getPlayer(playerId);
+      if (!player || player.roomId !== roomId) {
+        return res.status(404).json({ error: "Player not found in this room" });
+      }
+
+      // Check if player is already in a position
+      if (player.position !== null) {
+        return res.status(400).json({ error: "Player already has a position" });
+      }
+
+      // Check if the position is available
+      const roomPlayers = await storage.getPlayersByRoom(roomId);
+      const positionTaken = roomPlayers.some(p => p.position === position && !p.isSpectator);
+      
+      if (positionTaken) {
+        return res.status(400).json({ error: "Position already taken" });
+      }
+
+      // Update player to take the position
+      await storage.updatePlayer(playerId, {
+        position,
+        isSpectator: false
+      });
+
+      // Broadcast updated room state
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: "Player slot taken successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to take player slot" });
+    }
+  });
+
+  // WebSocket endpoint - must be before any catch-all routes  
   app.get("/ws", (req, res) => {
-    // This will be handled by the WebSocket server
-    res.status(426).send('Upgrade Required');
+    if (req.headers.upgrade?.toLowerCase() === 'websocket') {
+      res.status(426).send('Upgrade Required');
+    } else {
+      res.status(200).send('WebSocket endpoint - use WebSocket client to connect');
+    }
   });
 
   // iOS-friendly redirect endpoints for QR codes
