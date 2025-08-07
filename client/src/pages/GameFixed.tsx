@@ -193,7 +193,7 @@ export default function Game() {
                   <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
                   <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-white font-bold text-xs">UNO</div>
+                    <div className="text-white font-bold text-xs">?</div>
                   </div>
                 </div>
                 <div className="text-xs text-center mt-1 text-blue-300 font-bold">DRAW</div>

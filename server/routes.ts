@@ -482,14 +482,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const newHand = [...(player.hand || []), ...drawnCards];
     
     await storage.updatePlayer(connection.playerId, { hand: newHand });
+    // Always move to next player after drawing - turn is over
+    const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+      currentPlayerIndex, 
+      gamePlayers.length, 
+      room.direction || "clockwise"
+    );
+    
     await storage.updateRoom(connection.roomId, { 
       deck,
       pendingDraw: clearPendingDraw ? 0 : room.pendingDraw,
-      currentPlayerIndex: clearPendingDraw ? UnoGameLogic.getNextPlayerIndex(
-        currentPlayerIndex, 
-        gamePlayers.length, 
-        room.direction || "clockwise"
-      ) : currentPlayerIndex // Only move to next player if drew pending cards
+      currentPlayerIndex: nextPlayerIndex
     });
     await broadcastRoomState(connection.roomId);
   }
