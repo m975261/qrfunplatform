@@ -6,7 +6,7 @@ interface SocketMessage {
   [key: string]: any;
 }
 
-export function useSocket() {
+export function useSocket(autoConnect: boolean = true) {
   const [isConnected, setIsConnected] = useState(false);
   const [gameState, setGameState] = useState<any>(null);
   const [floatingEmojis, setFloatingEmojis] = useState<any[]>([]);
@@ -148,7 +148,9 @@ export function useSocket() {
   };
 
   useEffect(() => {
-    connect();
+    if (autoConnect) {
+      connect();
+    }
     
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -158,7 +160,13 @@ export function useSocket() {
         socketRef.current.close();
       }
     };
-  }, []);
+  }, [autoConnect]);
+
+  const manualConnect = () => {
+    if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
+      connect();
+    }
+  };
 
   return {
     isConnected,
@@ -171,6 +179,7 @@ export function useSocket() {
     callUno,
     chooseColor,
     sendChatMessage,
-    sendEmoji
+    sendEmoji,
+    connect: manualConnect
   };
 }

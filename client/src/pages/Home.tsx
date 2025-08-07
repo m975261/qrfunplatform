@@ -14,11 +14,12 @@ import QrScanner from 'qr-scanner';
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const [nickname, setNickname] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showNicknamePopup, setShowNicknamePopup] = useState(false);
+  const [showHostPopup, setShowHostPopup] = useState(false);
   const [qrDetectedCode, setQrDetectedCode] = useState("");
+  const [popupNickname, setPopupNickname] = useState("");
   const { toast } = useToast();
 
   // Check for room parameter in URL (from QR code)
@@ -43,8 +44,13 @@ export default function Home() {
     },
     onSuccess: (data) => {
       localStorage.setItem("playerId", data.player.id);
-      localStorage.setItem("playerNickname", nickname);
+      localStorage.setItem("playerNickname", popupNickname);
+      setShowHostPopup(false);
       setLocation(`/room/${data.room.id}?code=${data.room.code}`);
+      toast({
+        title: "Room Created",
+        description: `Room ${data.room.code} created! Share the QR code or room code with friends.`,
+      });
     },
     onError: () => {
       toast({
@@ -52,6 +58,7 @@ export default function Home() {
         description: "Failed to create room. Please try again.",
         variant: "destructive",
       });
+      setShowHostPopup(false);
     },
   });
 
@@ -109,7 +116,11 @@ export default function Home() {
   });
 
   const handleCreateRoom = () => {
-    if (!nickname.trim()) {
+    setShowHostPopup(true);
+  };
+
+  const handleHostRoom = () => {
+    if (!popupNickname.trim()) {
       toast({
         title: "Error",
         description: "Please enter a nickname.",
@@ -117,23 +128,24 @@ export default function Home() {
       });
       return;
     }
-    createRoomMutation.mutate(nickname);
+    createRoomMutation.mutate(popupNickname);
   };
 
   const handleJoinRoom = () => {
-    if (!nickname.trim() || !roomCode.trim()) {
+    if (!roomCode.trim()) {
       toast({
         title: "Error",
-        description: "Please enter both nickname and room code.",
+        description: "Please enter a room code.",
         variant: "destructive",
       });
       return;
     }
-    joinRoomMutation.mutate({ code: roomCode.toUpperCase(), nickname });
+    setQrDetectedCode(roomCode.toUpperCase());
+    setShowNicknamePopup(true);
   };
 
   const handleDirectJoin = () => {
-    if (!nickname.trim()) {
+    if (!popupNickname.trim()) {
       toast({
         title: "Error",
         description: "Please enter a nickname.",
@@ -141,7 +153,7 @@ export default function Home() {
       });
       return;
     }
-    directJoinMutation.mutate({ code: qrDetectedCode, nickname });
+    directJoinMutation.mutate({ code: qrDetectedCode, nickname: popupNickname });
   };
 
   const handleQRUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -262,22 +274,6 @@ export default function Home() {
           </div>
 
           <div className="space-y-6">
-            {/* Nickname Input */}
-            <div>
-              <Label htmlFor="nickname" className="text-sm font-medium text-gray-700 mb-2">
-                Your Nickname
-              </Label>
-              <Input
-                id="nickname"
-                type="text"
-                placeholder="Enter your nickname..."
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                maxLength={20}
-                className="text-center font-medium"
-              />
-            </div>
-
             {/* Room Options */}
             <div className="space-y-4">
               <Button
@@ -351,7 +347,10 @@ export default function Home() {
       )}
 
       {/* Nickname Popup for Direct QR Join */}
-      <Dialog open={showNicknamePopup} onOpenChange={setShowNicknamePopup}>
+      <Dialog open={showNicknamePopup} onOpenChange={(open) => {
+        setShowNicknamePopup(open);
+        if (!open) setPopupNickname("");
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center font-fredoka text-2xl bg-gradient-to-r from-uno-red to-uno-yellow bg-clip-text text-transparent">
@@ -367,8 +366,8 @@ export default function Home() {
                 id="popup-nickname"
                 type="text"
                 placeholder="Your nickname..."
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+                value={popupNickname}
+                onChange={(e) => setPopupNickname(e.target.value)}
                 maxLength={20}
                 className="text-center font-medium"
                 onKeyDown={(e) => {
@@ -381,7 +380,10 @@ export default function Home() {
             </div>
             <div className="flex space-x-2">
               <Button
-                onClick={() => setShowNicknamePopup(false)}
+                onClick={() => {
+                  setShowNicknamePopup(false);
+                  setPopupNickname("");
+                }}
                 variant="outline"
                 className="flex-1"
                 disabled={directJoinMutation.isPending}
@@ -390,7 +392,7 @@ export default function Home() {
               </Button>
               <Button
                 onClick={handleDirectJoin}
-                disabled={directJoinMutation.isPending || !nickname.trim()}
+                disabled={directJoinMutation.isPending || !popupNickname.trim()}
                 className="flex-1 bg-gradient-to-r from-uno-green to-emerald-500 hover:scale-105 transition-all"
               >
                 {directJoinMutation.isPending ? (
@@ -399,6 +401,67 @@ export default function Home() {
                   <ArrowRight className="mr-2 h-4 w-4" />
                 )}
                 Join Room
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Host Popup for Creating Room */}
+      <Dialog open={showHostPopup} onOpenChange={(open) => {
+        setShowHostPopup(open);
+        if (!open) setPopupNickname("");
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center font-fredoka text-2xl bg-gradient-to-r from-uno-red to-uno-yellow bg-clip-text text-transparent">
+              Create New Room
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label htmlFor="host-nickname" className="text-sm font-medium text-gray-700 mb-2">
+                Enter Your Nickname
+              </Label>
+              <Input
+                id="host-nickname"
+                type="text"
+                placeholder="Your nickname..."
+                value={popupNickname}
+                onChange={(e) => setPopupNickname(e.target.value)}
+                maxLength={20}
+                className="text-center font-medium"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleHostRoom();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => {
+                  setShowHostPopup(false);
+                  setPopupNickname("");
+                }}
+                variant="outline"
+                className="flex-1"
+                disabled={createRoomMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleHostRoom}
+                disabled={createRoomMutation.isPending || !popupNickname.trim()}
+                className="flex-1 bg-gradient-to-r from-uno-green to-emerald-500 hover:scale-105 transition-all"
+              >
+                {createRoomMutation.isPending ? (
+                  <Plus className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="mr-2 h-4 w-4" />
+                )}
+                Create Room
               </Button>
             </div>
           </div>
