@@ -38,10 +38,16 @@ export default function Home() {
     // Check for room parameter in URL (from shared links)
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room') || urlParams.get('code');
+    const preferredPosition = urlParams.get('position');
     
     if (roomFromUrl) {
       const cleanCode = roomFromUrl.replace(/[^0-9]/g, ''); // Remove non-digits
       if (cleanCode.length === 5) {
+        // Store preferred position if provided
+        if (preferredPosition) {
+          localStorage.setItem("preferredPosition", preferredPosition);
+        }
+        
         // If user already has a nickname from previous session, auto-join without popup
         if (existingNickname) {
           console.log("Auto-joining with saved nickname:", existingNickname);

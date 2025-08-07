@@ -317,16 +317,24 @@ export default function Game() {
                       onClick={() => {
                         if (currentPlayer?.isSpectator && isPaused) {
                           replacePlayer(position);
+                        } else if (!currentPlayer) {
+                          // External user - redirect to join flow
+                          const roomCode = room?.code;
+                          if (roomCode) {
+                            window.location.href = `/?room=${roomCode}&position=${position}`;
+                          }
                         }
                       }}
                     >
                       <div className="text-center">
-                        {currentPlayer?.isSpectator && isPaused ? (
+                        {(currentPlayer?.isSpectator && isPaused) || !currentPlayer ? (
                           <>
                             <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
                               <span className="text-white text-sm font-bold">+</span>
                             </div>
-                            <div className="text-xs text-blue-400 mt-1">Join</div>
+                            <div className="text-xs text-blue-400 mt-1">
+                              {currentPlayer?.isSpectator ? "Join" : "Click to Join"}
+                            </div>
                           </>
                         ) : (
                           <>

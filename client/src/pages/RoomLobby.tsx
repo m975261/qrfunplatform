@@ -294,12 +294,24 @@ export default function RoomLobby() {
                     // Empty Slot
                     <div 
                       className="w-20 h-20 bg-gray-300/50 rounded-full flex items-center justify-center border-4 border-white/30 cursor-pointer hover:bg-gray-300/70 transition-colors"
-                      onClick={() => currentPlayer?.isSpectator && takePlayerSlot(position)}
+                      onClick={() => {
+                        if (currentPlayer?.isSpectator) {
+                          takePlayerSlot(position);
+                        } else if (!currentPlayer) {
+                          // External user - redirect to join flow with pre-filled position
+                          const roomCode = room?.code;
+                          if (roomCode) {
+                            window.location.href = `/?room=${roomCode}&position=${position}`;
+                          }
+                        }
+                      }}
                     >
-                      {currentPlayer?.isSpectator ? (
+                      {currentPlayer?.isSpectator || !currentPlayer ? (
                         <div className="text-center">
-                          <Plus className="w-8 h-8 text-gray-600 mx-auto" />
-                          <div className="text-xs text-gray-700 font-medium">Join</div>
+                          <Plus className="w-8 h-8 text-blue-600 mx-auto" />
+                          <div className="text-xs text-blue-700 font-medium">
+                            {currentPlayer?.isSpectator ? "Join" : "Click to Join"}
+                          </div>
                         </div>
                       ) : (
                         <div className="text-center">

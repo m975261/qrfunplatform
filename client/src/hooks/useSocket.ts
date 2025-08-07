@@ -251,11 +251,10 @@ export function useSocket(autoConnect: boolean = true) {
     sendMessage({ type: 'continue_game' });
   };
 
-  const replacePlayer = (spectatorId: string, leftPlayerPosition: number) => {
+  const replacePlayer = (targetPosition: number) => {
     sendMessage({
       type: 'replace_player',
-      spectatorId,
-      leftPlayerPosition
+      targetPosition
     });
   };
 
