@@ -164,15 +164,12 @@ export default function Game() {
       <div className="absolute top-4 left-4 right-4 z-10">
         <div className="flex items-center justify-between">
           <div className="bg-slate-800/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-slate-700/50">
-            <div className="text-sm font-medium text-white">
+            <div className="text-sm font-medium text-white mb-1">
               Room <span className="font-mono text-blue-400">{room.code}</span>
             </div>
-          </div>
-
-          <div className="bg-slate-800/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-slate-700/50">
             <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-slate-400" />
-              <span className="text-sm text-slate-300">{players.length} players</span>
+              <Users className="h-3 w-3 text-slate-400" />
+              <span className="text-xs text-slate-300">{players.length} players</span>
             </div>
           </div>
 
@@ -211,8 +208,8 @@ export default function Game() {
             {/* Inner Circle */}
             <div className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
               
-              {/* Draw Pile */}
-              <div className="absolute -left-10 md:-left-12 top-1/2 transform -translate-y-1/2">
+              {/* Draw Pile - Moved to 8 o'clock position */}
+              <div className="absolute -left-16 top-6 transform">
                 <div className="relative cursor-pointer group" onClick={drawCard}>
                   <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
                   <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
@@ -312,11 +309,31 @@ export default function Game() {
                       </div>
                     </div>
                   ) : (
-                    // Empty Slot
-                    <div className="w-20 h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-4 border-white/20">
+                    // Empty Slot or Joinable Slot for Spectators
+                    <div 
+                      className={`w-20 h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-4 border-white/20 ${
+                        currentPlayer?.isSpectator && isPaused ? 'cursor-pointer hover:bg-gray-500/50 transition-colors' : ''
+                      }`}
+                      onClick={() => {
+                        if (currentPlayer?.isSpectator && isPaused) {
+                          replacePlayer(position);
+                        }
+                      }}
+                    >
                       <div className="text-center">
-                        <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
-                        <div className="text-xs text-gray-400 mt-1">Empty</div>
+                        {currentPlayer?.isSpectator && isPaused ? (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
+                              <span className="text-white text-sm font-bold">+</span>
+                            </div>
+                            <div className="text-xs text-blue-400 mt-1">Join</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
+                            <div className="text-xs text-gray-400 mt-1">Empty</div>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -546,6 +563,46 @@ export default function Game() {
             exitGame();
           }}
         />
+      )}
+
+      {/* Spectator View */}
+      {currentPlayer && currentPlayer.isSpectator && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-center">
+              <div className="bg-slate-700/80 px-6 py-3 rounded-lg border border-slate-600">
+                <div className="text-center">
+                  <div className="text-slate-300 text-sm mb-2">You are watching as a spectator</div>
+                  <div className="flex items-center justify-center space-x-4">
+                    <div className="text-xs text-slate-400">
+                      Current turn: <span className="text-green-400 font-medium">{currentGamePlayer?.nickname || 'Unknown'}</span>
+                    </div>
+                    {isPaused && (
+                      <div className="text-xs text-orange-400 font-medium">Game Paused - Click empty slots to join!</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Host Continue Game Prompt */}
+      {isPaused && isHost && (
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-40">
+          <div className="bg-orange-600/90 backdrop-blur-sm px-6 py-3 rounded-lg border border-orange-500 shadow-lg">
+            <div className="text-center">
+              <div className="text-white text-sm font-medium mb-2">Game is paused</div>
+              <Button
+                onClick={() => continueGame()}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
+              >
+                Continue Game
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Nickname Editor Modal */}

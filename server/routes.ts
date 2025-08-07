@@ -862,6 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const room = await storage.getRoom(connection.roomId);
     const hostPlayer = await storage.getPlayer(connection.playerId);
     const targetPlayer = await storage.getPlayer(targetPlayerId);
+    const players = await storage.getPlayersByRoom(connection.roomId);
     
     if (!room || !hostPlayer || !targetPlayer) return;
     
@@ -875,17 +876,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       isSpectator: true 
     });
     
-    // Send system message
-    await storage.createMessage({
-      roomId: connection.roomId,
-      message: `${targetPlayer.nickname} was removed from the game`,
-      type: "system"
-    });
-    
-    broadcastToRoom(connection.roomId, {
-      type: 'player_kicked',
-      player: targetPlayer.nickname
-    });
+    // If game is playing, pause it
+    if (room.status === "playing") {
+      await storage.updateRoom(connection.roomId, { status: "paused" });
+      
+      // Send system message about game pause
+      await storage.createMessage({
+        roomId: connection.roomId,
+        message: `Game paused: ${targetPlayer.nickname} was removed. Host can continue or manage players.`,
+        type: "system"
+      });
+      
+      broadcastToRoom(connection.roomId, {
+        type: 'game_paused',
+        reason: `${targetPlayer.nickname} was kicked`,
+        needsHostAction: true
+      });
+    } else {
+      // Send system message for lobby kick
+      await storage.createMessage({
+        roomId: connection.roomId,
+        message: `${targetPlayer.nickname} was removed from the room`,
+        type: "system"
+      });
+      
+      broadcastToRoom(connection.roomId, {
+        type: 'player_kicked',
+        player: targetPlayer.nickname
+      });
+    }
     
     await broadcastRoomState(connection.roomId);
   }
@@ -921,8 +940,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function handleReplacePlayer(connection: SocketConnection, message: any) {
     if (!connection.roomId || !connection.playerId) return;
     
-    const { spectatorId, leftPlayerPosition } = message;
+    const { targetPosition } = message;
     const room = await storage.getRoom(connection.roomId);
+    const playerToReplace = await storage.getPlayer(connection.playerId);
+    const players = await storage.getPlayersByRoom(connection.roomId);
+    
+    if (!room || !playerToReplace || !playerToReplace.isSpectator) return;
+    
+    // Find if there's a left player at the target position
+    const leftPlayer = players.find(p => p.position === targetPosition && p.hasLeft);
+    
+    if (leftPlayer) {
+      // Replace the left player - spectator takes their position and hand
+      await storage.updatePlayer(connection.playerId, {
+        isSpectator: false,
+        position: targetPosition,
+        hand: leftPlayer.hand || [],
+        hasLeft: false
+      });
+      
+      // Remove the left player completely
+      await storage.deletePlayer(leftPlayer.id);
+      
+      // Send system message
+      await storage.createMessage({
+        roomId: connection.roomId,
+        message: `${playerToReplace.nickname} joined the game replacing the previous player`,
+        type: "system"
+      });
+      
+      broadcastToRoom(connection.roomId, {
+        type: 'player_replaced',
+        newPlayer: playerToReplace.nickname,
+        position: targetPosition
+      });
+    } else {
+      // Regular join to empty position
+      await storage.updatePlayer(connection.playerId, {
+        isSpectator: false,
+        position: targetPosition
+      });
+      
+      // Send system message
+      await storage.createMessage({
+        roomId: connection.roomId,
+        message: `${playerToReplace.nickname} joined as a player`,
+        type: "system"
+      });
+      
+      broadcastToRoom(connection.roomId, {
+        type: 'spectator_joined',
+        player: playerToReplace.nickname,
+        position: targetPosition
+      });
+    }
+    
+    await broadcastRoomState(connection.roomId);
     
     if (!room || room.hostId !== connection.playerId) return;
     
