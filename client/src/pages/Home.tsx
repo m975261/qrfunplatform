@@ -22,7 +22,7 @@ export default function Home() {
   const [popupNickname, setPopupNickname] = useState("");
   const { toast } = useToast();
 
-  // Check for existing player session and room parameter in URL
+  // Smart session and nickname management
   useEffect(() => {
     const existingPlayerId = localStorage.getItem("playerId");
     const existingNickname = localStorage.getItem("playerNickname");
@@ -42,17 +42,21 @@ export default function Home() {
     if (roomFromUrl) {
       const cleanCode = roomFromUrl.replace(/[^0-9]/g, ''); // Remove non-digits
       if (cleanCode.length === 5) {
-        // If user already has a nickname from previous session, use it
+        // If user already has a nickname from previous session, auto-join without popup
         if (existingNickname) {
-          setPopupNickname(existingNickname);
+          console.log("Auto-joining with saved nickname:", existingNickname);
+          directJoinMutation.mutate({ code: cleanCode, nickname: existingNickname });
+          return;
         }
+        
+        // First time user - show nickname popup
         setQrDetectedCode(cleanCode);
         setShowNicknamePopup(true);
         // Clear the URL parameter after extracting it
         window.history.replaceState({}, document.title, window.location.pathname);
         toast({
           title: "Room Link Detected",
-          description: `Joining room ${cleanCode}! ${existingNickname ? 'Using saved nickname.' : 'Enter your nickname.'}`,
+          description: `Joining room ${cleanCode}! Enter your nickname.`,
         });
       }
     }
@@ -133,6 +137,11 @@ export default function Home() {
   });
 
   const handleCreateRoom = () => {
+    const existingNickname = localStorage.getItem("playerNickname");
+    if (existingNickname) {
+      // Use saved nickname automatically
+      setPopupNickname(existingNickname);
+    }
     setShowHostPopup(true);
   };
 
@@ -157,6 +166,25 @@ export default function Home() {
       });
       return;
     }
+    
+    if (roomCode.length !== 5) {
+      toast({
+        title: "Error", 
+        description: "Room code must be exactly 5 digits.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const existingNickname = localStorage.getItem("playerNickname");
+    if (existingNickname) {
+      // Auto-join with saved nickname
+      console.log("Auto-joining with saved nickname:", existingNickname);
+      joinRoomMutation.mutate({ code: roomCode, nickname: existingNickname });
+      return;
+    }
+    
+    // First time user - show nickname popup
     setQrDetectedCode(roomCode);
     setShowNicknamePopup(true);
   };

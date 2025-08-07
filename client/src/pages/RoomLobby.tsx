@@ -6,12 +6,14 @@ import { Copy, QrCode, X, Plus, Play, Crown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/hooks/useSocket";
+import NicknameEditor from "@/components/NicknameEditor";
 
 export default function RoomLobby() {
   const [, params] = useRoute("/room/:roomId");
   const [, setLocation] = useLocation();
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
+  const [showNicknameEditor, setShowNicknameEditor] = useState(false);
   const { toast } = useToast();
   const { gameState, joinRoom, startGame, isConnected } = useSocket();
   const roomId = params?.roomId;
@@ -184,7 +186,20 @@ export default function RoomLobby() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-gray-800">{player.nickname}</div>
+                      <div className={`font-semibold text-gray-800 ${
+                        player.id === playerId ? 'cursor-pointer hover:text-blue-600 hover:underline' : ''
+                      }`}
+                        onClick={() => {
+                          if (player.id === playerId) {
+                            setShowNicknameEditor(true);
+                          }
+                        }}
+                      >
+                        {player.nickname}
+                        {player.id === playerId && (
+                          <span className="text-xs text-blue-600 ml-1">(click to edit)</span>
+                        )}
+                      </div>
                       <div className="text-sm text-gray-500">Ready to play</div>
                     </div>
                     <div className="w-4 h-4 bg-green-500 rounded-full"></div>
@@ -257,6 +272,20 @@ export default function RoomLobby() {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Nickname Editor Modal */}
+        {currentPlayer && (
+          <NicknameEditor
+            currentNickname={currentPlayer.nickname}
+            playerId={playerId!}
+            isOpen={showNicknameEditor}
+            onClose={() => setShowNicknameEditor(false)}
+            onNicknameChanged={(newNickname) => {
+              // The component will handle the server update and broadcast
+              console.log("Nickname updated to:", newNickname);
+            }}
+          />
         )}
       </div>
     </div>

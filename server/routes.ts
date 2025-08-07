@@ -167,6 +167,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update player nickname
+  app.patch("/api/players/:playerId", async (req, res) => {
+    try {
+      const { playerId } = req.params;
+      const { nickname } = z.object({
+        nickname: z.string().min(1).max(20)
+      }).parse(req.body);
+
+      const updatedPlayer = await storage.updatePlayer(playerId, { nickname });
+      
+      if (!updatedPlayer) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+      
+      // Broadcast updated room state to all players in the room
+      if (updatedPlayer.roomId) {
+        await broadcastRoomState(updatedPlayer.roomId);
+      }
+      
+      res.json({ success: true, player: updatedPlayer });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update player nickname" });
+    }
+  });
+
   // WebSocket endpoint - must be before any catch-all routes
   app.get("/ws", (req, res) => {
     // This will be handled by the WebSocket server

@@ -10,6 +10,7 @@ import GameCard from "@/components/game/Card";
 import ChatPanel from "@/components/game/ChatPanel";
 import GameEndModal from "@/components/game/GameEndModal";
 import ColorPickerModal from "@/components/game/ColorPickerModal";
+import NicknameEditor from "@/components/NicknameEditor";
 
 export default function Game() {
   const [, params] = useRoute("/game/:roomId");
@@ -42,6 +43,7 @@ export default function Game() {
   const [timer, setTimer] = useState(30);
   const [hasCalledUno, setHasCalledUno] = useState(false);
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
+  const [showNicknameEditor, setShowNicknameEditor] = useState(false);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -320,8 +322,11 @@ export default function Game() {
                   {currentPlayer.nickname[0].toUpperCase()}
                 </div>
                 <div>
-                  <div className={`font-semibold text-white ${isMyTurn ? 'text-green-400' : ''}`}>
+                  <div className={`font-semibold text-white cursor-pointer hover:text-blue-300 hover:underline ${isMyTurn ? 'text-green-400' : ''}`}
+                    onClick={() => setShowNicknameEditor(true)}
+                  >
                     {currentPlayer.nickname} {isMyTurn && '⭐'}
+                    <span className="text-xs text-blue-300 ml-1">(click to edit)</span>
                   </div>
                   <div className="text-xs text-slate-400">
                     {currentPlayer.hand?.length || 0} cards
@@ -438,6 +443,19 @@ export default function Game() {
             // Clear current room session when exiting game
             localStorage.removeItem("currentRoomId");
             exitGame();
+          }}
+        />
+      )}
+
+      {/* Nickname Editor Modal */}
+      {currentPlayer && (
+        <NicknameEditor
+          currentNickname={currentPlayer.nickname}
+          playerId={playerId!}
+          isOpen={showNicknameEditor}
+          onClose={() => setShowNicknameEditor(false)}
+          onNicknameChanged={(newNickname) => {
+            console.log("Nickname updated to:", newNickname);
           }}
         />
       )}
