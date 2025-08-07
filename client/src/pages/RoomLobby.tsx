@@ -24,7 +24,7 @@ export default function RoomLobby() {
 
   // Set QR code data when room data is available
   useEffect(() => {
-    if (roomData && 'qrCode' in roomData) {
+    if (roomData && typeof roomData === 'object' && 'qrCode' in roomData) {
       setQRCodeData(roomData.qrCode as string);
     }
   }, [roomData]);

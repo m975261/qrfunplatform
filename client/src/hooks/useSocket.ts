@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface SocketMessage {
   type: string;
@@ -12,6 +12,7 @@ export function useSocket() {
   const [floatingEmojis, setFloatingEmojis] = useState<any[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const hasJoinedRoomRef = useRef<string | null>(null);
 
   const connect = () => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -87,14 +88,21 @@ export function useSocket() {
     }
   };
 
-  const joinRoom = (playerId: string, roomId: string) => {
+  const joinRoom = useCallback((playerId: string, roomId: string) => {
+    const joinKey = `${playerId}-${roomId}`;
+    if (hasJoinedRoomRef.current === joinKey) {
+      console.log("Already joined room, skipping:", { playerId, roomId });
+      return;
+    }
+    
     console.log("Sending join_room message:", { playerId, roomId });
+    hasJoinedRoomRef.current = joinKey;
     sendMessage({
       type: 'join_room',
       playerId,
       roomId
     });
-  };
+  }, []);
 
   const startGame = () => {
     sendMessage({ type: 'start_game' });
