@@ -95,16 +95,19 @@ export default function Game() {
       toast({
         title: "UNO!",
         description: "You called UNO! Now play your second-to-last card.",
+        duration: 1000,
       });
     } else if (hasCalledUno) {
       toast({
         title: "Already Called",
         description: "You've already called UNO for this hand.",
+        duration: 1000,
       });
     } else {
       toast({
         title: "UNO Available",
         description: "Call UNO when you have exactly 2 cards before playing your second-to-last card.",
+        duration: 1000,
       });
     }
   };

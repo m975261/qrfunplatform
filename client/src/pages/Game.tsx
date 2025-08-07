@@ -93,32 +93,27 @@ export default function Game() {
       toast({
         title: "UNO!",
         description: "You called UNO! Now play your second-to-last card.",
+        duration: 1000,
       });
     } else {
       toast({
         title: "Invalid UNO Call",
         description: "You can only call UNO when you have exactly two cards.",
         variant: "destructive",
+        duration: 1000,
       });
     }
+  };
+
+  // Helper function for responsive card sizes
+  const getCardSize = () => {
+    return "md"; // Default medium size for Game.tsx
   };
 
   const handlePlayCardWithUnoCheck = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
     
-    // Check if player should have called UNO (playing second-to-last card without calling UNO)
-    if (player?.hand?.length === 2 && !hasCalledUno) {
-      toast({
-        title: "UNO Penalty!",
-        description: "You didn't call UNO! Draw 2 cards as penalty.",
-        variant: "destructive",
-      });
-      // Draw 2 penalty cards
-      drawCard();
-      drawCard();
-      return;
-    }
-    
+    // UNO penalty is now handled server-side when playing cards
     // Normal card play
     handlePlayCard(cardIndex);
   };
@@ -493,7 +488,7 @@ export default function Game() {
                       <Button
                         key={spectator.id}
                         onClick={() => {
-                          replacePlayer(spectator.id, 0); // Replace with position logic
+                          replacePlayer(spectator.id); 
                           setShowContinuePrompt(false);
                         }}
                         variant="outline"

@@ -575,6 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (currentPlayer.id !== connection.playerId) return;
     
     const playerHand = player.hand || [];
+    const currentHandSize = playerHand.length;
     const card = playerHand[cardIndex];
     const topCard = (room.discardPile || [])[0];
     
@@ -585,9 +586,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Remove card from player's hand first
     let newHand = playerHand.filter((_, index) => index !== cardIndex);
     
-    // Check UNO penalty - if player has 1 card left after playing and didn't call UNO beforehand
+    // Check UNO penalty - apply only if player went from 2 cards to 1 card without calling UNO
     let shouldApplyUnoPenalty = false;
-    if (newHand.length === 1 && !player.hasCalledUno) {
+    if (currentHandSize === 2 && newHand.length === 1 && !player.hasCalledUno) {
       shouldApplyUnoPenalty = true;
     }
     
@@ -597,6 +598,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const penaltyCards = deck.splice(0, 2);
       newHand = [...newHand, ...penaltyCards];
       await storage.updateRoom(connection.roomId, { deck });
+      
+      // Send UNO penalty message
+      await storage.createMessage({
+        roomId: connection.roomId,
+        message: `${player.nickname} didn't call UNO and drew 2 penalty cards!`,
+        type: "system"
+      });
     }
     
     // Reset UNO call status if player now has more than 1 card (penalty applied or drew cards)
@@ -732,10 +740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       clearPendingDraw = true;
     }
     
-    // Check if player had exactly 2 cards and didn't call UNO - apply penalty
-    if (currentHandSize === 2 && !player.hasCalledUno) {
-      drawAmount += 2; // Add 2 penalty cards
-    }
+    // No UNO penalty when drawing cards - penalty only applies when playing cards
     
     const drawnCards = deck.splice(0, drawAmount);
     const newHand = [...(player.hand || []), ...drawnCards];
