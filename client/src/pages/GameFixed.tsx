@@ -127,6 +127,26 @@ export default function Game() {
   const isHost = currentPlayer?.id === room?.hostId;
   const topCard = room.discardPile?.[0];
 
+  // Helper functions for circular avatar layout
+  const getPlayerAtPosition = (position: number) => {
+    return gamePlayers.find((player: any) => player.position === position) || null;
+  };
+
+  const isPlayerOnline = (player: any) => {
+    if (!gameState?.onlineStatus || !player) return false;
+    return gameState.onlineStatus.includes(`${player.position}: online`);
+  };
+
+  const getPositionClass = (position: number) => {
+    const positions = [
+      'top-4 left-1/2 -translate-x-1/2', // 12 o'clock
+      'right-4 top-1/2 -translate-y-1/2', // 3 o'clock  
+      'bottom-4 left-1/2 -translate-x-1/2', // 6 o'clock
+      'left-4 top-1/2 -translate-y-1/2' // 9 o'clock
+    ];
+    return positions[position] || positions[0];
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative">
       {/* Floating emojis */}
@@ -254,8 +274,98 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Other Players positioned at clock positions around circle */}
-      {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
+      {/* Player Avatars in Circular Layout */}
+      <div className="absolute inset-0 flex items-center justify-center pb-32 pointer-events-none">
+        <div className="relative w-80 h-80">
+          {/* 4 Fixed Avatar Positions */}
+          {[0, 1, 2, 3].map((position) => {
+            const player = getPlayerAtPosition(position);
+            const isOnline = player ? isPlayerOnline(player) : false;
+            const isPlayerTurn = currentGamePlayer?.id === player?.id;
+            
+            return (
+              <div
+                key={position}
+                className={`absolute ${getPositionClass(position)} w-20 h-20 pointer-events-auto`}
+              >
+                <div className="relative">
+                  {player ? (
+                    // Player Avatar
+                    <div className={`w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg border-4 ${
+                      isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
+                    }`}>
+                      {player.nickname[0].toUpperCase()}
+                      {/* Online/Offline indicator */}
+                      <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
+                        isOnline ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                      {/* Host crown */}
+                      {player.id === room?.hostId && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          <div className="w-6 h-6 text-yellow-400 fill-yellow-400">👑</div>
+                        </div>
+                      )}
+                      {/* Card count */}
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded-full font-bold border border-slate-600">
+                        {player.hand?.length || 0}
+                      </div>
+                    </div>
+                  ) : (
+                    // Empty Slot
+                    <div className="w-20 h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-4 border-white/20">
+                      <div className="text-center">
+                        <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
+                        <div className="text-xs text-gray-400 mt-1">Empty</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Player Info and Controls Below Avatar */}
+                  {player && (
+                    <div className="absolute top-24 left-1/2 -translate-x-1/2 text-center">
+                      {/* Player Nickname */}
+                      <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-md mb-2 border border-slate-600">
+                        <div className="text-xs font-semibold text-white">
+                          {player.nickname}
+                        </div>
+                      </div>
+                      
+                      {/* Control Buttons */}
+                      <div className="flex items-center justify-center space-x-1">
+                        {/* Edit Button for Current Player */}
+                        {player.id === playerId && (
+                          <button
+                            onClick={() => setShowNicknameEditor(true)}
+                            className="w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md transition-colors"
+                            title="Edit nickname"
+                          >
+                            E
+                          </button>
+                        )}
+                        
+                        {/* Kick Button for Host */}
+                        {isHost && player.id !== playerId && (
+                          <button
+                            onClick={() => kickPlayer(player.id)}
+                            className="w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md transition-colors"
+                            title={isOnline ? "Remove player" : "Remove offline player"}
+                          >
+                            K
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Legacy player rendering - keeping for compatibility but hiding */}
+      <div className="hidden">
+        {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
         const filteredIndex = gamePlayers.filter((p: any) => p.id !== playerId && !p.isSpectator).indexOf(player);
         
         // Position players at clock positions: 12, 3, 6, 9 o'clock
@@ -307,7 +417,8 @@ export default function Game() {
             </div>
           </div>
         );
-      })}
+        })}
+      </div>
 
       {/* Player Hand Bar - Fixed at Bottom with proper spacing */}
       {currentPlayer && !currentPlayer.isSpectator && (
@@ -322,11 +433,8 @@ export default function Game() {
                   {currentPlayer.nickname[0].toUpperCase()}
                 </div>
                 <div>
-                  <div className={`font-semibold text-white cursor-pointer hover:text-blue-300 hover:underline ${isMyTurn ? 'text-green-400' : ''}`}
-                    onClick={() => setShowNicknameEditor(true)}
-                  >
+                  <div className={`font-semibold text-white ${isMyTurn ? 'text-green-400' : ''}`}>
                     {currentPlayer.nickname} {isMyTurn && '⭐'}
-                    <span className="text-xs text-blue-300 ml-1">(click to edit)</span>
                   </div>
                   <div className="text-xs text-slate-400">
                     {currentPlayer.hand?.length || 0} cards
