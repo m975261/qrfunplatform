@@ -53,18 +53,18 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
   const getSizeClasses = () => {
     switch (size) {
       case "small":
-        return "w-12 h-16 sm:w-14 sm:h-18";
+        return "w-16 h-22 sm:w-18 sm:h-24";
       case "large":
-        return "w-20 h-28 sm:w-24 sm:h-32";
+        return "w-28 h-36 sm:w-32 sm:h-40";
       default:
-        return "w-16 h-24 sm:w-18 sm:h-26";
+        return "w-20 h-28 sm:w-22 sm:h-30";
     }
   };
 
   const getNumberSize = () => {
     switch (size) {
       case "small":
-        return "text-lg font-black";
+        return "text-xl font-black";
       case "large":
         return "text-4xl font-black";
       default:

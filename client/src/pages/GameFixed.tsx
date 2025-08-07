@@ -282,8 +282,8 @@ export default function Game() {
 
       {/* Current Player at Bottom */}
       {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-2xl px-2">
-          <div className={`bg-white/95 backdrop-blur-sm rounded-xl p-2 sm:p-3 md:p-4 shadow-xl ${isMyTurn ? 'ring-2 ring-green-500' : ''}`}>
+        <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-4xl px-2">
+          <div className={`bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-xl ${isMyTurn ? 'ring-2 ring-green-500' : ''}`}>
             <div className="text-center mb-2 sm:mb-3 md:mb-4 relative">
               {isMyTurn && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-bounce">
@@ -331,18 +331,31 @@ export default function Game() {
             </div>
             
             {/* Player's Cards */}
-            <div className="flex flex-wrap gap-1 sm:gap-2 justify-center max-h-24 sm:max-h-32 md:max-h-40 overflow-y-auto">
-              {currentPlayer.hand?.map((card: any, index: number) => (
-                <div key={index} className="flex-shrink-0">
-                  <GameCard 
-                    card={card}
-                    size="small"
-                    interactive={isMyTurn}
-                    disabled={!isMyTurn}
-                    onClick={() => isMyTurn && handlePlayCard(index)}
-                  />
+            <div className="mt-4">
+              {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
+                <div className="flex justify-center">
+                  <div className="flex flex-wrap gap-3 justify-center max-w-5xl">
+                    {currentPlayer.hand.map((card: any, index: number) => (
+                      <div 
+                        key={index} 
+                        className={`transition-all duration-200 ${
+                          isMyTurn ? 'hover:scale-110 hover:-translate-y-3 cursor-pointer' : 'opacity-75'
+                        }`}
+                      >
+                        <GameCard 
+                          card={card}
+                          size="medium"
+                          interactive={isMyTurn}
+                          disabled={!isMyTurn}
+                          onClick={() => isMyTurn && handlePlayCard(index)}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )) || []}
+              ) : (
+                <div className="text-center text-gray-500 text-sm">No cards in hand</div>
+              )}
             </div>
           </div>
         </div>
