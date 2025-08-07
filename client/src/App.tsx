@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/Home";
 import RoomLobby from "@/pages/RoomLobby";
 import Game from "@/pages/Game";
+import GameTest from "@/pages/GameTest";
+import GameSimple from "@/pages/GameSimple";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -13,7 +15,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/room/:roomId" component={RoomLobby} />
-      <Route path="/game/:roomId" component={Game} />
+      <Route path="/game/:roomId" component={GameSimple} />
+      <Route path="/game-full/:roomId" component={Game} />
       <Route component={NotFound} />
     </Switch>
   );
