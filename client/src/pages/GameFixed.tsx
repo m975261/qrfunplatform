@@ -199,7 +199,7 @@ export default function Game() {
                   <GameCard 
                     card={topCard} 
                     size="medium"
-                    isPlayable={false}
+                    interactive={false}
                     onClick={() => {}}
                   />
                 ) : (
@@ -241,13 +241,26 @@ export default function Game() {
 
         return (
           <div key={player.id} className={`absolute z-20 ${positionClass}`}>
-            <div className={`bg-white/90 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-lg max-w-xs ${isPlayerTurn ? 'ring-2 ring-red-500 animate-pulse' : ''}`}>
+            <div className={`bg-white/90 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-lg max-w-xs relative ${isPlayerTurn ? 'ring-2 ring-red-500 animate-pulse' : ''}`}>
+              {isPlayerTurn && (
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-bounce">
+                  YOUR TURN
+                </div>
+              )}
               <div className="flex items-center space-x-2 mb-2">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm">
-                  {player.nickname?.[0]?.toUpperCase()}
+                {/* Player Avatar */}
+                <div className="relative">
+                  <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm ${
+                    isPlayerTurn ? 'bg-gradient-to-br from-red-400 to-red-600 animate-pulse' : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                  }`}>
+                    {player.nickname?.[0]?.toUpperCase()}
+                  </div>
+                  {isPlayerTurn && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                  )}
                 </div>
                 <div>
-                  <div className={`font-semibold text-xs md:text-sm text-gray-800 ${isPlayerTurn ? 'text-red-600' : ''}`}>
+                  <div className={`font-semibold text-xs md:text-sm text-gray-800 ${isPlayerTurn ? 'text-red-600 animate-pulse' : ''}`}>
                     {player.nickname} {isPlayerTurn && '⭐'}
                   </div>
                   <div className="text-xs text-gray-500">{player.hand?.length || 0} cards</div>
@@ -267,31 +280,46 @@ export default function Game() {
       {currentPlayer && !currentPlayer.isSpectator && (
         <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-2xl px-2">
           <div className={`bg-white/95 backdrop-blur-sm rounded-xl p-2 sm:p-3 md:p-4 shadow-xl ${isMyTurn ? 'ring-2 ring-green-500' : ''}`}>
-            <div className="text-center mb-2 sm:mb-3 md:mb-4">
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-base">
-                  {currentPlayer.nickname[0].toUpperCase()}
+            <div className="text-center mb-2 sm:mb-3 md:mb-4 relative">
+              {isMyTurn && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-bounce">
+                  YOUR TURN
                 </div>
-                <div>
-                  <div className={`font-semibold text-xs sm:text-sm md:text-base text-gray-800 ${isMyTurn ? 'text-green-600' : ''}`}>
+              )}
+              <div className="flex items-center justify-center space-x-2">
+                {/* Player Avatar */}
+                <div className="relative">
+                  <div className={`w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-base ${
+                    isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 animate-pulse' : 'bg-gradient-to-br from-green-400 to-green-600'
+                  }`}>
+                    {currentPlayer.nickname[0].toUpperCase()}
+                  </div>
+                  {isMyTurn && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className={`font-semibold text-xs sm:text-sm md:text-base text-gray-800 ${isMyTurn ? 'text-green-600 animate-pulse' : ''}`}>
                     {currentPlayer.nickname} (You) {isMyTurn && '⭐'}
                   </div>
                   <div className="text-xs text-gray-500">
                     {currentPlayer.hand?.length || 0} cards
                   </div>
                 </div>
-                
-                {/* UNO Button */}
-                {currentPlayer.hand?.length === 2 && (
+              </div>
+
+              {/* UNO Button - Make it more visible */}
+              {currentPlayer.hand?.length === 2 && (
+                <div className="mt-3">
                   <Button
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                    size="lg"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold animate-bounce shadow-lg"
                     onClick={handleUnoCall}
                   >
-                    UNO!
+                    🎯 CALL UNO! 🎯
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
             
             {/* Player's Cards */}
@@ -301,7 +329,8 @@ export default function Game() {
                   <GameCard 
                     card={card}
                     size="small"
-                    isPlayable={isMyTurn}
+                    interactive={isMyTurn}
+                    disabled={!isMyTurn}
                     onClick={() => isMyTurn && handlePlayCard(index)}
                   />
                 </div>
@@ -311,14 +340,33 @@ export default function Game() {
         </div>
       )}
 
+      {/* Spectators Area */}
+      {players.filter((p: any) => p.isSpectator).length > 0 && (
+        <div className="absolute top-20 right-2 md:right-4 z-20">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-lg max-w-xs">
+            <div className="text-xs font-semibold text-gray-700 mb-2">Spectators:</div>
+            <div className="space-y-1">
+              {players.filter((p: any) => p.isSpectator).map((spectator: any) => (
+                <div key={spectator.id} className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                    {spectator.nickname?.[0]?.toUpperCase()}
+                  </div>
+                  <span className="text-xs text-gray-600">{spectator.nickname}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Chat Panel */}
       {showChat && (
         <ChatPanel
-          gameState={gameState}
+          messages={gameState?.messages || []}
+          players={players}
           onSendMessage={sendChatMessage}
           onSendEmoji={sendEmoji}
           onClose={() => setShowChat(false)}
-          currentPlayerId={playerId}
         />
       )}
 
@@ -333,13 +381,14 @@ export default function Game() {
       {/* Game End Modal */}
       {showGameEnd && gameEndData && (
         <GameEndModal
-          gameEndData={gameEndData}
+          winner={gameEndData.winner}
+          rankings={gameEndData.rankings}
           onPlayAgain={() => {
             setShowGameEnd(false);
             setGameEndData(null);
             continueGame();
           }}
-          onClose={() => {
+          onBackToLobby={() => {
             setShowGameEnd(false);
             setGameEndData(null);
             exitGame();
