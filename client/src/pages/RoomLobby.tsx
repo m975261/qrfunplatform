@@ -276,8 +276,9 @@ export default function RoomLobby() {
                 <div className="relative">
                   {player ? (
                     // Player Avatar
-                    <div className="w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg border-4 border-white/20">
-                      {player.nickname[0].toUpperCase()}
+                    <div className="w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 border-white/20">
+                      <div className="text-lg">{player.nickname[0].toUpperCase()}</div>
+                      <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
                       {/* Online/Offline indicator */}
                       <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
                         isOnline ? 'bg-green-500' : 'bg-red-500'
@@ -309,17 +310,7 @@ export default function RoomLobby() {
                     </div>
                   )}
                   
-                  {/* Player Info Below Avatar */}
-                  {player && (
-                    <div className="absolute top-24 left-1/2 -translate-x-1/2 text-center">
-                      {/* Player Nickname */}
-                      <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-md">
-                        <div className="text-xs font-semibold text-gray-800">
-                          {player.nickname}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
                   
                   {/* Control Buttons Attached to Avatar */}
                   {player && (
