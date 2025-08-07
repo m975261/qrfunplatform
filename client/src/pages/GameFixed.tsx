@@ -178,8 +178,8 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Central Game Area - with proper spacing from bottom */}
+      <div className="absolute inset-0 flex items-center justify-center pb-48">
         <div className="relative">
           {/* Game Circle */}
           <div className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
@@ -283,9 +283,9 @@ export default function Game() {
         );
       })}
 
-      {/* Player Hand Bar - Fixed at Bottom */}
+      {/* Player Hand Bar - Fixed at Bottom with proper spacing */}
       {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/80 backdrop-blur-md border-t border-slate-700/50">
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
           <div className="container mx-auto px-4 py-4">
             {/* Player Info and UNO Button */}
             <div className="flex items-center justify-between mb-4">
