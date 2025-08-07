@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import QRScanner from "@/components/ui/qr-scanner";
+import QrScanner from 'qr-scanner';
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -98,26 +99,108 @@ export default function Home() {
     joinRoomMutation.mutate({ code: roomCode.toUpperCase(), nickname });
   };
 
-  const handleQRUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleQRUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // TODO: Implement QR code reading from uploaded image
-      toast({
-        title: "Feature Coming Soon",
-        description: "QR code upload will be available soon!",
-      });
+      try {
+        // Create an image element to load the file
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const loadImage = () => new Promise<void>((resolve, reject) => {
+          img.onload = () => {
+            // Set canvas size to match image
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Draw image on canvas
+            ctx?.drawImage(img, 0, 0);
+            resolve();
+          };
+          img.onerror = reject;
+        });
+        
+        // Load the image
+        img.src = URL.createObjectURL(file);
+        await loadImage();
+        
+        // Scan QR code from canvas
+        const result = await QrScanner.scanImage(canvas);
+        
+        // Extract room code from the result
+        let roomCode = '';
+        
+        // Check for different URL patterns
+        if (result.includes('/r/')) {
+          const match = result.match(/\/r\/([A-Z0-9]{6})/);
+          roomCode = match ? match[1] : '';
+        } else if (result.includes('/game?code=')) {
+          const match = result.match(/code=([A-Z0-9]{6})/);
+          roomCode = match ? match[1] : '';
+        } else if (result.includes('room=')) {
+          const match = result.match(/room=([A-Z0-9]{6})/);
+          roomCode = match ? match[1] : '';
+        } else if (/^[A-Z0-9]{6}$/.test(result)) {
+          // Direct room code
+          roomCode = result;
+        }
+        
+        if (roomCode) {
+          setRoomCode(roomCode.toUpperCase());
+          toast({
+            title: "QR Code Scanned",
+            description: `Room code ${roomCode.toUpperCase()} found! Enter your nickname to join.`,
+          });
+        } else {
+          toast({
+            title: "Invalid QR Code",
+            description: "This QR code doesn't contain a valid UNO room code.",
+            variant: "destructive",
+          });
+        }
+        
+        // Clean up
+        URL.revokeObjectURL(img.src);
+        
+      } catch (error) {
+        console.error('QR code scan error:', error);
+        toast({
+          title: "Scan Failed",
+          description: "Could not read QR code from this image. Make sure it's clear and contains a valid QR code.",
+          variant: "destructive",
+        });
+      }
     }
+    
+    // Reset the input so the same file can be selected again
+    event.target.value = '';
   };
 
   const handleQRScan = (result: string) => {
-    // Extract room code from QR result
-    const match = result.match(/room=([A-Z0-9]{6})/);
-    if (match) {
-      setRoomCode(match[1]);
+    // Extract room code from QR result - handle multiple URL patterns
+    let roomCode = '';
+    
+    if (result.includes('/r/')) {
+      const match = result.match(/\/r\/([A-Z0-9]{6})/);
+      roomCode = match ? match[1] : '';
+    } else if (result.includes('/game?code=')) {
+      const match = result.match(/code=([A-Z0-9]{6})/);
+      roomCode = match ? match[1] : '';
+    } else if (result.includes('room=')) {
+      const match = result.match(/room=([A-Z0-9]{6})/);
+      roomCode = match ? match[1] : '';
+    } else if (/^[A-Z0-9]{6}$/.test(result)) {
+      // Direct room code
+      roomCode = result;
+    }
+    
+    if (roomCode) {
+      setRoomCode(roomCode.toUpperCase());
       setShowQRScanner(false);
       toast({
         title: "Room Code Found",
-        description: `Room code ${match[1]} detected from QR code.`,
+        description: `Room code ${roomCode.toUpperCase()} detected from QR code.`,
       });
     } else {
       toast({
@@ -189,9 +272,9 @@ export default function Home() {
 
               {/* QR Code Options */}
               <div className="flex space-x-2">
-                <Label className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium cursor-pointer transition-all text-center">
+                <Label className="flex-1 bg-uno-yellow/20 hover:bg-uno-yellow/30 text-gray-700 py-3 px-4 rounded-xl font-medium cursor-pointer transition-all text-center border-2 border-dashed border-uno-yellow/50 hover:border-uno-yellow">
                   <Upload className="inline mr-2 h-4 w-4" />
-                  Upload QR
+                  Upload QR Photo
                   <input
                     type="file"
                     accept="image/*"
@@ -202,10 +285,10 @@ export default function Home() {
                 <Button
                   onClick={() => setShowQRScanner(true)}
                   variant="outline"
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  className="flex-1 bg-uno-blue/10 hover:bg-uno-blue/20 text-gray-700 border-uno-blue/30"
                 >
                   <Camera className="mr-2 h-4 w-4" />
-                  Scan QR
+                  Live Scan
                 </Button>
               </div>
             </div>
