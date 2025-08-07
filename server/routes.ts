@@ -223,6 +223,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'send_message':
             await handleSendMessage(connection, message);
             break;
+          case 'exit_game':
+            await handleExitGame(connection, message);
+            break;
+          case 'kick_player':
+            await handleKickPlayer(connection, message);
+            break;
+          case 'continue_game':
+            await handleContinueGame(connection, message);
+            break;
+          case 'replace_player':
+            await handleReplacePlayer(connection, message);
+            break;
           case 'send_emoji':
             await handleSendEmoji(connection, message);
             break;
@@ -361,11 +373,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Check for win condition
     if (newHand.length === 0) {
-      await storage.updateRoom(connection.roomId, { status: "finished" });
-      broadcastToRoom(connection.roomId, {
-        type: 'game_end',
-        winner: player.nickname
-      });
+      const players = await storage.getPlayersByRoom(connection.roomId);
+      const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
+      const finishedCount = activePlayers.filter(p => p.finishPosition).length;
+      
+      // Set finish position for current winner
+      await storage.updatePlayer(connection.playerId, { finishPosition: finishedCount + 1 });
+      
+      // Check if game should end (only 1 player left or all finished)
+      const remainingPlayers = activePlayers.filter(p => !p.finishPosition && p.id !== connection.playerId);
+      
+      if (remainingPlayers.length <= 1) {
+        // Game ends, set last player's position if any
+        if (remainingPlayers.length === 1) {
+          await storage.updatePlayer(remainingPlayers[0].id, { finishPosition: finishedCount + 2 });
+        }
+        
+        await storage.updateRoom(connection.roomId, { status: "finished" });
+        
+        // Get final rankings
+        const finalPlayers = await storage.getPlayersByRoom(connection.roomId);
+        const rankings = finalPlayers
+          .filter(p => !p.isSpectator)
+          .sort((a, b) => (a.finishPosition || 999) - (b.finishPosition || 999));
+        
+        broadcastToRoom(connection.roomId, {
+          type: 'game_end',
+          winner: player.nickname,
+          rankings: rankings.map(p => ({
+            nickname: p.nickname,
+            position: p.finishPosition || (p.hasLeft ? 'Left' : 'Last'),
+            hasLeft: p.hasLeft
+          }))
+        });
+      } else {
+        // Continue game with remaining players
+        broadcastToRoom(connection.roomId, {
+          type: 'player_finished',
+          player: player.nickname,
+          position: finishedCount + 1
+        });
+      }
     }
     
     await broadcastRoomState(connection.roomId);
@@ -459,6 +507,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
       type: 'floating_emoji',
       emoji,
       playerId: connection.playerId
+    });
+    
+    await broadcastRoomState(connection.roomId);
+  }
+
+  async function handleExitGame(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const room = await storage.getRoom(connection.roomId);
+    const player = await storage.getPlayer(connection.playerId);
+    const players = await storage.getPlayersByRoom(connection.roomId);
+    
+    if (!room || !player) return;
+    
+    // Mark player as left
+    await storage.updatePlayer(connection.playerId, { 
+      hasLeft: true, 
+      leftAt: new Date(),
+      isSpectator: true 
+    });
+    
+    // If game is in progress, pause and set finish position as last
+    if (room.status === "playing") {
+      const gamePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
+      const finishPosition = gamePlayers.length + 1; // Last position
+      
+      await storage.updatePlayer(connection.playerId, { finishPosition });
+      await storage.updateRoom(connection.roomId, { status: "waiting" });
+      
+      // Send system message
+      await storage.createMessage({
+        roomId: connection.roomId,
+        message: `${player.nickname} left the game`,
+        type: "system"
+      });
+      
+      broadcastToRoom(connection.roomId, {
+        type: 'player_left',
+        player: player.nickname,
+        needsContinue: true
+      });
+    }
+    
+    await broadcastRoomState(connection.roomId);
+  }
+
+  async function handleKickPlayer(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const { targetPlayerId } = message;
+    const room = await storage.getRoom(connection.roomId);
+    const hostPlayer = await storage.getPlayer(connection.playerId);
+    const targetPlayer = await storage.getPlayer(targetPlayerId);
+    
+    if (!room || !hostPlayer || !targetPlayer) return;
+    
+    // Only host can kick players
+    if (room.hostId !== connection.playerId) return;
+    
+    // Mark target player as left
+    await storage.updatePlayer(targetPlayerId, { 
+      hasLeft: true, 
+      leftAt: new Date(),
+      isSpectator: true 
+    });
+    
+    // Send system message
+    await storage.createMessage({
+      roomId: connection.roomId,
+      message: `${targetPlayer.nickname} was removed from the game`,
+      type: "system"
+    });
+    
+    broadcastToRoom(connection.roomId, {
+      type: 'player_kicked',
+      player: targetPlayer.nickname
+    });
+    
+    await broadcastRoomState(connection.roomId);
+  }
+
+  async function handleContinueGame(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const room = await storage.getRoom(connection.roomId);
+    const players = await storage.getPlayersByRoom(connection.roomId);
+    
+    if (!room || room.hostId !== connection.playerId) return;
+    
+    const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
+    
+    if (activePlayers.length >= 2) {
+      await storage.updateRoom(connection.roomId, { status: "playing" });
+      
+      // Send system message
+      await storage.createMessage({
+        roomId: connection.roomId,
+        message: "Game continues with remaining players",
+        type: "system"
+      });
+      
+      broadcastToRoom(connection.roomId, {
+        type: 'game_continued'
+      });
+    }
+    
+    await broadcastRoomState(connection.roomId);
+  }
+
+  async function handleReplacePlayer(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const { spectatorId, leftPlayerPosition } = message;
+    const room = await storage.getRoom(connection.roomId);
+    
+    if (!room || room.hostId !== connection.playerId) return;
+    
+    const spectator = await storage.getPlayer(spectatorId);
+    if (!spectator || !spectator.isSpectator) return;
+    
+    // Move spectator to game position
+    await storage.updatePlayer(spectatorId, { 
+      isSpectator: false,
+      position: leftPlayerPosition,
+      hasLeft: false
+    });
+    
+    // Send system message
+    await storage.createMessage({
+      roomId: connection.roomId,
+      message: `${spectator.nickname} joined the game`,
+      type: "system"
+    });
+    
+    broadcastToRoom(connection.roomId, {
+      type: 'player_replaced',
+      player: spectator.nickname
     });
     
     await broadcastRoomState(connection.roomId);

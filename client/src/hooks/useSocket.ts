@@ -40,6 +40,19 @@ export function useSocket(autoConnect: boolean = true) {
           case 'game_end':
             // Handle game end
             console.log("Game ended, winner:", message.winner);
+            setGameState((prev: any) => ({
+              ...prev,
+              gameEndData: message
+            }));
+            break;
+          case 'player_left':
+            console.log("Player left:", message.player);
+            if (message.needsContinue) {
+              setGameState((prev: any) => ({
+                ...prev,
+                needsContinue: true
+              }));
+            }
             break;
           case 'uno_called':
             // Handle UNO call
@@ -147,6 +160,29 @@ export function useSocket(autoConnect: boolean = true) {
     });
   };
 
+  const exitGame = () => {
+    sendMessage({ type: 'exit_game' });
+  };
+
+  const kickPlayer = (targetPlayerId: string) => {
+    sendMessage({
+      type: 'kick_player',
+      targetPlayerId
+    });
+  };
+
+  const continueGame = () => {
+    sendMessage({ type: 'continue_game' });
+  };
+
+  const replacePlayer = (spectatorId: string, leftPlayerPosition: number) => {
+    sendMessage({
+      type: 'replace_player',
+      spectatorId,
+      leftPlayerPosition
+    });
+  };
+
   useEffect(() => {
     if (autoConnect) {
       connect();
@@ -180,6 +216,10 @@ export function useSocket(autoConnect: boolean = true) {
     chooseColor,
     sendChatMessage,
     sendEmoji,
+    exitGame,
+    kickPlayer,
+    continueGame,
+    replacePlayer,
     connect: manualConnect
   };
 }

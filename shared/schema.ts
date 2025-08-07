@@ -32,6 +32,9 @@ export const players = pgTable("players", {
   isSpectator: boolean("is_spectator").default(false),
   hasCalledUno: boolean("has_called_uno").default(false),
   socketId: text("socket_id"),
+  hasLeft: boolean("has_left").default(false),
+  finishPosition: integer("finish_position"), // 1st, 2nd, 3rd, 4th place
+  leftAt: timestamp("left_at"),
   joinedAt: timestamp("joined_at").default(sql`now()`),
 });
 

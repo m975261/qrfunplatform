@@ -27,14 +27,20 @@ export default function Game() {
     chooseColor,
     sendChatMessage,
     sendEmoji,
+    exitGame,
+    kickPlayer,
+    continueGame,
+    replacePlayer,
     isConnected
   } = useSocket();
 
   const [showChat, setShowChat] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showGameEnd, setShowGameEnd] = useState(false);
+  const [gameEndData, setGameEndData] = useState<any>(null);
   const [pendingWildCard, setPendingWildCard] = useState<number | null>(null);
   const [timer, setTimer] = useState(30);
+  const [showContinuePrompt, setShowContinuePrompt] = useState(false);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -46,7 +52,16 @@ export default function Game() {
     if (gameState?.room?.status === "finished") {
       setShowGameEnd(true);
     }
-  }, [gameState?.room?.status]);
+    
+    if (gameState?.gameEndData) {
+      setGameEndData(gameState.gameEndData);
+      setShowGameEnd(true);
+    }
+    
+    if (gameState?.needsContinue) {
+      setShowContinuePrompt(true);
+    }
+  }, [gameState?.room?.status, gameState?.gameEndData, gameState?.needsContinue]);
 
   // Timer countdown
   useEffect(() => {
@@ -166,14 +181,30 @@ export default function Game() {
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white/95 backdrop-blur-sm"
-            onClick={() => setShowChat(!showChat)}
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/95 backdrop-blur-sm"
+              onClick={() => setShowChat(!showChat)}
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+            
+            {/* Exit Game Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
+              onClick={() => {
+                if (confirm("Are you sure you want to exit the game? You will be ranked last.")) {
+                  exitGame();
+                }
+              }}
+            >
+              Exit Game
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -338,10 +369,64 @@ export default function Game() {
 
       {showGameEnd && (
         <GameEndModal
-          winner={gamePlayers.find((p: any) => (p.hand?.length || 0) === 0)?.nickname || "Someone"}
+          winner={gameEndData?.winner || gamePlayers.find((p: any) => (p.hand?.length || 0) === 0)?.nickname || "Someone"}
+          rankings={gameEndData?.rankings}
           onPlayAgain={() => setShowGameEnd(false)}
           onBackToLobby={() => window.location.href = "/"}
         />
+      )}
+
+      {/* Continue Game Prompt */}
+      {showContinuePrompt && room?.hostId === playerId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <UICard className="max-w-md w-full mx-4">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Player Left the Game</h3>
+              <p className="text-gray-600 mb-6">
+                A player has left the game. As the host, you can either continue with the remaining players or invite someone to replace them.
+              </p>
+              
+              <div className="space-y-3">
+                <Button
+                  onClick={() => {
+                    continueGame();
+                    setShowContinuePrompt(false);
+                  }}
+                  className="w-full bg-gradient-to-r from-uno-green to-emerald-500"
+                >
+                  Continue Game
+                </Button>
+                
+                {spectators.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">Or select a spectator to replace:</p>
+                    {spectators.map((spectator: any) => (
+                      <Button
+                        key={spectator.id}
+                        onClick={() => {
+                          replacePlayer(spectator.id, 0); // Replace with position logic
+                          setShowContinuePrompt(false);
+                        }}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Replace with {spectator.nickname}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                
+                <Button
+                  onClick={() => setShowContinuePrompt(false)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </UICard>
+        </div>
       )}
     </div>
   );
