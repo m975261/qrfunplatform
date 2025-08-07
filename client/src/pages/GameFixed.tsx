@@ -237,20 +237,31 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Direction Indicator - moved to top corner */}
-      <div className="absolute top-4 right-20 z-10">
-        <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-2 border border-slate-700/50">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center">
-              {room.direction === 1 ? (
-                <ArrowRight className="text-white h-3 w-3" />
-              ) : (
-                <ArrowLeft className="text-white h-3 w-3" />
-              )}
+      {/* Direction Indicator - positioned near center circle */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+        <div className="relative">
+          {/* Curved arrow indicator */}
+          <div className="absolute -top-20 -left-4">
+            <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-2 border border-slate-700/50">
+              <div className="flex items-center space-x-2">
+                {room.direction === 1 ? (
+                  <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9 9 0 0 1-9-9 9 9 0 0 1 9-9z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 12 2 2 4-4"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3"/>
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9 9 9 0 0 0-9-9z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m15 12-2-2-4 4"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16v-4l-3-3"/>
+                  </svg>
+                )}
+                <span className="text-xs text-purple-300 font-bold">
+                  {room.direction === 1 ? "↻" : "↺"}
+                </span>
+              </div>
             </div>
-            <span className="text-xs text-purple-300 font-bold">
-              {room.direction === 1 ? "Clockwise" : "Counter-clockwise"}
-            </span>
           </div>
         </div>
       </div>
