@@ -40,6 +40,13 @@ export class MemStorage implements IStorage {
       ...insertRoom,
       id,
       createdAt: new Date(),
+      status: insertRoom.status || "waiting",
+      direction: insertRoom.direction || "clockwise",
+      currentPlayerIndex: insertRoom.currentPlayerIndex || 0,
+      maxPlayers: insertRoom.maxPlayers || 4,
+      deck: insertRoom.deck || [],
+      discardPile: insertRoom.discardPile || [],
+      currentColor: insertRoom.currentColor || null,
     };
     this.rooms.set(id, room);
     return room;
@@ -73,6 +80,11 @@ export class MemStorage implements IStorage {
       ...insertPlayer,
       id,
       joinedAt: new Date(),
+      hand: insertPlayer.hand || [],
+      position: insertPlayer.position || null,
+      isSpectator: insertPlayer.isSpectator || false,
+      hasCalledUno: insertPlayer.hasCalledUno || false,
+      socketId: insertPlayer.socketId || null,
     };
     this.players.set(id, player);
     return player;
@@ -112,6 +124,9 @@ export class MemStorage implements IStorage {
       ...insertMessage,
       id,
       createdAt: new Date(),
+      playerId: insertMessage.playerId || null,
+      message: insertMessage.message || null,
+      emoji: insertMessage.emoji || null,
     };
     this.messages.set(id, message);
     return message;

@@ -17,11 +17,12 @@ export function useSocket() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     
+    console.log("Attempting WebSocket connection to:", wsUrl);
     socketRef.current = new WebSocket(wsUrl);
     
     socketRef.current.onopen = () => {
       setIsConnected(true);
-      console.log("WebSocket connected");
+      console.log("WebSocket connected successfully");
     };
     
     socketRef.current.onmessage = (event) => {
@@ -49,14 +50,16 @@ export function useSocket() {
       }
     };
     
-    socketRef.current.onclose = () => {
+    socketRef.current.onclose = (event) => {
       setIsConnected(false);
+      console.log("WebSocket closed:", event.code, event.reason);
       // Attempt to reconnect after 3 seconds
       reconnectTimeoutRef.current = setTimeout(connect, 3000);
     };
     
     socketRef.current.onerror = (error) => {
       console.error("WebSocket error:", error);
+      setIsConnected(false);
     };
   };
 

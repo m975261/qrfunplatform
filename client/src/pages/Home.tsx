@@ -23,6 +23,7 @@ export default function Home() {
       return response.json();
     },
     onSuccess: (data) => {
+      localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", nickname);
       setLocation(`/room/${data.room.id}?code=${data.room.code}`);
     },

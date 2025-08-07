@@ -26,17 +26,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).parse(req.body);
 
       const code = UnoGameLogic.generateRoomCode();
+      // Create the room first
       const room = await storage.createRoom({
         code,
         hostId: "", // Will be set when host joins
         status: "waiting"
       });
 
+      // Create the host player immediately
+      const hostPlayer = await storage.createPlayer({
+        nickname: hostNickname,
+        roomId: room.id,
+        isSpectator: false,
+        position: 0
+      });
+
+      // Update room with host ID
+      const updatedRoom = await storage.updateRoom(room.id, { hostId: hostPlayer.id });
+
       // Generate QR code with room link
-      const roomLink = `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}?room=${code}`;
+      const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] || `${req.protocol}://${req.get('host')}`;
+      const roomLink = `${baseUrl}?room=${code}`;
       const qrCode = await QRCode.toDataURL(roomLink);
 
-      res.json({ room, qrCode });
+      res.json({ room: updatedRoom, qrCode, player: hostPlayer });
     } catch (error) {
       res.status(400).json({ error: "Failed to create room" });
     }
@@ -67,11 +80,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : null
       });
 
-      // Set host if this is the first player
-      if (!room.hostId) {
-        await storage.updateRoom(room.id, { hostId: player.id });
-      }
-
       res.json({ player, room });
     } catch (error) {
       res.status(400).json({ error: "Failed to join room" });
@@ -100,7 +108,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WebSocket server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
-  wss.on('connection', (ws: WebSocket) => {
+  console.log('WebSocket server created on path /ws');
+  
+  wss.on('connection', (ws: WebSocket, req) => {
+    console.log('New WebSocket connection from:', req.socket.remoteAddress);
     const connectionId = Math.random().toString(36).substring(7);
     connections.set(connectionId, { ws });
     
@@ -143,7 +154,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     ws.on('close', () => {
+      console.log('WebSocket connection closed:', connectionId);
       connections.delete(connectionId);
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
     });
   });
 
