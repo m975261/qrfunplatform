@@ -198,6 +198,20 @@ export class UnoGameLogic {
     const skipStep = skip ? step * 2 : step;
     return (currentIndex + skipStep + playerCount) % playerCount;
   }
+
+  static canPlayerStackDraw(playerHand: Card[], topCard: Card, pendingDraw: number): boolean {
+    // Check if player can stack draw cards when facing a penalty
+    if (!pendingDraw || pendingDraw === 0) return false;
+    
+    return playerHand.some(card => {
+      // Can play +2 on +2, or +4 on either +2 or +4
+      if (topCard.type === "draw2" && card.type === "draw2") return true;
+      if (topCard.type === "wild4" && card.type === "wild4") return true;
+      if (topCard.type === "draw2" && card.type === "wild4") return true;
+      // Cannot play +2 on +4
+      return false;
+    });
+  }
   
   static generateRoomCode(): string {
     // Generate codes like 22033, 44055, 55066 - format: AABCC where A and B are repeated digits

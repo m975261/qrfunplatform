@@ -562,6 +562,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     await broadcastRoomState(connection.roomId);
+    
+    // Check if the first player needs to automatically draw penalty cards
+    // (This handles cases where the first player after game start has pending draws)
+    await checkAndApplyAutomaticPenalty(connection.roomId, 0, gamePlayers);
   }
 
   async function handlePlayCard(connection: SocketConnection, message: any) {
@@ -716,6 +720,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     await broadcastRoomState(connection.roomId);
+    
+    // Check if the next player needs to automatically draw penalty cards
+    await checkAndApplyAutomaticPenalty(connection.roomId, nextPlayerIndex, gamePlayers);
+  }
+
+  async function checkAndApplyAutomaticPenalty(roomId: string, playerIndex: number, gamePlayers: any[]) {
+    const room = await storage.getRoom(roomId);
+    if (!room || !room.pendingDraw || room.pendingDraw === 0) return;
+
+    const currentPlayer = gamePlayers[playerIndex];
+    if (!currentPlayer) return;
+
+    const player = await storage.getPlayer(currentPlayer.id);
+    if (!player) return;
+
+    const topCard = (room.discardPile || [])[0];
+    if (!topCard) return;
+
+    // Check if the player can stack draw cards
+    const canStack = UnoGameLogic.canPlayerStackDraw(player.hand || [], topCard, room.pendingDraw);
+    
+    if (!canStack) {
+      // Player cannot stack, automatically apply penalty
+      const deck = room.deck || [];
+      const penaltyAmount = room.pendingDraw;
+      
+      if (deck.length >= penaltyAmount) {
+        const drawnCards = deck.splice(0, penaltyAmount);
+        const newHand = [...(player.hand || []), ...drawnCards];
+        
+        // Update player hand
+        await storage.updatePlayer(currentPlayer.id, { 
+          hand: newHand,
+          hasCalledUno: newHand.length > 1 ? false : player.hasCalledUno
+        });
+        
+        // Move to next player and clear penalty
+        const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+          playerIndex, 
+          gamePlayers.length, 
+          room.direction || "clockwise",
+          false,
+          false
+        );
+        
+        await storage.updateRoom(roomId, { 
+          deck,
+          pendingDraw: 0,
+          currentPlayerIndex: nextPlayerIndex
+        });
+        
+        // Broadcast automatic penalty application
+        broadcastToRoom(roomId, {
+          type: 'automatic_penalty',
+          player: player.nickname,
+          cardsDrawn: penaltyAmount
+        });
+        
+        await broadcastRoomState(roomId);
+      }
+    }
   }
 
   async function handleDrawCard(connection: SocketConnection, message: any) {

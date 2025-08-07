@@ -96,6 +96,10 @@ export function useSocket(autoConnect: boolean = true) {
               needsContinue: false
             }));
             break;
+          case 'automatic_penalty':
+            // Handle automatic penalty card drawing
+            console.log(`${message.player} automatically drew ${message.cardsDrawn} penalty cards`);
+            break;
           case 'error':
             // Handle server errors (like room not found)
             console.log("WebSocket error:", message.message);
