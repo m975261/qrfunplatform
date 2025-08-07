@@ -178,20 +178,20 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - positioned lower */}
-      <div className="absolute inset-0 flex items-center justify-center pb-32">
+      {/* Central Game Area - positioned much lower */}
+      <div className="absolute inset-0 flex items-center justify-center pb-20">
         <div className="relative">
           {/* Game Circle */}
-          <div className="w-56 h-56 md:w-72 md:h-72 lg:w-80 lg:h-80 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
+          <div className="w-48 h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
             
             {/* Inner Circle */}
-            <div className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
+            <div className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
               
               {/* Draw Pile */}
-              <div className="absolute -left-12 md:-left-16 top-1/2 transform -translate-y-1/2">
+              <div className="absolute -left-10 md:-left-12 top-1/2 transform -translate-y-1/2">
                 <div className="relative cursor-pointer group" onClick={drawCard}>
-                  <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
-                  <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
+                  <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
+                  <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-white font-bold text-xs">UNO</div>
                   </div>

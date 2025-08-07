@@ -334,16 +334,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
     
-    // Check UNO penalty - if player has 2 cards and doesn't have UNO called, and they're not calling UNO this turn
+    // Remove card from player's hand first
+    let newHand = playerHand.filter((_, index) => index !== cardIndex);
+    
+    // Check UNO penalty - if player has 1 card left after playing and didn't call UNO beforehand
     let shouldApplyUnoPenalty = false;
-    if (playerHand.length === 2 && !player.hasCalledUno) {
+    if (newHand.length === 1 && !player.hasCalledUno) {
       shouldApplyUnoPenalty = true;
     }
     
-    // Remove card from player's hand
-    let newHand = playerHand.filter((_, index) => index !== cardIndex);
-    
-    // Apply UNO penalty if needed
+    // Apply UNO penalty if needed (2 random cards from deck)
     if (shouldApplyUnoPenalty) {
       const deck = room.deck || [];
       const penaltyCards = deck.splice(0, 2);
