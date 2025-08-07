@@ -618,19 +618,21 @@ export default function Game() {
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-slate-800 rounded-lg border border-slate-600 p-6 max-w-md mx-4">
             <div className="text-center">
-              <div className="text-xl font-bold text-white mb-2">Penalty Cards</div>
-              <div className="text-slate-300 mb-4">
-                {gameState.penaltyAnimation.player} is drawing penalty cards...
+              <div className="text-2xl font-bold text-red-400 mb-2 animate-pulse">⚠️ Penalty Cards</div>
+              <div className="text-slate-300 mb-4 text-lg">
+                <span className="font-semibold text-white">{gameState.penaltyAnimation.player}</span> is drawing penalty cards...
               </div>
               
               {/* Progress indicator */}
-              <div className="bg-slate-700 rounded-full h-4 mb-4">
+              <div className="bg-slate-700 rounded-full h-6 mb-4 relative overflow-hidden">
                 <div 
-                  className="bg-red-500 h-4 rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-red-500 to-red-400 h-6 rounded-full transition-all duration-1000 ease-out relative"
                   style={{
                     width: `${(gameState.penaltyAnimation.drawnCards / gameState.penaltyAnimation.totalCards) * 100}%`
                   }}
-                />
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
+                </div>
               </div>
               
               <div className="text-lg font-medium text-white">
@@ -645,8 +647,8 @@ export default function Game() {
                       key={i}
                       className={`absolute w-12 h-16 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg border border-slate-500 transition-all duration-300 ${
                         i < gameState.penaltyAnimation.drawnCards 
-                          ? 'opacity-100 transform translate-y-0' 
-                          : 'opacity-50 transform translate-y-2'
+                          ? 'opacity-100 transform translate-y-0 scale-100' 
+                          : 'opacity-30 transform translate-y-4 scale-95'
                       }`}
                       style={{
                         left: `${i * 4}px`,
@@ -655,7 +657,8 @@ export default function Game() {
                       }}
                     >
                       {i < gameState.penaltyAnimation.drawnCards && (
-                        <div className="w-full h-full bg-red-400 rounded-lg flex items-center justify-center text-white text-xs font-bold animate-pulse">
+                        <div className="w-full h-full bg-gradient-to-br from-red-400 to-red-600 rounded-lg flex items-center justify-center text-white text-xs font-bold animate-bounce">
+                          <div className="animate-ping absolute w-2 h-2 bg-white rounded-full"></div>
                           ✓
                         </div>
                       )}

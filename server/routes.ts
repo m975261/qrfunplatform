@@ -747,9 +747,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     let currentHand = [...(player.hand || [])];
     
-    // Draw cards one by one with delay
+    // Draw cards one by one with delay (1 second between cards for better visibility)
     for (let i = 0; i < penaltyAmount; i++) {
-      await new Promise(resolve => setTimeout(resolve, 400)); // 400ms delay between cards
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1000ms delay between cards
       
       const drawnCard = deck.shift();
       if (!drawnCard) break;
@@ -787,6 +787,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pendingDraw: 0,
       currentPlayerIndex: nextPlayerIndex
     });
+    
+    // Wait an extra second before ending animation
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     // End penalty animation
     broadcastToRoom(roomId, {
