@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Menu, ArrowRight, ArrowLeft } from "lucide-react";
+import { BarChart3, Menu, ArrowRight, ArrowLeft, Users } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import PlayerArea from "@/components/game/PlayerArea";
