@@ -178,25 +178,25 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - with proper spacing from bottom */}
-      <div className="absolute inset-0 flex items-center justify-center pb-48">
+      {/* Central Game Area - positioned lower */}
+      <div className="absolute inset-0 flex items-center justify-center pb-32">
         <div className="relative">
           {/* Game Circle */}
-          <div className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
+          <div className="w-56 h-56 md:w-72 md:h-72 lg:w-80 lg:h-80 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
             
             {/* Inner Circle */}
-            <div className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
+            <div className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
               
               {/* Draw Pile */}
-              <div className="absolute -left-16 md:-left-20 top-1/2 transform -translate-y-1/2">
+              <div className="absolute -left-12 md:-left-16 top-1/2 transform -translate-y-1/2">
                 <div className="relative cursor-pointer group" onClick={drawCard}>
-                  <div className="w-12 h-16 md:w-16 md:h-20 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
-                  <div className="w-12 h-16 md:w-16 md:h-20 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
+                  <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
+                  <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-white font-bold text-xs">UNO</div>
                   </div>
                 </div>
-                <div className="text-xs text-center mt-2 text-blue-300 font-bold">DRAW</div>
+                <div className="text-xs text-center mt-1 text-blue-300 font-bold">DRAW</div>
               </div>
 
               {/* Current Card */}
@@ -204,13 +204,25 @@ export default function Game() {
                 {topCard ? (
                   <GameCard 
                     card={topCard} 
-                    size="medium"
+                    size="small"
                     interactive={false}
                     onClick={() => {}}
                   />
                 ) : (
-                  <div className="w-12 h-16 sm:w-16 sm:h-20 md:w-20 md:h-28 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-white shadow-xl flex items-center justify-center">
-                    <div className="text-white font-bold text-xs sm:text-sm md:text-base">?</div>
+                  <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-white shadow-xl flex items-center justify-center">
+                    <div className="text-white font-bold text-xs">?</div>
+                  </div>
+                )}
+                {/* Current Color Indicator for Wild Cards */}
+                {room.currentColor && (topCard?.type === 'wild' || topCard?.type === 'wild_draw_four') && (
+                  <div className="mt-2 flex items-center space-x-1">
+                    <div className={`w-4 h-4 rounded-full border-2 border-white shadow-lg ${
+                      room.currentColor === 'red' ? 'bg-red-500' :
+                      room.currentColor === 'blue' ? 'bg-blue-500' :
+                      room.currentColor === 'green' ? 'bg-green-500' :
+                      'bg-yellow-500'
+                    }`}></div>
+                    <span className="text-xs text-white font-bold capitalize">{room.currentColor}</span>
                   </div>
                 )}
               </div>

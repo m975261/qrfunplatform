@@ -52,9 +52,9 @@ export class UnoGameLogic {
     
     deck.forEach(card => {
       if (card.type === "number") {
-        counts.numbers[card.number!]++;
+        counts.numbers[card.number! as keyof typeof counts.numbers]++;
       } else {
-        counts[card.type]++;
+        counts[card.type as keyof typeof counts]++;
       }
     });
     

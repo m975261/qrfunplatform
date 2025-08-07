@@ -367,34 +367,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Handle stacking draw cards
     if (effect.draw > 0) {
-      if (room.pendingDraw && room.pendingDraw > 0) {
-        // Stack the draw effect
-        newPendingDraw = room.pendingDraw + effect.draw;
-      } else {
-        // Start new draw effect
-        newPendingDraw = effect.draw;
-      }
+      // Stack the draw effect - pass the penalty to next player
+      newPendingDraw = (room.pendingDraw || 0) + effect.draw;
+      
+      // Move to next player (they can either draw or stack)
       nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
         currentPlayerIndex, 
         gamePlayers.length, 
         room.direction || "clockwise", 
-        true // Skip next player, they must draw
+        false // Don't skip, next player gets a chance to stack
       );
     } else {
-      // Normal card, resolve any pending draws first
-      if (room.pendingDraw && room.pendingDraw > 0) {
-        // Current player couldn't stack, so they must draw the pending cards
-        const roomData = await storage.getRoom(connection.roomId);
-        const deck = roomData?.deck || [];
-        const drawnCards = deck.splice(0, room.pendingDraw);
-        const currentPlayerHand = [...newHand, ...drawnCards];
-        
-        await storage.updatePlayer(connection.playerId, { hand: currentPlayerHand });
-        await storage.updateRoom(connection.roomId, { deck });
-        newPendingDraw = 0;
-      }
-      
-      // Handle other effects
+      // Handle other effects first
       if (effect.reverse) {
         newDirection = room.direction === "clockwise" ? "counterclockwise" : "clockwise";
       }
@@ -405,6 +389,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newDirection || "clockwise", 
         effect.skip
       );
+      
+      // Clear pending draw since this is not a draw card
+      newPendingDraw = 0;
     }
     
     // Update room state
@@ -497,17 +484,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await storage.updatePlayer(connection.playerId, { hand: newHand });
     await storage.updateRoom(connection.roomId, { 
       deck,
-      pendingDraw: clearPendingDraw ? 0 : room.pendingDraw
+      pendingDraw: clearPendingDraw ? 0 : room.pendingDraw,
+      currentPlayerIndex: clearPendingDraw ? UnoGameLogic.getNextPlayerIndex(
+        currentPlayerIndex, 
+        gamePlayers.length, 
+        room.direction || "clockwise"
+      ) : currentPlayerIndex // Only move to next player if drew pending cards
     });
-    
-    // Move to next player
-    const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
-      currentPlayerIndex, 
-      gamePlayers.length, 
-      room.direction || "clockwise"
-    );
-    
-    await storage.updateRoom(connection.roomId, { currentPlayerIndex: nextPlayerIndex });
     await broadcastRoomState(connection.roomId);
   }
 
