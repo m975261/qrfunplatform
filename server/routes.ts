@@ -639,6 +639,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Stack the draw effect - pass the penalty to next player
       newPendingDraw = (room.pendingDraw || 0) + effect.draw;
       
+      console.log(`${card.type} card played by ${player.nickname}, stacking ${effect.draw} cards. New pending draw: ${newPendingDraw}`);
+      
       // Move to next player (they can either draw or stack)
       nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
         currentPlayerIndex, 
@@ -745,11 +747,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       totalCards: penaltyAmount
     });
 
+    // Show initial penalty amount for 1.5 seconds before starting to draw
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
     let currentHand = [...(player.hand || [])];
     
-    // Draw cards one by one with delay (1 second between cards for better visibility)
+    // Calculate timing to make total animation 6 seconds
+    // 1.5s initial + (cards * delay) + 1.5s final = 6s
+    // For +2: 1.5 + (2 * 1.5) + 1.5 = 6s  
+    // For +4: 1.5 + (4 * 0.75) + 1.5 = 6s
+    const delayPerCard = penaltyAmount === 2 ? 1500 : 750; // Adjust timing based on card count
+    
+    // Draw cards one by one with calculated delay
     for (let i = 0; i < penaltyAmount; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 1000ms delay between cards
+      await new Promise(resolve => setTimeout(resolve, delayPerCard));
       
       const drawnCard = deck.shift();
       if (!drawnCard) break;
@@ -767,8 +778,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'penalty_card_drawn',
         player: player.nickname,
         cardNumber: i + 1,
-        totalCards: penaltyAmount
+        totalCards: penaltyAmount,
+        drawnCard: drawnCard // Include the actual card for debugging
       });
+      
+      console.log(`${player.nickname} drew penalty card ${i + 1}/${penaltyAmount}: ${drawnCard.type} ${drawnCard.color}`);
       
       await broadcastRoomState(roomId);
     }
@@ -788,8 +802,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentPlayerIndex: nextPlayerIndex
     });
     
-    // Wait an extra second before ending animation
+    // Wait 1.5 seconds before ending animation to complete 6 second total
     await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    console.log(`Penalty animation completed for ${player.nickname}: ${penaltyAmount} cards drawn, final hand size: ${currentHand.length}`);
     
     // End penalty animation
     broadcastToRoom(roomId, {

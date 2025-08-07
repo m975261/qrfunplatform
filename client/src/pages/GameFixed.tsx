@@ -620,7 +620,16 @@ export default function Game() {
             <div className="text-center">
               <div className="text-2xl font-bold text-red-400 mb-2 animate-pulse">⚠️ Penalty Cards</div>
               <div className="text-slate-300 mb-4 text-lg">
-                <span className="font-semibold text-white">{gameState.penaltyAnimation.player}</span> is drawing penalty cards...
+                {gameState.penaltyAnimation.drawnCards === 0 ? (
+                  <>
+                    <span className="font-semibold text-white">{gameState.penaltyAnimation.player}</span> must draw{' '}
+                    <span className="text-red-400 font-bold text-2xl animate-pulse">{gameState.penaltyAnimation.totalCards}</span> cards!
+                  </>
+                ) : (
+                  <>
+                    <span className="font-semibold text-white">{gameState.penaltyAnimation.player}</span> is drawing penalty cards...
+                  </>
+                )}
               </div>
               
               {/* Progress indicator */}
