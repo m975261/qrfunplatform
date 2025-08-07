@@ -81,7 +81,7 @@ export class MemStorage implements IStorage {
       id,
       joinedAt: new Date(),
       hand: insertPlayer.hand || [],
-      position: insertPlayer.position || null,
+      position: insertPlayer.position ?? null,
       isSpectator: insertPlayer.isSpectator || false,
       hasCalledUno: insertPlayer.hasCalledUno || false,
       socketId: insertPlayer.socketId || null,

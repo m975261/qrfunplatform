@@ -103,15 +103,11 @@ export default function RoomLobby() {
 
   const getPlayerSlots = () => {
     const slots = Array(4).fill(null);
-    console.log("getPlayerSlots - gamePlayers:", gamePlayers);
     gamePlayers.forEach((player: any) => {
-      console.log("Processing player:", player.nickname, "position:", player.position);
       if (player.position !== null && player.position !== undefined) {
-        console.log("Adding player to slot:", player.position);
         slots[player.position] = player;
       }
     });
-    console.log("Final slots:", slots.map(p => p ? p.nickname : 'empty'));
     return slots;
   };
 
