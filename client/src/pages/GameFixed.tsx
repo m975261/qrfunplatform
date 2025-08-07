@@ -215,27 +215,33 @@ export default function Game() {
                 )}
               </div>
 
-              {/* Direction Indicator */}
-              <div className="absolute -right-16 md:-right-20 top-1/2 transform -translate-y-1/2">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center shadow-lg border-2 border-purple-400">
-                  {room.direction === 1 ? (
-                    <ArrowRight className="text-white h-5 w-5 md:h-6 md:w-6" />
-                  ) : (
-                    <ArrowLeft className="text-white h-5 w-5 md:h-6 md:w-6" />
-                  )}
-                </div>
-                <div className="text-xs text-center mt-2 text-purple-300 font-bold">
-                  {room.direction === 1 ? "CW" : "CCW"}
-                </div>
-              </div>
+
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Direction Indicator - moved to top corner */}
+      <div className="absolute top-4 right-20 z-10">
+        <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-2 border border-slate-700/50">
+          <div className="flex items-center space-x-2">
+            <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center">
+              {room.direction === 1 ? (
+                <ArrowRight className="text-white h-3 w-3" />
+              ) : (
+                <ArrowLeft className="text-white h-3 w-3" />
+              )}
+            </div>
+            <span className="text-xs text-purple-300 font-bold">
+              {room.direction === 1 ? "Clockwise" : "Counter-clockwise"}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Other Players positioned at screen corners - completely away from circle */}
       {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
-        const filteredIndex = gamePlayers.filter(p => p.id !== playerId && !p.isSpectator).indexOf(player);
+        const filteredIndex = gamePlayers.filter((p: any) => p.id !== playerId && !p.isSpectator).indexOf(player);
         
         // Position players at corners: top-left, top-right, bottom-right
         const positions = [
