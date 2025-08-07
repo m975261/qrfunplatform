@@ -96,9 +96,37 @@ export function useSocket(autoConnect: boolean = true) {
               needsContinue: false
             }));
             break;
-          case 'automatic_penalty':
-            // Handle automatic penalty card drawing
-            console.log(`${message.player} automatically drew ${message.cardsDrawn} penalty cards`);
+          case 'penalty_animation_start':
+            console.log(`${message.player} is drawing ${message.totalCards} penalty cards...`);
+            // Show penalty drawing notification
+            setGameState((prev: any) => ({
+              ...prev,
+              penaltyAnimation: {
+                player: message.player,
+                totalCards: message.totalCards,
+                drawnCards: 0,
+                isActive: true
+              }
+            }));
+            break;
+          case 'penalty_card_drawn':
+            console.log(`${message.player} drew card ${message.cardNumber} of ${message.totalCards}`);
+            // Update penalty drawing progress
+            setGameState((prev: any) => ({
+              ...prev,
+              penaltyAnimation: prev.penaltyAnimation ? {
+                ...prev.penaltyAnimation,
+                drawnCards: message.cardNumber
+              } : null
+            }));
+            break;
+          case 'penalty_animation_end':
+            console.log(`${message.player} finished drawing ${message.totalCards} penalty cards`);
+            // Clear penalty animation
+            setGameState((prev: any) => ({
+              ...prev,
+              penaltyAnimation: null
+            }));
             break;
           case 'error':
             // Handle server errors (like room not found)

@@ -613,6 +613,61 @@ export default function Game() {
         </div>
       )}
 
+      {/* Penalty Animation Overlay */}
+      {gameState?.penaltyAnimation?.isActive && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-slate-800 rounded-lg border border-slate-600 p-6 max-w-md mx-4">
+            <div className="text-center">
+              <div className="text-xl font-bold text-white mb-2">Penalty Cards</div>
+              <div className="text-slate-300 mb-4">
+                {gameState.penaltyAnimation.player} is drawing penalty cards...
+              </div>
+              
+              {/* Progress indicator */}
+              <div className="bg-slate-700 rounded-full h-4 mb-4">
+                <div 
+                  className="bg-red-500 h-4 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${(gameState.penaltyAnimation.drawnCards / gameState.penaltyAnimation.totalCards) * 100}%`
+                  }}
+                />
+              </div>
+              
+              <div className="text-lg font-medium text-white">
+                {gameState.penaltyAnimation.drawnCards} / {gameState.penaltyAnimation.totalCards} cards
+              </div>
+              
+              {/* Animated card stack */}
+              <div className="flex justify-center mt-4">
+                <div className="relative">
+                  {Array.from({ length: gameState.penaltyAnimation.totalCards }, (_, i) => (
+                    <div
+                      key={i}
+                      className={`absolute w-12 h-16 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg border border-slate-500 transition-all duration-300 ${
+                        i < gameState.penaltyAnimation.drawnCards 
+                          ? 'opacity-100 transform translate-y-0' 
+                          : 'opacity-50 transform translate-y-2'
+                      }`}
+                      style={{
+                        left: `${i * 4}px`,
+                        zIndex: gameState.penaltyAnimation.totalCards - i,
+                        animationDelay: `${i * 100}ms`
+                      }}
+                    >
+                      {i < gameState.penaltyAnimation.drawnCards && (
+                        <div className="w-full h-full bg-red-400 rounded-lg flex items-center justify-center text-white text-xs font-bold animate-pulse">
+                          ✓
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Nickname Editor Modal */}
       {currentPlayer && (
         <NicknameEditor

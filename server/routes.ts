@@ -725,6 +725,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await checkAndApplyAutomaticPenalty(connection.roomId, nextPlayerIndex, gamePlayers);
   }
 
+  async function applyPenaltyWithAnimation(roomId: string, playerIndex: number, gamePlayers: any[], penaltyAmount: number) {
+    const room = await storage.getRoom(roomId);
+    if (!room || penaltyAmount <= 0) return;
+
+    const currentPlayer = gamePlayers[playerIndex];
+    if (!currentPlayer) return;
+
+    const player = await storage.getPlayer(currentPlayer.id);
+    if (!player) return;
+
+    const deck = room.deck || [];
+    if (deck.length < penaltyAmount) return;
+
+    // Start penalty animation
+    broadcastToRoom(roomId, {
+      type: 'penalty_animation_start',
+      player: player.nickname,
+      totalCards: penaltyAmount
+    });
+
+    let currentHand = [...(player.hand || [])];
+    
+    // Draw cards one by one with delay
+    for (let i = 0; i < penaltyAmount; i++) {
+      await new Promise(resolve => setTimeout(resolve, 400)); // 400ms delay between cards
+      
+      const drawnCard = deck.shift();
+      if (!drawnCard) break;
+      
+      currentHand.push(drawnCard);
+      
+      // Update player hand incrementally
+      await storage.updatePlayer(currentPlayer.id, { 
+        hand: currentHand,
+        hasCalledUno: currentHand.length > 1 ? false : player.hasCalledUno
+      });
+      
+      // Broadcast each card being drawn
+      broadcastToRoom(roomId, {
+        type: 'penalty_card_drawn',
+        player: player.nickname,
+        cardNumber: i + 1,
+        totalCards: penaltyAmount
+      });
+      
+      await broadcastRoomState(roomId);
+    }
+    
+    // Move to next player and clear penalty
+    const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+      playerIndex, 
+      gamePlayers.length, 
+      room.direction || "clockwise",
+      false,
+      false
+    );
+    
+    await storage.updateRoom(roomId, { 
+      deck,
+      pendingDraw: 0,
+      currentPlayerIndex: nextPlayerIndex
+    });
+    
+    // End penalty animation
+    broadcastToRoom(roomId, {
+      type: 'penalty_animation_end',
+      player: player.nickname,
+      totalCards: penaltyAmount
+    });
+    
+    await broadcastRoomState(roomId);
+  }
+
   async function checkAndApplyAutomaticPenalty(roomId: string, playerIndex: number, gamePlayers: any[]) {
     const room = await storage.getRoom(roomId);
     if (!room || !room.pendingDraw || room.pendingDraw === 0) return;
@@ -742,44 +815,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const canStack = UnoGameLogic.canPlayerStackDraw(player.hand || [], topCard, room.pendingDraw);
     
     if (!canStack) {
-      // Player cannot stack, automatically apply penalty
-      const deck = room.deck || [];
-      const penaltyAmount = room.pendingDraw;
-      
-      if (deck.length >= penaltyAmount) {
-        const drawnCards = deck.splice(0, penaltyAmount);
-        const newHand = [...(player.hand || []), ...drawnCards];
-        
-        // Update player hand
-        await storage.updatePlayer(currentPlayer.id, { 
-          hand: newHand,
-          hasCalledUno: newHand.length > 1 ? false : player.hasCalledUno
-        });
-        
-        // Move to next player and clear penalty
-        const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
-          playerIndex, 
-          gamePlayers.length, 
-          room.direction || "clockwise",
-          false,
-          false
-        );
-        
-        await storage.updateRoom(roomId, { 
-          deck,
-          pendingDraw: 0,
-          currentPlayerIndex: nextPlayerIndex
-        });
-        
-        // Broadcast automatic penalty application
-        broadcastToRoom(roomId, {
-          type: 'automatic_penalty',
-          player: player.nickname,
-          cardsDrawn: penaltyAmount
-        });
-        
-        await broadcastRoomState(roomId);
-      }
+      // Player cannot stack, automatically apply penalty with animation
+      await applyPenaltyWithAnimation(roomId, playerIndex, gamePlayers, room.pendingDraw);
     }
   }
 
