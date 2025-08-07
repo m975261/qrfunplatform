@@ -144,7 +144,7 @@ export function useSocket(autoConnect: boolean = true) {
       new Date().getTimezoneOffset(),
       canvas.toDataURL(),
       navigator.hardwareConcurrency || 0,
-      navigator.deviceMemory || 0
+      (navigator as any).deviceMemory || 0
     ].join('|');
     
     // Simple hash function
