@@ -54,8 +54,11 @@ export function useSocket() {
     socketRef.current.onclose = (event) => {
       setIsConnected(false);
       console.log("WebSocket closed:", event.code, event.reason);
-      // Attempt to reconnect after 3 seconds
-      reconnectTimeoutRef.current = setTimeout(connect, 3000);
+      // Don't reconnect automatically on code 1006 (abnormal closure) if it's due to HMR
+      if (event.code !== 1006 || !event.reason.includes('HMR')) {
+        // Attempt to reconnect after 3 seconds
+        reconnectTimeoutRef.current = setTimeout(connect, 3000);
+      }
     };
     
     socketRef.current.onerror = (error) => {
