@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Menu, ArrowRight, ArrowLeft, Users } from "lucide-react";
+import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import PlayerArea from "@/components/game/PlayerArea";
@@ -40,16 +40,6 @@ export default function Game() {
   const [gameEndData, setGameEndData] = useState<any>(null);
   const [pendingWildCard, setPendingWildCard] = useState<number | null>(null);
   const [timer, setTimer] = useState(30);
-
-  // Responsive card size helper
-  const getCardSize = () => {
-    if (typeof window !== 'undefined') {
-      if (window.innerWidth < 640) return "small";
-      if (window.innerWidth < 768) return "small";
-      return "medium";
-    }
-    return "medium";
-  };
   const [hasCalledUno, setHasCalledUno] = useState(false);
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
 
@@ -73,8 +63,6 @@ export default function Game() {
       setShowContinuePrompt(true);
     }
   }, [gameState?.room?.status, gameState?.gameEndData, gameState?.needsContinue]);
-
-  // Timer countdown will be set up after variables are declared
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
