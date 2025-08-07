@@ -79,6 +79,14 @@ export function useSocket(autoConnect: boolean = true) {
             alert(message.message || "You have been removed from the room");
             window.location.href = "/";
             break;
+          case 'game_continued':
+            // Handle game continuation - refresh state
+            console.log("Game continued");
+            setGameState((prev: any) => ({
+              ...prev,
+              needsContinue: false
+            }));
+            break;
           case 'error':
             // Handle server errors (like room not found)
             console.log("WebSocket error:", message.message);

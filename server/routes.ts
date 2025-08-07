@@ -1000,32 +1000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     await broadcastRoomState(connection.roomId);
-    
-    if (!room || room.hostId !== connection.playerId) return;
-    
-    const spectator = await storage.getPlayer(spectatorId);
-    if (!spectator || !spectator.isSpectator) return;
-    
-    // Move spectator to game position
-    await storage.updatePlayer(spectatorId, { 
-      isSpectator: false,
-      position: leftPlayerPosition,
-      hasLeft: false
-    });
-    
-    // Send system message
-    await storage.createMessage({
-      roomId: connection.roomId,
-      message: `${spectator.nickname} joined the game`,
-      type: "system"
-    });
-    
-    broadcastToRoom(connection.roomId, {
-      type: 'player_replaced',
-      player: spectator.nickname
-    });
-    
-    await broadcastRoomState(connection.roomId);
+
   }
 
   async function handlePlayerDisconnect(playerId: string, roomId: string) {
