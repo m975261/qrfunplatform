@@ -233,50 +233,43 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Players around circle */}
+      {/* Players positioned around the edges - away from circle */}
       {gamePlayers.map((player: any, index: number) => {
         if (player.id === playerId) return null; // Skip current player
         
         const position = index === 0 ? "top" : index === 1 ? "left" : "right";
         const positionClass = 
-          position === "top" ? "top-16 md:top-20 left-1/2 transform -translate-x-1/2" :
-          position === "left" ? "left-2 md:left-4 top-1/2 transform -translate-y-1/2" :
-          "right-2 md:right-4 top-1/2 transform -translate-y-1/2";
+          position === "top" ? "top-4 left-1/2 transform -translate-x-1/2" :
+          position === "left" ? "left-4 top-1/4 transform -translate-y-1/2" :
+          "right-4 top-1/4 transform -translate-y-1/2";
 
         const isPlayerTurn = currentGamePlayer?.id === player.id;
 
         return (
           <div key={player.id} className={`absolute z-20 ${positionClass}`}>
-            <div className={`bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border max-w-xs relative ${
-              isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-slate-600'
+            <div className={`bg-slate-800/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border min-w-[100px] ${
+              isPlayerTurn ? 'border-green-400 ring-1 ring-green-400/50' : 'border-slate-600'
             }`}>
-              {isPlayerTurn && (
-                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-bounce">
-                  TURN
-                </div>
-              )}
               <div className="flex items-center space-x-2">
-                {/* Player Avatar */}
                 <div className="relative">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                    isPlayerTurn ? 'bg-gradient-to-br from-green-400 to-green-600 ring-2 ring-green-400' : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${
+                    isPlayerTurn ? 'bg-gradient-to-br from-green-400 to-green-600' : 'bg-gradient-to-br from-blue-400 to-blue-600'
                   }`}>
                     {player.nickname?.[0]?.toUpperCase()}
                   </div>
                   {isPlayerTurn && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
+                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   )}
                 </div>
-                <div>
-                  <div className={`font-semibold text-sm ${
+                <div className="flex-1 min-w-0">
+                  <div className={`font-medium text-xs truncate ${
                     isPlayerTurn ? 'text-green-400' : 'text-white'
                   }`}>
-                    {player.nickname} {isPlayerTurn && '⭐'}
+                    {player.nickname}
                   </div>
                   <div className="text-xs text-slate-400">{player.hand?.length || 0} cards</div>
                 </div>
               </div>
-
             </div>
           </div>
         );
