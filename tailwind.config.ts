@@ -61,6 +61,16 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        // UNO specific colors
+        "uno-red": "var(--uno-red)",
+        "uno-blue": "var(--uno-blue)",
+        "uno-green": "var(--uno-green)",
+        "uno-yellow": "var(--uno-yellow)",
+        "uno-purple": "var(--uno-purple)",
+        coral: "var(--coral)",
+        "dark-bg": "var(--dark-bg)",
+        "medium-bg": "var(--medium-bg)",
+        "light-bg": "var(--light-bg)",
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
