@@ -1,0 +1,59 @@
+Build a full-stack multiplayer UNO-style card game with the following features:
+
+🃏 Game Logic:
+1. It should be a **classic UNO game** with standard rules:
+   - Match cards by color or number
+   - Include all action cards: Skip, Reverse, Draw Two, Wild, Draw Four
+   - Turn-based logic with direction control (clockwise or counterclockwise)
+2. Maximum **4 players** per room
+3. Game state should be **synchronized in real time** using `socket.io`
+4. If the game has **already started**, new users **cannot join** as players but can join as **spectators**
+
+👥 Authentication & Access:
+1. No account or sign-up is required
+2. On entering the game, ask the user only for a **nickname**
+3. Players can **join existing game rooms** in any of the following ways:
+   - By entering a room code
+   - By uploading a QR code image that contains the room link or token
+   - By scanning a QR code with their phone and opening the embedded link
+4. Players can **create a new game room** from the main page
+
+🏠 Room & Player Behavior:
+1. If the player **joins a room before the game has started**:
+   - Show the full room with **4 player slots**
+   - Allow the player to click an **empty slot** to join the game
+2. If the player joins **after the game has started**:
+   - Enter the room as a **spectator**
+   - Allow spectators to **watch the game in real-time**
+   - Spectators can only **send animated emojis**, but **not interact with gameplay**
+3. The **host (room creator)** can:
+   - See who joined
+   - **Kick/remove** any player before the game starts
+   - Click "Start Game" to begin the match
+
+🎨 UI Layout:
+1. Match the layout of a typical UNO game:
+   - Center area with the current card pile and direction indicator
+   - Four player areas (top, bottom, left, right) showing cards and avatars
+   - The user sees their own hand (actual cards), but other players' hands only show card backs
+2. Each player area should show:
+   - Nickname
+   - Avatar (default image or emoji)
+3. Include chat/emojis panel for interaction
+4. Add a timer display if a player's turn is delayed
+5. Create a lobby/home screen to:
+   - Enter nickname
+   - Create or join a room
+   - Upload or scan a QR code
+
+⚙️ Tech Stack Suggestions (optional):
+- Frontend: HTML + CSS or Tailwind + Vanilla JS or React
+- Backend: Node.js + Express
+- Real-time: `socket.io`
+- QR code: `qrcode` + `jsonwebtoken` (for token-based room links)
+- Database (optional): Replit DB or Supabase for storing rooms & player states
+
+🎯 Deployment:
+- Game should be hosted and playable directly from Replit with live multiplayer functionality.
+
+Please generate all necessary files (frontend, backend, and socket logic) to run the game fully on Replit.
