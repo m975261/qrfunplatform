@@ -366,16 +366,16 @@ export default function Game() {
           minHeight: '400px'
         }}>
           
-          {/* Game Direction Indicator - Near 12 o'clock position */}
+          {/* Game Direction Indicator - Near 12 o'clock position with curved arrows */}
           {gameState?.room?.status === 'playing' && (
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 pointer-events-auto">
               <div className="bg-purple-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-purple-500 flex items-center space-x-2">
                 <span>Game Direction</span>
-                <div className="flex items-center">
+                <div className="flex items-center text-lg">
                   {gameState?.room?.direction === 'clockwise' ? (
-                    <ArrowRight className="w-4 h-4 text-white" />
+                    <span className="text-white font-bold">↻</span>
                   ) : (
-                    <ArrowLeft className="w-4 h-4 text-white" />
+                    <span className="text-white font-bold">↺</span>
                   )}
                 </div>
               </div>
