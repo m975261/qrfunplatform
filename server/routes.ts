@@ -887,7 +887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log('Final rankings:', rankings.map(p => `${p.nickname}: ${p.finishPosition}`));
         
-        broadcastToRoom(connection.roomId, {
+        const gameEndMessage = {
           type: 'game_end',
           winner: player.nickname,
           rankings: rankings.map(p => ({
@@ -895,7 +895,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             position: p.finishPosition || (p.hasLeft ? 'Left' : 'Last'),
             hasLeft: p.hasLeft || false
           }))
-        });
+        };
+        
+        console.log('🏆 Broadcasting game_end message:', gameEndMessage);
+        console.log('🏆 Active connections for room:', connections.filter(c => c.roomId === connection.roomId).length);
+        
+        broadcastToRoom(connection.roomId, gameEndMessage);
       } else {
         // Continue game with remaining players
         console.log(`${player.nickname} finished in position ${finishedCount + 1}, game continues`);
@@ -1478,11 +1483,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   function broadcastToRoom(roomId: string, message: any) {
+    let sentCount = 0;
     connections.forEach(connection => {
       if (connection.roomId === roomId && connection.ws.readyState === WebSocket.OPEN) {
         connection.ws.send(JSON.stringify(message));
+        sentCount++;
       }
     });
+    if (message.type === 'game_end') {
+      console.log(`🏆 Sent game_end message to ${sentCount} connections in room ${roomId}`);
+    }
   }
 
   return httpServer;
