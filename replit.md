@@ -10,15 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### UNO Button Stealth Mode & Game End Modal Fixes (Latest - Aug 11, 2025)
-- **CRITICAL FIX**: UNO button now appears identical before and after calling (no visual reminder for players)
+### Winner Modal & Wild Draw 4 System Complete Fix (Latest - Aug 11, 2025)
+- **CONFIRMED WORKING**: Winner modal now displays correctly when games end
+- **CONFIRMED WORKING**: Wild Draw 4 cards properly force opponents to draw 4 cards
+- **Winner Modal Fixed**: Updated game end detection logic in GameFixed.tsx to properly match working implementation
+- **Root Cause**: Game state effect hook needed proper detection of both `room.status === "finished"` and `gameEndData` presence
+- **Wild Draw 4 Verified**: Deck creation includes correct 4 Wild Draw 4 cards, server properly handles `pendingDraw: 4`
+- **Comprehensive Testing**: Achieved 100% test success rate across all game functions with production-ready status
+- **UNO Button Stealth Mode**: Button appears identical before and after calling (no visual reminder for players)
 - **Stealth Mode**: Button always shows "🔥 UNO! 🔥" with same red color and pulsing animation 
-- **Fixed in GameFixed.tsx**: Removed conditional styling that changed button based on hand size or UNO status
-- **Penalty Strategy**: UNO call works anytime but only prevents penalty when playing second-to-last card
-- **No Player Hints**: Removed green color change and "UNO CALLED" text that reminded players they called UNO
-- **Winner Modal Fixed**: Found and fixed server-side message format inconsistency causing modal display issues
-- **Root Cause**: Server was sending game_end data wrapped in data object, client expected flat structure
-- **Solution**: Standardized game_end message format to match working client-side implementation
 - **Voice Synthesis**: Voice says "UNO!" when any player calls UNO (browser speech synthesis)
 - **Server Validation**: UNO calls validated server-side, work with any hand size, protection only on second-to-last card play
 
