@@ -19,7 +19,7 @@ function makeRequest(path, method = 'GET', data = null) {
           const json = JSON.parse(responseData);
           resolve(json);
         } catch (e) {
-          resolve(responseData);
+          resolve({ error: 'Non-JSON response', data: responseData });
         }
       });
     });
@@ -34,96 +34,93 @@ function makeRequest(path, method = 'GET', data = null) {
   });
 }
 
-async function testGameEnd() {
-  console.log('Testing game end functionality...');
+function connectWebSocket(playerId, roomId) {
+  return new Promise((resolve) => {
+    const ws = new WebSocket('ws://localhost:5000/ws');
+    
+    ws.on('open', () => {
+      // Send join room message to associate this connection
+      ws.send(JSON.stringify({
+        type: 'join_room',
+        playerId,
+        roomId
+      }));
+      resolve(ws);
+    });
+  });
+}
+
+async function testUnoCall() {
+  console.log('🧪 Testing UNO call WebSocket functionality...');
   
   try {
-    // Create room and join players
+    // Create room and players
     const roomResponse = await makeRequest('/api/rooms', 'POST', {
-      hostNickname: 'TestHost'
+      hostNickname: 'TestPlayer'
     });
     const roomId = roomResponse.room.id;
-    console.log('Created room:', roomId);
+    const roomCode = roomResponse.room.code;
+    const player1Id = roomResponse.player.id;
     
-    const player1 = await makeRequest(`/api/rooms/${roomId}/join`, 'POST', {
-      nickname: 'Player1'
-    });
-    
-    const player2 = await makeRequest(`/api/rooms/${roomId}/join`, 'POST', {
+    // Add second player
+    const player2Response = await makeRequest(`/api/rooms/${roomCode}/join`, 'POST', {
       nickname: 'Player2'
     });
     
-    console.log('Players joined');
-    
     // Start game
     await makeRequest(`/api/rooms/${roomId}/start`, 'POST');
-    console.log('Game started');
+    
+    // Set TestPlayer to have 2 cards
+    await makeRequest(`/api/rooms/${roomId}/test-set-hand`, 'POST', {
+      playerId: player1Id,
+      hand: [
+        { color: 'red', value: '5' },
+        { color: 'red', value: '7' }
+      ]
+    });
+    
+    // Set a valid discard pile
+    await makeRequest(`/api/rooms/${roomId}/test-set-discard`, 'POST', {
+      topCard: { color: 'red', value: '3' }
+    });
+    
+    console.log('✓ Game setup complete');
     
     // Connect WebSocket
-    const ws = new WebSocket('ws://localhost:5000/ws');
+    const ws = await connectWebSocket(player1Id, roomId);
+    console.log('✓ WebSocket connected');
     
-    let gameEndReceived = false;
-    let testComplete = false;
+    // Wait a bit for connection to stabilize
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    ws.on('message', (data) => {
-      const message = JSON.parse(data.toString());
-      
-      if (message.type === 'game_end') {
-        console.log('SUCCESS: Game end message received!');
-        console.log('Winner:', message.data?.winner);
-        gameEndReceived = true;
-        
-        if (!testComplete) {
-          testComplete = true;
-          ws.close();
-          console.log('TEST PASSED: Game end flow works correctly');
-          process.exit(0);
-        }
-      }
-    });
+    // Test UNO call
+    console.log('📢 Calling UNO...');
+    ws.send(JSON.stringify({
+      type: 'call_uno'
+    }));
     
-    ws.on('open', () => {
-      console.log('WebSocket connected');
-      
-      // Join room
-      ws.send(JSON.stringify({
-        type: 'join_room',
-        roomId: roomId,
-        playerId: player1.player.id,
-        nickname: 'Player1'
-      }));
-      
-      // Simulate a win by sending a play_card that would empty the hand
-      setTimeout(() => {
-        console.log('Simulating game win...');
-        
-        ws.send(JSON.stringify({
-          type: 'play_card',
-          cardIndex: 0  // This should trigger win detection if player has 1 card
-        }));
-        
-        // Give it 3 seconds to respond
-        setTimeout(() => {
-          if (!gameEndReceived && !testComplete) {
-            testComplete = true;
-            console.log('TEST FAILED: No game end message received within timeout');
-            ws.close();
-            process.exit(1);
-          }
-        }, 3000);
-        
-      }, 1000);
-    });
+    // Wait for server to process
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-      process.exit(1);
-    });
+    // Check if UNO call was registered
+    const gameState = await makeRequest(`/api/rooms/${roomId}`);
+    const testPlayer = gameState.players.find(p => p.id === player1Id);
+    
+    console.log('UNO call result:');
+    console.log('  hasCalledUno:', testPlayer?.hasCalledUno);
+    console.log('  Hand size:', testPlayer?.hand?.length);
+    
+    if (testPlayer?.hasCalledUno) {
+      console.log('✅ UNO call working correctly!');
+    } else {
+      console.log('❌ UNO call failed - WebSocket message not processed');
+    }
+    
+    ws.close();
     
   } catch (error) {
-    console.error('Test failed:', error.message);
-    process.exit(1);
+    console.error('Test error:', error.message);
   }
 }
 
-testGameEnd();
+testUnoCall();

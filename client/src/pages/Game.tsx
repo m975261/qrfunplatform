@@ -338,7 +338,7 @@ export default function Game() {
             </div>
 
             {/* UNO Button - Outside Circle */}
-            {currentPlayer?.hand?.length === 2 && isMyTurn && (
+            {currentPlayer?.hand?.length === 2 && !currentPlayer.hasCalledUno && (
               <div className="absolute -bottom-12 sm:-bottom-16 md:-bottom-20 left-1/2 transform -translate-x-1/2">
                 <Button
                   onClick={handleUnoCall}
