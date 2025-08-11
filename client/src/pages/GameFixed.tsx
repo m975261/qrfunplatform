@@ -193,7 +193,8 @@ export default function Game() {
                 localStorage.removeItem("currentRoomId");
                 localStorage.removeItem("playerId");
                 localStorage.removeItem("playerNickname");
-                window.location.replace("/");
+                // Use ?fresh=true to ensure we don't get redirected back
+                window.location.replace("/?fresh=true");
               }}
             >
               Home
@@ -215,8 +216,8 @@ export default function Game() {
                   localStorage.removeItem("currentRoomId");
                   localStorage.removeItem("playerId");
                   localStorage.removeItem("playerNickname");
-                  // Force navigation to main page
-                  window.location.replace("/");
+                  // Force navigation to main page with fresh start
+                  window.location.replace("/?fresh=true");
                 }
               }}
             >

@@ -28,17 +28,24 @@ export default function Home() {
     const existingNickname = localStorage.getItem("playerNickname");
     const existingRoomId = localStorage.getItem("currentRoomId");
     
-    // If user has an existing session but came from a shared link, clear old session first
+    // Check URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room') || urlParams.get('code');
+    const freshStart = urlParams.get('fresh') === 'true'; // Allow bypassing auto-redirect
     
-    if (roomFromUrl && existingPlayerId && existingNickname && existingRoomId) {
-      // Clear old session when accessing via shared link
+    // If user explicitly wants a fresh start or came from a shared link, clear old session first
+    if ((roomFromUrl && existingPlayerId && existingNickname && existingRoomId) || freshStart) {
       localStorage.removeItem("playerId");
       localStorage.removeItem("playerNickname"); 
       localStorage.removeItem("currentRoomId");
-      console.log("Cleared old session due to shared link access");
-    } else if (existingPlayerId && existingNickname && existingRoomId) {
+      console.log("Cleared old session due to shared link access or fresh start request");
+      
+      // If fresh start was requested, clear the URL parameter
+      if (freshStart) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return; // Stay on home page
+      }
+    } else if (existingPlayerId && existingNickname && existingRoomId && !freshStart) {
       console.log("Found existing session, redirecting to room:", { existingPlayerId, existingNickname, existingRoomId });
       setLocation(`/room/${existingRoomId}`);
       return;
