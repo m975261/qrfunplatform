@@ -90,6 +90,16 @@ export function useSocket(autoConnect: boolean = true) {
           case 'uno_called_success':
             // Show success feedback when UNO is called
             console.log("UNO successfully called by:", message.player);
+            
+            // Play voice saying "UNO"
+            if ('speechSynthesis' in window) {
+              const utterance = new SpeechSynthesisUtterance('UNO!');
+              utterance.rate = 1.2;
+              utterance.pitch = 1.3;
+              utterance.volume = 0.8;
+              window.speechSynthesis.speak(utterance);
+            }
+            
             // Set UNO message for animated display
             setGameState((prev: any) => ({
               ...prev,

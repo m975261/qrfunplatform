@@ -36,8 +36,10 @@ Preferred communication style: Simple, everyday language.
 - **Functionality**: UNO call works anytime but only prevents penalty when playing second-to-last card
 - **Animated Messages**: Added funny animated UNO messages visible to all players when someone calls UNO
 - **Message Display**: Large bouncing message "🔥 PlayerName says UNO! 🔥" appears for 3 seconds
-- **WebSocket Enhancement**: Broadcasts `uno_called_success` message to all players for synchronized animation
-- **Complete Workflow**: Call UNO anytime → Play second-to-last card → No penalty (if UNO was called)
+- **Voice Synthesis**: Added voice that says "UNO!" when any player calls UNO (using browser's speech synthesis)
+- **Audio Settings**: Voice configured with enhanced rate (1.2x), higher pitch (1.3x), and moderate volume (0.8)
+- **WebSocket Enhancement**: Broadcasts `uno_called_success` message to all players for synchronized animation and audio
+- **Complete Workflow**: Call UNO anytime → Voice says "UNO!" + Animation → Play second-to-last card → No penalty
 
 ### UNO Penalty System Completely Fixed (Aug 11, 2025)
 - **RESOLVED**: Fixed critical UNO penalty bug where players received 2-card penalties even after calling UNO correctly

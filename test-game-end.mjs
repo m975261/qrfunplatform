@@ -88,9 +88,9 @@ async function testUnoCall() {
     console.log('✓ WebSocket connected');
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    console.log('📢 Test 1: Calling UNO with 5 cards...');
+    console.log('📢 Test 1: Calling UNO with 5 cards (should trigger voice + animation)...');
     ws.send(JSON.stringify({ type: 'call_uno' }));
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait longer for voice processing
     
     let gameState = await makeRequest(`/api/rooms/${roomId}`);
     let testPlayer = gameState.players.find(p => p.id === player1Id);
