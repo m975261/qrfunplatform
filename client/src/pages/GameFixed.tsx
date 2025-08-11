@@ -73,37 +73,21 @@ export default function Game() {
         isSafari: /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
       });
       
-      // Force modal display with enhanced Safari handling
+      // Always set game end data and show modal
       if (gameState?.gameEndData) {
         setGameEndData(gameState.gameEndData);
       }
       setShowGameEnd(true);
       
-      // Safari iOS specific fix - multiple attempts to ensure modal appears
-      const isSafariMobile = /iPhone|iPad/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent);
-      
-      if (isSafariMobile) {
-        console.log("🍎 Safari iOS detected - applying enhanced modal fixes");
-        
-        // Multiple forced re-renders for Safari
-        setTimeout(() => setShowGameEnd(true), 50);
-        setTimeout(() => setShowGameEnd(true), 150);
-        setTimeout(() => setShowGameEnd(true), 300);
-        
-        // Emergency Safari fallback - show alert if modal still not visible
-        setTimeout(() => {
-          const modalElement = document.querySelector('[data-testid="game-end-modal"]');
-          if (!modalElement || getComputedStyle(modalElement).display === 'none') {
-            console.log("🚨 Safari modal fallback triggered");
-            const winner = gameState?.gameEndData?.winner || "Someone";
-            alert(`🏆 GAME OVER!\n\n${winner} wins!\n\nThe winner modal should appear now.`);
-            setShowGameEnd(true);
-          }
-        }, 1000);
-      } else {
-        // Standard browsers
-        setTimeout(() => setShowGameEnd(true), 100);
-      }
+      // Force a re-render to ensure modal appears on all browsers including Safari
+      setTimeout(() => {
+        console.log("🏆 Forcing modal re-render, current state:", {
+          showGameEnd: true,
+          gameEndData: gameState?.gameEndData,
+          modalShouldRender: !!(gameState?.gameEndData)
+        });
+        setShowGameEnd(true);
+      }, 100);
     }
     
     if (gameState?.needsContinue) {

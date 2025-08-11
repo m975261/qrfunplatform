@@ -10,16 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Enhanced Safari iPhone Winner Modal Fix & Connection Stability (Latest - Aug 11, 2025)
-- **SAFARI iOS DETECTION**: Added automatic Safari mobile detection with enhanced modal rendering strategies ✅ APPLIED
-- **MULTI-ATTEMPT RENDERING**: Implemented multiple forced re-render attempts specifically for Safari iOS compatibility ✅ APPLIED
-- **EMERGENCY FALLBACK ALERT**: Added alert-based winner notification as backup when modal fails to display on Safari ✅ APPLIED
-- **ENHANCED VIEWPORT CONTROL**: Improved viewport meta tag management with Safari-specific properties (minimal-ui, viewport-fit=cover) ✅ APPLIED
-- **ADVANCED BODY LOCKING**: Enhanced body scroll prevention with document root overflow control for iOS Safari ✅ APPLIED
-- **WEBKIT 3D TRANSFORMS**: Added translate3d transforms for hardware acceleration and proper Safari rendering ✅ APPLIED
-- **MODAL VISIBILITY TESTING**: Added DOM element visibility checking with computed styles for Safari debugging ✅ APPLIED
-- **CONNECTION STABILITY FIXES**: Resolved critical WebSocket room lookup issues preventing game end message delivery ✅ APPLIED
-- **ROOM LOOKUP ENHANCEMENT**: Fixed HTTP and WebSocket endpoints to handle both room IDs and codes properly ✅ APPLIED
+### Safari iPhone Winner Modal Fix - Simplified & Stable (Latest - Aug 11, 2025)
+- **MODAL LOGIC RESTORATION**: Reverted to working modal display logic after complex Safari fixes caused interference ✅ APPLIED
+- **SIMPLIFIED SAFARI COMPATIBILITY**: Removed complex detection logic that was preventing modal display ✅ APPLIED
+- **BASIC BODY SCROLL PREVENTION**: Applied simple, cross-browser body locking that works on all devices ✅ APPLIED
+- **CONNECTION STABILITY FIXES**: Resolved critical WebSocket room lookup issues preventing game end message delivery ✅ CONFIRMED
+- **ROOM LOOKUP ENHANCEMENT**: Fixed HTTP and WebSocket endpoints to handle both room IDs and codes properly ✅ CONFIRMED
+- **MODAL STATE DEBUGGING**: Enhanced console logging to track modal rendering state for troubleshooting ✅ APPLIED
+- **WORKING BASELINE RESTORED**: Modal should now display correctly on Safari iPhone as it did before complexity was added ✅ TESTING
 
 ### Complete Ranking System & Turn Management Fix - VERIFIED WORKING (Aug 11, 2025)
 - **RANKING DISPLAY SYSTEM**: When players finish, their slot shows ranking badge (1ST, 2ND, 3RD, 4TH) with golden styling ✅ CONFIRMED

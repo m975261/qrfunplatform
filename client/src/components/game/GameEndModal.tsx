@@ -25,83 +25,46 @@ interface GameEndModalProps {
 }
 
 export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLobby }: GameEndModalProps) {
-  // Enhanced Safari iOS modal compatibility
+  // Safari iOS compatibility with simpler approach
   useEffect(() => {
-    console.log("🏆 GameEndModal mounted - applying Safari fixes");
+    console.log("🏆 GameEndModal mounted for winner:", winner);
     
-    // Force viewport meta tag for iOS Safari
-    let viewportMeta = document.querySelector('meta[name="viewport"]');
-    if (!viewportMeta) {
-      viewportMeta = document.createElement('meta');
-      viewportMeta.setAttribute('name', 'viewport');
-      document.head.appendChild(viewportMeta);
-    }
-    const originalViewport = viewportMeta.getAttribute('content');
-    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, minimal-ui');
-    
-    // Store original body styles
+    // Basic viewport and scroll prevention that works across all browsers
     const originalBodyOverflow = document.body.style.overflow;
     const originalBodyPosition = document.body.style.position;
-    const originalBodyWidth = document.body.style.width;
-    const originalBodyHeight = document.body.style.height;
-    const originalDocumentOverflow = document.documentElement.style.overflow;
     
-    // Apply Safari-specific body locking
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
-    document.body.style.width = '100vw';
-    document.body.style.height = '100vh';
-    document.body.style.top = '0';
-    document.body.style.left = '0';
-    document.documentElement.style.overflow = 'hidden';
-    
-    // Force reflow to ensure styles are applied
-    document.body.offsetHeight;
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
     
     return () => {
-      console.log("🏆 GameEndModal unmounting - restoring styles");
+      console.log("🏆 GameEndModal unmounting");
       document.body.style.overflow = originalBodyOverflow;
       document.body.style.position = originalBodyPosition;
-      document.body.style.width = originalBodyWidth;
-      document.body.style.height = originalBodyHeight;
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.documentElement.style.overflow = originalDocumentOverflow;
-      
-      if (originalViewport) {
-        viewportMeta?.setAttribute('content', originalViewport);
-      }
+      document.body.style.width = '';
+      document.body.style.height = '';
     };
-  }, []);
+  }, [winner]);
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
       style={{ 
-        position: 'fixed !important',
+        position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 99999,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        display: 'flex !important',
+        zIndex: 9999,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '16px',
-        boxSizing: 'border-box',
-        overflow: 'auto',
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-        WebkitTransform: 'translate3d(0, 0, 0)',
-        transform: 'translate3d(0, 0, 0)',
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'none'
+        padding: '20px',
+        boxSizing: 'border-box'
       }}
       onClick={(e) => e.stopPropagation()}
-      onTouchMove={(e) => e.preventDefault()}
       data-testid="game-end-modal"
     >
       <Card 
