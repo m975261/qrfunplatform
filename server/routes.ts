@@ -54,45 +54,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let domain;
       let roomLink;
       
-      // iOS Camera app URL recognition workaround
-      // Some iOS versions don't recognize certain domain patterns as URLs
+      // iOS Camera app URL recognition - Force HTTPS
       if (process.env.REPL_SLUG && process.env.REPLIT_DEPLOYMENT_ID) {
         domain = `${process.env.REPL_SLUG}.replit.app`;
       } else if (process.env.REPLIT_DOMAINS) {
-        domain = process.env.REPLIT_DOMAINS.split(',')[0];
+        domain = process.env.REPLIT_DOMAINS.split(',')[0].replace(/^https?:\/\//, '');
       } else {
         domain = req.get('host') || 'localhost:5000';
       }
       
-      // Create URL with explicit formatting for iOS recognition
-      roomLink = `https://${domain}/game?code=${code}`;
+      // Create URL with HTTPS for iOS recognition
+      roomLink = `https://${domain}?room=${code}`;
       
-      // Add URL scheme prefix that iOS definitely recognizes
-      if (!roomLink.startsWith('https://')) {
-        roomLink = 'https://' + roomLink.replace(/^https?:\/\//, '');
-      }
-      
-      // Double-check HTTPS prefix is present and add explicit URL formatting for iOS
-      if (!roomLink.startsWith('https://')) {
-        roomLink = 'https://' + roomLink.replace(/^https?:\/\//, '');
-      }
-      
-      // Ensure URL is properly formatted for iOS Safari recognition
+      // Clean up any double slashes or malformed URLs
       roomLink = roomLink.replace(/([^:]\/)\/+/g, "$1");
-      
-      // Add explicit web scheme for maximum iOS compatibility  
-      if (!roomLink.includes('://')) {
-        roomLink = 'https://' + roomLink;
-      }
-      
-      // iOS Camera app fix: ensure standard URL format
-      roomLink = roomLink.replace(/([^:])(\/\/+)/g, '$1//');
-      
-      // Alternative approach: Create a more iOS-friendly URL format
-      if (roomLink.includes('replit.app')) {
-        // Ensure the URL follows a pattern iOS Camera recognizes as a web link
-        roomLink = roomLink.replace(/\?\s*/, '?').replace(/\s+/g, '');
-      }
       
       console.log('Generated QR code URL:', roomLink);
       console.log('QR code URL length:', roomLink.length);
@@ -171,9 +146,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const players = await storage.getPlayersByRoom(room.id);
       const messages = await storage.getMessagesByRoom(room.id, 20);
 
-      // Generate QR code for sharing
-      const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] || `${req.protocol}://${req.get('host')}`;
+      // Generate QR code for sharing - Force HTTPS for iOS compatibility
+      let baseUrl;
+      if (process.env.REPLIT_DOMAINS) {
+        const domain = process.env.REPLIT_DOMAINS.split(',')[0];
+        baseUrl = `https://${domain.replace(/^https?:\/\//, '')}`;
+      } else {
+        const host = req.get('host') || 'localhost:5000';
+        baseUrl = `https://${host}`;
+      }
       const roomLink = `${baseUrl}?room=${room.code}`;
+      console.log('QR code URL (room state):', roomLink);
       const qrCode = await QRCode.toDataURL(roomLink);
 
       res.json({ room, players, messages, qrCode });
