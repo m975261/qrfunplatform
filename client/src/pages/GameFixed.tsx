@@ -62,38 +62,30 @@ export default function Game() {
       currentPlayerId: playerId
     });
     
-    // Enhanced game end detection with Safari-specific handling
-    if (gameState?.room?.status === "finished" || gameState?.gameEndData) {
-      console.log("🏆 Game ended - forcing winner modal display with Safari compatibility", {
-        status: gameState?.room?.status,
+    // SIMPLIFIED game end detection - trigger on any game end data
+    if (gameState?.gameEndData) {
+      console.log("🏆 GAME END DETECTED - Showing winner modal immediately", {
         winner: gameState?.gameEndData?.winner,
         rankings: gameState?.gameEndData?.rankings,
-        playerId,
-        userAgent: navigator.userAgent,
-        isSafari: /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
+        timestamp: gameState?.gameEndData?.timestamp,
+        browser: navigator.userAgent
       });
       
-      // Always set game end data and show modal
-      if (gameState?.gameEndData) {
-        setGameEndData(gameState.gameEndData);
-      }
+      // Immediately set the data and show modal
+      setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
       
-      // Force a re-render to ensure modal appears on all browsers including Safari
-      setTimeout(() => {
-        console.log("🏆 Forcing modal re-render, current state:", {
-          showGameEnd: true,
-          gameEndData: gameState?.gameEndData,
-          modalShouldRender: !!(gameState?.gameEndData)
-        });
+      // Additional safety net for Safari/mobile browsers
+      requestAnimationFrame(() => {
         setShowGameEnd(true);
-      }, 100);
+        console.log("🏆 Modal forced to show via requestAnimationFrame");
+      });
     }
     
     if (gameState?.needsContinue) {
       setShowContinuePrompt(true);
     }
-  }, [gameState?.room?.status, gameState?.gameEndData, gameState?.needsContinue, playerId]);
+  }, [gameState?.gameEndData, gameState?.needsContinue, playerId]);
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -675,8 +667,8 @@ export default function Game() {
         />
       )}
 
-      {/* Game End Modal - Force display for all players including kicked/rejoined */}
-      {(showGameEnd || gameState?.room?.status === 'finished') && (gameEndData || gameState?.gameEndData) && (
+      {/* Game End Modal - Simplified condition to ensure it always shows */}
+      {showGameEnd && (gameEndData || gameState?.gameEndData) && (
         <div 
           className="fixed inset-0 z-[100]"
           style={{
