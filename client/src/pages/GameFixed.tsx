@@ -88,6 +88,9 @@ export default function Game() {
       
       console.log("🏆 Creating universal overlay for all browsers");
       
+      // Show immediate alert first - this MUST work on iPhone
+      alert(`🏆 ${winner} WINS!\n\nFinal Rankings:\n${rankings.map((player, index) => `${index + 1}. ${player.nickname}`).join('\n')}\n\nTap OK to continue`);
+      
       // Create simple DOM overlay
       const overlay = document.createElement('div');
       overlay.id = 'universal-winner-overlay';
@@ -481,17 +484,8 @@ export default function Game() {
           minHeight: '400px'
         }}>
           
-          {/* Game Direction Indicator - Always visible during games for debugging */}
-          {(() => {
-            console.log("🧭 DIRECTION BUTTON DEBUG:", {
-              gameState: !!gameState,
-              room: !!gameState?.room,
-              status: gameState?.room?.status,
-              direction: gameState?.room?.direction,
-              shouldShow: gameState && gameState.room && gameState.room.status === 'playing'
-            });
-            return gameState && gameState.room && gameState.room.status === 'playing';
-          })() && (
+          {/* Game Direction Indicator - Always show if game exists */}
+          {gameState && gameState.room && (
             <div className="absolute z-20 pointer-events-none" style={{
               top: 'max(-4rem, -12vh)',
               left: '50%',
@@ -499,7 +493,8 @@ export default function Game() {
               minHeight: '32px'
             }}>
               <div className="bg-purple-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-purple-500 flex items-center space-x-2">
-                <span>Game Direction</span>
+                <span>Status: {gameState?.room?.status || 'none'}</span>
+                <span>Dir: {gameState?.room?.direction || 'none'}</span>
                 <div className="flex items-center text-lg">
                   {gameState?.room?.direction === 'clockwise' ? (
                     <span className="text-white font-bold">↻</span>
