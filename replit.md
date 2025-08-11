@@ -10,15 +10,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Winner Modal & Wild Draw 4 System Complete Fix (Latest - Aug 11, 2025)
+### Host Exit Redirect & Complete System Fixes (Latest - Aug 11, 2025)
+- **NEW FEATURE**: Host exit redirect during play again flow - all players automatically redirected to main page when host leaves
+- **Host Exit Detection**: Server detects when host disconnects and handles room cleanup appropriately
+- **Auto-Redirect Logic**: When host leaves room with "finished" status (play again scenario), all players get `host_left_redirect` message
+- **Client-Side Handling**: useSocket hook processes redirect message, cleans localStorage, shows alert, and redirects to main page
+- **Room Cleanup**: Server automatically deletes abandoned rooms after host departure to prevent orphaned rooms
+- **Host Transfer**: For non-finished games, host privileges automatically transfer to next active player
 - **CONFIRMED WORKING**: Winner modal now displays correctly when games end
 - **CONFIRMED WORKING**: Wild Draw 4 cards properly force opponents to draw 4 cards
 - **Winner Modal Fixed**: Updated game end detection logic in GameFixed.tsx to properly match working implementation
-- **Root Cause**: Game state effect hook needed proper detection of both `room.status === "finished"` and `gameEndData` presence
 - **Wild Draw 4 Verified**: Deck creation includes correct 4 Wild Draw 4 cards, server properly handles `pendingDraw: 4`
 - **Comprehensive Testing**: Achieved 100% test success rate across all game functions with production-ready status
 - **UNO Button Stealth Mode**: Button appears identical before and after calling (no visual reminder for players)
-- **Stealth Mode**: Button always shows "🔥 UNO! 🔥" with same red color and pulsing animation 
 - **Voice Synthesis**: Voice says "UNO!" when any player calls UNO (browser speech synthesis)
 - **Server Validation**: UNO calls validated server-side, work with any hand size, protection only on second-to-last card play
 

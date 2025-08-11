@@ -161,6 +161,20 @@ export function useSocket(autoConnect: boolean = true) {
               penaltyAnimation: null
             }));
             break;
+          case 'host_left_redirect':
+            // Host left during play again flow - redirect to main page
+            console.log("Host left game:", message.message);
+            localStorage.removeItem("currentRoomId");
+            localStorage.removeItem("playerId");
+            // Show brief message before redirect
+            alert(message.message || "Host has left the game. Redirecting to main page...");
+            window.location.href = "/";
+            break;
+          case 'host_changed':
+            // New host assigned
+            console.log("Host changed:", message.message);
+            console.log("New host:", message.newHost);
+            break;
           case 'error':
             // Handle server errors (like room not found)
             console.log("WebSocket error:", message.message);

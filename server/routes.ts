@@ -1454,6 +1454,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       socketId: null
     });
     
+    // Check if the disconnected player is the host
+    const isHost = room.hostId === playerId;
+    
+    if (isHost) {
+      console.log(`Host ${disconnectedPlayer.nickname} disconnected from room ${roomId}`);
+      
+      // If the room is finished (after game end, during play again flow), redirect all players
+      if (room.status === "finished") {
+        console.log('Host left during play again flow - redirecting all players to main page');
+        broadcastToRoom(roomId, {
+          type: 'host_left_redirect',
+          message: 'Host has left the game. Redirecting to main page...'
+        });
+        
+        // Clean up the room after a delay to allow the message to be sent
+        setTimeout(async () => {
+          try {
+            await storage.deleteRoom(roomId);
+            console.log(`Room ${roomId} cleaned up after host departure`);
+          } catch (error) {
+            console.error('Failed to clean up room:', error);
+          }
+        }, 2000);
+        
+        return; // Exit early, don't proceed with normal disconnect handling
+      }
+      
+      // For other game states, transfer host to another player
+      const activePlayers = players.filter(p => p.id !== playerId && !p.isSpectator);
+      if (activePlayers.length > 0) {
+        const newHost = activePlayers[0];
+        await storage.updateRoom(roomId, { hostId: newHost.id });
+        console.log(`Host transferred from ${disconnectedPlayer.nickname} to ${newHost.nickname}`);
+        
+        broadcastToRoom(roomId, {
+          type: 'host_changed',
+          newHost: newHost.nickname,
+          message: `${newHost.nickname} is now the host`
+        });
+      }
+    }
+    
     // If game is in progress and player is not a spectator, pause the game
     if (room.status === "playing" && !disconnectedPlayer.isSpectator) {
       await storage.updateRoom(roomId, { 
