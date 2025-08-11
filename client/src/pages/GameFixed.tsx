@@ -58,27 +58,36 @@ export default function Game() {
       hasGameEndData: !!gameState?.gameEndData,
       gameEndData: gameState?.gameEndData,
       showGameEnd,
-      needsContinue: gameState?.needsContinue
+      needsContinue: gameState?.needsContinue,
+      currentPlayerId: playerId
     });
     
     // Enhanced game end detection - handle both finished status and gameEndData
+    // Force modal display regardless of player connection status
     if (gameState?.room?.status === "finished" || gameState?.gameEndData) {
-      console.log("🏆 Game ended - showing winner modal", {
+      console.log("🏆 Game ended - forcing winner modal display", {
         status: gameState?.room?.status,
         winner: gameState?.gameEndData?.winner,
-        rankings: gameState?.gameEndData?.rankings
+        rankings: gameState?.gameEndData?.rankings,
+        playerId
       });
       
+      // Always set game end data and show modal
       if (gameState?.gameEndData) {
         setGameEndData(gameState.gameEndData);
       }
       setShowGameEnd(true);
+      
+      // Force a re-render to ensure modal appears
+      setTimeout(() => {
+        setShowGameEnd(true);
+      }, 100);
     }
     
     if (gameState?.needsContinue) {
       setShowContinuePrompt(true);
     }
-  }, [gameState?.room?.status, gameState?.gameEndData, gameState?.needsContinue]);
+  }, [gameState?.room?.status, gameState?.gameEndData, gameState?.needsContinue, playerId]);
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -343,29 +352,7 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Direction Indicator - Viewport responsive positioning */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
-        paddingBottom: 'max(20vh, 160px)',
-        paddingTop: 'max(8vh, 64px)'
-      }}>
-        <div className="relative">
-          <div className="absolute left-1/2 transform -translate-x-1/2 z-10" style={{
-            top: 'max(11rem, min(25vw, 25vh))'
-          }}>
-            <div className="bg-purple-600/90 rounded-full flex items-center justify-center shadow-lg border-2 border-purple-400"
-                 style={{
-                   width: 'max(2rem, min(6vw, 6vh))',
-                   height: 'max(2rem, min(6vw, 6vh))',
-                   minWidth: '32px',
-                   minHeight: '32px'
-                 }}>
-              <div className="text-white font-bold" style={{fontSize: 'min(1.25rem, 4vw)'}}>
-                {room.direction === "clockwise" ? "↻" : "↺"}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       {/* Player Avatars in Circular Layout - Fully viewport responsive */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
@@ -378,6 +365,22 @@ export default function Game() {
           minWidth: '320px',
           minHeight: '400px'
         }}>
+          
+          {/* Game Direction Indicator - Near 12 o'clock position */}
+          {gameState?.room?.status === 'playing' && (
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 pointer-events-auto">
+              <div className="bg-purple-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-purple-500 flex items-center space-x-2">
+                <span>Game Direction</span>
+                <div className="flex items-center">
+                  {gameState?.room?.direction === 'clockwise' ? (
+                    <ArrowRight className="w-4 h-4 text-white" />
+                  ) : (
+                    <ArrowLeft className="w-4 h-4 text-white" />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {/* 4 Fixed Avatar Positions */}
           {[0, 1, 2, 3].map((position) => {
             const player = getPlayerAtPosition(position);
@@ -655,34 +658,36 @@ export default function Game() {
         />
       )}
 
-      {/* Game End Modal - Enhanced detection for kicked/rejoined players */}
+      {/* Game End Modal - Force display for all players including kicked/rejoined */}
       {(showGameEnd || gameState?.room?.status === 'finished') && (gameEndData || gameState?.gameEndData) && (
-        <GameEndModal
-          winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
-          rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}
-          onPlayAgain={() => {
-            console.log('🔄 Play again clicked');
-            playAgain();
-            setShowGameEnd(false);
-            setGameEndData(null);
-            if (roomId) {
-              setTimeout(() => {
-                window.location.href = `/room/${roomId}`;
-              }, 500);
-            } else {
-              window.location.href = `/`;
-            }
-          }}
-          onBackToLobby={() => {
-            console.log('🏠 Back to lobby clicked');
-            setShowGameEnd(false);
-            setGameEndData(null);
-            localStorage.removeItem("currentRoomId");
-            localStorage.removeItem("playerId");
-            localStorage.removeItem("playerNickname");
-            window.location.href = "/";
-          }}
-        />
+        <div className="fixed inset-0 z-[100]">
+          <GameEndModal
+            winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
+            rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}
+            onPlayAgain={() => {
+              console.log('🔄 Play again clicked');
+              playAgain();
+              setShowGameEnd(false);
+              setGameEndData(null);
+              if (roomId) {
+                setTimeout(() => {
+                  window.location.href = `/room/${roomId}`;
+                }, 500);
+              } else {
+                window.location.href = `/`;
+              }
+            }}
+            onBackToLobby={() => {
+              console.log('🏠 Back to lobby clicked');
+              setShowGameEnd(false);
+              setGameEndData(null);
+              localStorage.removeItem("currentRoomId");
+              localStorage.removeItem("playerId");
+              localStorage.removeItem("playerNickname");
+              window.location.href = "/";
+            }}
+          />
+        </div>
       )}
       
 

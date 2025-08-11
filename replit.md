@@ -10,7 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### GUI Responsive Design & Draw Deck Enhancement (Latest - Aug 11, 2025)
+### Winner Modal & Game Direction Fixes (Latest - Aug 11, 2025)
+- **Winner Modal Fixed**: Enhanced game end detection to properly display winner message for all players including kicked/rejoined ones
+- **Force Modal Display**: Added timeout-based re-render and highest z-index to ensure modal always appears
+- **Game Direction Indicator**: Added purple badge near 12 o'clock position showing "Game Direction" with clockwise/counterclockwise arrows
+- **Card Count Repositioned**: Moved card count badges from bottom to left side of avatars to prevent name overlap
+- **Enhanced Debugging**: Added comprehensive logging for game end flow to track modal display issues
+- **Improved Modal Rendering**: Wrapped game end modal in fixed container with maximum z-index for visibility
+
+### GUI Responsive Design & Draw Deck Enhancement (Aug 11, 2025)
 - **Draw Deck Renamed**: Changed from "?" symbol to "Cards" text for better user clarity
 - **Compact Bottom Bar**: Reduced player hand area height by 40% to prevent screen overflow
 - **Better Element Positioning**: Moved draw pile further right to avoid overlaps with main card
