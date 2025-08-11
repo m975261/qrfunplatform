@@ -185,17 +185,38 @@ export default function Game() {
             </Button>
             
             <Button
+              variant="outline" 
+              size="sm"
+              className="bg-blue-900/50 border-blue-700 text-blue-300 hover:bg-blue-800/50"
+              onClick={() => {
+                // Direct navigation to home without confirmation
+                localStorage.removeItem("currentRoomId");
+                localStorage.removeItem("playerId");
+                localStorage.removeItem("playerNickname");
+                window.location.replace("/");
+              }}
+            >
+              Home
+            </Button>
+            
+            <Button
               variant="outline"
               size="sm"
               className="bg-red-900/50 border-red-700 text-red-300 hover:bg-red-800/50"
               onClick={() => {
                 if (confirm("Are you sure you want to exit the game?")) {
-                  // Send exit message to server
-                  exitGame();
-                  // Clear local storage and redirect to main page
+                  try {
+                    // Send exit message to server
+                    exitGame();
+                  } catch (error) {
+                    console.log("Exit game message failed:", error);
+                  }
+                  // Clear all game-related storage
                   localStorage.removeItem("currentRoomId");
                   localStorage.removeItem("playerId");
-                  window.location.href = "/";
+                  localStorage.removeItem("playerNickname");
+                  // Force navigation to main page
+                  window.location.replace("/");
                 }
               }}
             >
