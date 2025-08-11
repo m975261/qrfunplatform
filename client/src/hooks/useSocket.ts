@@ -21,6 +21,8 @@ export function useSocket(autoConnect: boolean = true) {
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     
     console.log("Attempting WebSocket connection to:", wsUrl);
+    console.log("Current location:", window.location.href);
+    console.log("Protocol:", protocol, "Host:", window.location.host);
     socketRef.current = new WebSocket(wsUrl);
     
     socketRef.current.onopen = () => {

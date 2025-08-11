@@ -257,12 +257,19 @@ export default function RoomLobby() {
                   ) : (
                     // Empty Slot
                     <div 
-                      className="w-20 h-20 bg-gray-300/50 rounded-full flex items-center justify-center border-4 border-white/30 cursor-pointer hover:bg-gray-300/70 transition-colors"
+                      className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors ${
+                        room?.status === 'playing' || room?.status === 'paused' 
+                          ? 'bg-gray-200/50 border-gray-300/30 cursor-not-allowed' 
+                          : 'bg-gray-300/50 border-white/30 cursor-pointer hover:bg-gray-300/70'
+                      }`}
                       onClick={() => {
+                        if (room?.status === 'playing' || room?.status === 'paused') {
+                          return; // Slot is closed during game
+                        }
                         if (currentPlayer?.isSpectator) {
                           takePlayerSlot(position);
                         } else if (!currentPlayer) {
-                          // External user - redirect to join flow with pre-filled position
+                          // External user - redirect to join flow
                           const roomCode = room?.code;
                           if (roomCode) {
                             window.location.href = `/?room=${roomCode}&position=${position}`;
@@ -270,7 +277,12 @@ export default function RoomLobby() {
                         }
                       }}
                     >
-                      {currentPlayer?.isSpectator || !currentPlayer ? (
+                      {room?.status === 'playing' || room?.status === 'paused' ? (
+                        <div className="text-center">
+                          <X className="w-8 h-8 text-gray-400 mx-auto" />
+                          <div className="text-xs text-gray-500 mt-1">Closed</div>
+                        </div>
+                      ) : currentPlayer?.isSpectator || !currentPlayer ? (
                         <div className="text-center">
                           <Plus className="w-8 h-8 text-blue-600 mx-auto" />
                           <div className="text-xs text-blue-700 font-medium">

@@ -112,13 +112,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingPlayers = await storage.getPlayersByRoom(room.id);
       const nonSpectatorPlayers = existingPlayers.filter(p => !p.isSpectator);
 
+      let playerPosition = null;
+      let playerHand: any[] = [];
+      let isSpectator = true;
+
+      if (room.status === "waiting" && nonSpectatorPlayers.length < 4) {
+        // Normal join for waiting room
+        isSpectator = false;
+        playerPosition = nonSpectatorPlayers.length;
+      } else if (room.status === "playing" || room.status === "paused") {
+        // For active games, check if there are available positions with cards
+        const availablePositions = [];
+        for (let pos = 0; pos < 4; pos++) {
+          const positionTaken = existingPlayers.some(p => p.position === pos && !p.isSpectator && !p.hasLeft);
+          if (!positionTaken && room.positionHands?.[pos.toString()]) {
+            availablePositions.push(pos);
+          }
+        }
+        
+        if (availablePositions.length > 0) {
+          // Join the first available position with existing cards
+          playerPosition = availablePositions[0];
+          playerHand = room.positionHands[playerPosition.toString()] || [];
+          isSpectator = false;
+          console.log(`New player ${nickname} joining active game at position ${playerPosition} with ${playerHand.length} cards`);
+        } else {
+          // No positions with cards available, join as spectator
+          console.log(`New player ${nickname} joining as spectator - no available positions with cards`);
+        }
+      }
+
       const player = await storage.createPlayer({
         nickname,
         roomId: room.id,
-        isSpectator: room.status === "playing" || nonSpectatorPlayers.length >= 4,
-        position: room.status === "waiting" && nonSpectatorPlayers.length < 4 
-          ? nonSpectatorPlayers.length 
-          : null
+        isSpectator,
+        position: playerPosition,
+        hand: playerHand
       });
 
       // Set this player as host if room had no host
@@ -448,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const wss = new WebSocketServer({ 
     server: httpServer, 
     path: '/ws',
-    verifyClient: (info) => {
+    verifyClient: (info: any) => {
       // Allow all origins in development
       console.log('WebSocket connection attempt from:', info.origin);
       return true;
