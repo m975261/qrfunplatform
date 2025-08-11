@@ -331,6 +331,26 @@ export default function RoomLobby() {
           })}
         </div>
 
+        {/* Spectators Section - Show spectators who are still connected */}
+        {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
+          <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6">
+            <CardContent className="p-4">
+              <div className="text-sm font-semibold text-gray-700 mb-3">Spectators:</div>
+              <div className="flex flex-wrap gap-2">
+                {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any) => (
+                  <div key={spectator.id} className="flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-1">
+                    <div className="w-6 h-6 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                      {spectator.nickname?.[0]?.toUpperCase()}
+                    </div>
+                    <span className="text-sm text-gray-700">{spectator.nickname}</span>
+                    <div className={`w-2 h-2 rounded-full ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Game Controls */}
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
           <CardContent className="p-6">

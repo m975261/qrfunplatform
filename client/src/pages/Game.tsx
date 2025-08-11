@@ -121,7 +121,7 @@ export default function Game() {
   const room = gameState.room;
   const players = gameState.players || [];
   const gamePlayers = players.filter((p: any) => !p.isSpectator).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
-  const spectators = players.filter((p: any) => p.isSpectator);
+  const spectators = players.filter((p: any) => p.isSpectator && p.isOnline);
   const currentPlayer = players.find((p: any) => p.id === playerId);
   const currentGamePlayer = gamePlayers[room.currentPlayerIndex || 0];
   const isMyTurn = currentGamePlayer?.id === playerId;
