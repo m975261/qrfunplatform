@@ -476,9 +476,14 @@ export default function Game() {
           minHeight: '400px'
         }}>
           
-          {/* Game Direction Indicator - Near 12 o'clock position with curved arrows */}
+          {/* Game Direction Indicator - Fixed visibility and positioning */}
           {gameState?.room?.status === 'playing' && (
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 pointer-events-auto">
+            <div className="absolute z-20 pointer-events-none" style={{
+              top: 'max(-4rem, -12vh)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              minHeight: '32px'
+            }}>
               <div className="bg-purple-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-purple-500 flex items-center space-x-2">
                 <span>Game Direction</span>
                 <div className="flex items-center text-lg">
