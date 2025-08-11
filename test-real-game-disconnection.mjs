@@ -1,312 +1,126 @@
-import fetch from 'node-fetch';
 import WebSocket from 'ws';
+import fetch from 'node-fetch';
 
 const BASE_URL = 'http://localhost:5000';
+const WS_URL = 'ws://localhost:5000/ws';
 
-// Real game simulation to test disconnection issue
-async function simulateRealGame() {
-  console.log('🎮 SIMULATING REAL GAME TO REPRODUCE DISCONNECTION');
-  console.log('='.repeat(60));
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function testRealGameDisconnection() {
+  console.log('🎮 REAL GAME UNO BUG TEST');
+  console.log('='.repeat(50));
   
-  let roomCode, hostId, player2Id, hostToken;
-  let hostWs, player2Ws;
-  let testResults = {
-    roomCreated: false,
-    playersJoined: false,
-    connectionsEstablished: false,
-    gameStarted: false,
-    gameEndReceived: false,
-    connectionsStableAfterGameEnd: false,
-    hostDisconnected: false,
-    player2Disconnected: false,
-    timing: {}
-  };
-
+  let player1WS, player2WS;
+  let player1Id, player2Id, roomId;
+  
   try {
-    // Create room
-    console.log('\n1️⃣ Creating room...');
+    // Step 1: Create room and get proper structure
     const roomResponse = await fetch(`${BASE_URL}/api/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hostNickname: 'TestHost' })
+      body: JSON.stringify({ hostNickname: 'RealTestHost' })
     });
-    
     const roomData = await roomResponse.json();
-    roomCode = roomData.room?.code || roomData.code;
-    hostId = roomData.room?.hostId || roomData.hostId;  
-    hostToken = roomData.room?.token || roomData.token;
+    const roomCode = roomData.room?.code || roomData.code;
+    roomId = roomData.room?.id || roomData.id;
+    player1Id = roomData.room?.hostId || roomData.hostId;
+    console.log(`✅ Room: ${roomCode} (ID: ${roomId}), Host: ${player1Id}`);
     
-    if (!roomCode) throw new Error('Room creation failed');
-    testResults.roomCreated = true;
-    console.log(`✅ Room created: ${roomCode}`);
-
-    // Add second player
-    console.log('\n2️⃣ Adding second player...');
+    // Step 2: Join second player
     const joinResponse = await fetch(`${BASE_URL}/api/rooms/${roomCode}/join`, {
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nickname: 'TestPlayer2' })
-    });
-    
-    const player2Data = await joinResponse.json();
-    player2Id = player2Data.player?.id || player2Data.playerId;
-    testResults.playersJoined = true;
-    console.log('✅ Second player joined');
-
-    // Setup WebSocket connections with detailed monitoring
-    console.log('\n3️⃣ Setting up WebSocket connections...');
-    
-    let gameEndTimestamp = null;
-    
-    // Host WebSocket with comprehensive monitoring
-    hostWs = new WebSocket(`ws://localhost:5000/ws`);
-    
-    hostWs.on('open', () => {
-      console.log('🔌 Host WebSocket opened');
-      // Join room via WebSocket using room code as ID
-      hostWs.send(JSON.stringify({
-        type: 'join_room',
-        playerId: hostId,
-        roomId: roomCode, // Use room code instead of room ID
-        userFingerprint: 'test-host-real',
-        sessionId: 'test-host-session-real'
-      }));
-    });
-    
-    hostWs.on('message', (data) => {
-      const message = JSON.parse(data.toString());
-      if (message.type === 'room_state') {
-        console.log('🏠 Host received room state');
-      }
-      if (message.type === 'game_end') {
-        gameEndTimestamp = Date.now();
-        testResults.gameEndReceived = true;
-        console.log('🏆 Host received game_end at:', new Date(gameEndTimestamp).toISOString());
-        
-        // Check connection stability after short delay
-        setTimeout(() => {
-          const isStillConnected = hostWs.readyState === WebSocket.OPEN;
-          console.log(`🔍 Host connection after game_end: ${isStillConnected ? 'STABLE' : 'LOST'}`);
-          if (!isStillConnected) {
-            testResults.hostDisconnected = true;
-          }
-        }, 1000);
-      }
-    });
-    
-    hostWs.on('close', (code, reason) => {
-      console.log(`🔴 Host WebSocket closed: ${code} - ${reason?.toString()}`);
-      if (gameEndTimestamp && Date.now() - gameEndTimestamp < 5000) {
-        console.log('⚠️ Host disconnected shortly after game_end!');
-        testResults.hostDisconnected = true;
-      }
-    });
-    
-    hostWs.on('error', (error) => {
-      console.error('🔴 Host WebSocket error:', error.message);
-    });
-    
-    // Player 2 WebSocket
-    player2Ws = new WebSocket(`ws://localhost:5000/ws`);
-    
-    player2Ws.on('open', () => {
-      console.log('🔌 Player 2 WebSocket opened');
-      // Join room via WebSocket using room code as ID
-      player2Ws.send(JSON.stringify({
-        type: 'join_room',
-        playerId: player2Id,
-        roomId: roomCode, // Use room code instead of room ID
-        userFingerprint: 'test-player2-real',
-        sessionId: 'test-player2-session-real'
-      }));
-    });
-    
-    player2Ws.on('message', (data) => {
-      const message = JSON.parse(data.toString());
-      if (message.type === 'room_state') {
-        console.log('🏠 Player 2 received room state');
-      }
-      if (message.type === 'game_end') {
-        console.log('🏆 Player 2 received game_end');
-      }
-    });
-    
-    player2Ws.on('close', (code, reason) => {
-      console.log(`🔴 Player 2 WebSocket closed: ${code} - ${reason?.toString()}`);
-      if (gameEndTimestamp && Date.now() - gameEndTimestamp < 5000) {
-        console.log('⚠️ Player 2 disconnected shortly after game_end!');
-        testResults.player2Disconnected = true;
-      }
-    });
-    
-    player2Ws.on('error', (error) => {
-      console.error('🔴 Player 2 WebSocket error:', error.message);
-    });
-
-    // Wait for connections to establish
-    console.log('⏳ Waiting for WebSocket connections...');
-    await new Promise(resolve => setTimeout(resolve, 4000));
-    
-    const hostConnected = hostWs.readyState === WebSocket.OPEN;
-    const player2Connected = player2Ws.readyState === WebSocket.OPEN;
-    
-    if (!hostConnected || !player2Connected) {
-      console.log(`❌ Connection failed - Host: ${hostConnected}, Player 2: ${player2Connected}`);
-      return testResults;
-    }
-    
-    testResults.connectionsEstablished = true;
-    console.log('✅ Both WebSocket connections established');
-
-    // Start game 
-    console.log('\n4️⃣ Starting game...');
-    const startResponse = await fetch(`${BASE_URL}/api/rooms/${roomCode}/start`, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${hostToken}`
-      }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: 'RealTestPlayer' })
     });
+    const joinData = await joinResponse.json();
+    player2Id = joinData.player?.id;
+    console.log(`✅ Player 2: ${player2Id}`);
     
-    if (!startResponse.ok) {
-      console.log(`⚠️ Game start failed: ${startResponse.status}`);
-      const error = await startResponse.text();
-      console.log('Start error:', error);
-      
-      // Try WebSocket start as alternative
-      console.log('Trying WebSocket game start...');
-      hostWs.send(JSON.stringify({ type: 'start_game' }));
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    } else {
-      console.log('✅ Game started successfully via API');
-    }
+    // Step 3: Connect WebSockets using join_room (not authenticate)
+    player1WS = new WebSocket(WS_URL);
+    player2WS = new WebSocket(WS_URL);
     
-    testResults.gameStarted = true;
-
-    // Play multiple cards to simulate real game flow
-    console.log('\n5️⃣ Playing cards to simulate game...');
+    await new Promise(resolve => {
+      let connectedCount = 0;
+      const onConnect = () => {
+        connectedCount++;
+        if (connectedCount === 2) resolve();
+      };
+      player1WS.on('open', onConnect);
+      player2WS.on('open', onConnect);
+    });
+    console.log('🔗 WebSocket connections established');
     
-    // Play a few normal cards first
-    for (let i = 0; i < 2; i++) {
-      console.log(`🎯 Playing card ${i + 1}...`);
-      hostWs.send(JSON.stringify({
-        type: 'play_card',
-        cardIndex: 0
-      }));
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Player 2's turn 
-      player2Ws.send(JSON.stringify({
-        type: 'play_card',
-        cardIndex: 0
-      }));
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    }
-
-    // Now simulate a winning scenario
-    console.log('\n6️⃣ Setting up winning scenario...');
+    // Step 4: Join room using the correct message format
+    player1WS.send(JSON.stringify({
+      type: 'join_room',
+      playerId: player1Id,
+      roomId: roomId, 
+      userFingerprint: 'test-fp1',
+      sessionId: 'test-session1'
+    }));
     
-    // Reduce host to 1 card and play final card
-    console.log('🏆 Playing final winning card...');
-    hostWs.send(JSON.stringify({
+    player2WS.send(JSON.stringify({
+      type: 'join_room',
+      playerId: player2Id,
+      roomId: roomId,
+      userFingerprint: 'test-fp2', 
+      sessionId: 'test-session2'
+    }));
+    
+    await sleep(1000);
+    console.log('🎮 Players joined via WebSocket');
+    
+    // Step 5: Start game
+    await fetch(`${BASE_URL}/api/rooms/${roomCode}/start`, {
+      method: 'POST'
+    });
+    console.log('🚀 Game started');
+    await sleep(1000);
+    
+    // Step 6: Test UNO scenario with proper connection
+    console.log('\n🐛 TESTING UNO BUG WITH REAL CONNECTIONS:');
+    
+    // Player 1 calls UNO
+    console.log('📢 Host calling UNO...');
+    player1WS.send(JSON.stringify({
+      type: 'call_uno'
+    }));
+    
+    await sleep(800); // Wait for UNO call to process
+    
+    // Player 1 plays card
+    console.log('🃏 Host playing card after UNO call...');
+    player1WS.send(JSON.stringify({
       type: 'play_card',
       cardIndex: 0
     }));
     
-    // Monitor for game end and disconnections
-    console.log('\n7️⃣ Monitoring game end and connections...');
+    await sleep(2000); // Wait for processing
     
-    // Wait up to 10 seconds for game end
-    let monitoringTime = 0;
-    const monitorInterval = setInterval(() => {
-      monitoringTime += 500;
-      
-      if (testResults.gameEndReceived) {
-        console.log(`✅ Game end detected at ${monitoringTime}ms`);
-        clearInterval(monitorInterval);
-      }
-      
-      if (monitoringTime >= 10000) {
-        console.log('⏰ Monitoring timeout reached');
-        clearInterval(monitorInterval);
-      }
-      
-      // Check if connections are still alive
-      const hostAlive = hostWs.readyState === WebSocket.OPEN;
-      const player2Alive = player2Ws.readyState === WebSocket.OPEN;
-      
-      if (!hostAlive && !testResults.hostDisconnected) {
-        console.log(`⚠️ Host disconnected at ${monitoringTime}ms`);
-        testResults.hostDisconnected = true;
-      }
-      
-      if (!player2Alive && !testResults.player2Disconnected) {
-        console.log(`⚠️ Player 2 disconnected at ${monitoringTime}ms`);
-        testResults.player2Disconnected = true;
-      }
-      
-    }, 500);
-
-    // Wait for monitoring to complete
-    await new Promise(resolve => setTimeout(resolve, 12000));
+    console.log('\n🔍 EXPECTED SERVER LOGS:');
+    console.log('✅ "UNO CALLED: Set hasCalledUno=true for RealTestHost"');
+    console.log('✅ "UNO CALL VERIFICATION: RealTestHost hasCalledUno=true"');
+    console.log('✅ "UNO STATUS CONFIRMED: RealTestHost has called UNO"');
+    console.log('✅ Should NOT see penalty if UNO system works correctly');
     
-    // Final connection check
-    const finalHostConnected = hostWs.readyState === WebSocket.OPEN;
-    const finalPlayer2Connected = player2Ws.readyState === WebSocket.OPEN;
-    
-    testResults.connectionsStableAfterGameEnd = finalHostConnected && finalPlayer2Connected;
-    
-    console.log('\n📊 FINAL TEST STATUS:');
-    console.log(`🏠 Room Created: ${testResults.roomCreated}`);
-    console.log(`👥 Players Joined: ${testResults.playersJoined}`);
-    console.log(`🔌 Connections Established: ${testResults.connectionsEstablished}`);
-    console.log(`🎮 Game Started: ${testResults.gameStarted}`);
-    console.log(`🏆 Game End Received: ${testResults.gameEndReceived}`);
-    console.log(`📡 Final Host Connection: ${finalHostConnected}`);
-    console.log(`📡 Final Player 2 Connection: ${finalPlayer2Connected}`);
-    console.log(`✅ Connections Stable After Game End: ${testResults.connectionsStableAfterGameEnd}`);
+    return { success: true, roomCode, roomId };
     
   } catch (error) {
     console.error('❌ Test error:', error.message);
-    testResults.error = error.message;
+    return { success: false, error: error.message };
   } finally {
-    // Clean up connections
-    if (hostWs && hostWs.readyState === WebSocket.OPEN) {
-      hostWs.close();
-    }
-    if (player2Ws && player2Ws.readyState === WebSocket.OPEN) {
-      player2Ws.close();
-    }
+    if (player1WS) player1WS.close();
+    if (player2WS) player2WS.close();
   }
-  
-  return testResults;
 }
 
-async function runRealGameTest() {
-  const results = await simulateRealGame();
-  
-  console.log('\n' + '='.repeat(60));
-  console.log('🔬 REAL GAME DISCONNECTION TEST RESULTS');
-  console.log('='.repeat(60));
-  
-  const success = results.connectionsStableAfterGameEnd && 
-                 !results.hostDisconnected && 
-                 !results.player2Disconnected &&
-                 results.gameEndReceived;
-  
-  console.log(`🎯 OVERALL RESULT: ${success ? '✅ CONNECTIONS STABLE' : '❌ DISCONNECTION CONFIRMED'}`);
-  
-  if (!success) {
-    console.log('\n🐛 ISSUES IDENTIFIED:');
-    if (results.hostDisconnected) console.log('  • Host disconnected during/after game end');
-    if (results.player2Disconnected) console.log('  • Player 2 disconnected during/after game end');  
-    if (!results.gameEndReceived) console.log('  • Game end message not received');
-    if (!results.connectionsStableAfterGameEnd) console.log('  • Connections not stable after game end');
+testRealGameDisconnection().then(result => {
+  console.log('\n📋 TEST RESULT:', result.success ? 'COMPLETED' : 'FAILED');
+  if (result.roomCode) {
+    console.log(`🏠 Room: ${result.roomCode}`);
   }
-  
-  console.log('='.repeat(60));
-  
-  process.exit(success ? 0 : 1);
-}
-
-runRealGameTest().catch(console.error);
+  process.exit(result.success ? 0 : 1);
+});

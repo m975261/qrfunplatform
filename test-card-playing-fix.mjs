@@ -1,117 +1,133 @@
 import WebSocket from 'ws';
+import fetch from 'node-fetch';
 
-// Simple test focused on card playing issue
-async function testCardPlaying() {
-  console.log('🔍 Testing Card Playing Fix...');
+const BASE_URL = 'http://localhost:5000';
+const WS_URL = 'ws://localhost:5000/ws';
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function testCardPlayingFix() {
+  console.log('🔧 TESTING CARD PLAYING FIX');
+  console.log('='.repeat(50));
+  
+  let player1WS, player2WS;
   
   try {
-    // Create WebSocket connection
-    const ws = new WebSocket('ws://localhost:5000/ws');
-    let gameState = null;
+    // Step 1: Create room using standard flow
+    const roomResponse = await fetch(`${BASE_URL}/api/rooms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hostNickname: 'FixTestHost' })
+    });
+    const roomData = await roomResponse.json();
+    const roomCode = roomData.room?.code || roomData.code;
+    const roomId = roomData.room?.id || roomData.id;
+    const player1Id = roomData.room?.hostId || roomData.hostId;
     
-    ws.on('message', (data) => {
-      const message = JSON.parse(data.toString());
-      if (message.type === 'room_state') {
-        gameState = message.data;
-        console.log('📥 Received game state update');
-      }
+    console.log(`✅ Room created: ${roomCode} (ID: ${roomId})`);
+    console.log(`✅ Host: ${player1Id}`);
+    
+    // Step 2: Join second player
+    const joinResponse = await fetch(`${BASE_URL}/api/rooms/${roomCode}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: 'FixTestPlayer' })
+    });
+    const joinData = await joinResponse.json();
+    const player2Id = joinData.player?.id;
+    console.log(`✅ Player 2: ${player2Id}`);
+    
+    // Step 3: Connect via WebSocket using room IDs  
+    player1WS = new WebSocket(WS_URL);
+    player2WS = new WebSocket(WS_URL);
+    
+    await new Promise(resolve => {
+      let connectedCount = 0;
+      const onConnect = () => {
+        connectedCount++;
+        if (connectedCount === 2) resolve();
+      };
+      player1WS.on('open', onConnect);
+      player2WS.on('open', onConnect);
     });
     
-    await new Promise(resolve => ws.on('open', resolve));
-    console.log('✅ WebSocket connected');
-    
-    // Use existing room from test
-    const testRoomId = 'a8c1a98b-0da6-49fe-bc54-ee765d231ecf';
-    const testPlayerId = '83fb194c-5863-4beb-ae63-69361481dc84';
-    
-    // Join room
-    ws.send(JSON.stringify({
+    // Step 4: Join room via WebSocket using ACTUAL room ID (not code)
+    player1WS.send(JSON.stringify({
       type: 'join_room',
-      playerId: testPlayerId,
-      roomId: testRoomId,
-      userFingerprint: 'test-fix',
-      sessionId: 'session-fix'
+      playerId: player1Id,
+      roomId: roomId, // Use actual room ID for consistency
+      userFingerprint: 'fix-fp1',
+      sessionId: 'fix-session1'
     }));
     
-    // Wait for game state
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    player2WS.send(JSON.stringify({
+      type: 'join_room',
+      playerId: player2Id,
+      roomId: roomId, // Use actual room ID for consistency
+      userFingerprint: 'fix-fp2',
+      sessionId: 'fix-session2'
+    }));
     
-    if (!gameState || !gameState.room) {
-      console.log('❌ No game state received');
-      return false;
+    await sleep(1000);
+    console.log('🎮 WebSocket connections authenticated');
+    
+    // Step 5: Start game using room CODE (as the API expects)
+    const startResponse = await fetch(`${BASE_URL}/api/rooms/${roomCode}/start`, {
+      method: 'POST'
+    });
+    
+    if (!startResponse.ok) {
+      throw new Error(`Failed to start game: ${startResponse.status}`);
     }
     
-    console.log(`🎮 Room Status: ${gameState.room.status}`);
-    console.log(`👥 Players: ${gameState.players.length}`);
+    console.log('🚀 Game started via HTTP');
+    await sleep(1000);
     
-    const currentPlayerIndex = gameState.room.currentPlayerIndex || 0;
-    const gamePlayers = gameState.players.filter(p => !p.isSpectator);
-    const currentPlayer = gamePlayers[currentPlayerIndex];
-    const topCard = gameState.room.discardPile[0];
+    // Step 6: Verify room state before testing UNO
+    const roomStateResponse = await fetch(`${BASE_URL}/api/rooms/${roomCode}`);
+    const roomState = await roomStateResponse.json();
+    console.log(`🎮 Room status after start: ${roomState.room?.status}`);
     
-    console.log(`🎯 Current player: ${currentPlayer?.nickname} (Index: ${currentPlayerIndex})`);
-    console.log(`🃏 Top card: ${topCard?.color} ${topCard?.type} ${topCard?.number || ''}`);
-    console.log(`🤚 Current player hand size: ${currentPlayer?.hand?.length || 0}`);
+    // Step 7: Test UNO bug scenario  
+    console.log('\n🔍 TESTING UNO BUG FIX:');
     
-    if (currentPlayer && currentPlayer.hand && currentPlayer.hand.length > 0) {
-      console.log('🎲 Player hand:');
-      currentPlayer.hand.forEach((card, i) => {
-        console.log(`   ${i}: ${card.color} ${card.type} ${card.number !== undefined ? card.number : ''}`);
-      });
-      
-      // Test card playability logic
-      let foundPlayableCard = false;
-      for (let i = 0; i < currentPlayer.hand.length; i++) {
-        const card = currentPlayer.hand[i];
-        const isPlayable = 
-          card.color === topCard.color ||
-          (card.type === 'number' && topCard.type === 'number' && card.number === topCard.number) ||
-          card.type === topCard.type ||
-          card.type === 'wild' ||
-          card.type === 'wild4';
-          
-        if (isPlayable) {
-          console.log(`✅ Found playable card at index ${i}: ${card.color} ${card.type} ${card.number || ''}`);
-          foundPlayableCard = true;
-          
-          // Try to play it if it's our turn
-          if (currentPlayer.id === testPlayerId) {
-            console.log('🎮 Attempting to play card...');
-            
-            if (card.type === 'wild' || card.type === 'wild4') {
-              ws.send(JSON.stringify({ type: 'choose_color', color: 'red' }));
-              await new Promise(resolve => setTimeout(resolve, 100));
-            }
-            
-            ws.send(JSON.stringify({ type: 'play_card', cardIndex: i }));
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            console.log('✅ Card play attempted');
-          }
-          break;
-        }
-      }
-      
-      if (!foundPlayableCard) {
-        console.log('⚠️ No playable cards found, testing draw card...');
-        if (currentPlayer.id === testPlayerId) {
-          ws.send(JSON.stringify({ type: 'draw_card' }));
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          console.log('🎲 Draw card attempted');
-        }
-      }
-    }
+    // Call UNO first
+    console.log('1. Calling UNO...');
+    player1WS.send(JSON.stringify({
+      type: 'call_uno'
+    }));
     
-    ws.close();
-    return true;
+    await sleep(1000);
+    
+    // Play card after UNO call
+    console.log('2. Playing card after UNO call...');
+    player1WS.send(JSON.stringify({
+      type: 'play_card',
+      cardIndex: 0
+    }));
+    
+    await sleep(2000);
+    
+    console.log('\n🎯 EXPECTED RESULTS:');
+    console.log('• Room status should be "playing" not "waiting"');
+    console.log('• UNO call should be verified as true');
+    console.log('• Card play should proceed (no "Invalid state" error)');
+    console.log('• If player has 2 cards and plays 1, no penalty should occur');
+    
+    return { success: true, roomCode, roomId };
     
   } catch (error) {
-    console.log('❌ Test failed:', error.message);
-    return false;
+    console.error('❌ Test error:', error.message);
+    return { success: false, error: error.message };
+  } finally {
+    if (player1WS) player1WS.close();
+    if (player2WS) player2WS.close();
   }
 }
 
-testCardPlaying().then(success => {
-  console.log(success ? '✅ Test completed' : '❌ Test failed');
-  process.exit(0);
+testCardPlayingFix().then(result => {
+  console.log('\n📋 RESULT:', result.success ? 'TEST COMPLETED' : 'TEST FAILED');
+  process.exit(result.success ? 0 : 1);
 });

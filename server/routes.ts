@@ -769,6 +769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const room = await storage.getRoom(connection.roomId);
     console.log(`🏠 Room status: ${room?.status}, exists: ${!!room}`);
+    console.log(`🔍 Room ID being checked: ${connection.roomId}`);
     
     // CRITICAL: Get fresh player data to ensure we have the latest hasCalledUno status
     const player = await storage.getPlayer(connection.playerId);
@@ -1751,10 +1752,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { roomId } = req.params;
       const hostId = req.headers.authorization?.replace('Bearer ', '');
       
+      console.log(`🚀 GAME START REQUEST: roomId parameter = ${roomId}`);
+      
       // Try both room ID and room code lookup
       let room = await storage.getRoom(roomId);
       if (!room) {
         room = await storage.getRoomByCode(roomId);
+        console.log(`📍 Found room by code: ${roomId} -> ${room?.id}`);
+      } else {
+        console.log(`📍 Found room by ID: ${roomId}`);
       }
       
       if (!room) {
@@ -1784,8 +1790,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { firstCard, remainingDeck: finalDeck } = UnoGameLogic.findFirstNumberCard(remainingDeck);
       const discardPile = [firstCard];
       
-      // Update room with game state
-      await storage.updateRoom(roomId, {
+      // Update room with game state - use room.id to ensure we're updating the right room
+      await storage.updateRoom(room.id, {
         status: "playing",
         deck: finalDeck,
         discardPile,
@@ -1793,6 +1799,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentColor: firstCard.color as "red" | "blue" | "green" | "yellow",
         pendingDraw: 0
       });
+      console.log(`✅ GAME START: Room ${room.code} (ID: ${room.id}) status updated to 'playing'`);
+      
+      // Verify the update worked
+      const verifyRoom = await storage.getRoom(room.id);
+      console.log(`🔍 VERIFICATION: Room status is now: ${verifyRoom?.status}`);
 
       // Update player hands and store position-based hands
       const positionHands: {[key: string]: any[]} = {};
@@ -1810,9 +1821,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Position hands saved:`, Object.keys(positionHands));
       
       // Update room with position-based hands and active positions
-      await storage.updateRoom(roomId, { positionHands, activePositions });
+      await storage.updateRoom(room.id, { positionHands, activePositions });
       
-      await broadcastRoomState(roomId);
+      await broadcastRoomState(room.id);
       
       res.json({ success: true, message: "Game started successfully" });
     } catch (error) {

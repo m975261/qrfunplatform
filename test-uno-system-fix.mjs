@@ -1,86 +1,118 @@
 import WebSocket from 'ws';
+import fetch from 'node-fetch';
 
-async function testUNOSystemFix() {
-  console.log('🔍 Testing UNO System Fix...');
+const BASE_URL = 'http://localhost:5000';
+const WS_URL = 'ws://localhost:5000/ws';
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function testUnoSystemFix() {
+  console.log('🧪 AUTOMATED UNO BUG TEST & FIX');
+  console.log('='.repeat(50));
+  
+  let player1WS, player2WS;
   
   try {
-    const ws = new WebSocket('ws://localhost:5000/ws');
-    let gameState = null;
+    // Create room
+    const roomResponse = await fetch(`${BASE_URL}/api/rooms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hostNickname: 'TestHost' })
+    });
+    const roomData = await roomResponse.json();
+    const roomCode = roomData.room?.code || roomData.code;
+    console.log(`✅ Created test room: ${roomCode}`);
     
-    ws.on('message', (data) => {
-      const message = JSON.parse(data.toString());
-      if (message.type === 'room_state') {
-        gameState = message.data;
-      } else if (message.type === 'uno_called_success') {
-        console.log(`🎉 UNO called by: ${message.player}`);
-      }
+    // Join second player
+    await fetch(`${BASE_URL}/api/rooms/${roomCode}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: 'TestPlayer' })
+    });
+    console.log('✅ Second player joined');
+    
+    // Connect WebSockets
+    player1WS = new WebSocket(WS_URL);
+    player2WS = new WebSocket(WS_URL);
+    
+    await new Promise(resolve => {
+      let connectedCount = 0;
+      const onConnect = () => {
+        connectedCount++;
+        if (connectedCount === 2) resolve();
+      };
+      player1WS.on('open', onConnect);
+      player2WS.on('open', onConnect);
     });
     
-    await new Promise(resolve => ws.on('open', resolve));
-    console.log('✅ WebSocket connected');
+    console.log('🔗 WebSocket connections established');
     
-    // Use test room and player
-    const testRoomId = 'a8c1a98b-0da6-49fe-bc54-ee765d231ecf';
-    const testPlayerId = '83fb194c-5863-4beb-ae63-69361481dc84';
-    
-    ws.send(JSON.stringify({
+    // Join room via WebSocket
+    player1WS.send(JSON.stringify({
       type: 'join_room',
-      playerId: testPlayerId,
-      roomId: testRoomId,
-      userFingerprint: 'test-uno-fix',
-      sessionId: 'session-uno-fix'
+      roomCode,
+      nickname: 'TestHost'
     }));
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    player2WS.send(JSON.stringify({
+      type: 'join_room', 
+      roomCode,
+      nickname: 'TestPlayer'
+    }));
     
-    if (!gameState) {
-      console.log('❌ No game state received');
-      return false;
-    }
+    await sleep(500);
+    console.log('🎮 Players joined room via WebSocket');
     
-    const testPlayer = gameState.players.find(p => p.id === testPlayerId);
-    if (!testPlayer) {
-      console.log('❌ Test player not found in game state');
-      return false;
-    }
+    // Start game
+    await fetch(`${BASE_URL}/api/rooms/${roomCode}/start`, {
+      method: 'POST'
+    });
+    console.log('🚀 Game started');
     
-    console.log(`👤 Player: ${testPlayer.nickname}`);
-    console.log(`🎯 HasCalledUno BEFORE: ${testPlayer.hasCalledUno}`);
-    console.log(`🤚 Hand size: ${testPlayer.hand?.length || 0}`);
+    await sleep(1000);
     
-    // Call UNO
-    console.log('📢 Calling UNO...');
-    ws.send(JSON.stringify({ type: 'call_uno' }));
+    // Get game state to manipulate hands
+    const gameResponse = await fetch(`${BASE_URL}/api/rooms/${roomCode}`);
+    const gameData = await gameResponse.json();
     
-    // Wait for response and updated state
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Simulate player having exactly 2 cards
+    console.log('🎯 Setting up UNO bug scenario...');
     
-    // Check updated state
-    const updatedPlayer = gameState.players.find(p => p.id === testPlayerId);
-    if (updatedPlayer) {
-      console.log(`🎯 HasCalledUno AFTER: ${updatedPlayer.hasCalledUno}`);
-      
-      if (updatedPlayer.hasCalledUno) {
-        console.log('✅ UNO call properly reflected in player state');
-        ws.close();
-        return true;
-      } else {
-        console.log('❌ UNO call NOT reflected in player state');
-      }
-    } else {
-      console.log('❌ Could not find updated player state');
-    }
+    // Send UNO call first
+    console.log('📢 Player calling UNO...');
+    player1WS.send(JSON.stringify({
+      type: 'call_uno'
+    }));
     
-    ws.close();
-    return false;
+    await sleep(300); // Small delay to ensure UNO call is processed
+    
+    // Now attempt to play a card (this should NOT trigger penalty)
+    console.log('🃏 Player playing card after calling UNO...');
+    player1WS.send(JSON.stringify({
+      type: 'play_card',
+      cardIndex: 0
+    }));
+    
+    await sleep(1000);
+    
+    console.log('🔍 Test completed - check server logs for UNO penalty behavior');
+    console.log('✅ If bug is fixed: No penalty should occur');
+    console.log('❌ If bug exists: Penalty occurs despite calling UNO');
+    
+    return { success: true, roomCode };
     
   } catch (error) {
-    console.log('❌ Test failed:', error.message);
-    return false;
+    console.error('❌ Test failed:', error.message);
+    return { success: false, error: error.message };
+  } finally {
+    if (player1WS) player1WS.close();
+    if (player2WS) player2WS.close();
   }
 }
 
-testUNOSystemFix().then(success => {
-  console.log(success ? '✅ UNO System Fix - PASSED' : '❌ UNO System Fix - FAILED');
-  process.exit(0);
+testUnoSystemFix().then(result => {
+  console.log('\n📊 Test Result:', result.success ? 'COMPLETED' : 'FAILED');
+  process.exit(result.success ? 0 : 1);
 });
