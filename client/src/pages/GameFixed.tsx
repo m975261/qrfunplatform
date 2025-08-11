@@ -61,9 +61,15 @@ export default function Game() {
     });
     
     if (gameState?.room?.status === 'finished' || gameState?.gameEndData) {
-      console.log('🏆 Game finished detected, showing modal');
+      console.log('🏆 Game finished detected, showing modal:', {
+        roomStatus: gameState?.room?.status,
+        hasGameEndData: !!gameState?.gameEndData,
+        winner: gameState?.gameEndData?.winner,
+        showGameEndState: showGameEnd
+      });
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
+      console.log('🏆 Modal state updated - showGameEnd: true');
     }
     
     if (gameState?.needsContinue) {
@@ -547,7 +553,18 @@ export default function Game() {
       )}
 
       {/* Game End Modal */}
-      {((showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData)) && (
+      {(() => {
+        const condition1 = showGameEnd && gameEndData;
+        const condition2 = gameState?.room?.status === 'finished' && gameState?.gameEndData;
+        const shouldShow = condition1 || condition2;
+        console.log("🏆 MODAL RENDER CHECK:", {
+          condition1: `showGameEnd(${showGameEnd}) && gameEndData(${!!gameEndData})`,
+          condition2: `roomStatus(${gameState?.room?.status}) === 'finished' && hasGameEndData(${!!gameState?.gameEndData})`,
+          shouldShow,
+          winner: gameEndData?.winner || gameState?.gameEndData?.winner
+        });
+        return shouldShow;
+      })() && (
         <GameEndModal
           winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
           rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}
