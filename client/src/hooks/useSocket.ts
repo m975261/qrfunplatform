@@ -54,15 +54,20 @@ export function useSocket(autoConnect: boolean = true) {
             handleFloatingEmoji(message);
             break;
           case 'game_end':
-            // Handle game end - enhanced logging for debugging
-            console.log("🏆 GAME END MESSAGE RECEIVED:", {
+            // Enhanced Safari debugging for game end
+            const isSafariAgent = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+            console.log("🏆 GAME END MESSAGE RECEIVED - Safari Debug:", {
               winner: message.winner,
               rankings: message.rankings,
               timestamp: new Date().toISOString(),
-              wsState: socketRef.current?.readyState
+              wsState: socketRef.current?.readyState,
+              isSafari: isSafariAgent,
+              userAgent: navigator.userAgent.substring(0, 80),
+              documentReady: document.readyState,
+              windowLoaded: document.readyState === 'complete'
             });
             
-            // Force state update to ensure winner modal appears
+            // Force state update with additional Safari debugging
             setGameState((prev: any) => {
               const newState = {
                 ...prev,
@@ -73,10 +78,20 @@ export function useSocket(autoConnect: boolean = true) {
                 gameEndData: {
                   winner: message.winner,
                   rankings: message.rankings,
-                  timestamp: Date.now()
+                  timestamp: Date.now(),
+                  debugInfo: {
+                    receivedAt: new Date().toISOString(),
+                    isSafari: isSafariAgent,
+                    windowSize: `${window.innerWidth}x${window.innerHeight}`
+                  }
                 }
               };
-              console.log("🏆 Updated game state with end data:", newState);
+              console.log("🏆 Safari Debug - Updated game state:", {
+                hasGameEndData: !!newState.gameEndData,
+                winner: newState.gameEndData?.winner,
+                rankingCount: newState.gameEndData?.rankings?.length,
+                roomStatus: newState.room?.status
+              });
               return newState;
             });
             

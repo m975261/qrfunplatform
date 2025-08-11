@@ -24,25 +24,19 @@ interface GameEndModalProps {
 }
 
 export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLobby }: GameEndModalProps) {
-  // Enhanced Safari compatibility with forced rendering
+  // MAXIMUM Safari compatibility with extensive debugging
   useEffect(() => {
-    console.log("🏆 GameEndModal mounted - Safari compatibility mode", {
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    console.log("🏆 GameEndModal MOUNTED - Maximum Safari Debug", {
       winner,
       rankings,
-      userAgent: navigator.userAgent,
-      isSafari: /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
+      isSafari,
+      modalMounted: true,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      timestamp: new Date().toISOString()
     });
 
-    // Force viewport and prevent scrolling - enhanced for Safari
-    let viewportMeta = document.querySelector('meta[name="viewport"]');
-    if (!viewportMeta) {
-      viewportMeta = document.createElement('meta');
-      viewportMeta.setAttribute('name', 'viewport');
-      document.head.appendChild(viewportMeta);
-    }
-    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0');
-    
-    // Prevent body scroll with Safari-specific fixes
+    // Safari-specific aggressive rendering techniques
     const originalStyles = {
       overflow: document.body.style.overflow,
       position: document.body.style.position,
@@ -51,24 +45,54 @@ export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLo
       touchAction: document.body.style.touchAction
     };
     
+    // Immediately lock body scroll
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
     document.body.style.width = '100%';
-    document.body.style.height = '100%';
-    document.body.style.touchAction = 'none'; // Prevent Safari scroll bounce
+    document.body.style.height = '100vh';
+    document.body.style.touchAction = 'none';
     
-    // Force Safari to acknowledge the modal exists
-    const forceRender = () => {
-      console.log("🏆 Forcing Safari render acknowledgment");
-      document.body.offsetHeight; // Force reflow
+    // Force viewport meta for Safari
+    let viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) {
+      viewportMeta = document.createElement('meta');
+      viewportMeta.setAttribute('name', 'viewport');
+      document.head.appendChild(viewportMeta);
+    }
+    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0, minimum-scale=1.0');
+    
+    // Aggressive Safari rendering with multiple techniques
+    const modalElement = document.querySelector('.gameEndModalOverlay') as HTMLElement;
+    if (modalElement) {
+      console.log("🏆 Modal element found, forcing Safari visibility");
+      modalElement.style.display = 'flex';
+      modalElement.style.visibility = 'visible';
+      modalElement.style.opacity = '1';
+    }
+    
+    // Multiple forced reflow techniques for Safari
+    const forceMultipleRenders = () => {
+      console.log("🏆 Safari render force pass");
+      document.body.offsetHeight;
+      if (modalElement) {
+        modalElement.offsetHeight;
+        modalElement.style.transform = 'translateZ(0) scale(1.0001)';
+        setTimeout(() => modalElement.style.transform = 'translateZ(0) scale(1)', 10);
+      }
     };
     
-    // Multiple render forcing techniques for Safari
-    requestAnimationFrame(forceRender);
-    setTimeout(forceRender, 50);
-    setTimeout(forceRender, 100);
+    // Immediate render
+    forceMultipleRenders();
+    // Animation frame render
+    requestAnimationFrame(forceMultipleRenders);
+    // Multiple timeout renders
+    setTimeout(forceMultipleRenders, 16);
+    setTimeout(forceMultipleRenders, 50);
+    setTimeout(forceMultipleRenders, 100);
+    setTimeout(forceMultipleRenders, 200);
     
     return () => {
+      console.log("🏆 GameEndModal UNMOUNTING");
       document.body.style.overflow = originalStyles.overflow;
       document.body.style.position = originalStyles.position;
       document.body.style.width = originalStyles.width;
