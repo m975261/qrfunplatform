@@ -898,7 +898,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         console.log('🏆 Broadcasting game_end message:', gameEndMessage);
-        console.log('🏆 Active connections for room:', connections.filter(c => c.roomId === connection.roomId).length);
+        const roomConnections = Array.from(connections.values()).filter(c => c.roomId === connection.roomId);
+        console.log('🏆 Active connections for room:', roomConnections.length);
         
         broadcastToRoom(connection.roomId, gameEndMessage);
       } else {
@@ -1484,7 +1485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   function broadcastToRoom(roomId: string, message: any) {
     let sentCount = 0;
-    connections.forEach(connection => {
+    connections.forEach((connection) => {
       if (connection.roomId === roomId && connection.ws.readyState === WebSocket.OPEN) {
         connection.ws.send(JSON.stringify(message));
         sentCount++;

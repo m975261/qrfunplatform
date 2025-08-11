@@ -586,15 +586,7 @@ export default function Game() {
         />
       )}
       
-      {/* Debug info for game end */}
-      {gameState?.room?.status === 'finished' && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-50 text-xs">
-          Game Status: {gameState?.room?.status}<br/>
-          GameEndData: {gameState?.gameEndData ? 'Present' : 'Missing'}<br/>
-          ShowGameEnd: {showGameEnd ? 'True' : 'False'}<br/>
-          Winner: {gameState?.gameEndData?.winner || 'None'}
-        </div>
-      )}
+
 
       {/* Spectator View */}
       {currentPlayer && currentPlayer.isSpectator && (
