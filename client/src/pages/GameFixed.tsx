@@ -414,8 +414,8 @@ export default function Game() {
                           <div className="text-lg sm:text-xl text-yellow-400">👑</div>
                         </div>
                       )}
-                      {/* Card count - Responsive */}
-                      <div className="absolute -bottom-1 sm:-bottom-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold border border-slate-600">
+                      {/* Card count - Positioned on left side to avoid name overlap */}
+                      <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold border border-slate-600 shadow-lg">
                         {player.hand?.length || 0}
                       </div>
                     </div>
