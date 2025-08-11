@@ -1678,15 +1678,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const gameEndMessage = {
             type: 'game_end',
-            data: {
-              winner: player.nickname,
-              finalPositions: rankings.map(p => ({
-                nickname: p.nickname,
-                cardCount: p.hand?.length || 0,
-                finishPosition: p.finishPosition || (p.hasLeft ? 'Left' : 'Last'),
-                hasLeft: p.hasLeft || false
-              }))
-            }
+            winner: player.nickname,
+            rankings: rankings.map(p => ({
+              nickname: p.nickname,
+              position: p.finishPosition || (p.hasLeft ? 'Left' : 'Last'),
+              hasLeft: p.hasLeft || false
+            }))
           };
           
           console.log('🏆 Test triggered game_end message:', gameEndMessage);

@@ -16,7 +16,9 @@ Preferred communication style: Simple, everyday language.
 - **Fixed in GameFixed.tsx**: Removed conditional styling that changed button based on hand size or UNO status
 - **Penalty Strategy**: UNO call works anytime but only prevents penalty when playing second-to-last card
 - **No Player Hints**: Removed green color change and "UNO CALLED" text that reminded players they called UNO
-- **Enhanced Debugging**: Added comprehensive logging for game end modal detection and display
+- **Winner Modal Fixed**: Found and fixed server-side message format inconsistency causing modal display issues
+- **Root Cause**: Server was sending game_end data wrapped in data object, client expected flat structure
+- **Solution**: Standardized game_end message format to match working client-side implementation
 - **Voice Synthesis**: Voice says "UNO!" when any player calls UNO (browser speech synthesis)
 - **Server Validation**: UNO calls validated server-side, work with any hand size, protection only on second-to-last card play
 
