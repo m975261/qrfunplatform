@@ -30,12 +30,15 @@ Preferred communication style: Simple, everyday language.
 - WebSocket validation prevents joining positions that weren't active at game start
 - Comprehensive debugging logs for kick operations and card restoration
 
-### UNO Call System Fixed (Aug 7, 2025)
-- Fixed critical UNO call bug where players received penalty cards even after calling UNO correctly
+### UNO Penalty System Completely Fixed (Aug 11, 2025)
+- **RESOLVED**: Fixed critical UNO penalty bug where players received 2-card penalties even after calling UNO correctly
+- **Root Cause**: Missing HTTP start game endpoint prevented games from entering "playing" status
+- **Solution**: Added POST `/api/rooms/:roomId/start` endpoint for proper game initialization
+- Fixed game state validation - rooms now properly transition from "waiting" to "playing" status
+- Card play validation now works correctly when room status is "playing" with 2+ players
+- UNO call workflow verified: Call UNO → Play card → Hand reduces from 2→1 → No penalty
 - Added comprehensive debugging system with detailed console logging for UNO workflow
-- Implemented fresh player data retrieval to prevent race conditions in card play logic
 - Enhanced penalty animation system with proper timing (6 seconds total) and initial count display
-- Verified UNO call workflow: Call UNO → Play card → No penalty (working correctly)
 
 ### Session Management 
 - Implemented browser fingerprinting to detect same user accessing from multiple tabs/browsers

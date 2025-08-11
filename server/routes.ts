@@ -1562,6 +1562,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Start game endpoint
+  app.post("/api/rooms/:roomId/start", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const hostId = req.headers.authorization?.replace('Bearer ', '');
+      
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      const players = await storage.getPlayersByRoom(roomId);
+      const gamePlayers = players.filter(p => !p.isSpectator);
+      
+      console.log(`Start game attempt: Host: ${hostId}, Room host: ${room.hostId}, Players: ${gamePlayers.length}`);
+
+      if (gamePlayers.length < 2) {
+        return res.status(400).json({ error: "Need at least 2 players to start the game" });
+      }
+
+      // Initialize game with verified deck
+      const deck = UnoGameLogic.createDeck();
+      
+      // Verify deck composition in development
+      if (process.env.NODE_ENV === 'development') {
+        UnoGameLogic.verifyDeckComposition(deck);
+      }
+
+      const { hands, remainingDeck } = UnoGameLogic.dealInitialHands(deck, gamePlayers.length);
+      
+      // Find a number card for the first discard (never start with special cards)
+      const { firstCard, remainingDeck: finalDeck } = UnoGameLogic.findFirstNumberCard(remainingDeck);
+      const discardPile = [firstCard];
+      
+      // Update room with game state
+      await storage.updateRoom(roomId, {
+        status: "playing",
+        deck: finalDeck,
+        discardPile,
+        currentPlayerIndex: 0,
+        currentColor: firstCard.color as "red" | "blue" | "green" | "yellow",
+        pendingDraw: 0
+      });
+
+      // Update player hands and store position-based hands
+      const positionHands: {[key: string]: any[]} = {};
+      const activePositions: number[] = [];
+      
+      for (let i = 0; i < gamePlayers.length; i++) {
+        await storage.updatePlayer(gamePlayers[i].id, { hand: hands[i] });
+        // Store cards by position so anyone joining this position gets these cards
+        positionHands[gamePlayers[i].position!.toString()] = hands[i];
+        // Track which positions were active when game started
+        activePositions.push(gamePlayers[i].position!);
+      }
+      
+      console.log(`Game started with active positions: [${activePositions.join(', ')}]`);
+      console.log(`Position hands saved:`, Object.keys(positionHands));
+      
+      // Update room with position-based hands and active positions
+      await storage.updateRoom(roomId, { positionHands, activePositions });
+      
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: "Game started successfully" });
+    } catch (error) {
+      console.error("Error starting game:", error);
+      res.status(500).json({ error: "Failed to start game" });
+    }
+  });
+
   app.post("/api/rooms/:roomId/test-play-card", async (req, res) => {
     try {
       const { playerId, cardIndex } = req.body;
