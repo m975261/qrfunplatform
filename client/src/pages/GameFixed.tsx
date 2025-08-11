@@ -75,22 +75,114 @@ export default function Game() {
       // Set data first
       setGameEndData(gameState.gameEndData);
       
-      // IMMEDIATE Safari alert fallback - show native alert first
+      // AGGRESSIVE Safari solution - create simple DOM overlay
       if (isSafariOrMobile) {
         const winner = gameState.gameEndData.winner;
         const rankings = gameState.gameEndData.rankings || [];
-        let alertMessage = `🏆 ${winner} WINS!\n\nFinal Rankings:\n`;
-        rankings.forEach((player, index) => {
-          alertMessage += `${index + 1}. ${player.nickname}\n`;
-        });
-        alertMessage += '\nTap OK to continue';
         
-        // Show native alert immediately for Safari
+        console.log("🏆 Creating Safari-compatible overlay");
+        
+        // Create simple DOM overlay for Safari
+        const overlay = document.createElement('div');
+        overlay.id = 'safari-winner-overlay';
+        overlay.innerHTML = `
+          <div style="
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: rgba(0,0,0,0.9) !important;
+            z-index: 999999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px !important;
+          ">
+            <div style="
+              background: white !important;
+              border-radius: 12px !important;
+              padding: 30px !important;
+              text-align: center !important;
+              max-width: 350px !important;
+              width: 90% !important;
+              box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
+              border: 3px solid #ffd700 !important;
+            ">
+              <div style="font-size: 32px; margin-bottom: 15px;">🏆</div>
+              <h2 style="color: #333; margin: 0 0 15px 0; font-size: 24px; font-weight: bold;">
+                ${winner} Wins!
+              </h2>
+              <p style="color: #666; margin: 0 0 20px 0; font-size: 16px;">
+                Congratulations! 🎉
+              </p>
+              <div style="margin-bottom: 25px;">
+                ${rankings.map((player, index) => `
+                  <div style="
+                    padding: 10px; 
+                    margin: 5px 0;
+                    background: ${index === 0 ? '#ffd700' : '#f5f5f5'};
+                    border-radius: 8px;
+                    color: ${index === 0 ? 'white' : '#333'};
+                    font-size: 16px;
+                    font-weight: ${index === 0 ? 'bold' : 'normal'};
+                  ">
+                    ${index + 1}. ${player.nickname} ${index === 0 ? '👑' : ''}
+                  </div>
+                `).join('')}
+              </div>
+              <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="window.location.reload()" style="
+                  background: #4CAF50;
+                  color: white;
+                  border: none;
+                  padding: 12px 20px;
+                  border-radius: 8px;
+                  font-size: 16px;
+                  min-height: 44px;
+                  cursor: pointer;
+                ">
+                  Play Again
+                </button>
+                <button onclick="window.location.href='/'" style="
+                  background: #f44336;
+                  color: white;
+                  border: none;
+                  padding: 12px 20px;
+                  border-radius: 8px;
+                  font-size: 16px;
+                  min-height: 44px;
+                  cursor: pointer;
+                ">
+                  Home
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Remove any existing overlay
+        const existing = document.getElementById('safari-winner-overlay');
+        if (existing) existing.remove();
+        
+        // Add to body
+        document.body.appendChild(overlay);
+        console.log("🏆 Safari overlay created and added to DOM");
+        
+        // Force Safari to acknowledge it
+        overlay.offsetHeight;
+        overlay.style.display = 'flex';
+        
+        // Also show native alert as backup
         setTimeout(() => {
+          let alertMessage = `🏆 ${winner} WINS!\n\nFinal Rankings:\n`;
+          rankings.forEach((player, index) => {
+            alertMessage += `${index + 1}. ${player.nickname}\n`;
+          });
           alert(alertMessage);
-        }, 100);
-        
-        console.log("🏆 Safari native alert shown");
+        }, 500);
       }
       
       // Always try to show modal regardless
