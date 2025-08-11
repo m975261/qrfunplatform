@@ -140,10 +140,10 @@ export default function Game() {
 
   const getPositionClass = (position: number) => {
     const positions = [
-      'top-4 left-1/2 -translate-x-1/2', // 12 o'clock
-      'right-4 top-1/2 -translate-y-1/2', // 3 o'clock  
-      'bottom-4 left-1/2 -translate-x-1/2', // 6 o'clock
-      'left-4 top-1/2 -translate-y-1/2' // 9 o'clock
+      'top-8 left-1/2 -translate-x-1/2', // 12 o'clock - moved further from center
+      'right-8 top-1/2 -translate-y-1/2', // 3 o'clock - moved further from center
+      'bottom-24 left-1/2 -translate-x-1/2', // 6 o'clock - moved up to avoid bottom bar
+      'left-8 top-1/2 -translate-y-1/2' // 9 o'clock - moved further from center
     ];
     return positions[position] || positions[0];
   };
@@ -227,11 +227,11 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - centered with responsive padding */}
-      <div className="absolute inset-0 flex items-center justify-center pb-24 sm:pb-32 pt-16 sm:pt-20">
+      {/* Central Game Area - centered with reduced bottom padding */}
+      <div className="absolute inset-0 flex items-center justify-center pb-40 sm:pb-44 pt-16 sm:pt-20">
         <div className="relative">
-          {/* Draw Pile - Positioned below circle, mobile-friendly, offset to avoid conflicts */}
-          <div className="absolute -bottom-16 -right-12 sm:-bottom-20 sm:-right-16 z-10">
+          {/* Draw Pile - Better positioned to avoid overlaps */}
+          <div className="absolute -bottom-12 -right-20 sm:-bottom-16 sm:-right-24 z-10">
             <div className="relative cursor-pointer group" onClick={drawCard}>
               <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
               <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
@@ -239,14 +239,14 @@ export default function Game() {
                 <div className="text-white font-bold text-xs">Cards</div>
               </div>
             </div>
-            <div className="text-xs sm:text-sm text-center mt-2 text-blue-300 font-bold">DRAW</div>
+            <div className="text-xs sm:text-sm text-center mt-1 text-blue-300 font-bold">DRAW</div>
           </div>
 
-          {/* Game Circle - Responsive sizing */}
-          <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
+          {/* Game Circle - Responsive sizing with better proportions */}
+          <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
             
             {/* Inner Circle - Responsive sizing */}
-            <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
+            <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
               
 
 
@@ -288,12 +288,12 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Direction Indicator - positioned directly below the center circle */}
+      {/* Direction Indicator - positioned away from overlaps */}
       <div className="absolute inset-0 flex items-center justify-center pb-32 pointer-events-none">
         <div className="relative">
-          <div className="absolute top-[300px] md:top-[340px] lg:top-[380px] left-1/2 transform -translate-x-1/2 z-10">
-            <div className="bg-purple-600/90 rounded-full w-12 h-12 flex items-center justify-center shadow-lg border-2 border-purple-400">
-              <div className="text-white text-2xl font-bold">
+          <div className="absolute top-[240px] sm:top-[280px] md:top-[320px] lg:top-[360px] left-1/2 transform -translate-x-1/2 z-10">
+            <div className="bg-purple-600/90 rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg border-2 border-purple-400">
+              <div className="text-white text-xl sm:text-2xl font-bold">
                 {room.direction === "clockwise" ? "↻" : "↺"}
               </div>
             </div>
@@ -302,8 +302,8 @@ export default function Game() {
       </div>
 
       {/* Player Avatars in Circular Layout */}
-      <div className="absolute inset-0 flex items-center justify-center pb-32 pointer-events-none">
-        <div className="relative w-80 h-80">
+      <div className="absolute inset-0 flex items-center justify-center pb-40 pointer-events-none">
+        <div className="relative w-80 h-80 sm:w-96 sm:h-96">
           {/* 4 Fixed Avatar Positions */}
           {[0, 1, 2, 3].map((position) => {
             const player = getPlayerAtPosition(position);
@@ -339,9 +339,9 @@ export default function Game() {
                       </div>
                     </div>
                   ) : (
-                    // Empty Slot or Joinable Slot for Spectators
+                    // Empty Slot or Joinable Slot for Spectators - Smaller size to reduce overlap
                     <div 
-                      className={`w-20 h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-4 border-white/20 ${
+                      className={`w-16 h-16 sm:w-20 sm:h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-4 border-white/20 ${
                         currentPlayer?.isSpectator && isPaused && activePositions.includes(position) ? 'cursor-pointer hover:bg-gray-500/50 transition-colors' : ''
                       }`}
                       onClick={() => {
@@ -368,7 +368,7 @@ export default function Game() {
                           </>
                         ) : (
                           <>
-                            <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-400 mx-auto" />
                             <div className="text-xs text-gray-400 mt-1">Closed</div>
                           </>
                         )}
@@ -468,20 +468,20 @@ export default function Game() {
         })}
       </div>
 
-      {/* Player Hand Bar - Fixed at Bottom with responsive design */}
+      {/* Player Hand Bar - Compact design at bottom */}
       {currentPlayer && !currentPlayer.isSpectator && (
         <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
-          <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
-            {/* Player Info and UNO Button - Responsive */}
-            <div className="flex items-center justify-between mb-2 sm:mb-4 flex-wrap gap-2">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 ring-2 ring-green-400 ring-offset-2 ring-offset-slate-800' : 'bg-gradient-to-br from-blue-400 to-blue-600'
+          <div className="container mx-auto px-2 sm:px-4 py-1.5 sm:py-2">
+            {/* Compact Player Info and UNO Button */}
+            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+              <div className="flex items-center space-x-2">
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                  isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 ring-1 ring-green-400' : 'bg-gradient-to-br from-blue-400 to-blue-600'
                 }`}>
                   {currentPlayer.nickname[0].toUpperCase()}
                 </div>
                 <div>
-                  <div className={`font-semibold text-white text-sm sm:text-base ${isMyTurn ? 'text-green-400' : ''}`}>
+                  <div className={`font-semibold text-white text-sm ${isMyTurn ? 'text-green-400' : ''}`}>
                     {currentPlayer.nickname} {isMyTurn && '⭐'}
                   </div>
                   <div className="text-xs text-slate-400">
@@ -490,16 +490,16 @@ export default function Game() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="flex items-center space-x-2">
                 {isMyTurn && (
-                  <div className="bg-green-500/20 text-green-400 px-2 sm:px-3 py-1 rounded-full text-xs font-bold border border-green-500/30">
+                  <div className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full text-xs font-bold border border-green-500/30">
                     YOUR TURN
                   </div>
                 )}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs sm:text-sm px-2 sm:px-3"
+                  className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs px-2 py-1"
                   onClick={handleUnoCall}
                 >
                   🔥 UNO! 🔥
@@ -507,15 +507,15 @@ export default function Game() {
               </div>
             </div>
             
-            {/* Player's Cards - Responsive scrolling */}
+            {/* Compact Card Display */}
             <div className="overflow-x-auto">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div className="flex space-x-1 sm:space-x-2 pb-2 min-w-max">
+                <div className="flex space-x-1 pb-1 min-w-max">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
                       className={`transition-all duration-200 flex-shrink-0 ${
-                        isMyTurn ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer' : 'opacity-60'
+                        isMyTurn ? 'hover:scale-105 hover:-translate-y-1 cursor-pointer' : 'opacity-60'
                       }`}
                     >
                       <GameCard 
@@ -529,7 +529,7 @@ export default function Game() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-slate-400 text-sm py-4">No cards in hand</div>
+                <div className="text-center text-slate-400 text-sm py-2">No cards in hand</div>
               )}
             </div>
           </div>

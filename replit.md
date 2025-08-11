@@ -10,7 +10,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Host Exit Redirect & Complete System Fixes (Latest - Aug 11, 2025)
+### GUI Responsive Design & Draw Deck Enhancement (Latest - Aug 11, 2025)
+- **Draw Deck Renamed**: Changed from "?" symbol to "Cards" text for better user clarity
+- **Compact Bottom Bar**: Reduced player hand area height by 40% to prevent screen overflow
+- **Better Element Positioning**: Moved draw pile further right to avoid overlaps with main card
+- **Responsive Player Slots**: Increased distance between player avatars and center circle
+- **Mobile-First Sizing**: All elements now scale properly from iPhone to desktop browser
+- **Fixed Overlapping Issues**: Resolved "Closed" slots overlapping with center game card
+- **Optimized Layout Spacing**: Direction indicator repositioned to avoid visual conflicts
+- **Improved Card Scrolling**: Enhanced horizontal card display with proper touch scrolling
+
+### Host Exit Redirect & Complete System Fixes (Aug 11, 2025)
 - **NEW FEATURE**: Host exit redirect during play again flow - all players automatically redirected to main page when host leaves
 - **Host Exit Detection**: Server detects when host disconnects and handles room cleanup appropriately
 - **Auto-Redirect Logic**: When host leaves room with "finished" status (play again scenario), all players get `host_left_redirect` message
