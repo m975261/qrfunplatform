@@ -238,16 +238,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         position: updatedPlayer?.position
       });
       
-      // Send kick message but don't close connection - let them stay as spectator
-      connections.forEach((connection, connId) => {
-        if (connection.playerId === playerIdToKick && connection.ws.readyState === WebSocket.OPEN) {
-          connection.ws.send(JSON.stringify({
-            type: 'kicked',
-            message: 'You have been removed from the room'
-          }));
-          // Don't close connection - let them stay as spectator
-        }
-      });
+      // Don't send kick message at all - just let room state update handle it
+      // The player will see they became a spectator through the room state broadcast
 
       // Broadcast updated room state
       await broadcastRoomState(roomId);
@@ -1133,16 +1125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     // No notification message for lobby kicks either
     
-    // Send kick message to target player but don't close their connection
-    connections.forEach((conn, connId) => {
-      if (conn.playerId === targetPlayerId && conn.ws.readyState === WebSocket.OPEN) {
-        conn.ws.send(JSON.stringify({
-          type: 'kicked',
-          message: 'You have been removed from the room'
-        }));
-        // Don't close connection - let them stay as spectator
-      }
-    });
+    // Don't send kick message - just let room state update handle it
+    // The player will see they became a spectator through the room state broadcast
     
     await broadcastRoomState(connection.roomId);
   }
