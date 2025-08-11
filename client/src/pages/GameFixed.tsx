@@ -511,13 +511,13 @@ export default function Game() {
         </div>
       )}
 
-      {/* Spectators Area */}
-      {players.filter((p: any) => p.isSpectator).length > 0 && (
+      {/* Spectators Area - Show spectators who are still connected */}
+      {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
         <div className="absolute top-20 right-2 md:right-4 z-20">
           <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-lg max-w-xs">
             <div className="text-xs font-semibold text-gray-700 mb-2">Spectators:</div>
             <div className="space-y-1">
-              {players.filter((p: any) => p.isSpectator).map((spectator: any) => (
+              {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any) => (
                 <div key={spectator.id} className="flex items-center space-x-2">
                   <div className="w-4 h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                     {spectator.nickname?.[0]?.toUpperCase()}
