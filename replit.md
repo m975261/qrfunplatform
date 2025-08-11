@@ -10,14 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Safari iPhone Winner Modal Fix & Complete System Verification (Latest - Aug 11, 2025)
-- **SAFARI MODAL COMPATIBILITY**: Fixed winner modal not displaying on Safari iPhone with comprehensive mobile Safari support ✅ CONFIRMED
-- **VIEWPORT MANAGEMENT**: Added dynamic viewport meta tag handling for proper iOS Safari rendering ✅ APPLIED
-- **BODY SCROLL PREVENTION**: Implemented body scroll locking during modal display to prevent background interaction ✅ APPLIED  
-- **WEBKIT OPTIMIZATION**: Added WebKit-specific CSS properties for 3D acceleration and proper layering ✅ APPLIED
-- **TOUCH-FRIENDLY BUTTONS**: Enhanced button styling with 44px minimum touch targets and tap highlight removal ✅ APPLIED
-- **ENHANCED Z-INDEX**: Used inline styles with z-index 9999+ to ensure modal displays above all content ✅ APPLIED
-- **BACKDROP IMPROVEMENTS**: Strengthened backdrop opacity and added click prevention for better modal isolation ✅ APPLIED
+### Enhanced Safari iPhone Winner Modal Fix & Connection Stability (Latest - Aug 11, 2025)
+- **SAFARI iOS DETECTION**: Added automatic Safari mobile detection with enhanced modal rendering strategies ✅ APPLIED
+- **MULTI-ATTEMPT RENDERING**: Implemented multiple forced re-render attempts specifically for Safari iOS compatibility ✅ APPLIED
+- **EMERGENCY FALLBACK ALERT**: Added alert-based winner notification as backup when modal fails to display on Safari ✅ APPLIED
+- **ENHANCED VIEWPORT CONTROL**: Improved viewport meta tag management with Safari-specific properties (minimal-ui, viewport-fit=cover) ✅ APPLIED
+- **ADVANCED BODY LOCKING**: Enhanced body scroll prevention with document root overflow control for iOS Safari ✅ APPLIED
+- **WEBKIT 3D TRANSFORMS**: Added translate3d transforms for hardware acceleration and proper Safari rendering ✅ APPLIED
+- **MODAL VISIBILITY TESTING**: Added DOM element visibility checking with computed styles for Safari debugging ✅ APPLIED
+- **CONNECTION STABILITY FIXES**: Resolved critical WebSocket room lookup issues preventing game end message delivery ✅ APPLIED
+- **ROOM LOOKUP ENHANCEMENT**: Fixed HTTP and WebSocket endpoints to handle both room IDs and codes properly ✅ APPLIED
 
 ### Complete Ranking System & Turn Management Fix - VERIFIED WORKING (Aug 11, 2025)
 - **RANKING DISPLAY SYSTEM**: When players finish, their slot shows ranking badge (1ST, 2ND, 3RD, 4TH) with golden styling ✅ CONFIRMED

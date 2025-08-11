@@ -25,53 +25,84 @@ interface GameEndModalProps {
 }
 
 export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLobby }: GameEndModalProps) {
-  // Force viewport and prevent scrolling on Safari iOS
+  // Enhanced Safari iOS modal compatibility
   useEffect(() => {
-    // Add meta viewport tag if not present
+    console.log("🏆 GameEndModal mounted - applying Safari fixes");
+    
+    // Force viewport meta tag for iOS Safari
     let viewportMeta = document.querySelector('meta[name="viewport"]');
     if (!viewportMeta) {
       viewportMeta = document.createElement('meta');
       viewportMeta.setAttribute('name', 'viewport');
       document.head.appendChild(viewportMeta);
     }
-    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover');
+    const originalViewport = viewportMeta.getAttribute('content');
+    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, minimal-ui');
     
-    // Prevent body scroll
+    // Store original body styles
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyPosition = document.body.style.position;
+    const originalBodyWidth = document.body.style.width;
+    const originalBodyHeight = document.body.style.height;
+    const originalDocumentOverflow = document.documentElement.style.overflow;
+    
+    // Apply Safari-specific body locking
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
+    document.body.style.width = '100vw';
+    document.body.style.height = '100vh';
+    document.body.style.top = '0';
+    document.body.style.left = '0';
+    document.documentElement.style.overflow = 'hidden';
+    
+    // Force reflow to ensure styles are applied
+    document.body.offsetHeight;
     
     return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
+      console.log("🏆 GameEndModal unmounting - restoring styles");
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.position = originalBodyPosition;
+      document.body.style.width = originalBodyWidth;
+      document.body.style.height = originalBodyHeight;
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.documentElement.style.overflow = originalDocumentOverflow;
+      
+      if (originalViewport) {
+        viewportMeta?.setAttribute('content', originalViewport);
+      }
     };
   }, []);
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center"
       style={{ 
-        position: 'fixed',
+        position: 'fixed !important',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 9999,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
+        width: '100vw',
+        height: '100vh',
+        zIndex: 99999,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        display: 'flex !important',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px',
+        padding: '16px',
         boxSizing: 'border-box',
+        overflow: 'auto',
         WebkitBackfaceVisibility: 'hidden',
         backfaceVisibility: 'hidden',
-        WebkitPerspective: '1000px',
-        perspective: '1000px'
+        WebkitTransform: 'translate3d(0, 0, 0)',
+        transform: 'translate3d(0, 0, 0)',
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'none'
       }}
       onClick={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.preventDefault()}
+      data-testid="game-end-modal"
     >
       <Card 
         className="max-w-md w-full mx-4 animate-slide-up"

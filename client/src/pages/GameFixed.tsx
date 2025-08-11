@@ -62,26 +62,48 @@ export default function Game() {
       currentPlayerId: playerId
     });
     
-    // Enhanced game end detection - handle both finished status and gameEndData
-    // Force modal display regardless of player connection status
+    // Enhanced game end detection with Safari-specific handling
     if (gameState?.room?.status === "finished" || gameState?.gameEndData) {
-      console.log("🏆 Game ended - forcing winner modal display", {
+      console.log("🏆 Game ended - forcing winner modal display with Safari compatibility", {
         status: gameState?.room?.status,
         winner: gameState?.gameEndData?.winner,
         rankings: gameState?.gameEndData?.rankings,
-        playerId
+        playerId,
+        userAgent: navigator.userAgent,
+        isSafari: /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
       });
       
-      // Always set game end data and show modal
+      // Force modal display with enhanced Safari handling
       if (gameState?.gameEndData) {
         setGameEndData(gameState.gameEndData);
       }
       setShowGameEnd(true);
       
-      // Force a re-render to ensure modal appears
-      setTimeout(() => {
-        setShowGameEnd(true);
-      }, 100);
+      // Safari iOS specific fix - multiple attempts to ensure modal appears
+      const isSafariMobile = /iPhone|iPad/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent);
+      
+      if (isSafariMobile) {
+        console.log("🍎 Safari iOS detected - applying enhanced modal fixes");
+        
+        // Multiple forced re-renders for Safari
+        setTimeout(() => setShowGameEnd(true), 50);
+        setTimeout(() => setShowGameEnd(true), 150);
+        setTimeout(() => setShowGameEnd(true), 300);
+        
+        // Emergency Safari fallback - show alert if modal still not visible
+        setTimeout(() => {
+          const modalElement = document.querySelector('[data-testid="game-end-modal"]');
+          if (!modalElement || getComputedStyle(modalElement).display === 'none') {
+            console.log("🚨 Safari modal fallback triggered");
+            const winner = gameState?.gameEndData?.winner || "Someone";
+            alert(`🏆 GAME OVER!\n\n${winner} wins!\n\nThe winner modal should appear now.`);
+            setShowGameEnd(true);
+          }
+        }, 1000);
+      } else {
+        // Standard browsers
+        setTimeout(() => setShowGameEnd(true), 100);
+      }
     }
     
     if (gameState?.needsContinue) {
