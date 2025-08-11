@@ -6,6 +6,7 @@ import { UnoGameLogic } from "./gameLogic";
 import { z } from "zod";
 import QRCode from "qrcode";
 import jwt from "jsonwebtoken";
+import { Card } from "@shared/schema";
 
 interface SocketConnection {
   ws: WebSocket;
@@ -354,13 +355,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Position already taken" });
       }
 
+      // Check if game is active and deal cards to rejoining player
+      let newHand: Card[] = [];
+      if (room.status === "playing" && room.deck && room.deck.length > 0) {
+        // Deal 7 cards to the rejoining player from the current deck
+        const cardsNeeded = Math.min(7, room.deck.length);
+        newHand = room.deck.slice(0, cardsNeeded);
+        const updatedDeck = room.deck.slice(cardsNeeded);
+        
+        // Update room deck
+        await storage.updateRoom(roomId, { deck: updatedDeck });
+        
+        console.log(`Dealing ${cardsNeeded} cards to player ${playerId} taking position ${position}`);
+      }
+
       // Update player to take the position and reset their game state
       await storage.updatePlayer(playerId, {
         position,
         isSpectator: false,
         hasLeft: false,
         leftAt: null,
-        hand: [],
+        hand: newHand, // Deal cards if game is active, empty otherwise
         hasCalledUno: false,
         finishPosition: null
       });
@@ -1193,18 +1208,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return; // Position is occupied by an active player
     }
     
-    // Regular join to empty position - initialize game state
+    // Check if game is active and deal cards to rejoining player
+    let newHand: Card[] = [];
+    if (room.status === "playing" && room.deck && room.deck.length > 0) {
+      // Deal 7 cards to the rejoining player from the current deck
+      const cardsNeeded = Math.min(7, room.deck.length);
+      newHand = room.deck.slice(0, cardsNeeded);
+      const updatedDeck = room.deck.slice(cardsNeeded);
+      
+      // Update room deck
+      await storage.updateRoom(connection.roomId, { deck: updatedDeck });
+      
+      console.log(`Dealing ${cardsNeeded} cards to rejoining player ${playerToReplace.nickname}`);
+    }
+    
+    // Regular join to empty position - initialize game state with cards if game is active
     await storage.updatePlayer(connection.playerId, {
       isSpectator: false,
       position: targetPosition,
-      hand: [], // Empty hand for new player
+      hand: newHand, // Deal cards if game is active, empty otherwise
       hasLeft: false,
       leftAt: null,
       hasCalledUno: false,
       finishPosition: null
     });
     
-    console.log(`${playerToReplace.nickname} joined position ${targetPosition}`);
+    console.log(`${playerToReplace.nickname} joined position ${targetPosition} with ${newHand.length} cards`);
     
     // Removed system message as requested by user
     
