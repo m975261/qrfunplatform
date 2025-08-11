@@ -54,19 +54,30 @@ export function useSocket(autoConnect: boolean = true) {
             handleFloatingEmoji(message);
             break;
           case 'game_end':
-            // Handle game end
+            // Handle game end - enhanced logging for debugging
             console.log("🏆 GAME END MESSAGE RECEIVED:", {
               winner: message.winner,
-              rankings: message.rankings
+              rankings: message.rankings,
+              timestamp: new Date().toISOString()
             });
-            setGameState((prev: any) => ({
-              ...prev,
-              room: { ...prev.room, status: 'finished' },
-              gameEndData: {
-                winner: message.winner,
-                rankings: message.rankings
-              }
-            }));
+            
+            // Force state update to ensure winner modal appears
+            setGameState((prev: any) => {
+              const newState = {
+                ...prev,
+                room: { 
+                  ...prev.room, 
+                  status: 'finished' 
+                },
+                gameEndData: {
+                  winner: message.winner,
+                  rankings: message.rankings,
+                  timestamp: Date.now()
+                }
+              };
+              console.log("🏆 Updated game state with end data:", newState);
+              return newState;
+            });
             break;
           case 'player_left':
             console.log("Player left:", message.player);

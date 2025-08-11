@@ -61,14 +61,17 @@ export default function Game() {
       needsContinue: gameState?.needsContinue
     });
     
-    if (gameState?.room?.status === "finished") {
-      console.log("🏆 Room status is finished - setting showGameEnd to true");
-      setShowGameEnd(true);
-    }
-    
-    if (gameState?.gameEndData) {
-      console.log("🏆 GameEndData found - setting modal data and show", gameState.gameEndData);
-      setGameEndData(gameState.gameEndData);
+    // Enhanced game end detection - handle both finished status and gameEndData
+    if (gameState?.room?.status === "finished" || gameState?.gameEndData) {
+      console.log("🏆 Game ended - showing winner modal", {
+        status: gameState?.room?.status,
+        winner: gameState?.gameEndData?.winner,
+        rankings: gameState?.gameEndData?.rankings
+      });
+      
+      if (gameState?.gameEndData) {
+        setGameEndData(gameState.gameEndData);
+      }
       setShowGameEnd(true);
     }
     
@@ -652,13 +655,13 @@ export default function Game() {
         />
       )}
 
-      {/* Game End Modal */}
-      {((showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData)) && (
+      {/* Game End Modal - Enhanced detection for kicked/rejoined players */}
+      {(showGameEnd || gameState?.room?.status === 'finished') && (gameEndData || gameState?.gameEndData) && (
         <GameEndModal
           winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
           rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}
           onPlayAgain={() => {
-            console.log('Play again clicked');
+            console.log('🔄 Play again clicked');
             playAgain();
             setShowGameEnd(false);
             setGameEndData(null);
@@ -671,11 +674,12 @@ export default function Game() {
             }
           }}
           onBackToLobby={() => {
-            console.log('Back to lobby clicked');
+            console.log('🏠 Back to lobby clicked');
             setShowGameEnd(false);
             setGameEndData(null);
             localStorage.removeItem("currentRoomId");
             localStorage.removeItem("playerId");
+            localStorage.removeItem("playerNickname");
             window.location.href = "/";
           }}
         />
