@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         for (const pos of originalActivePositions) {
           const positionTaken = existingPlayers.some(p => p.position === pos && !p.isSpectator && !p.hasLeft);
-          if (!positionTaken && room.positionHands?.[pos.toString()]) {
+          if (!positionTaken && (room.positionHands || {})[pos.toString()]) {
             availablePositions.push(pos);
           }
         }
@@ -135,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (availablePositions.length > 0) {
           // Join the first available position with existing cards
           playerPosition = availablePositions[0];
-          playerHand = room.positionHands[playerPosition.toString()] || [];
+          playerHand = (room.positionHands || {})[playerPosition.toString()] || [];
           isSpectator = false;
           console.log(`New player ${nickname} joining active game at position ${playerPosition} with ${playerHand.length} cards`);
         } else {
@@ -1495,6 +1495,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🏆 Sent game_end message to ${sentCount} connections in room ${roomId}`);
     }
   }
+
+  // Test endpoints for development
+  app.post("/api/rooms/:roomId/test-set-hand", async (req, res) => {
+    try {
+      const { playerId, hand } = req.body;
+      await storage.updatePlayer(playerId, { hand });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/rooms/:roomId/test-play-card", async (req, res) => {
+    try {
+      const { playerId, cardIndex } = req.body;
+      const player = await storage.getPlayer(playerId);
+      if (!player || !player.hand || player.hand.length === 0) {
+        return res.status(400).json({ error: "No cards to play" });
+      }
+
+      const card = player.hand[cardIndex];
+      if (!card) {
+        return res.status(400).json({ error: "Invalid card index" });
+      }
+
+      // Remove card from hand
+      const newHand = player.hand.filter((_, i) => i !== cardIndex);
+      await storage.updatePlayer(playerId, { hand: newHand });
+
+      // Check for win condition
+      if (newHand.length === 0) {
+        // Trigger game end logic
+        const room = await storage.getRoom(req.params.roomId);
+        const players = await storage.getPlayersByRoom(req.params.roomId);
+        const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
+        
+        const finishedPlayers = activePlayers.filter(p => p.finishPosition);
+        const finishedCount = finishedPlayers.length;
+        
+        await storage.updatePlayer(playerId, { finishPosition: finishedCount + 1 });
+        
+        const remainingPlayers = activePlayers.filter(p => !p.finishPosition && p.id !== playerId);
+        
+        if (remainingPlayers.length <= 1) {
+          if (remainingPlayers.length === 1) {
+            await storage.updatePlayer(remainingPlayers[0].id, { finishPosition: finishedCount + 2 });
+          }
+          
+          await storage.updateRoom(req.params.roomId, { status: "finished" });
+          
+          const finalPlayers = await storage.getPlayersByRoom(req.params.roomId);
+          const rankings = finalPlayers
+            .filter(p => !p.isSpectator)
+            .sort((a, b) => (a.finishPosition || 999) - (b.finishPosition || 999));
+          
+          const gameEndMessage = {
+            type: 'game_end',
+            data: {
+              winner: player.nickname,
+              finalPositions: rankings.map(p => ({
+                nickname: p.nickname,
+                cardCount: p.hand?.length || 0,
+                finishPosition: p.finishPosition || (p.hasLeft ? 'Left' : 'Last'),
+                hasLeft: p.hasLeft || false
+              }))
+            }
+          };
+          
+          console.log('🏆 Test triggered game_end message:', gameEndMessage);
+          broadcastToRoom(req.params.roomId, gameEndMessage);
+        }
+      }
+
+      res.json({ success: true, cardsLeft: newHand.length, gameEnded: newHand.length === 0 });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
 
   return httpServer;
 }
