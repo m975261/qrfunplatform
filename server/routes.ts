@@ -190,7 +190,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Kick player from room (host only)
+  // Kick player from room (host only) - POST endpoint for frontend
+  app.post("/api/rooms/:roomId/kick", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { playerIdToKick } = req.body;
+      const hostId = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!hostId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      if (room.hostId !== hostId) {
+        return res.status(403).json({ error: "Only the host can kick players" });
+      }
+
+      const playerToKick = await storage.getPlayer(playerIdToKick);
+      if (!playerToKick || playerToKick.roomId !== roomId) {
+        return res.status(404).json({ error: "Player not found in this room" });
+      }
+
+      console.log(`Converting player ${playerIdToKick} (${playerToKick.nickname}) to spectator via POST`);
+      
+      // Convert player to spectator instead of deleting them
+      await storage.updatePlayer(playerIdToKick, {
+        isSpectator: true,
+        hasLeft: false, // Keep as false so they remain visible as spectator
+        leftAt: null,   // Don't set left time
+        position: null,
+        hand: [],
+        hasCalledUno: false,
+        finishPosition: null
+      });
+      
+      // Verify the update worked
+      const updatedPlayer = await storage.getPlayer(playerIdToKick);
+      console.log(`Player after POST kick update:`, {
+        id: updatedPlayer?.id,
+        nickname: updatedPlayer?.nickname,
+        isSpectator: updatedPlayer?.isSpectator,
+        hasLeft: updatedPlayer?.hasLeft,
+        position: updatedPlayer?.position
+      });
+      
+      // Send kick message but don't close connection - let them stay as spectator
+      connections.forEach((connection, connId) => {
+        if (connection.playerId === playerIdToKick && connection.ws.readyState === WebSocket.OPEN) {
+          connection.ws.send(JSON.stringify({
+            type: 'kicked',
+            message: 'You have been removed from the room'
+          }));
+          // Don't close connection - let them stay as spectator
+        }
+      });
+
+      // Broadcast updated room state
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: "Player kicked successfully" });
+    } catch (error) {
+      console.error("Error in POST kick endpoint:", error);
+      res.status(500).json({ error: "Failed to kick player" });
+    }
+  });
+
+  // Kick player from room (host only) - DELETE endpoint (legacy)
   app.delete("/api/rooms/:roomId/players/:playerId", async (req, res) => {
     try {
       const { roomId, playerId } = req.params;
