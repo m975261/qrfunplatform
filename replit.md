@@ -10,7 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Position-Based Card System & Complete Kick Functionality (Latest - Aug 11, 2025)
+### Mobile Accessibility & Exit Button Fixes (Latest - Aug 11, 2025)
+- Fixed draw button positioning for mobile devices (iPhone accessibility)
+- Repositioned draw button from far left (-left-32) to bottom-right area (-bottom-20 -right-16)
+- Ensured draw button is in clear space without overlapping other game elements
+- Fixed exit button to properly redirect to main page with localStorage cleanup
+- Added confirmation dialog and proper session cleanup on exit
+
+### Position-Based Card System & Complete Kick Functionality (Aug 11, 2025)
 - Implemented position-based card memory system where each game slot (0-3) remembers its cards
 - Fixed kick system to be completely silent with proper card preservation and restoration
 - Added positionHands field to room schema for persistent card storage by position

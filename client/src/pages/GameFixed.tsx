@@ -186,7 +186,12 @@ export default function Game() {
               className="bg-red-900/50 border-red-700 text-red-300 hover:bg-red-800/50"
               onClick={() => {
                 if (confirm("Are you sure you want to exit the game?")) {
+                  // Send exit message to server
                   exitGame();
+                  // Clear local storage and redirect to main page
+                  localStorage.removeItem("currentRoomId");
+                  localStorage.removeItem("playerId");
+                  window.location.href = "/";
                 }
               }}
             >
