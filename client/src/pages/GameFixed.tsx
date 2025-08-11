@@ -671,7 +671,18 @@ export default function Game() {
 
       {/* Game End Modal - Force display for all players including kicked/rejoined */}
       {(showGameEnd || gameState?.room?.status === 'finished') && (gameEndData || gameState?.gameEndData) && (
-        <div className="fixed inset-0 z-[100]">
+        <div 
+          className="fixed inset-0 z-[100]"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9998,
+            pointerEvents: 'auto'
+          }}
+        >
           <GameEndModal
             winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
             rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}
