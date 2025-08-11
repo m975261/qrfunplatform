@@ -81,10 +81,9 @@ export function useSocket(autoConnect: boolean = true) {
             console.log("UNO successfully called by:", message.player);
             break;
           case 'kicked':
-            // Player was kicked from room
+            // Player was kicked from room - silently redirect without notification
             localStorage.removeItem("currentRoomId");
             localStorage.removeItem("playerId");
-            alert(message.message || "You have been removed from the room");
             window.location.href = "/";
             break;
           case 'game_continued':

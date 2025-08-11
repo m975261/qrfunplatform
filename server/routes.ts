@@ -217,24 +217,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert player to spectator instead of deleting them
       await storage.updatePlayer(playerId, {
         isSpectator: true,
-        hasLeft: true,
-        leftAt: new Date(),
+        hasLeft: false, // Keep as false so they remain visible as spectator
+        leftAt: null,   // Don't set left time
         position: null,
         hand: [],
         hasCalledUno: false,
         finishPosition: null
       });
       
-      // Close WebSocket connection if player is online
-      // Find and close connections for this player
+      // Send kick message but don't close connection - let them stay as spectator
       connections.forEach((connection, connId) => {
         if (connection.playerId === playerId && connection.ws.readyState === WebSocket.OPEN) {
           connection.ws.send(JSON.stringify({
             type: 'kicked',
             message: 'You have been removed from the room'
           }));
-          connection.ws.close();
-          connections.delete(connId);
+          // Don't close connection - let them stay as spectator
         }
       });
 
@@ -1017,32 +1015,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Only host can kick players
     if (room.hostId !== connection.playerId) return;
     
-    // Mark target player as left
+    // Convert target player to spectator instead of marking as left
     await storage.updatePlayer(targetPlayerId, { 
-      hasLeft: true, 
-      leftAt: new Date(),
-      isSpectator: true 
+      hasLeft: false, // Keep as false so they remain visible as spectator
+      leftAt: null,   // Don't set left time
+      isSpectator: true,
+      position: null,
+      hand: [],
+      hasCalledUno: false,
+      finishPosition: null
     });
     
     // If game is playing, pause it
     if (room.status === "playing") {
       await storage.updateRoom(connection.roomId, { status: "paused" });
       
-      // Removed system message as requested by user
+      // No notification message - silent kick
       
       broadcastToRoom(connection.roomId, {
         type: 'game_paused',
-        reason: `${targetPlayer.nickname} was kicked`,
+        reason: 'Game paused',
         needsHostAction: true
       });
-    } else {
-      // Removed system message as requested by user
-      
-      broadcastToRoom(connection.roomId, {
-        type: 'player_kicked',
-        player: targetPlayer.nickname
-      });
     }
+    // No notification message for lobby kicks either
+    
+    // Send kick message to target player but don't close their connection
+    connections.forEach((conn, connId) => {
+      if (conn.playerId === targetPlayerId && conn.ws.readyState === WebSocket.OPEN) {
+        conn.ws.send(JSON.stringify({
+          type: 'kicked',
+          message: 'You have been removed from the room'
+        }));
+        // Don't close connection - let them stay as spectator
+      }
+    });
     
     await broadcastRoomState(connection.roomId);
   }
