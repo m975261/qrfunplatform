@@ -58,7 +58,8 @@ export function useSocket(autoConnect: boolean = true) {
             console.log("🏆 GAME END MESSAGE RECEIVED:", {
               winner: message.winner,
               rankings: message.rankings,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              wsState: socketRef.current?.readyState
             });
             
             // Force state update to ensure winner modal appears
@@ -78,6 +79,20 @@ export function useSocket(autoConnect: boolean = true) {
               console.log("🏆 Updated game state with end data:", newState);
               return newState;
             });
+            
+            // Monitor connection stability after game end
+            setTimeout(() => {
+              const wsState = socketRef.current?.readyState;
+              if (wsState !== WebSocket.OPEN) {
+                console.warn("⚠️ WebSocket connection lost after game_end message, state:", wsState);
+                if (wsState === WebSocket.CLOSED || wsState === WebSocket.CLOSING) {
+                  console.log("🔄 Attempting to reconnect after game end disconnect...");
+                  connect();
+                }
+              } else {
+                console.log("✅ WebSocket connection stable after game_end processing");
+              }
+            }, 1000);
             break;
           case 'player_left':
             console.log("Player left:", message.player);
@@ -206,7 +221,12 @@ export function useSocket(autoConnect: boolean = true) {
     
     socketRef.current.onclose = (event) => {
       setIsConnected(false);
-      console.log("WebSocket closed:", event.code, event.reason);
+      console.log(`WebSocket closed: code=${event.code}, reason="${event.reason}", wasClean=${event.wasClean}`);
+      
+      // Log additional context for game end related disconnections
+      if (event.code === 1006) {
+        console.log("WebSocket closed abnormally (1006) - possible network issue or server termination");
+      }
       
       // Clear heartbeat
       if (heartbeatIntervalRef.current) {
@@ -214,9 +234,15 @@ export function useSocket(autoConnect: boolean = true) {
       }
       
       // Don't reconnect automatically on code 1006 (abnormal closure) if it's due to HMR
-      if (event.code !== 1006 || !event.reason.includes('HMR')) {
+      // But do reconnect for other close codes or if not HMR related
+      const shouldReconnect = event.code !== 1006 || !event.reason?.includes('HMR');
+      
+      if (shouldReconnect) {
+        console.log("Attempting to reconnect in 3 seconds...");
         // Attempt to reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(connect, 3000);
+      } else {
+        console.log("Skipping reconnect - appears to be HMR related");
       }
     };
     
@@ -224,6 +250,17 @@ export function useSocket(autoConnect: boolean = true) {
       console.error("WebSocket error:", error);
       console.error("WebSocket readyState:", socketRef.current?.readyState);
       console.error("WebSocket URL was:", wsUrl);
+      console.error("Error timestamp:", new Date().toISOString());
+      
+      // Check if this error happens around game end time
+      const gameEndRecent = gameState?.gameEndData && 
+        gameState.gameEndData.timestamp && 
+        (Date.now() - gameState.gameEndData.timestamp < 10000);
+      
+      if (gameEndRecent) {
+        console.error("⚠️ WebSocket error occurred shortly after game end - possible connection issue");
+      }
+      
       setIsConnected(false);
     };
   };

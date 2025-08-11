@@ -169,9 +169,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get room state
   app.get("/api/rooms/:roomId", async (req, res) => {
     try {
-      const room = await storage.getRoom(req.params.roomId);
+      // Try both room ID and room code lookup
+      let room = await storage.getRoom(req.params.roomId);
       if (!room) {
-        console.log(`Room ${req.params.roomId} not found via HTTP GET`);
+        room = await storage.getRoomByCode(req.params.roomId);
+      }
+      
+      if (!room) {
+        console.log(`Room ${req.params.roomId} not found via HTTP GET (tried both ID and code)`);
         return res.status(404).json({ error: "Room not found" });
       }
 
@@ -587,11 +592,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
     
-    ws.on('close', () => {
-      console.log('WebSocket connection closed:', connectionId);
+    ws.on('close', (code, reason) => {
+      console.log(`WebSocket connection closed: ${connectionId} (code: ${code}, reason: ${reason?.toString()})`);
       clearInterval(heartbeat);
       const connection = connections.get(connectionId);
       if (connection?.playerId && connection?.roomId) {
+        const playerNickname = connection.playerId; // Try to get nickname for better logging
+        console.log(`Player connection ${playerNickname} (${connectionId}) closed with code ${code}`);
+        
         // Wait a bit before marking as disconnected to allow for reconnection
         setTimeout(() => {
           // Check if player has reconnected with a different connection
@@ -599,7 +607,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .some(conn => conn.playerId === connection.playerId && conn.ws.readyState === WebSocket.OPEN);
           
           if (!hasActiveConnection && connection.playerId && connection.roomId) {
+            console.log(`Marking player ${connection.playerId} as disconnected after timeout`);
             handlePlayerDisconnect(connection.playerId, connection.roomId);
+          } else if (hasActiveConnection) {
+            console.log(`Player ${connection.playerId} has active connection, not marking as disconnected`);
           }
         }, 5000);
       }
@@ -607,7 +618,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
+      console.error(`WebSocket error for connection ${connectionId}:`, error);
+      const connection = connections.get(connectionId);
+      if (connection?.playerId) {
+        console.error(`  Player: ${connection.playerId}, Room: ${connection.roomId}`);
+      }
     });
   });
 
@@ -617,17 +632,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("handleJoinRoom called:", { playerId, roomId, connectionId, userFingerprint, sessionId });
     
     // Ensure room and player exist before proceeding
-    const room = await storage.getRoom(roomId);
+    // Try both room ID and room code lookup
+    let room = await storage.getRoom(roomId);
+    if (!room) {
+      room = await storage.getRoomByCode(roomId);
+    }
+    
     const player = await storage.getPlayer(playerId);
     
     if (!room) {
-      console.log(`Room ${roomId} not found, cannot join via WebSocket`);
+      console.log(`Room ${roomId} not found by ID or code`);
+      // Additional debugging for room lookup failures
+      console.log(`Available rooms lookup failed - will use fallback debug method`);
+      
       connection.ws.send(JSON.stringify({
         type: 'error',
         message: 'Room not found. Please join via the main interface.'
       }));
       return;
     }
+    
+    // Use actual room ID for consistency
+    const actualRoomId = room.id;
+    console.log(`Room found: ${room.code} -> ${actualRoomId}`);
     
     if (!player) {
       console.log(`Player ${playerId} not found, cannot join room`);
@@ -656,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     connection.playerId = playerId;
-    connection.roomId = roomId;
+    connection.roomId = actualRoomId; // Use actual room ID
     connection.lastSeen = Date.now();
     connection.userFingerprint = userFingerprint;
     connection.sessionId = sessionId;
@@ -664,9 +691,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Update player's socket ID
     await storage.updatePlayer(playerId, { socketId: connectionId });
     
-    console.log("Broadcasting room state to all players in room:", roomId);
+    console.log("Broadcasting room state to all players in room:", actualRoomId);
     // Broadcast room state to all players
-    await broadcastRoomState(roomId);
+    await broadcastRoomState(actualRoomId);
   }
 
   async function handleStartGame(connection: SocketConnection, message: any) {
@@ -945,7 +972,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const roomConnections = Array.from(connections.values()).filter(c => c.roomId === connection.roomId);
         console.log('🏆 Active connections for room:', roomConnections.length);
         
-        broadcastToRoom(connection.roomId, gameEndMessage);
+        // Before broadcasting, ensure all connections are stable
+        roomConnections.forEach(conn => {
+          if (conn.ws.readyState !== WebSocket.OPEN) {
+            console.log('⚠️ Warning: Connection not open before game_end broadcast');
+          }
+        });
+        
+        // Enhanced broadcast with error handling and connection monitoring
+        try {
+          console.log('🏆 Broadcasting game_end message to room connections...');
+          let successCount = 0;
+          let failCount = 0;
+          
+          roomConnections.forEach((conn, index) => {
+            try {
+              if (conn.ws.readyState === WebSocket.OPEN) {
+                conn.ws.send(JSON.stringify(gameEndMessage));
+                successCount++;
+                console.log(`✅ Game end message sent to connection ${index + 1}`);
+              } else {
+                failCount++;
+                console.log(`❌ Connection ${index + 1} not open (state: ${conn.ws.readyState})`);
+              }
+            } catch (sendError) {
+              failCount++;
+              console.error(`❌ Failed to send game_end to connection ${index + 1}:`, sendError);
+            }
+          });
+          
+          console.log(`🏆 Game end broadcast complete: ${successCount} sent, ${failCount} failed`);
+          
+          // Monitor connection stability over time
+          const checkConnectionStability = (checkNum: number) => {
+            setTimeout(() => {
+              const stillActiveConnections = Array.from(connections.values())
+                .filter(c => c.roomId === connection.roomId && c.ws.readyState === WebSocket.OPEN);
+              console.log(`🏆 Check ${checkNum}: ${stillActiveConnections.length}/${roomConnections.length} connections active`);
+              
+              // If connections are dropping, log detailed info
+              if (stillActiveConnections.length < roomConnections.length) {
+                console.log('⚠️ Connection loss detected after game_end:');
+                roomConnections.forEach((conn, idx) => {
+                  const isStillActive = stillActiveConnections.some(active => active === conn);
+                  console.log(`  Connection ${idx + 1}: ${isStillActive ? 'ACTIVE' : 'LOST'} (state: ${conn.ws.readyState})`);
+                });
+              }
+            }, checkNum * 1000);
+          };
+          
+          // Check at 1s, 3s, and 5s intervals
+          checkConnectionStability(1);
+          checkConnectionStability(3);
+          checkConnectionStability(5);
+          
+        } catch (broadcastError) {
+          console.error('❌ Fatal error during game_end broadcast:', broadcastError);
+        }
       } else {
         // Continue game with remaining players
         console.log(`${player.nickname} finished in position ${finishedCount + 1}, game continues`);
@@ -1590,14 +1673,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   function broadcastToRoom(roomId: string, message: any) {
     let sentCount = 0;
+    let failedCount = 0;
     connections.forEach((connection) => {
-      if (connection.roomId === roomId && connection.ws.readyState === WebSocket.OPEN) {
-        connection.ws.send(JSON.stringify(message));
-        sentCount++;
+      if (connection.roomId === roomId) {
+        if (connection.ws.readyState === WebSocket.OPEN) {
+          try {
+            connection.ws.send(JSON.stringify(message));
+            sentCount++;
+          } catch (error) {
+            console.error(`Failed to send message to connection:`, error);
+            failedCount++;
+          }
+        } else {
+          failedCount++;
+          if (message.type === 'game_end') {
+            console.log(`⚠️ Connection not open for game_end broadcast (state: ${connection.ws.readyState})`);
+          }
+        }
       }
     });
     if (message.type === 'game_end') {
-      console.log(`🏆 Sent game_end message to ${sentCount} connections in room ${roomId}`);
+      console.log(`🏆 Sent game_end message: ${sentCount} successful, ${failedCount} failed in room ${roomId}`);
     }
   }
 
@@ -1644,12 +1740,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { roomId } = req.params;
       const hostId = req.headers.authorization?.replace('Bearer ', '');
       
-      const room = await storage.getRoom(roomId);
+      // Try both room ID and room code lookup
+      let room = await storage.getRoom(roomId);
+      if (!room) {
+        room = await storage.getRoomByCode(roomId);
+      }
+      
       if (!room) {
         return res.status(404).json({ error: "Room not found" });
       }
 
-      const players = await storage.getPlayersByRoom(roomId);
+      const players = await storage.getPlayersByRoom(room.id);
       const gamePlayers = players.filter(p => !p.isSpectator);
       
       console.log(`Start game attempt: Host: ${hostId}, Room host: ${room.hostId}, Players: ${gamePlayers.length}`);

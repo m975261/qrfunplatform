@@ -6,6 +6,7 @@ export interface IStorage {
   createRoom(room: InsertRoom): Promise<Room>;
   getRoom(id: string): Promise<Room | undefined>;
   getRoomByCode(code: string): Promise<Room | undefined>;
+  getAllRooms(): Promise<Room[]>;
   updateRoom(id: string, updates: Partial<Room>): Promise<Room | undefined>;
   deleteRoom(id: string): Promise<boolean>;
 
@@ -49,7 +50,7 @@ export class MemStorage implements IStorage {
       currentColor: insertRoom.currentColor || null,
       pendingDraw: insertRoom.pendingDraw || null,
       positionHands: insertRoom.positionHands || {},
-      activePositions: insertRoom.activePositions || [],
+      activePositions: insertRoom.activePositions || [] as number[],
     };
     this.rooms.set(id, room);
     return room;
@@ -61,6 +62,10 @@ export class MemStorage implements IStorage {
 
   async getRoomByCode(code: string): Promise<Room | undefined> {
     return Array.from(this.rooms.values()).find(room => room.code === code);
+  }
+
+  async getAllRooms(): Promise<Room[]> {
+    return Array.from(this.rooms.values());
   }
 
   async updateRoom(id: string, updates: Partial<Room>): Promise<Room | undefined> {
