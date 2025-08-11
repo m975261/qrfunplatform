@@ -694,19 +694,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
       const finishedCount = activePlayers.filter(p => p.finishPosition).length;
       
+      console.log(`${player.nickname} won! Setting finish position ${finishedCount + 1}`);
+      
       // Set finish position for current winner
       await storage.updatePlayer(connection.playerId, { finishPosition: finishedCount + 1 });
       
       // Check if game should end (only 1 player left or all finished)
       const remainingPlayers = activePlayers.filter(p => !p.finishPosition && p.id !== connection.playerId);
       
+      console.log(`Remaining players after ${player.nickname} won: ${remainingPlayers.length}`);
+      
       if (remainingPlayers.length <= 1) {
         // Game ends, set last player's position if any
         if (remainingPlayers.length === 1) {
           await storage.updatePlayer(remainingPlayers[0].id, { finishPosition: finishedCount + 2 });
+          console.log(`Set last player ${remainingPlayers[0].nickname} to position ${finishedCount + 2}`);
         }
         
         await storage.updateRoom(connection.roomId, { status: "finished" });
+        console.log(`Game finished in room ${connection.roomId}`);
         
         // Get final rankings
         const finalPlayers = await storage.getPlayersByRoom(connection.roomId);
@@ -714,17 +720,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .filter(p => !p.isSpectator)
           .sort((a, b) => (a.finishPosition || 999) - (b.finishPosition || 999));
         
+        console.log('Final rankings:', rankings.map(p => `${p.nickname}: ${p.finishPosition}`));
+        
         broadcastToRoom(connection.roomId, {
           type: 'game_end',
           winner: player.nickname,
           rankings: rankings.map(p => ({
             nickname: p.nickname,
             position: p.finishPosition || (p.hasLeft ? 'Left' : 'Last'),
-            hasLeft: p.hasLeft
+            hasLeft: p.hasLeft || false
           }))
         });
       } else {
         // Continue game with remaining players
+        console.log(`${player.nickname} finished in position ${finishedCount + 1}, game continues`);
         broadcastToRoom(connection.roomId, {
           type: 'player_finished',
           player: player.nickname,

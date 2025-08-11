@@ -36,6 +36,8 @@ export class UnoGameLogic {
       console.warn(`Warning: UNO deck has ${deck.length} cards instead of 108`);
     }
     
+    console.log(`Deck created with ${deck.length} cards including ${deck.filter(c => c.type === 'wild4').length} Wild Draw 4 cards`);
+    
     return this.shuffleDeck(deck);
   }
   

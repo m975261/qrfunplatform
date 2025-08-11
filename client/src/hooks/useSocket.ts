@@ -53,10 +53,14 @@ export function useSocket(autoConnect: boolean = true) {
             break;
           case 'game_end':
             // Handle game end
-            console.log("Game ended, winner:", message.winner);
+            console.log("Game ended, winner:", message.winner, "rankings:", message.rankings);
             setGameState((prev: any) => ({
               ...prev,
-              gameEndData: message
+              room: { ...prev.room, status: 'finished' },
+              gameEndData: {
+                winner: message.winner,
+                rankings: message.rankings
+              }
             }));
             break;
           case 'player_left':

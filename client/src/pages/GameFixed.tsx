@@ -53,13 +53,16 @@ export default function Game() {
   }, [roomId, playerId, isConnected, joinRoom]);
 
   useEffect(() => {
-    if (gameState?.room?.status === "finished") {
-      setShowGameEnd(true);
-    }
+    console.log('Game state changed:', { 
+      status: gameState?.room?.status, 
+      gameEndData: gameState?.gameEndData,
+      needsContinue: gameState?.needsContinue 
+    });
     
-    if (gameState?.gameEndData) {
+    if (gameState?.room?.status === 'finished' || gameState?.gameEndData) {
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
+      console.log('Showing game end modal with data:', gameState.gameEndData);
     }
     
     if (gameState?.needsContinue) {
@@ -558,7 +561,9 @@ export default function Game() {
             setGameEndData(null);
             // Navigate back to lobby to see the reset room
             if (roomId) {
-              window.location.href = `/room/${roomId}`;
+              setTimeout(() => {
+                window.location.href = `/room/${roomId}`;
+              }, 500);
             } else {
               window.location.href = `/`;
             }
@@ -568,7 +573,8 @@ export default function Game() {
             setGameEndData(null);
             // Clear current room session when exiting game
             localStorage.removeItem("currentRoomId");
-            exitGame();
+            localStorage.removeItem("playerId");
+            window.location.href = "/";
           }}
         />
       )}
