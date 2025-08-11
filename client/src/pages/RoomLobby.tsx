@@ -83,24 +83,13 @@ export default function RoomLobby() {
         body: JSON.stringify({ playerIdToKick })
       });
 
-      if (response.ok) {
-        toast({
-          title: "Player Removed",
-          description: "Player has been removed from the room.",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to remove player.",
-          variant: "destructive",
-        });
+      if (!response.ok) {
+        console.error("Failed to kick player:", response.status);
       }
+      // No notification messages - silent operation
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to remove player.",
-        variant: "destructive",
-      });
+      console.error("Error kicking player:", error);
+      // No notification - silent operation
     }
   };
 

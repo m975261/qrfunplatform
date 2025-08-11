@@ -214,6 +214,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Player not found in this room" });
       }
 
+      console.log(`Converting player ${playerId} (${playerToKick.nickname}) to spectator`);
+      
       // Convert player to spectator instead of deleting them
       await storage.updatePlayer(playerId, {
         isSpectator: true,
@@ -223,6 +225,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hand: [],
         hasCalledUno: false,
         finishPosition: null
+      });
+      
+      // Verify the update worked
+      const updatedPlayer = await storage.getPlayer(playerId);
+      console.log(`Player after kick update:`, {
+        id: updatedPlayer?.id,
+        nickname: updatedPlayer?.nickname,
+        isSpectator: updatedPlayer?.isSpectator,
+        hasLeft: updatedPlayer?.hasLeft,
+        position: updatedPlayer?.position
       });
       
       // Send kick message but don't close connection - let them stay as spectator
@@ -1015,6 +1027,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Only host can kick players
     if (room.hostId !== connection.playerId) return;
     
+    console.log(`WebSocket kick: Converting player ${targetPlayerId} (${targetPlayer.nickname}) to spectator`);
+    
     // Convert target player to spectator instead of marking as left
     await storage.updatePlayer(targetPlayerId, { 
       hasLeft: false, // Keep as false so they remain visible as spectator
@@ -1024,6 +1038,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hand: [],
       hasCalledUno: false,
       finishPosition: null
+    });
+    
+    // Verify the update worked
+    const updatedPlayer = await storage.getPlayer(targetPlayerId);
+    console.log(`Player after WebSocket kick update:`, {
+      id: updatedPlayer?.id,
+      nickname: updatedPlayer?.nickname,
+      isSpectator: updatedPlayer?.isSpectator,
+      hasLeft: updatedPlayer?.hasLeft,
+      position: updatedPlayer?.position
     });
     
     // If game is playing, pause it
