@@ -1072,19 +1072,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const deck = room.deck || [];
     if (deck.length === 0) return;
     
-    // Handle pending draw effects first
-    let drawAmount = 1;
-    let clearPendingDraw = false;
-    const currentHandSize = (player.hand || []).length;
-    
+    // Handle pending draw effects with animation to maintain secrecy
     if (room.pendingDraw && room.pendingDraw > 0) {
-      drawAmount = room.pendingDraw;
-      clearPendingDraw = true;
+      // Use the same animated penalty system as automatic penalties
+      // This hides whether the player had a choice or not
+      await applyPenaltyWithAnimation(connection.roomId, currentPlayerIndex, gamePlayers, room.pendingDraw);
+      return; // applyPenaltyWithAnimation handles everything including turn advancement
     }
     
-    // No UNO penalty when drawing cards - penalty only applies when playing cards
-    
-    const drawnCards = deck.splice(0, drawAmount);
+    // Normal single card draw (no penalty)
+    const drawnCards = deck.splice(0, 1);
     const newHand = [...(player.hand || []), ...drawnCards];
     
     // Reset UNO call if player now has more than 1 card  
@@ -1099,6 +1096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       updatedPositionHands[player.position.toString()] = newHand;
       await storage.updateRoom(connection.roomId, { positionHands: updatedPositionHands });
     }
+    
     // Always move to next player after drawing - turn is over
     const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
       currentPlayerIndex, 
@@ -1110,7 +1108,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     await storage.updateRoom(connection.roomId, { 
       deck,
-      pendingDraw: clearPendingDraw ? 0 : room.pendingDraw,
       currentPlayerIndex: nextPlayerIndex
     });
     await broadcastRoomState(connection.roomId);
