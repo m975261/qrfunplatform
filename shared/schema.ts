@@ -21,6 +21,7 @@ export const rooms = pgTable("rooms", {
   deck: jsonb("deck").$type<any[]>().default([]),
   discardPile: jsonb("discard_pile").$type<any[]>().default([]),
   pendingDraw: integer("pending_draw").default(0),
+  positionHands: jsonb("position_hands").$type<{[key: string]: any[]}>().default({}), // Store cards for each position (0-3)
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 

@@ -218,13 +218,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Converting player ${playerIdToKick} (${playerToKick.nickname}) to spectator via POST`);
       
-      // Convert player to spectator but preserve their hand in a separate field
+      // Before kicking, update position hands with current cards
+      if (playerToKick.position !== null && room.positionHands) {
+        const updatedPositionHands = { ...room.positionHands };
+        updatedPositionHands[playerToKick.position.toString()] = playerToKick.hand || [];
+        await storage.updateRoom(roomId, { positionHands: updatedPositionHands });
+        console.log(`Saved ${(playerToKick.hand || []).length} cards for position ${playerToKick.position}`);
+      }
+      
+      // Convert player to spectator
       await storage.updatePlayer(playerIdToKick, {
         isSpectator: true,
         hasLeft: false, // Keep as false so they remain visible as spectator
         leftAt: null,   // Don't set left time
         position: null,
-        savedHand: playerToKick.hand || [], // Save current hand for when they rejoin
         hand: [], // Clear active hand since they're spectator
         hasCalledUno: false,
         finishPosition: null
@@ -279,13 +286,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Converting player ${playerId} (${playerToKick.nickname}) to spectator`);
       
-      // Convert player to spectator but preserve their hand in a separate field
+      // Before kicking, update position hands with current cards
+      if (playerToKick.position !== null && room.positionHands) {
+        const updatedPositionHands = { ...room.positionHands };
+        updatedPositionHands[playerToKick.position.toString()] = playerToKick.hand || [];
+        await storage.updateRoom(roomId, { positionHands: updatedPositionHands });
+        console.log(`Saved ${(playerToKick.hand || []).length} cards for position ${playerToKick.position}`);
+      }
+      
+      // Convert player to spectator
       await storage.updatePlayer(playerId, {
         isSpectator: true,
         hasLeft: false, // Keep as false so they remain visible as spectator
         leftAt: null,   // Don't set left time
         position: null,
-        savedHand: playerToKick.hand || [], // Save current hand for when they rejoin
         hand: [], // Clear active hand since they're spectator
         hasCalledUno: false,
         finishPosition: null
@@ -357,35 +371,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Position already taken" });
       }
 
-      // Get current player data to check for saved hand
-      const currentPlayer = await storage.getPlayer(playerId);
-      
-      // Check if player has saved cards from being kicked, otherwise deal new ones if game is active
+      // Get cards for this position - either from positionHands or deal new ones
       let newHand: Card[] = [];
-      if (currentPlayer?.savedHand && currentPlayer.savedHand.length > 0) {
-        // Restore saved hand from when they were kicked
-        newHand = currentPlayer.savedHand;
-        console.log(`Restoring ${newHand.length} saved cards to player ${playerId} taking position ${position}`);
+      if (room.positionHands && room.positionHands[position.toString()]) {
+        // Use cards assigned to this position when game started or when last player left
+        newHand = room.positionHands[position.toString()];
+        console.log(`Restoring ${newHand.length} position cards to player ${playerId} taking position ${position}`);
       } else if (room.status === "playing" && room.deck && room.deck.length > 0) {
-        // Deal 7 cards to the rejoining player from the current deck (new player case)
+        // Deal 7 cards for new position in active game
         const cardsNeeded = Math.min(7, room.deck.length);
         newHand = room.deck.slice(0, cardsNeeded);
         const updatedDeck = room.deck.slice(cardsNeeded);
         
-        // Update room deck
-        await storage.updateRoom(roomId, { deck: updatedDeck });
+        // Update room deck and save cards for this position
+        const updatedPositionHands = { ...room.positionHands, [position.toString()]: newHand };
+        await storage.updateRoom(roomId, { 
+          deck: updatedDeck,
+          positionHands: updatedPositionHands
+        });
         
-        console.log(`Dealing ${cardsNeeded} new cards to player ${playerId} taking position ${position}`);
+        console.log(`Dealing ${cardsNeeded} new cards to player ${playerId} for new position ${position}`);
       }
 
-      // Update player to take the position and restore saved hand or deal new cards
+      // Update player to take the position with position-specific cards
       await storage.updatePlayer(playerId, {
         position,
         isSpectator: false,
         hasLeft: false,
         leftAt: null,
-        hand: newHand, // Restore saved hand or deal new cards
-        savedHand: [], // Clear saved hand after restoring
+        hand: newHand, // Use position-specific cards
         hasCalledUno: false,
         finishPosition: null
       });
@@ -648,10 +662,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pendingDraw: 0
     });
     
-    // Update player hands
+    // Update player hands and store position-based hands
+    const positionHands: {[key: string]: any[]} = {};
     for (let i = 0; i < gamePlayers.length; i++) {
       await storage.updatePlayer(gamePlayers[i].id, { hand: hands[i] });
+      // Store cards by position so anyone joining this position gets these cards
+      positionHands[gamePlayers[i].position!.toString()] = hands[i];
     }
+    
+    // Update room with position-based hands
+    await storage.updateRoom(connection.roomId, { positionHands });
     
     await broadcastRoomState(connection.roomId);
     
@@ -730,6 +750,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hand: newHand,
       hasCalledUno: newUnoStatus
     });
+    
+    // Update position hands to keep them current
+    if (player.position !== null) {
+      const updatedPositionHands = { ...room.positionHands };
+      updatedPositionHands[player.position.toString()] = newHand;
+      await storage.updateRoom(connection.roomId, { positionHands: updatedPositionHands });
+    }
     
     // Add card to discard pile
     const newDiscardPile = [card, ...(room.discardPile || [])];
@@ -986,6 +1013,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hand: newHand,
       hasCalledUno: newHand.length > 1 ? false : player.hasCalledUno
     });
+    
+    // Update position hands to keep them current
+    if (player.position !== null) {
+      const updatedPositionHands = { ...room.positionHands };
+      updatedPositionHands[player.position.toString()] = newHand;
+      await storage.updateRoom(connection.roomId, { positionHands: updatedPositionHands });
+    }
     // Always move to next player after drawing - turn is over
     const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
       currentPlayerIndex, 
@@ -1115,13 +1149,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     console.log(`WebSocket kick: Converting player ${targetPlayerId} (${targetPlayer.nickname}) to spectator`);
     
-    // Convert target player to spectator but preserve their hand
+    // Before kicking, update position hands with current cards
+    if (targetPlayer.position !== null && room.positionHands) {
+      const updatedPositionHands = { ...room.positionHands };
+      updatedPositionHands[targetPlayer.position.toString()] = targetPlayer.hand || [];
+      await storage.updateRoom(connection.roomId, { positionHands: updatedPositionHands });
+      console.log(`Saved ${(targetPlayer.hand || []).length} cards for position ${targetPlayer.position}`);
+    }
+    
+    // Convert target player to spectator
     await storage.updatePlayer(targetPlayerId, { 
       hasLeft: false, // Keep as false so they remain visible as spectator
       leftAt: null,   // Don't set left time
       isSpectator: true,
       position: null,
-      savedHand: targetPlayer.hand || [], // Save current hand for when they rejoin
       hand: [], // Clear active hand since they're spectator
       hasCalledUno: false,
       finishPosition: null
@@ -1219,30 +1260,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return; // Position is occupied by an active player
     }
     
-    // Check if player has saved cards from being kicked, otherwise deal new ones if game is active
+    // Get cards for this position - either from positionHands or deal new ones
     let newHand: Card[] = [];
-    if (playerToReplace.savedHand && playerToReplace.savedHand.length > 0) {
-      // Restore saved hand from when they were kicked
-      newHand = playerToReplace.savedHand;
-      console.log(`Restoring ${newHand.length} saved cards to rejoining player ${playerToReplace.nickname}`);
+    if (room.positionHands && room.positionHands[targetPosition.toString()]) {
+      // Use cards assigned to this position when game started or when last player left
+      newHand = room.positionHands[targetPosition.toString()];
+      console.log(`Restoring ${newHand.length} position cards to ${playerToReplace.nickname} joining position ${targetPosition}`);
     } else if (room.status === "playing" && room.deck && room.deck.length > 0) {
-      // Deal 7 cards to the rejoining player from the current deck (new player case)
+      // Deal 7 cards for new position in active game
       const cardsNeeded = Math.min(7, room.deck.length);
       newHand = room.deck.slice(0, cardsNeeded);
       const updatedDeck = room.deck.slice(cardsNeeded);
       
-      // Update room deck
-      await storage.updateRoom(connection.roomId, { deck: updatedDeck });
+      // Update room deck and save cards for this position
+      const updatedPositionHands = { ...room.positionHands, [targetPosition.toString()]: newHand };
+      await storage.updateRoom(connection.roomId, { 
+        deck: updatedDeck,
+        positionHands: updatedPositionHands
+      });
       
-      console.log(`Dealing ${cardsNeeded} new cards to rejoining player ${playerToReplace.nickname}`);
+      console.log(`Dealing ${cardsNeeded} new cards to ${playerToReplace.nickname} for new position ${targetPosition}`);
     }
     
-    // Regular join to empty position - restore saved hand or deal new cards
+    // Join position with position-specific cards
     await storage.updatePlayer(connection.playerId, {
       isSpectator: false,
       position: targetPosition,
-      hand: newHand, // Restore saved hand or deal new cards
-      savedHand: [], // Clear saved hand after restoring
+      hand: newHand, // Use position-specific cards
       hasLeft: false,
       leftAt: null,
       hasCalledUno: false,
