@@ -62,44 +62,44 @@ export default function Game() {
       currentPlayerId: playerId
     });
     
-    // ENHANCED game end detection with Safari-specific handling
+    // SAFARI COMPATIBILITY - Immediate alert + modal fallback
     if (gameState?.gameEndData) {
-      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-      console.log("🏆 GAME END DETECTED - Safari compatibility mode", {
+      const isSafariOrMobile = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent) || /Mobile/.test(navigator.userAgent);
+      console.log("🏆 GAME END DETECTED - Mobile Safari Fix", {
         winner: gameState?.gameEndData?.winner,
         rankings: gameState?.gameEndData?.rankings,
-        timestamp: gameState?.gameEndData?.timestamp,
-        isSafari,
-        userAgent: navigator.userAgent.substring(0, 50)
+        isSafariOrMobile,
+        modalWillShow: true
       });
       
       // Set data first
       setGameEndData(gameState.gameEndData);
       
-      // Safari-specific modal display with multiple fallbacks
-      if (isSafari) {
-        // Safari requires multiple rendering passes
-        setShowGameEnd(true);
-        requestAnimationFrame(() => {
-          setShowGameEnd(true);
-          console.log("🏆 Safari modal render pass 1");
+      // IMMEDIATE Safari alert fallback - show native alert first
+      if (isSafariOrMobile) {
+        const winner = gameState.gameEndData.winner;
+        const rankings = gameState.gameEndData.rankings || [];
+        let alertMessage = `🏆 ${winner} WINS!\n\nFinal Rankings:\n`;
+        rankings.forEach((player, index) => {
+          alertMessage += `${index + 1}. ${player.nickname}\n`;
         });
+        alertMessage += '\nTap OK to continue';
+        
+        // Show native alert immediately for Safari
         setTimeout(() => {
-          setShowGameEnd(true);
-          console.log("🏆 Safari modal render pass 2");
-        }, 50);
-        setTimeout(() => {
-          setShowGameEnd(true);
-          console.log("🏆 Safari modal render pass 3 - final");
-        }, 150);
-      } else {
-        // Standard browsers
-        setShowGameEnd(true);
-        requestAnimationFrame(() => {
-          setShowGameEnd(true);
-          console.log("🏆 Standard browser modal render");
-        });
+          alert(alertMessage);
+        }, 100);
+        
+        console.log("🏆 Safari native alert shown");
       }
+      
+      // Always try to show modal regardless
+      setShowGameEnd(true);
+      
+      // Multiple render attempts for Safari
+      requestAnimationFrame(() => setShowGameEnd(true));
+      setTimeout(() => setShowGameEnd(true), 100);
+      setTimeout(() => setShowGameEnd(true), 300);
     }
     
     if (gameState?.needsContinue) {

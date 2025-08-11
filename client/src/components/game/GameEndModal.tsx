@@ -101,86 +101,98 @@ export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLo
     };
   }, [winner, rankings]);
 
-  // Safari-compatible modal container with maximum compatibility
+  // MAXIMUM SAFARI COMPATIBILITY with emergency fallback
   return (
-    <div 
-      className="gameEndModalOverlay"
-      style={{ 
-        // Use direct CSS properties for maximum Safari compatibility
-        position: 'fixed',
-        top: '0px',
-        left: '0px', 
-        right: '0px',
-        bottom: '0px',
-        width: '100vw',
-        height: '100vh',
-        zIndex: '99999',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-        boxSizing: 'border-box',
-        // Safari-specific properties
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-        WebkitPerspective: '1000px',
-        perspective: '1000px',
-        WebkitTransform: 'translateZ(0)',
-        transform: 'translateZ(0)',
-        // Force Safari to render
-        opacity: '1',
-        visibility: 'visible',
-        pointerEvents: 'auto',
-        // Prevent touch events from propagating
-        WebkitTouchCallout: 'none',
-        WebkitUserSelect: 'none',
-        userSelect: 'none'
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
+    <>
+      {/* Emergency Safari Fallback - Simple div with native styling */}
       <div 
-        className="gameEndModalCard"
         style={{
-          // Direct styling for maximum Safari compatibility
-          maxWidth: '400px',
-          width: '90%',
-          maxHeight: '80vh',
-          minHeight: '400px',
-          position: 'relative',
-          zIndex: '100000',
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          overflow: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          transform: 'translateZ(0) scale(1)',
-          WebkitTransform: 'translateZ(0) scale(1)',
-          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
-          border: '2px solid #e5e5e5',
-          // Animation with Safari fallback
-          animation: 'modalSlideUp 0.3s ease-out forwards',
-          WebkitAnimation: 'modalSlideUp 0.3s ease-out forwards',
-          // Force visibility
-          opacity: '1',
-          visibility: 'visible',
-          display: 'block'
+          position: 'fixed',
+          top: '0',
+          left: '0', 
+          right: '0',
+          bottom: '0',
+          width: '100%',
+          height: '100%',
+          zIndex: 999999,
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          display: 'flex !important',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div 
-          className="gameEndModalContent"
           style={{
-            padding: '32px',
-            textAlign: 'center',
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            position: 'relative',
-            zIndex: '100001',
+            maxWidth: '350px',
+            width: '90%',
             minHeight: '300px',
-            display: 'block',
-            width: '100%',
-            boxSizing: 'border-box'
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '20px',
+            textAlign: 'center',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+            border: '3px solid #ffd700'
           }}
         >
+          {/* Simple inline content for Safari */}
+          <div style={{ marginBottom: '20px', fontSize: '24px' }}>🏆</div>
+          <h2 style={{ color: '#333', margin: '0 0 10px 0', fontSize: '20px' }}>
+            {winner} Wins!
+          </h2>
+          <p style={{ color: '#666', margin: '0 0 20px 0', fontSize: '14px' }}>
+            Congratulations! 🎉
+          </p>
+          
+          {/* Rankings */}
+          <div style={{ marginBottom: '30px' }}>
+            {rankings.map((player, index) => (
+              <div key={index} style={{ 
+                padding: '8px', 
+                margin: '4px 0',
+                backgroundColor: index === 0 ? '#ffd700' : '#f5f5f5',
+                borderRadius: '6px',
+                color: index === 0 ? 'white' : '#333',
+                fontSize: '14px',
+                fontWeight: index === 0 ? 'bold' : 'normal'
+              }}>
+                {index + 1}. {player.nickname} {index === 0 ? '👑' : ''}
+              </div>
+            ))}
+          </div>
+          
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <Button
+              onClick={onPlayAgain}
+              style={{
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                padding: '12px 20px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                minHeight: '44px'
+              }}
+            >
+              Play Again
+            </Button>
+            <Button
+              onClick={onBackToLobby}
+              style={{
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                padding: '12px 20px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                minHeight: '44px'
+              }}
+            >
+              Back to Home
+            </Button>
+          </div>
           <div className="mb-6">
             {/* Winner Display */}
             <div className="w-20 h-20 bg-gradient-to-br from-uno-yellow to-yellow-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
@@ -260,6 +272,6 @@ export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLo
           </div>
         </div>
       </div>
-    </div>
+      </>
   );
 }
