@@ -558,17 +558,15 @@ export default function Game() {
       )}
 
       {/* Game End Modal */}
-      {(showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData) ? (
+      {((showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData)) && (
         <GameEndModal
-          winner={gameEndData?.winner || gameState?.gameEndData?.winner}
-          rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings}
+          winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
+          rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}
           onPlayAgain={() => {
             console.log('Play again clicked');
-            // Call server-side play again to reset the room state
             playAgain();
             setShowGameEnd(false);
             setGameEndData(null);
-            // Navigate back to lobby to see the reset room
             if (roomId) {
               setTimeout(() => {
                 window.location.href = `/room/${roomId}`;
@@ -581,13 +579,22 @@ export default function Game() {
             console.log('Back to lobby clicked');
             setShowGameEnd(false);
             setGameEndData(null);
-            // Clear current room session when exiting game
             localStorage.removeItem("currentRoomId");
             localStorage.removeItem("playerId");
             window.location.href = "/";
           }}
         />
-      ) : null}
+      )}
+      
+      {/* Debug info for game end */}
+      {gameState?.room?.status === 'finished' && (
+        <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-50 text-xs">
+          Game Status: {gameState?.room?.status}<br/>
+          GameEndData: {gameState?.gameEndData ? 'Present' : 'Missing'}<br/>
+          ShowGameEnd: {showGameEnd ? 'True' : 'False'}<br/>
+          Winner: {gameState?.gameEndData?.winner || 'None'}
+        </div>
+      )}
 
       {/* Spectator View */}
       {currentPlayer && currentPlayer.isSpectator && (
