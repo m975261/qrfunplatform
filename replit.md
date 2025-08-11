@@ -10,7 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Safari iPhone Winner Modal Fix - WORKING VERSION RESTORED (Latest - Aug 11, 2025)
+### UNO Penalty Bug Investigation & Safari Modal Fix (Latest - Aug 11, 2025)
+- **UNO PENALTY BUG IDENTIFIED**: Players getting penalized even after calling UNO correctly ⚠️ INVESTIGATING
+- **ENHANCED UNO LOGGING**: Added verification logging to track hasCalledUno status through entire flow ✅ APPLIED
+- **STORAGE VERIFICATION**: Added database verification after UNO call to ensure persistence ✅ APPLIED
+- **RACE CONDITION CHECK**: Investigating timing between UNO call and card play actions ⚠️ IN PROGRESS
+
+### Safari iPhone Winner Modal Fix - WORKING VERSION RESTORED (Aug 11, 2025)
 - **EXACT WORKING VERSION RESTORED**: Reverted to the precise modal implementation that was confirmed working ✅ APPLIED
 - **WEBKIT PROPERTIES RESTORED**: Re-added WebkitBackfaceVisibility, WebkitPerspective for Safari rendering ✅ APPLIED
 - **HARDWARE ACCELERATION RESTORED**: Added back WebkitTransform and translateZ(0) for Safari performance ✅ APPLIED

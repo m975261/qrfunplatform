@@ -778,6 +778,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     console.log(`👤 Player found: ${player.nickname}, hasCalledUno: ${player.hasCalledUno}`);
     
+    // Double-check UNO status with additional logging for debugging
+    if (player.hasCalledUno) {
+      console.log(`✅ UNO STATUS CONFIRMED: ${player.nickname} has called UNO (hasCalledUno=true)`);
+    } else {
+      console.log(`❌ UNO STATUS: ${player.nickname} has NOT called UNO (hasCalledUno=false)`);
+    }
+    
     const players = await storage.getPlayersByRoom(connection.roomId);
     const gamePlayers = players.filter(p => !p.isSpectator).sort((a, b) => (a.position || 0) - (b.position || 0));
     console.log(`🎮 Game players: ${gamePlayers.map(p => p.nickname).join(', ')}`);
@@ -1242,6 +1249,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!player.hasCalledUno) {
       await storage.updatePlayer(connection.playerId, { hasCalledUno: true });
       console.log(`✅ UNO CALLED: Set hasCalledUno=true for ${player.nickname}`);
+      
+      // Verify the update was successful by checking the database
+      const verifyPlayer = await storage.getPlayer(connection.playerId);
+      console.log(`🔍 UNO CALL VERIFICATION: ${player.nickname} hasCalledUno=${verifyPlayer?.hasCalledUno}`);
       
       // Broadcast UNO call for visual feedback to all players
       broadcastToRoom(connection.roomId!, {
