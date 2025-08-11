@@ -199,16 +199,16 @@ export default function Game() {
       {/* Central Game Area - centered */}
       <div className="absolute inset-0 flex items-center justify-center pb-32">
         <div className="relative">
-          {/* Draw Pile - Fixed position outside circle, responsive */}
-          <div className="absolute -left-32 top-1/2 -translate-y-1/2 z-10">
+          {/* Draw Pile - Positioned below circle, mobile-friendly, offset to avoid conflicts */}
+          <div className="absolute -bottom-20 -right-16 z-10">
             <div className="relative cursor-pointer group" onClick={drawCard}>
-              <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
-              <div className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
+              <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
+              <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white font-bold text-xs">?</div>
+                <div className="text-white font-bold text-sm">?</div>
               </div>
             </div>
-            <div className="text-xs text-center mt-1 text-blue-300 font-bold">DRAW</div>
+            <div className="text-sm text-center mt-2 text-blue-300 font-bold">DRAW</div>
           </div>
 
           {/* Game Circle */}
