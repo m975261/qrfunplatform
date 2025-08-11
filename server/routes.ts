@@ -445,7 +445,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    verifyClient: (info) => {
+      // Allow all origins in development
+      console.log('WebSocket connection attempt from:', info.origin);
+      return true;
+    }
+  });
   
   console.log('WebSocket server created on path /ws');
 

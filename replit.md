@@ -10,7 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### UNO Call System Fixed (Latest - Aug 7, 2025)
+### Position-Based Card System & Complete Kick Functionality (Latest - Aug 11, 2025)
+- Implemented position-based card memory system where each game slot (0-3) remembers its cards
+- Fixed kick system to be completely silent with proper card preservation and restoration
+- Added positionHands field to room schema for persistent card storage by position
+- Cards tied to positions, not players - anyone joining a position gets that position's cards
+- Complete kick workflow: Player kicked → Cards saved to position → Anyone can rejoin and get same cards
+- Real-time position hand updates during gameplay (card play/draw operations)
+- Comprehensive debugging logs for kick operations and card restoration
+
+### UNO Call System Fixed (Aug 7, 2025)
 - Fixed critical UNO call bug where players received penalty cards even after calling UNO correctly
 - Added comprehensive debugging system with detailed console logging for UNO workflow
 - Implemented fresh player data retrieval to prevent race conditions in card play logic
