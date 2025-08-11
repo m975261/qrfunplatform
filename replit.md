@@ -10,7 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Mobile Accessibility & Exit Button Fixes (Latest - Aug 11, 2025)
+### UNO Button Stealth Mode & Game End Modal Fixes (Latest - Aug 11, 2025)
+- **CRITICAL FIX**: UNO button now appears identical before and after calling (no visual reminder for players)
+- **Stealth Mode**: Button always shows "🔥 UNO! 🔥" with same red color and pulsing animation
+- **Penalty Strategy**: UNO call works anytime but only prevents penalty when playing second-to-last card
+- **No Player Hints**: Removed green color change and "UNO CALLED" text that reminded players they called UNO
+- **Enhanced Debugging**: Added comprehensive logging for game end modal detection and display
+- **Modal Issue**: Investigating winner screen display when games end
+
+### Mobile Accessibility & Exit Button Fixes (Aug 11, 2025)
 - Fixed draw button positioning for mobile devices (iPhone accessibility)
 - Repositioned draw button from far left (-left-32) to bottom-right area (-bottom-20 -right-16)
 - Ensured draw button is in clear space without overlapping other game elements

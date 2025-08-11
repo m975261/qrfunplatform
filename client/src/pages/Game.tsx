@@ -63,11 +63,21 @@ export default function Game() {
   }, [gameState?.unoMessage]);
 
   useEffect(() => {
+    console.log("🏆 Game state changed:", {
+      roomStatus: gameState?.room?.status,
+      hasGameEndData: !!gameState?.gameEndData,
+      gameEndData: gameState?.gameEndData,
+      showGameEnd,
+      needsContinue: gameState?.needsContinue
+    });
+    
     if (gameState?.room?.status === "finished") {
+      console.log("🏆 Room status is finished - setting showGameEnd to true");
       setShowGameEnd(true);
     }
     
     if (gameState?.gameEndData) {
+      console.log("🏆 GameEndData found - setting modal data and show", gameState.gameEndData);
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
     }
@@ -360,18 +370,13 @@ export default function Game() {
               </div>
             </div>
 
-            {/* UNO Button - Always Available */}
+            {/* UNO Button - Always Available, Always Same Appearance */}
             <div className="absolute -bottom-12 sm:-bottom-16 md:-bottom-20 left-1/2 transform -translate-x-1/2">
               <Button
                 onClick={handleUnoCall}
-                className={`transition-all shadow-lg text-white font-bold px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 text-sm sm:text-base md:text-lg rounded-full ${
-                  currentPlayer?.hasCalledUno 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:scale-105' 
-                    : 'bg-gradient-to-r from-uno-red to-red-500 hover:scale-110 animate-pulse'
-                }`}
-                disabled={currentPlayer?.hasCalledUno}
+                className="transition-all shadow-lg text-white font-bold px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 text-sm sm:text-base md:text-lg rounded-full bg-gradient-to-r from-uno-red to-red-500 hover:scale-110 animate-pulse"
               >
-                {currentPlayer?.hasCalledUno ? '✅ UNO CALLED' : '🔥 UNO! 🔥'}
+                🔥 UNO! 🔥
               </Button>
             </div>
           </div>
