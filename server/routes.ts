@@ -764,6 +764,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let shouldApplyUnoPenalty = false;
     if (currentHandSize === 2 && newHand.length === 1 && !player.hasCalledUno) {
       shouldApplyUnoPenalty = true;
+      console.log(`🚨 UNO PENALTY: ${player.nickname} played from 2→1 cards without calling UNO`);
+      console.log(`🚨 Player hasCalledUno status: ${player.hasCalledUno}`);
+    } else if (currentHandSize === 2 && newHand.length === 1 && player.hasCalledUno) {
+      console.log(`✅ UNO SUCCESS: ${player.nickname} played from 2→1 cards WITH UNO called`);
     }
     
     // Apply UNO penalty if needed (2 random cards from deck)
@@ -1095,15 +1099,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const player = await storage.getPlayer(connection.playerId);
     if (!player) return;
     
+    console.log(`📢 UNO CALL: ${player.nickname} trying to call UNO with ${(player.hand || []).length} cards`);
+    
     // Allow UNO call when player has 2 cards (before playing second-to-last card)
     if ((player.hand || []).length === 2) {
       await storage.updatePlayer(connection.playerId, { hasCalledUno: true });
+      console.log(`✅ UNO CALLED: Set hasCalledUno=true for ${player.nickname}`);
       
       // Broadcast UNO call for visual feedback
       broadcastToRoom(connection.roomId!, {
         type: 'uno_called_success',
         player: player.nickname
       });
+    } else {
+      console.log(`❌ UNO CALL DENIED: ${player.nickname} has ${(player.hand || []).length} cards (must have exactly 2)`);
     }
   }
 
