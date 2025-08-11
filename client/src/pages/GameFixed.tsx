@@ -142,7 +142,7 @@ export default function Game() {
     const positions = [
       'top-2 left-1/2 -translate-x-1/2', // 12 o'clock - much further from center
       'right-2 top-1/2 -translate-y-1/2', // 3 o'clock - much further from center  
-      'bottom-32 left-1/2 -translate-x-1/2', // 6 o'clock - moved up to avoid bottom bar
+      'bottom-8 left-1/2 -translate-x-1/2', // 6 o'clock - positioned way below center
       'left-2 top-1/2 -translate-y-1/2' // 9 o'clock - much further from center
     ];
     return positions[position] || positions[0];
@@ -302,8 +302,8 @@ export default function Game() {
       </div>
 
       {/* Player Avatars in Circular Layout */}
-      <div className="absolute inset-0 flex items-center justify-center pb-40 pointer-events-none">
-        <div className="relative w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] md:w-[420px] md:h-[420px]">
+      <div className="absolute inset-0 flex items-center justify-center pb-32 pointer-events-none">
+        <div className="relative w-[320px] h-[400px] sm:w-[380px] sm:h-[480px] md:w-[420px] md:h-[520px]">
           {/* 4 Fixed Avatar Positions */}
           {[0, 1, 2, 3].map((position) => {
             const player = getPlayerAtPosition(position);
