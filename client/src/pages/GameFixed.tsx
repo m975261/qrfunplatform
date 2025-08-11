@@ -61,15 +61,8 @@ export default function Game() {
     });
     
     if (gameState?.room?.status === 'finished' || gameState?.gameEndData) {
-      console.log('🏆 Game finished detected, showing modal:', {
-        roomStatus: gameState?.room?.status,
-        hasGameEndData: !!gameState?.gameEndData,
-        winner: gameState?.gameEndData?.winner,
-        showGameEndState: showGameEnd
-      });
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
-      console.log('🏆 Modal state updated - showGameEnd: true');
     }
     
     if (gameState?.needsContinue) {
@@ -193,8 +186,7 @@ export default function Game() {
                 localStorage.removeItem("currentRoomId");
                 localStorage.removeItem("playerId");
                 localStorage.removeItem("playerNickname");
-                // Use ?fresh=true to ensure we don't get redirected back
-                window.location.replace("/?fresh=true");
+                window.location.replace("/");
               }}
             >
               Home
@@ -216,8 +208,8 @@ export default function Game() {
                   localStorage.removeItem("currentRoomId");
                   localStorage.removeItem("playerId");
                   localStorage.removeItem("playerNickname");
-                  // Force navigation to main page with fresh start
-                  window.location.replace("/?fresh=true");
+                  // Force navigation to main page
+                  window.location.replace("/");
                 }
               }}
             >
@@ -575,18 +567,7 @@ export default function Game() {
       )}
 
       {/* Game End Modal */}
-      {(() => {
-        const condition1 = showGameEnd && gameEndData;
-        const condition2 = gameState?.room?.status === 'finished' && gameState?.gameEndData;
-        const shouldShow = condition1 || condition2;
-        console.log("🏆 MODAL RENDER CHECK:", {
-          condition1: `showGameEnd(${showGameEnd}) && gameEndData(${!!gameEndData})`,
-          condition2: `roomStatus(${gameState?.room?.status}) === 'finished' && hasGameEndData(${!!gameState?.gameEndData})`,
-          shouldShow,
-          winner: gameEndData?.winner || gameState?.gameEndData?.winner
-        });
-        return shouldShow;
-      })() && (
+      {((showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData)) && (
         <GameEndModal
           winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
           rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}
