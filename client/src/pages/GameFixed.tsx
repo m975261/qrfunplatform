@@ -56,10 +56,12 @@ export default function Game() {
     console.log('Game state changed:', { 
       status: gameState?.room?.status, 
       gameEndData: gameState?.gameEndData,
-      needsContinue: gameState?.needsContinue 
+      needsContinue: gameState?.needsContinue,
+      fullGameState: gameState
     });
     
     if (gameState?.room?.status === 'finished' || gameState?.gameEndData) {
+      console.log('Game finished detected! GameEndData:', gameState?.gameEndData);
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
       console.log('Showing game end modal with data:', gameState.gameEndData);
@@ -121,6 +123,7 @@ export default function Game() {
   const isPaused = room.status === "paused";
   const isHost = currentPlayer?.id === room?.hostId;
   const topCard = room.discardPile?.[0];
+  const activePositions = room.activePositions || []; // Positions that were active when game started
 
   // Helper functions for circular avatar layout
   const getPlayerAtPosition = (position: number) => {
@@ -316,10 +319,10 @@ export default function Game() {
                     // Empty Slot or Joinable Slot for Spectators
                     <div 
                       className={`w-20 h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-4 border-white/20 ${
-                        currentPlayer?.isSpectator && isPaused ? 'cursor-pointer hover:bg-gray-500/50 transition-colors' : ''
+                        currentPlayer?.isSpectator && isPaused && activePositions.includes(position) ? 'cursor-pointer hover:bg-gray-500/50 transition-colors' : ''
                       }`}
                       onClick={() => {
-                        if (currentPlayer?.isSpectator && isPaused) {
+                        if (currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) {
                           replacePlayer(position);
                         } else if (!currentPlayer) {
                           // External user - redirect to join flow
@@ -331,7 +334,7 @@ export default function Game() {
                       }}
                     >
                       <div className="text-center">
-                        {(currentPlayer?.isSpectator && isPaused) || !currentPlayer ? (
+                        {(currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) || (!currentPlayer && activePositions.includes(position)) ? (
                           <>
                             <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
                               <span className="text-white text-sm font-bold">+</span>
@@ -343,7 +346,7 @@ export default function Game() {
                         ) : (
                           <>
                             <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
-                            <div className="text-xs text-gray-400 mt-1">Empty</div>
+                            <div className="text-xs text-gray-400 mt-1">Closed</div>
                           </>
                         )}
                       </div>
@@ -555,11 +558,12 @@ export default function Game() {
       )}
 
       {/* Game End Modal */}
-      {showGameEnd && gameEndData && (
+      {(showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData) ? (
         <GameEndModal
-          winner={gameEndData.winner}
-          rankings={gameEndData.rankings}
+          winner={gameEndData?.winner || gameState?.gameEndData?.winner}
+          rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings}
           onPlayAgain={() => {
+            console.log('Play again clicked');
             // Call server-side play again to reset the room state
             playAgain();
             setShowGameEnd(false);
@@ -574,6 +578,7 @@ export default function Game() {
             }
           }}
           onBackToLobby={() => {
+            console.log('Back to lobby clicked');
             setShowGameEnd(false);
             setGameEndData(null);
             // Clear current room session when exiting game
@@ -582,7 +587,7 @@ export default function Game() {
             window.location.href = "/";
           }}
         />
-      )}
+      ) : null}
 
       {/* Spectator View */}
       {currentPlayer && currentPlayer.isSpectator && (
