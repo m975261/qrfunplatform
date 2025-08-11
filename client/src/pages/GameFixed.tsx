@@ -53,14 +53,21 @@ export default function Game() {
   }, [roomId, playerId, isConnected, joinRoom]);
 
   useEffect(() => {
-    console.log('Game state changed:', { 
-      status: gameState?.room?.status, 
+    console.log("🏆 Game state changed:", {
+      roomStatus: gameState?.room?.status,
+      hasGameEndData: !!gameState?.gameEndData,
       gameEndData: gameState?.gameEndData,
-      needsContinue: gameState?.needsContinue,
-      fullGameState: gameState
+      showGameEnd,
+      needsContinue: gameState?.needsContinue
     });
     
-    if (gameState?.room?.status === 'finished' || gameState?.gameEndData) {
+    if (gameState?.room?.status === "finished") {
+      console.log("🏆 Room status is finished - setting showGameEnd to true");
+      setShowGameEnd(true);
+    }
+    
+    if (gameState?.gameEndData) {
+      console.log("🏆 GameEndData found - setting modal data and show", gameState.gameEndData);
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
     }
