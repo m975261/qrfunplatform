@@ -14,9 +14,13 @@ Preferred communication style: Simple, everyday language.
 - Implemented position-based card memory system where each game slot (0-3) remembers its cards
 - Fixed kick system to be completely silent with proper card preservation and restoration
 - Added positionHands field to room schema for persistent card storage by position
+- Added activePositions field to track which positions were active when game started
 - Cards tied to positions, not players - anyone joining a position gets that position's cards
-- Complete kick workflow: Player kicked → Cards saved to position → Anyone can rejoin and get same cards
+- **CRITICAL RESTRICTION**: During games, only originally active positions can be rejoined
+- Empty positions at game start become permanently closed until game ends
+- Complete kick workflow: Player kicked → Cards saved to position → Only original players can rejoin same position
 - Real-time position hand updates during gameplay (card play/draw operations)
+- WebSocket validation prevents joining positions that weren't active at game start
 - Comprehensive debugging logs for kick operations and card restoration
 
 ### UNO Call System Fixed (Aug 7, 2025)

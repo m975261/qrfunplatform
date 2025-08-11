@@ -714,6 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     console.log(`Game started with active positions: [${activePositions.join(', ')}]`);
+    console.log(`Position hands saved:`, Object.keys(positionHands));
     
     // Update room with position-based hands and active positions
     await storage.updateRoom(connection.roomId, { positionHands, activePositions });
@@ -1303,6 +1304,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (activePlayerAtPosition) {
       console.log(`Position ${targetPosition} is already taken by active player ${activePlayerAtPosition.nickname}`);
       return; // Position is occupied by an active player
+    }
+    
+    // During active games, only allow rejoining originally active positions
+    if (room.status === "playing" || room.status === "paused") {
+      const originalActivePositions = room.activePositions || [];
+      if (!originalActivePositions.includes(targetPosition)) {
+        console.log(`Position ${targetPosition} was not active when game started. Originally active: [${originalActivePositions.join(', ')}]`);
+        return; // Position was not active when game started, cannot join
+      }
     }
     
     // Get cards for this position - either from positionHands or deal new ones
