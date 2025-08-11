@@ -10,14 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Penalty Animation Stealth Mode & UI Enhancements (Latest - Aug 11, 2025)
+### Complete Ranking System & Turn Management Fix (Latest - Aug 11, 2025)
+- **RANKING DISPLAY SYSTEM**: When players finish, their slot shows ranking badge (1ST, 2ND, 3RD, 4TH) with golden styling
+- **FINISHED PLAYER TURN SKIP**: Finished players are completely excluded from turn rotation - only active players get turns
+- **PROPER GAME FLOW**: Games continue among remaining players until only 1 left, then show final rankings modal
+- **CARD COUNT HIDING**: Card counts only shown for active players, finished players show rank badges instead
+- **TURN LOGIC ENHANCED**: All getNextPlayerIndex calls updated to skip finished player positions automatically
+- **COMPLETE END GAME**: Final modal displays all rankings in proper order from 1st to last place finisher
 - **STEALTH PENALTY SYSTEM**: When player chooses to draw instead of playing +2/+4 counter, uses same animated penalty as automatic penalties
-- **Strategy Privacy Protected**: Other players cannot tell if someone had a valid counter card but chose to draw penalty instead
-- **Unified Penalty Animation**: All +2/+4 penalties now use identical 6-second animated sequence regardless of player choice
-- **Winner Modal Fixed**: Enhanced game end detection to properly display winner message for all players including kicked/rejoined ones
-- **Force Modal Display**: Added timeout-based re-render and highest z-index to ensure modal always appears
-- **Game Direction Indicator**: Added purple badge near 12 o'clock position showing "Game Direction" with clockwise/counterclockwise arrows
-- **Card Count Repositioned**: Moved card count badges from bottom to left side of avatars to prevent name overlap
+- **Game Direction Curved Arrows**: Updated to use ↻ (clockwise) and ↺ (counterclockwise) symbols matching design reference
 
 ### GUI Responsive Design & Draw Deck Enhancement (Aug 11, 2025)
 - **Draw Deck Renamed**: Changed from "?" symbol to "Cards" text for better user clarity

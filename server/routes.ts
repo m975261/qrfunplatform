@@ -765,6 +765,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (currentPlayer.id !== connection.playerId) return;
     
+    // Don't allow finished players to play cards
+    if (currentPlayer.finishPosition) return;
+    
     const playerHand = player.hand || [];
     const currentHandSize = playerHand.length;
     const card = playerHand[cardIndex];
@@ -845,13 +848,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Stack the draw effect - pass the penalty to next player
       newPendingDraw = (room.pendingDraw || 0) + effect.draw;
       
+      // Get finished player indices for turn skipping
+      const finishedPlayerIndices = gamePlayers
+        .map((p, idx) => ({ player: p, index: idx }))
+        .filter(item => item.player.finishPosition)
+        .map(item => item.index);
+      
       // Move to next player (they can either draw or stack)
       nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
         currentPlayerIndex, 
         gamePlayers.length, 
         room.direction || "clockwise", 
         false, // Don't skip, next player gets a chance to stack
-        false
+        false,
+        finishedPlayerIndices
       );
     } else {
       // Handle other effects first
@@ -859,12 +869,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newDirection = room.direction === "clockwise" ? "counterclockwise" : "clockwise";
       }
       
+      // Get finished player indices for turn skipping
+      const finishedPlayerIndices = gamePlayers
+        .map((p, idx) => ({ player: p, index: idx }))
+        .filter(item => item.player.finishPosition)
+        .map(item => item.index);
+      
       nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
         currentPlayerIndex, 
         gamePlayers.length, 
         newDirection || "clockwise", 
         effect.skip,
-        effect.reverse
+        effect.reverse,
+        finishedPlayerIndices
       );
       
       // Clear pending draw since this is not a draw card
@@ -1004,13 +1021,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await broadcastRoomState(roomId);
     }
     
+    // Get finished player indices for turn skipping
+    const finishedPlayerIndices = gamePlayers
+      .map((p, idx) => ({ player: p, index: idx }))
+      .filter(item => item.player.finishPosition)
+      .map(item => item.index);
+    
     // Move to next player and clear penalty
     const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
       playerIndex, 
       gamePlayers.length, 
       room.direction || "clockwise",
       false,
-      false
+      false,
+      finishedPlayerIndices
     );
     
     await storage.updateRoom(roomId, { 
@@ -1069,6 +1093,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (currentPlayer.id !== connection.playerId) return;
     
+    // Don't allow finished players to draw cards
+    if (currentPlayer.finishPosition) return;
+    
     const deck = room.deck || [];
     if (deck.length === 0) return;
     
@@ -1097,13 +1124,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateRoom(connection.roomId, { positionHands: updatedPositionHands });
     }
     
+    // Get finished player indices for turn skipping
+    const finishedPlayerIndices = gamePlayers
+      .map((p, idx) => ({ player: p, index: idx }))
+      .filter(item => item.player.finishPosition)
+      .map(item => item.index);
+    
     // Always move to next player after drawing - turn is over
     const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
       currentPlayerIndex, 
       gamePlayers.length, 
       room.direction || "clockwise",
       false,
-      false
+      false,
+      finishedPlayerIndices
     );
     
     await storage.updateRoom(connection.roomId, { 

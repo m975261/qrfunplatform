@@ -417,10 +417,21 @@ export default function Game() {
                           <div className="text-lg sm:text-xl text-yellow-400">👑</div>
                         </div>
                       )}
-                      {/* Card count - Positioned on left side to avoid name overlap */}
-                      <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold border border-slate-600 shadow-lg">
-                        {player.hand?.length || 0}
-                      </div>
+                      {/* Ranking badge for finished players */}
+                      {player.finishPosition && (
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black text-xs px-2 py-1 rounded-full font-bold border-2 border-yellow-400 shadow-lg">
+                          {player.finishPosition === 1 ? '1ST' : 
+                           player.finishPosition === 2 ? '2ND' : 
+                           player.finishPosition === 3 ? '3RD' : 
+                           `${player.finishPosition}TH`}
+                        </div>
+                      )}
+                      {/* Card count - Positioned on left side to avoid name overlap, only show if player hasn't finished */}
+                      {!player.finishPosition && (
+                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold border border-slate-600 shadow-lg">
+                          {player.hand?.length || 0}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     // Empty Slot or Joinable Slot for Spectators - Smaller size to reduce overlap
