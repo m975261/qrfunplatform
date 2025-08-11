@@ -140,10 +140,10 @@ export default function Game() {
 
   const getPositionClass = (position: number) => {
     const positions = [
-      'top-8 left-1/2 -translate-x-1/2', // 12 o'clock - moved further from center
-      'right-8 top-1/2 -translate-y-1/2', // 3 o'clock - moved further from center
-      'bottom-24 left-1/2 -translate-x-1/2', // 6 o'clock - moved up to avoid bottom bar
-      'left-8 top-1/2 -translate-y-1/2' // 9 o'clock - moved further from center
+      'top-2 left-1/2 -translate-x-1/2', // 12 o'clock - much further from center
+      'right-2 top-1/2 -translate-y-1/2', // 3 o'clock - much further from center  
+      'bottom-32 left-1/2 -translate-x-1/2', // 6 o'clock - moved up to avoid bottom bar
+      'left-2 top-1/2 -translate-y-1/2' // 9 o'clock - much further from center
     ];
     return positions[position] || positions[0];
   };
@@ -242,11 +242,11 @@ export default function Game() {
             <div className="text-xs sm:text-sm text-center mt-1 text-blue-300 font-bold">DRAW</div>
           </div>
 
-          {/* Game Circle - Responsive sizing with better proportions */}
-          <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
+          {/* Game Circle - Smaller to prevent overlaps */}
+          <div className="w-36 h-36 sm:w-40 sm:h-40 md:w-44 md:h-44 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
             
-            {/* Inner Circle - Responsive sizing */}
-            <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
+            {/* Inner Circle - Smaller responsive sizing */}
+            <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
               
 
 
@@ -288,12 +288,12 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Direction Indicator - positioned away from overlaps */}
+      {/* Direction Indicator - positioned closer to smaller circle */}
       <div className="absolute inset-0 flex items-center justify-center pb-32 pointer-events-none">
         <div className="relative">
-          <div className="absolute top-[240px] sm:top-[280px] md:top-[320px] lg:top-[360px] left-1/2 transform -translate-x-1/2 z-10">
-            <div className="bg-purple-600/90 rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg border-2 border-purple-400">
-              <div className="text-white text-xl sm:text-2xl font-bold">
+          <div className="absolute top-[180px] sm:top-[200px] md:top-[220px] lg:top-[240px] left-1/2 transform -translate-x-1/2 z-10">
+            <div className="bg-purple-600/90 rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center shadow-lg border-2 border-purple-400">
+              <div className="text-white text-lg sm:text-xl font-bold">
                 {room.direction === "clockwise" ? "↻" : "↺"}
               </div>
             </div>
@@ -303,7 +303,7 @@ export default function Game() {
 
       {/* Player Avatars in Circular Layout */}
       <div className="absolute inset-0 flex items-center justify-center pb-40 pointer-events-none">
-        <div className="relative w-80 h-80 sm:w-96 sm:h-96">
+        <div className="relative w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] md:w-[420px] md:h-[420px]">
           {/* 4 Fixed Avatar Positions */}
           {[0, 1, 2, 3].map((position) => {
             const player = getPlayerAtPosition(position);
@@ -313,15 +313,15 @@ export default function Game() {
             return (
               <div
                 key={position}
-                className={`absolute ${getPositionClass(position)} w-20 h-20 pointer-events-auto`}
+                className={`absolute ${getPositionClass(position)} pointer-events-auto`}
               >
                 <div className="relative">
                   {player ? (
-                    // Player Avatar
-                    <div className={`w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 ${
+                    // Player Avatar - Smaller to fit better
+                    <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 ${
                       isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
                     }`}>
-                      <div className="text-lg">{player.nickname[0].toUpperCase()}</div>
+                      <div className="text-sm sm:text-lg">{player.nickname[0].toUpperCase()}</div>
                       <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
                       {/* Online/Offline indicator - Responsive */}
                       <div className={`absolute -top-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 rounded-full border-1 sm:border-2 border-white ${
