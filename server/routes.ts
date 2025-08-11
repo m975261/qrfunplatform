@@ -528,6 +528,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!connection) return;
         
+        console.log(`📨 WebSocket message received: ${message.type} from connection ${connectionId}`);
+        
         switch (message.type) {
           case 'join_room':
             await handleJoinRoom(connection, message, connectionId);
@@ -536,6 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await handleStartGame(connection, message);
             break;
           case 'play_card':
+            console.log(`🎯 Routing play_card message to handlePlayCard`);
             await handlePlayCard(connection, message);
             break;
           case 'draw_card':
@@ -727,21 +730,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   async function handlePlayCard(connection: SocketConnection, message: any) {
-    if (!connection.roomId || !connection.playerId) return;
+    console.log(`🎯 handlePlayCard called for connection: ${connection.playerId}`);
+    
+    if (!connection.roomId || !connection.playerId) {
+      console.log(`❌ PLAY CARD: Missing roomId or playerId`);
+      return;
+    }
     
     const { cardIndex } = message;
+    console.log(`🃏 PLAY CARD: ${connection.playerId} trying to play card index ${cardIndex}`);
+    
     const room = await storage.getRoom(connection.roomId);
+    console.log(`🏠 Room status: ${room?.status}, exists: ${!!room}`);
     
     // CRITICAL: Get fresh player data to ensure we have the latest hasCalledUno status
     const player = await storage.getPlayer(connection.playerId);
     if (!player) {
+      console.log(`❌ PLAY CARD: Player not found`);
       return;
     }
+    console.log(`👤 Player found: ${player.nickname}, hasCalledUno: ${player.hasCalledUno}`);
     
     const players = await storage.getPlayersByRoom(connection.roomId);
     const gamePlayers = players.filter(p => !p.isSpectator).sort((a, b) => (a.position || 0) - (b.position || 0));
+    console.log(`🎮 Game players: ${gamePlayers.map(p => p.nickname).join(', ')}`);
     
-    if (!room || !player || room.status !== "playing") return;
+    if (!room || !player || room.status !== "playing") {
+      console.log(`❌ PLAY CARD: Invalid state - room exists: ${!!room}, player exists: ${!!player}, room status: ${room?.status}`);
+      return;
+    }
     
     const currentPlayerIndex = room.currentPlayerIndex || 0;
     const currentPlayer = gamePlayers[currentPlayerIndex];
@@ -754,8 +771,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const topCard = (room.discardPile || [])[0];
     
     if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0)) {
+      console.log(`❌ PLAY CARD: Cannot play card - card exists: ${!!card}, canPlay: ${card ? UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0) : false}`);
       return;
     }
+    
+    console.log(`✅ PLAY CARD: Playing card ${card.color} ${card.value} for ${player.nickname}`);
     
     // Remove card from player's hand first
     let newHand = playerHand.filter((_, index) => index !== cardIndex);
@@ -1510,6 +1530,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { playerId, hand } = req.body;
       await storage.updatePlayer(playerId, { hand });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/rooms/:roomId/test-set-discard", async (req, res) => {
+    try {
+      const { topCard } = req.body;
+      const room = await storage.getRoom(req.params.roomId);
+      if (room) {
+        await storage.updateRoom(req.params.roomId, { 
+          discardPile: [topCard, ...(room.discardPile || [])],
+          currentColor: topCard.color
+        });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/rooms/:roomId/test-set-turn", async (req, res) => {
+    try {
+      const { currentPlayerIndex } = req.body;
+      await storage.updateRoom(req.params.roomId, { currentPlayerIndex });
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: error.message });
