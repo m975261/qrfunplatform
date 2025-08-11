@@ -25,27 +25,30 @@ interface GameEndModalProps {
 }
 
 export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLobby }: GameEndModalProps) {
-  // Safari iOS compatibility with simpler approach
+  // Force viewport and prevent scrolling on Safari iOS (WORKING VERSION RESTORED)
   useEffect(() => {
-    console.log("🏆 GameEndModal mounted for winner:", winner);
+    // Add meta viewport tag if not present
+    let viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) {
+      viewportMeta = document.createElement('meta');
+      viewportMeta.setAttribute('name', 'viewport');
+      document.head.appendChild(viewportMeta);
+    }
+    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover');
     
-    // Basic viewport and scroll prevention that works across all browsers
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalBodyPosition = document.body.style.position;
-    
+    // Prevent body scroll
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
     document.body.style.width = '100%';
     document.body.style.height = '100%';
     
     return () => {
-      console.log("🏆 GameEndModal unmounting");
-      document.body.style.overflow = originalBodyOverflow;
-      document.body.style.position = originalBodyPosition;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
       document.body.style.width = '';
       document.body.style.height = '';
     };
-  }, [winner]);
+  }, []);
 
   return (
     <div 
@@ -62,10 +65,13 @@ export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLo
         alignItems: 'center',
         justifyContent: 'center',
         padding: '20px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        WebkitBackfaceVisibility: 'hidden',
+        backfaceVisibility: 'hidden',
+        WebkitPerspective: '1000px',
+        perspective: '1000px'
       }}
       onClick={(e) => e.stopPropagation()}
-      data-testid="game-end-modal"
     >
       <Card 
         className="max-w-md w-full mx-4 animate-slide-up"

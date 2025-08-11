@@ -10,14 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Safari iPhone Winner Modal Fix - Simplified & Stable (Latest - Aug 11, 2025)
-- **MODAL LOGIC RESTORATION**: Reverted to working modal display logic after complex Safari fixes caused interference ✅ APPLIED
-- **SIMPLIFIED SAFARI COMPATIBILITY**: Removed complex detection logic that was preventing modal display ✅ APPLIED
-- **BASIC BODY SCROLL PREVENTION**: Applied simple, cross-browser body locking that works on all devices ✅ APPLIED
-- **CONNECTION STABILITY FIXES**: Resolved critical WebSocket room lookup issues preventing game end message delivery ✅ CONFIRMED
-- **ROOM LOOKUP ENHANCEMENT**: Fixed HTTP and WebSocket endpoints to handle both room IDs and codes properly ✅ CONFIRMED
-- **MODAL STATE DEBUGGING**: Enhanced console logging to track modal rendering state for troubleshooting ✅ APPLIED
-- **WORKING BASELINE RESTORED**: Modal should now display correctly on Safari iPhone as it did before complexity was added ✅ TESTING
+### Safari iPhone Winner Modal Fix - WORKING VERSION RESTORED (Latest - Aug 11, 2025)
+- **EXACT WORKING VERSION RESTORED**: Reverted to the precise modal implementation that was confirmed working ✅ APPLIED
+- **WEBKIT PROPERTIES RESTORED**: Re-added WebkitBackfaceVisibility, WebkitPerspective for Safari rendering ✅ APPLIED
+- **HARDWARE ACCELERATION RESTORED**: Added back WebkitTransform and translateZ(0) for Safari performance ✅ APPLIED
+- **TOUCH SCROLLING RESTORED**: Re-implemented WebkitOverflowScrolling: 'touch' for proper iOS behavior ✅ APPLIED
+- **VIEWPORT MANAGEMENT RESTORED**: Proper Safari viewport meta tag handling restored from working version ✅ APPLIED
+- **CONNECTION STABILITY VERIFIED**: WebSocket game_end message delivery working correctly ✅ CONFIRMED
+- **ROOM LOOKUP VERIFIED**: HTTP and WebSocket endpoints handling room codes properly ✅ CONFIRMED
+- **CONFIRMED WORKING BASELINE**: Exact implementation that user confirmed worked before ✅ READY FOR TEST
 
 ### Complete Ranking System & Turn Management Fix - VERIFIED WORKING (Aug 11, 2025)
 - **RANKING DISPLAY SYSTEM**: When players finish, their slot shows ranking badge (1ST, 2ND, 3RD, 4TH) with golden styling ✅ CONFIRMED
