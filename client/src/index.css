@@ -3,6 +3,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safari-compatible modal animations */
+@keyframes modalSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.9) translateZ(0);
+    -webkit-transform: translateY(50px) scale(0.9) translateZ(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) translateZ(0);
+    -webkit-transform: translateY(0) scale(1) translateZ(0);
+  }
+}
+
+@-webkit-keyframes modalSlideUp {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateY(50px) scale(0.9) translateZ(0);
+    transform: translateY(50px) scale(0.9) translateZ(0);
+  }
+  100% {
+    opacity: 1;
+    -webkit-transform: translateY(0) scale(1) translateZ(0);
+    transform: translateY(0) scale(1) translateZ(0);
+  }
+}
+
+/* Force Safari to render modal elements properly */
+.gameEndModalOverlay {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000px;
+  perspective: 1000px;
+  will-change: transform;
+}
+
+.gameEndModalCard {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
 :root {
   --background: hsl(0 0% 100%);
   --foreground: hsl(210 25% 7.8431%);

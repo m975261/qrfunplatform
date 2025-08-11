@@ -10,12 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### UNO Penalty Bug COMPLETELY FIXED & Safari Modal Restored (Latest - Aug 11, 2025)
+### UNO Bug Fixed & Safari Winner Modal Enhanced (Latest - Aug 11, 2025)
 - **UNO PENALTY BUG COMPLETELY FIXED**: Root cause was HTTP start game endpoint using room code instead of room ID for storage updates ✅ FIXED
 - **ROOM STATUS UPDATE FIX**: Fixed room.id vs roomId parameter mismatch in /api/rooms/:roomId/start endpoint ✅ APPLIED
 - **GAME STATE SYNCHRONIZATION**: Room status now properly updates from "waiting" to "playing" after game start ✅ CONFIRMED
 - **UNO WORKFLOW VERIFIED**: Call UNO → Play card → No penalty system working perfectly ✅ CONFIRMED
-- **COMPREHENSIVE TESTING**: Multiple automated test scripts confirm UNO penalty bug is completely resolved ✅ VERIFIED
+- **SAFARI WINNER MODAL ENHANCED**: Complete rewrite with Safari-specific rendering techniques, direct CSS styling, forced reflows, and multiple render passes ✅ APPLIED
+- **CROSS-BROWSER COMPATIBILITY**: Modal now uses direct DOM styling instead of CSS classes for maximum browser compatibility ✅ ENHANCED
 
 ### Safari iPhone Winner Modal Fix - WORKING VERSION RESTORED (Aug 11, 2025)
 - **EXACT WORKING VERSION RESTORED**: Reverted to the precise modal implementation that was confirmed working ✅ APPLIED

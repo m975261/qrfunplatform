@@ -1,4 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Home } from "lucide-react";
 import { useEffect } from "react";
@@ -25,79 +24,137 @@ interface GameEndModalProps {
 }
 
 export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLobby }: GameEndModalProps) {
-  // Force viewport and prevent scrolling on Safari iOS (WORKING VERSION RESTORED)
+  // Enhanced Safari compatibility with forced rendering
   useEffect(() => {
-    // Add meta viewport tag if not present
+    console.log("🏆 GameEndModal mounted - Safari compatibility mode", {
+      winner,
+      rankings,
+      userAgent: navigator.userAgent,
+      isSafari: /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
+    });
+
+    // Force viewport and prevent scrolling - enhanced for Safari
     let viewportMeta = document.querySelector('meta[name="viewport"]');
     if (!viewportMeta) {
       viewportMeta = document.createElement('meta');
       viewportMeta.setAttribute('name', 'viewport');
       document.head.appendChild(viewportMeta);
     }
-    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover');
+    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, maximum-scale=1.0');
     
-    // Prevent body scroll
+    // Prevent body scroll with Safari-specific fixes
+    const originalStyles = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      width: document.body.style.width,
+      height: document.body.style.height,
+      touchAction: document.body.style.touchAction
+    };
+    
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
     document.body.style.width = '100%';
     document.body.style.height = '100%';
+    document.body.style.touchAction = 'none'; // Prevent Safari scroll bounce
+    
+    // Force Safari to acknowledge the modal exists
+    const forceRender = () => {
+      console.log("🏆 Forcing Safari render acknowledgment");
+      document.body.offsetHeight; // Force reflow
+    };
+    
+    // Multiple render forcing techniques for Safari
+    requestAnimationFrame(forceRender);
+    setTimeout(forceRender, 50);
+    setTimeout(forceRender, 100);
     
     return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
+      document.body.style.overflow = originalStyles.overflow;
+      document.body.style.position = originalStyles.position;
+      document.body.style.width = originalStyles.width;
+      document.body.style.height = originalStyles.height;
+      document.body.style.touchAction = originalStyles.touchAction;
     };
-  }, []);
+  }, [winner, rankings]);
 
+  // Safari-compatible modal container with maximum compatibility
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+      className="gameEndModalOverlay"
       style={{ 
+        // Use direct CSS properties for maximum Safari compatibility
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        top: '0px',
+        left: '0px', 
+        right: '0px',
+        bottom: '0px',
+        width: '100vw',
+        height: '100vh',
+        zIndex: '99999',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '20px',
         boxSizing: 'border-box',
+        // Safari-specific properties
         WebkitBackfaceVisibility: 'hidden',
         backfaceVisibility: 'hidden',
         WebkitPerspective: '1000px',
-        perspective: '1000px'
+        perspective: '1000px',
+        WebkitTransform: 'translateZ(0)',
+        transform: 'translateZ(0)',
+        // Force Safari to render
+        opacity: '1',
+        visibility: 'visible',
+        pointerEvents: 'auto',
+        // Prevent touch events from propagating
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none'
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <Card 
-        className="max-w-md w-full mx-4 animate-slide-up"
+      <div 
+        className="gameEndModalCard"
         style={{
+          // Direct styling for maximum Safari compatibility
           maxWidth: '400px',
-          width: '100%',
-          maxHeight: '90vh',
-          margin: '0 auto',
+          width: '90%',
+          maxHeight: '80vh',
+          minHeight: '400px',
           position: 'relative',
-          zIndex: 10000,
-          backgroundColor: 'white',
-          borderRadius: '12px',
+          zIndex: '100000',
+          backgroundColor: '#ffffff',
+          borderRadius: '16px',
           overflow: 'auto',
           WebkitOverflowScrolling: 'touch',
-          transform: 'translateZ(0)',
-          WebkitTransform: 'translateZ(0)',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)'
+          transform: 'translateZ(0) scale(1)',
+          WebkitTransform: 'translateZ(0) scale(1)',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+          border: '2px solid #e5e5e5',
+          // Animation with Safari fallback
+          animation: 'modalSlideUp 0.3s ease-out forwards',
+          WebkitAnimation: 'modalSlideUp 0.3s ease-out forwards',
+          // Force visibility
+          opacity: '1',
+          visibility: 'visible',
+          display: 'block'
         }}
       >
-        <CardContent 
-          className="p-8 text-center"
+        <div 
+          className="gameEndModalContent"
           style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
+            padding: '32px',
+            textAlign: 'center',
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
             position: 'relative',
-            zIndex: 10001
+            zIndex: '100001',
+            minHeight: '300px',
+            display: 'block',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           <div className="mb-6">
@@ -177,8 +234,8 @@ export default function GameEndModal({ winner, rankings, onPlayAgain, onBackToLo
               Back to Home
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

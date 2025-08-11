@@ -62,24 +62,44 @@ export default function Game() {
       currentPlayerId: playerId
     });
     
-    // SIMPLIFIED game end detection - trigger on any game end data
+    // ENHANCED game end detection with Safari-specific handling
     if (gameState?.gameEndData) {
-      console.log("🏆 GAME END DETECTED - Showing winner modal immediately", {
+      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+      console.log("🏆 GAME END DETECTED - Safari compatibility mode", {
         winner: gameState?.gameEndData?.winner,
         rankings: gameState?.gameEndData?.rankings,
         timestamp: gameState?.gameEndData?.timestamp,
-        browser: navigator.userAgent
+        isSafari,
+        userAgent: navigator.userAgent.substring(0, 50)
       });
       
-      // Immediately set the data and show modal
+      // Set data first
       setGameEndData(gameState.gameEndData);
-      setShowGameEnd(true);
       
-      // Additional safety net for Safari/mobile browsers
-      requestAnimationFrame(() => {
+      // Safari-specific modal display with multiple fallbacks
+      if (isSafari) {
+        // Safari requires multiple rendering passes
         setShowGameEnd(true);
-        console.log("🏆 Modal forced to show via requestAnimationFrame");
-      });
+        requestAnimationFrame(() => {
+          setShowGameEnd(true);
+          console.log("🏆 Safari modal render pass 1");
+        });
+        setTimeout(() => {
+          setShowGameEnd(true);
+          console.log("🏆 Safari modal render pass 2");
+        }, 50);
+        setTimeout(() => {
+          setShowGameEnd(true);
+          console.log("🏆 Safari modal render pass 3 - final");
+        }, 150);
+      } else {
+        // Standard browsers
+        setShowGameEnd(true);
+        requestAnimationFrame(() => {
+          setShowGameEnd(true);
+          console.log("🏆 Standard browser modal render");
+        });
+      }
     }
     
     if (gameState?.needsContinue) {
@@ -667,18 +687,23 @@ export default function Game() {
         />
       )}
 
-      {/* Game End Modal - Simplified condition to ensure it always shows */}
+      {/* Game End Modal - Cross-browser compatibility with Safari-specific fixes */}
       {showGameEnd && (gameEndData || gameState?.gameEndData) && (
         <div 
-          className="fixed inset-0 z-[100]"
+          key="gameEndModalWrapper"
+          className="fixed inset-0"
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9998,
-            pointerEvents: 'auto'
+            top: '0px',
+            left: '0px',
+            right: '0px',
+            bottom: '0px',
+            width: '100vw',
+            height: '100vh',
+            zIndex: '99998',
+            pointerEvents: 'auto',
+            display: 'block',
+            visibility: 'visible'
           }}
         >
           <GameEndModal
