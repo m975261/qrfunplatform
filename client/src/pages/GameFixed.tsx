@@ -60,11 +60,18 @@ export default function Game() {
       fullGameState: gameState
     });
     
+    console.log("🏆 Game state effect - checking for game end:", {
+      roomStatus: gameState?.room?.status,
+      hasGameEndData: !!gameState?.gameEndData,
+      gameEndData: gameState?.gameEndData,
+      showGameEnd
+    });
+    
     if (gameState?.room?.status === 'finished' || gameState?.gameEndData) {
-      console.log('Game finished detected! GameEndData:', gameState?.gameEndData);
+      console.log('🏆 Game finished detected! GameEndData:', gameState?.gameEndData);
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
-      console.log('Showing game end modal with data:', gameState.gameEndData);
+      console.log('🏆 Showing game end modal with data:', gameState.gameEndData);
     }
     
     if (gameState?.needsContinue) {
@@ -95,14 +102,10 @@ export default function Game() {
 
   const handleUnoCall = () => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
-    if (player?.hand?.length === 2 && !hasCalledUno) {
+    if (!player?.hasCalledUno) {
       callUno();
       setHasCalledUno(true);
-      // Removed toast notification as requested
-    } else if (hasCalledUno) {
-      // Already called - no notification needed
-    } else {
-      // UNO available - no notification needed
+      // UNO call will be validated on the server and work only when playing second-to-last card
     }
   };
 
@@ -476,16 +479,10 @@ export default function Game() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className={`font-bold border-2 transition-all ${
-                    currentPlayer.hand?.length === 2 && !hasCalledUno 
-                      ? 'bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse' 
-                      : hasCalledUno && currentPlayer.hand?.length === 1
-                      ? 'bg-green-600 border-green-500 text-white hover:bg-green-700'
-                      : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
-                  }`}
+                  className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse"
                   onClick={handleUnoCall}
                 >
-                  {hasCalledUno && currentPlayer.hand?.length === 1 ? 'UNO!' : 'CALL UNO'}
+                  🔥 UNO! 🔥
                 </Button>
               </div>
             </div>

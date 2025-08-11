@@ -12,11 +12,13 @@ Preferred communication style: Simple, everyday language.
 
 ### UNO Button Stealth Mode & Game End Modal Fixes (Latest - Aug 11, 2025)
 - **CRITICAL FIX**: UNO button now appears identical before and after calling (no visual reminder for players)
-- **Stealth Mode**: Button always shows "🔥 UNO! 🔥" with same red color and pulsing animation
+- **Stealth Mode**: Button always shows "🔥 UNO! 🔥" with same red color and pulsing animation 
+- **Fixed in GameFixed.tsx**: Removed conditional styling that changed button based on hand size or UNO status
 - **Penalty Strategy**: UNO call works anytime but only prevents penalty when playing second-to-last card
 - **No Player Hints**: Removed green color change and "UNO CALLED" text that reminded players they called UNO
 - **Enhanced Debugging**: Added comprehensive logging for game end modal detection and display
-- **Modal Issue**: Investigating winner screen display when games end
+- **Voice Synthesis**: Voice says "UNO!" when any player calls UNO (browser speech synthesis)
+- **Server Validation**: UNO calls validated server-side, work with any hand size, protection only on second-to-last card play
 
 ### Mobile Accessibility & Exit Button Fixes (Aug 11, 2025)
 - Fixed draw button positioning for mobile devices (iPhone accessibility)
