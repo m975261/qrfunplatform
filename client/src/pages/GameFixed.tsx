@@ -149,12 +149,12 @@ export default function Game() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
       {/* Floating emojis */}
       {floatingEmojis.map((emoji) => (
         <div
           key={emoji.id}
-          className="fixed z-50 pointer-events-none animate-bounce text-2xl"
+          className="fixed z-50 pointer-events-none animate-bounce text-xl sm:text-2xl"
           style={{ left: emoji.x, top: emoji.y }}
         >
           {emoji.emoji}
@@ -162,32 +162,33 @@ export default function Game() {
       ))}
 
       {/* Header */}
-      <div className="absolute top-4 left-4 right-4 z-10">
-        <div className="flex items-center justify-between">
-          <div className="bg-slate-800/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-slate-700/50">
-            <div className="text-sm font-medium text-white mb-1">
+      <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-10">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-slate-700/50 min-w-0">
+            <div className="text-xs sm:text-sm font-medium text-white mb-1">
               Room <span className="font-mono text-blue-400">{room.code}</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <Users className="h-3 w-3 text-slate-400" />
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <Users className="h-3 w-3 text-slate-400 flex-shrink-0" />
               <span className="text-xs text-slate-300">{players.length} players</span>
             </div>
           </div>
 
-          <div className="flex space-x-2">
+          <div className="flex space-x-1 sm:space-x-2 flex-shrink-0">
             <Button
               variant="outline"
               size="sm"
-              className="bg-slate-800/90 border-slate-700 text-slate-300 hover:bg-slate-700"
+              className="bg-slate-800/90 border-slate-700 text-slate-300 hover:bg-slate-700 p-2 sm:px-3"
               onClick={() => setShowChat(!showChat)}
             >
-              <MessageCircle className="h-4 w-4" />
+              <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline sm:ml-2">Chat</span>
             </Button>
             
             <Button
               variant="outline" 
               size="sm"
-              className="bg-blue-900/50 border-blue-700 text-blue-300 hover:bg-blue-800/50"
+              className="bg-blue-900/50 border-blue-700 text-blue-300 hover:bg-blue-800/50 px-2 sm:px-3"
               onClick={() => {
                 // Direct navigation to home without confirmation
                 localStorage.removeItem("currentRoomId");
@@ -202,7 +203,7 @@ export default function Game() {
             <Button
               variant="outline"
               size="sm"
-              className="bg-red-900/50 border-red-700 text-red-300 hover:bg-red-800/50"
+              className="bg-red-900/50 border-red-700 text-red-300 hover:bg-red-800/50 px-2 sm:px-3"
               onClick={() => {
                 if (confirm("Are you sure you want to exit the game?")) {
                   try {
@@ -226,26 +227,26 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - centered */}
-      <div className="absolute inset-0 flex items-center justify-center pb-32">
+      {/* Central Game Area - centered with responsive padding */}
+      <div className="absolute inset-0 flex items-center justify-center pb-24 sm:pb-32 pt-16 sm:pt-20">
         <div className="relative">
           {/* Draw Pile - Positioned below circle, mobile-friendly, offset to avoid conflicts */}
-          <div className="absolute -bottom-20 -right-16 z-10">
+          <div className="absolute -bottom-16 -right-12 sm:-bottom-20 sm:-right-16 z-10">
             <div className="relative cursor-pointer group" onClick={drawCard}>
-              <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
-              <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
+              <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
+              <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white font-bold text-sm">?</div>
+                <div className="text-white font-bold text-xs">Cards</div>
               </div>
             </div>
-            <div className="text-sm text-center mt-2 text-blue-300 font-bold">DRAW</div>
+            <div className="text-xs sm:text-sm text-center mt-2 text-blue-300 font-bold">DRAW</div>
           </div>
 
-          {/* Game Circle */}
-          <div className="w-48 h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
+          {/* Game Circle - Responsive sizing */}
+          <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
             
-            {/* Inner Circle */}
-            <div className="w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
+            {/* Inner Circle - Responsive sizing */}
+            <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
               
 
 
@@ -259,17 +260,17 @@ export default function Game() {
                       interactive={false}
                       onClick={() => {}}
                     />
-                    {/* Current Color Indicator for Wild Cards */}
+                    {/* Current Color Indicator for Wild Cards - Responsive */}
                     {room.currentColor && (topCard?.type === 'wild' || topCard?.type === 'wild4') && (
-                      <div className="mt-2 px-3 py-1 bg-slate-800/90 rounded-full border border-slate-600">
-                        <div className="flex items-center space-x-2">
-                          <div className={`w-3 h-3 rounded-full border border-white shadow-lg ${
+                      <div className="mt-1 sm:mt-2 px-2 sm:px-3 py-1 bg-slate-800/90 rounded-full border border-slate-600">
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full border border-white shadow-lg ${
                             room.currentColor === 'red' ? 'bg-red-500' :
                             room.currentColor === 'blue' ? 'bg-blue-500' :
                             room.currentColor === 'green' ? 'bg-green-500' :
                             'bg-yellow-500'
                           }`}></div>
-                          <span className="text-xs text-white font-bold">Play {room.currentColor}</span>
+                          <span className="text-xs sm:text-xs text-white font-bold">Play {room.currentColor}</span>
                         </div>
                       </div>
                     )}
@@ -322,18 +323,18 @@ export default function Game() {
                     }`}>
                       <div className="text-lg">{player.nickname[0].toUpperCase()}</div>
                       <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
-                      {/* Online/Offline indicator */}
-                      <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
+                      {/* Online/Offline indicator - Responsive */}
+                      <div className={`absolute -top-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 rounded-full border-1 sm:border-2 border-white ${
                         isOnline ? 'bg-green-500' : 'bg-red-500'
                       }`} />
-                      {/* Host crown */}
+                      {/* Host crown - Responsive */}
                       {player.id === room?.hostId && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                          <div className="w-6 h-6 text-yellow-400 fill-yellow-400">👑</div>
+                        <div className="absolute -top-2 sm:-top-3 left-1/2 -translate-x-1/2">
+                          <div className="text-lg sm:text-xl text-yellow-400">👑</div>
                         </div>
                       )}
-                      {/* Card count */}
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded-full font-bold border border-slate-600">
+                      {/* Card count - Responsive */}
+                      <div className="absolute -bottom-1 sm:-bottom-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold border border-slate-600">
                         {player.hand?.length || 0}
                       </div>
                     </div>
@@ -467,20 +468,20 @@ export default function Game() {
         })}
       </div>
 
-      {/* Player Hand Bar - Fixed at Bottom with proper spacing */}
+      {/* Player Hand Bar - Fixed at Bottom with responsive design */}
       {currentPlayer && !currentPlayer.isSpectator && (
         <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-4">
-            {/* Player Info and UNO Button */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+          <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
+            {/* Player Info and UNO Button - Responsive */}
+            <div className="flex items-center justify-between mb-2 sm:mb-4 flex-wrap gap-2">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
                   isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 ring-2 ring-green-400 ring-offset-2 ring-offset-slate-800' : 'bg-gradient-to-br from-blue-400 to-blue-600'
                 }`}>
                   {currentPlayer.nickname[0].toUpperCase()}
                 </div>
                 <div>
-                  <div className={`font-semibold text-white ${isMyTurn ? 'text-green-400' : ''}`}>
+                  <div className={`font-semibold text-white text-sm sm:text-base ${isMyTurn ? 'text-green-400' : ''}`}>
                     {currentPlayer.nickname} {isMyTurn && '⭐'}
                   </div>
                   <div className="text-xs text-slate-400">
@@ -489,16 +490,16 @@ export default function Game() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 {isMyTurn && (
-                  <div className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/30">
+                  <div className="bg-green-500/20 text-green-400 px-2 sm:px-3 py-1 rounded-full text-xs font-bold border border-green-500/30">
                     YOUR TURN
                   </div>
                 )}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse"
+                  className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs sm:text-sm px-2 sm:px-3"
                   onClick={handleUnoCall}
                 >
                   🔥 UNO! 🔥
@@ -506,14 +507,14 @@ export default function Game() {
               </div>
             </div>
             
-            {/* Player's Cards */}
+            {/* Player's Cards - Responsive scrolling */}
             <div className="overflow-x-auto">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div className="flex space-x-2 pb-2 min-w-max">
+                <div className="flex space-x-1 sm:space-x-2 pb-2 min-w-max">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
-                      className={`transition-all duration-200 ${
+                      className={`transition-all duration-200 flex-shrink-0 ${
                         isMyTurn ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer' : 'opacity-60'
                       }`}
                     >
@@ -535,18 +536,18 @@ export default function Game() {
         </div>
       )}
 
-      {/* Spectators Area - Show spectators who are still connected */}
+      {/* Spectators Area - Responsive positioning */}
       {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-        <div className="absolute top-20 right-2 md:right-4 z-20">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-lg max-w-xs">
+        <div className="absolute top-16 sm:top-20 right-2 sm:right-4 z-20">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 sm:p-3 shadow-lg max-w-xs">
             <div className="text-xs font-semibold text-gray-700 mb-2">Spectators:</div>
             <div className="space-y-1">
               {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any) => (
                 <div key={spectator.id} className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                     {spectator.nickname?.[0]?.toUpperCase()}
                   </div>
-                  <span className="text-xs text-gray-600">{spectator.nickname}</span>
+                  <span className="text-xs text-gray-600 truncate">{spectator.nickname}</span>
                 </div>
               ))}
             </div>

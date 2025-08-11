@@ -180,7 +180,7 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
         return (
           <div className="w-full h-full flex items-center justify-center">
             <div className="relative w-3/4 h-3/4 bg-white rounded-full flex items-center justify-center shadow-inner">
-              <span className="text-black font-bold">?</span>
+              <span className="text-black font-bold text-xs">Cards</span>
             </div>
           </div>
         );
