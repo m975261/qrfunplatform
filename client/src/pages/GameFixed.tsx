@@ -60,18 +60,26 @@ export default function Game() {
       fullGameState: gameState
     });
     
-    console.log("🏆 Game state effect - checking for game end:", {
+    console.log("🏆🏆🏆 GAME STATE EFFECT - CHECKING FOR GAME END:", {
       roomStatus: gameState?.room?.status,
       hasGameEndData: !!gameState?.gameEndData,
       gameEndData: gameState?.gameEndData,
-      showGameEnd
+      showGameEnd,
+      showGameEndState: showGameEnd,
+      gameEndDataState: gameEndData,
+      timestamp: new Date().toLocaleTimeString()
     });
     
     if (gameState?.room?.status === 'finished' || gameState?.gameEndData) {
-      console.log('🏆 Game finished detected! GameEndData:', gameState?.gameEndData);
+      console.log('🏆🏆🏆 GAME FINISHED DETECTED! Triggering modal:', {
+        roomStatus: gameState?.room?.status,
+        gameEndData: gameState?.gameEndData,
+        winner: gameState?.gameEndData?.winner,
+        rankings: gameState?.gameEndData?.rankings
+      });
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
-      console.log('🏆 Showing game end modal with data:', gameState.gameEndData);
+      console.log('🏆🏆🏆 MODAL STATE SET - showGameEnd: true, gameEndData:', gameState.gameEndData);
     }
     
     if (gameState?.needsContinue) {
@@ -554,8 +562,19 @@ export default function Game() {
         />
       )}
 
-      {/* Game End Modal */}
-      {((showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData)) && (
+      {/* Game End Modal - Enhanced debugging */}
+      {(() => {
+        const shouldShow = (showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData);
+        console.log("🏆🏆🏆 MODAL RENDER CHECK:", {
+          shouldShow,
+          showGameEnd,
+          gameEndData,
+          roomStatus: gameState?.room?.status,
+          hasGameStateEndData: !!gameState?.gameEndData,
+          timestamp: new Date().toLocaleTimeString()
+        });
+        return shouldShow;
+      })() && (
         <GameEndModal
           winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
           rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}

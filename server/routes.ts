@@ -771,7 +771,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const topCard = (room.discardPile || [])[0];
     
     if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0)) {
-      console.log(`❌ PLAY CARD: Cannot play card - card exists: ${!!card}, canPlay: ${card ? UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0) : false}`);
+      console.log(`❌ WILD4 DEBUG: Card play failed - analyzing Wild4 specifically:`);
+      console.log(`   - Card exists: ${!!card}`);
+      console.log(`   - Card details: ${card ? `${card.color} ${card.type} ${card.number || card.value || ''}` : 'null'}`);
+      console.log(`   - Is Wild4: ${card?.type === 'wild4'}`);
+      console.log(`   - Top card: ${topCard ? `${topCard.color} ${topCard.type} ${topCard.number || topCard.value || ''}` : 'null'}`);
+      console.log(`   - Current color: ${room.currentColor}`);
+      console.log(`   - Pending draw: ${room.pendingDraw}`);
+      console.log(`   - CanPlay result: ${card ? UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0) : false}`);
+      if (card?.type === 'wild4') {
+        console.log(`   - Wild4 should ALWAYS be playable unless stacking rules prevent it`);
+      }
       return;
     }
     
