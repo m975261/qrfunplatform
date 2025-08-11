@@ -60,26 +60,10 @@ export default function Game() {
       fullGameState: gameState
     });
     
-    console.log("🏆🏆🏆 GAME STATE EFFECT - CHECKING FOR GAME END:", {
-      roomStatus: gameState?.room?.status,
-      hasGameEndData: !!gameState?.gameEndData,
-      gameEndData: gameState?.gameEndData,
-      showGameEnd,
-      showGameEndState: showGameEnd,
-      gameEndDataState: gameEndData,
-      timestamp: new Date().toLocaleTimeString()
-    });
-    
     if (gameState?.room?.status === 'finished' || gameState?.gameEndData) {
-      console.log('🏆🏆🏆 GAME FINISHED DETECTED! Triggering modal:', {
-        roomStatus: gameState?.room?.status,
-        gameEndData: gameState?.gameEndData,
-        winner: gameState?.gameEndData?.winner,
-        rankings: gameState?.gameEndData?.rankings
-      });
+      console.log('🏆 Game finished detected, showing modal');
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
-      console.log('🏆🏆🏆 MODAL STATE SET - showGameEnd: true, gameEndData:', gameState.gameEndData);
     }
     
     if (gameState?.needsContinue) {
@@ -562,19 +546,8 @@ export default function Game() {
         />
       )}
 
-      {/* Game End Modal - Enhanced debugging */}
-      {(() => {
-        const shouldShow = (showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData);
-        console.log("🏆🏆🏆 MODAL RENDER CHECK:", {
-          shouldShow,
-          showGameEnd,
-          gameEndData,
-          roomStatus: gameState?.room?.status,
-          hasGameStateEndData: !!gameState?.gameEndData,
-          timestamp: new Date().toLocaleTimeString()
-        });
-        return shouldShow;
-      })() && (
+      {/* Game End Modal */}
+      {((showGameEnd && gameEndData) || (gameState?.room?.status === 'finished' && gameState?.gameEndData)) && (
         <GameEndModal
           winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
           rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}

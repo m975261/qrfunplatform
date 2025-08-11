@@ -54,37 +54,19 @@ export function useSocket(autoConnect: boolean = true) {
             handleFloatingEmoji(message);
             break;
           case 'game_end':
-            // Handle game end - Enhanced debugging
-            console.log("🏆🏆🏆 GAME END MESSAGE RECEIVED:", {
+            // Handle game end
+            console.log("🏆 GAME END MESSAGE RECEIVED:", {
               winner: message.winner,
-              rankings: message.rankings,
-              fullMessage: message,
-              messageType: message.type,
-              timestamp: new Date().toLocaleTimeString()
+              rankings: message.rankings
             });
-            console.log("🏆 Setting game state to finished with gameEndData");
-            setGameState((prev: any) => {
-              const newState = {
-                ...prev,
-                room: { ...prev?.room, status: 'finished' },
-                gameEndData: {
-                  winner: message.winner,
-                  rankings: message.rankings
-                }
-              };
-              console.log("🏆🏆🏆 NEW GAME STATE AFTER GAME_END:", {
-                roomStatus: newState.room?.status,
-                hasGameEndData: !!newState.gameEndData,
-                gameEndData: newState.gameEndData,
-                winner: newState.gameEndData?.winner,
-                rankingsCount: newState.gameEndData?.rankings?.length
-              });
-              return newState;
-            });
-            // Force a small delay to ensure state update is processed
-            setTimeout(() => {
-              console.log("🏆 Post-update: Modal should be showing now");
-            }, 100);
+            setGameState((prev: any) => ({
+              ...prev,
+              room: { ...prev.room, status: 'finished' },
+              gameEndData: {
+                winner: message.winner,
+                rankings: message.rankings
+              }
+            }));
             break;
           case 'player_left':
             console.log("Player left:", message.player);
