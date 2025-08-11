@@ -29,6 +29,7 @@ export const players = pgTable("players", {
   nickname: text("nickname").notNull(),
   roomId: varchar("room_id").notNull(),
   hand: jsonb("hand").$type<any[]>().default([]),
+  savedHand: jsonb("saved_hand").$type<any[]>().default([]), // Store hand when kicked to restore on rejoin
   position: integer("position"), // 0-3 for game positions
   isSpectator: boolean("is_spectator").default(false),
   hasCalledUno: boolean("has_called_uno").default(false),
