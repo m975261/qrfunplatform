@@ -138,12 +138,31 @@ export default function Game() {
     return playerData?.isOnline || false;
   };
 
-  const getPositionClass = (position: number) => {
+  const getPositionStyle = (position: number) => {
+    // Calculate circular positions attached to main circle edge
+    // Positions: 0=12 o'clock, 1=3 o'clock, 2=6 o'clock, 3=9 o'clock
+    const radius = 'max(6rem, min(12vw, 12vh))'; // Distance from center to avatar center
     const positions = [
-      'top-2 left-1/2 -translate-x-1/2', // 12 o'clock - much further from center
-      'right-2 top-1/2 -translate-y-1/2', // 3 o'clock - much further from center  
-      'bottom-8 left-1/2 -translate-x-1/2', // 6 o'clock - positioned way below center
-      'left-2 top-1/2 -translate-y-1/2' // 9 o'clock - much further from center
+      { // 12 o'clock
+        top: `calc(50% - ${radius})`,
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      },
+      { // 3 o'clock  
+        top: '50%',
+        left: `calc(50% + ${radius})`,
+        transform: 'translate(-50%, -50%)'
+      },
+      { // 6 o'clock
+        top: `calc(50% + ${radius})`,
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      },
+      { // 9 o'clock
+        top: '50%',
+        left: `calc(50% - ${radius})`,
+        transform: 'translate(-50%, -50%)'
+      }
     ];
     return positions[position] || positions[0];
   };
@@ -227,26 +246,56 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - centered with reduced bottom padding */}
-      <div className="absolute inset-0 flex items-center justify-center pb-40 sm:pb-44 pt-16 sm:pt-20">
+      {/* Central Game Area - Fully responsive with viewport units */}
+      <div className="absolute inset-0 flex items-center justify-center" style={{
+        paddingBottom: 'max(20vh, 160px)',  // Responsive bottom padding
+        paddingTop: 'max(8vh, 64px)'        // Responsive top padding
+      }}>
         <div className="relative">
-          {/* Draw Pile - Better positioned to avoid overlaps */}
-          <div className="absolute -bottom-12 -right-20 sm:-bottom-16 sm:-right-24 z-10">
+          {/* Draw Pile - Viewport responsive positioning */}
+          <div className="absolute z-10" style={{
+            bottom: 'max(-3rem, -8vh)',
+            right: 'max(-5rem, -12vw)',
+          }}>
             <div className="relative cursor-pointer group" onClick={drawCard}>
-              <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all"></div>
-              <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-12 md:h-16 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"></div>
+              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
+                   style={{
+                     width: 'max(2rem, 6vw)',
+                     height: 'max(3rem, 8vh)',
+                     minWidth: '32px',
+                     minHeight: '48px'
+                   }}></div>
+              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"
+                   style={{
+                     width: 'max(2rem, 6vw)',
+                     height: 'max(3rem, 8vh)',
+                     minWidth: '32px',
+                     minHeight: '48px'
+                   }}></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white font-bold text-xs">Cards</div>
+                <div className="text-white font-bold" style={{fontSize: 'min(0.75rem, 2.5vw)'}}>Cards</div>
               </div>
             </div>
-            <div className="text-xs sm:text-sm text-center mt-1 text-blue-300 font-bold">DRAW</div>
+            <div className="text-center mt-1 text-blue-300 font-bold" style={{fontSize: 'min(0.75rem, 2vw)'}}>DRAW</div>
           </div>
 
-          {/* Game Circle - Smaller to prevent overlaps */}
-          <div className="w-36 h-36 sm:w-40 sm:h-40 md:w-44 md:h-44 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50">
+          {/* Game Circle - Fully viewport responsive */}
+          <div className="rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50" 
+               style={{
+                 width: 'max(9rem, min(20vw, 20vh))',
+                 height: 'max(9rem, min(20vw, 20vh))',
+                 minWidth: '144px',
+                 minHeight: '144px'
+               }}>
             
-            {/* Inner Circle - Smaller responsive sizing */}
-            <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30">
+            {/* Inner Circle - Viewport responsive sizing */}
+            <div className="rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30"
+                 style={{
+                   width: 'max(6rem, min(14vw, 14vh))',
+                   height: 'max(6rem, min(14vw, 14vh))',
+                   minWidth: '96px',
+                   minHeight: '96px'
+                 }}>
               
 
 
@@ -288,12 +337,23 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Direction Indicator - positioned closer to smaller circle */}
-      <div className="absolute inset-0 flex items-center justify-center pb-32 pointer-events-none">
+      {/* Direction Indicator - Viewport responsive positioning */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
+        paddingBottom: 'max(20vh, 160px)',
+        paddingTop: 'max(8vh, 64px)'
+      }}>
         <div className="relative">
-          <div className="absolute top-[180px] sm:top-[200px] md:top-[220px] lg:top-[240px] left-1/2 transform -translate-x-1/2 z-10">
-            <div className="bg-purple-600/90 rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center shadow-lg border-2 border-purple-400">
-              <div className="text-white text-lg sm:text-xl font-bold">
+          <div className="absolute left-1/2 transform -translate-x-1/2 z-10" style={{
+            top: 'max(11rem, min(25vw, 25vh))'
+          }}>
+            <div className="bg-purple-600/90 rounded-full flex items-center justify-center shadow-lg border-2 border-purple-400"
+                 style={{
+                   width: 'max(2rem, min(6vw, 6vh))',
+                   height: 'max(2rem, min(6vw, 6vh))',
+                   minWidth: '32px',
+                   minHeight: '32px'
+                 }}>
+              <div className="text-white font-bold" style={{fontSize: 'min(1.25rem, 4vw)'}}>
                 {room.direction === "clockwise" ? "↻" : "↺"}
               </div>
             </div>
@@ -301,9 +361,17 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Player Avatars in Circular Layout */}
-      <div className="absolute inset-0 flex items-center justify-center pb-32 pointer-events-none">
-        <div className="relative w-[320px] h-[400px] sm:w-[380px] sm:h-[480px] md:w-[420px] md:h-[520px]">
+      {/* Player Avatars in Circular Layout - Fully viewport responsive */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
+        paddingBottom: 'max(20vh, 160px)',
+        paddingTop: 'max(8vh, 64px)'
+      }}>
+        <div className="relative" style={{
+          width: 'max(20rem, min(40vw, 40vh))',
+          height: 'max(25rem, min(50vw, 50vh))',
+          minWidth: '320px',
+          minHeight: '400px'
+        }}>
           {/* 4 Fixed Avatar Positions */}
           {[0, 1, 2, 3].map((position) => {
             const player = getPlayerAtPosition(position);
@@ -313,14 +381,21 @@ export default function Game() {
             return (
               <div
                 key={position}
-                className={`absolute ${getPositionClass(position)} pointer-events-auto`}
+                className="absolute pointer-events-auto"
+                style={getPositionStyle(position)}
               >
                 <div className="relative">
                   {player ? (
-                    // Player Avatar - Smaller to fit better
-                    <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 ${
+                    // Player Avatar - Viewport responsive sizing
+                    <div className={`bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 ${
                       isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
-                    }`}>
+                    }`}
+                    style={{
+                      width: 'max(4rem, min(8vw, 8vh))',
+                      height: 'max(4rem, min(8vw, 8vh))',
+                      minWidth: '64px',
+                      minHeight: '64px'
+                    }}>
                       <div className="text-sm sm:text-lg">{player.nickname[0].toUpperCase()}</div>
                       <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
                       {/* Online/Offline indicator - Responsive */}
