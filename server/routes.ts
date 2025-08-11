@@ -214,8 +214,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Player not found in this room" });
       }
 
-      // Remove the player
-      await storage.deletePlayer(playerId);
+      // Convert player to spectator instead of deleting them
+      await storage.updatePlayer(playerId, {
+        isSpectator: true,
+        hasLeft: true,
+        leftAt: new Date(),
+        position: null,
+        hand: [],
+        hasCalledUno: false,
+        finishPosition: null
+      });
       
       // Close WebSocket connection if player is online
       // Find and close connections for this player
@@ -262,8 +270,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Player not found in this room" });
       }
 
-      // Check if player is already in a position
-      if (player.position !== null) {
+      // Check if player is already in a position (and not a kicked/left spectator)
+      if (player.position !== null && !player.isSpectator && !player.hasLeft) {
         return res.status(400).json({ error: "Player already has a position" });
       }
 
@@ -275,10 +283,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Position already taken" });
       }
 
-      // Update player to take the position
+      // Update player to take the position and reset their game state
       await storage.updatePlayer(playerId, {
         position,
-        isSpectator: false
+        isSpectator: false,
+        hasLeft: false,
+        leftAt: null,
+        hand: [],
+        hasCalledUno: false,
+        finishPosition: null
       });
 
       // Broadcast updated room state
@@ -1083,50 +1096,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const playerToReplace = await storage.getPlayer(connection.playerId);
     const players = await storage.getPlayersByRoom(connection.roomId);
     
-    if (!room || !playerToReplace || !playerToReplace.isSpectator) return;
+    if (!room || !playerToReplace) return;
     
-    // Find if there's a left player at the target position
-    const leftPlayer = players.find(p => p.position === targetPosition && p.hasLeft);
+    // Allow both spectators and kicked players (who are now spectators) to rejoin
+    if (!playerToReplace.isSpectator && !playerToReplace.hasLeft) return;
     
-    if (leftPlayer) {
-      // Replace the left player - spectator takes their position, hand, and game state
-      await storage.updatePlayer(connection.playerId, {
-        isSpectator: false,
-        position: targetPosition,
-        hand: leftPlayer.hand || [],
-        hasLeft: false,
-        hasCalledUno: leftPlayer.hasCalledUno || false,
-        finishPosition: null // Clear any finish position since they're back in game
-      });
-      
-      // Remove the left player completely
-      await storage.deletePlayer(leftPlayer.id);
-      
-      // Removed system message as requested by user
-      
-      broadcastToRoom(connection.roomId, {
-        type: 'player_replaced',
-        newPlayer: playerToReplace.nickname,
-        position: targetPosition
-      });
-    } else {
-      // Regular join to empty position - initialize game state
-      await storage.updatePlayer(connection.playerId, {
-        isSpectator: false,
-        position: targetPosition,
-        hand: [], // Empty hand for new player
-        hasCalledUno: false,
-        finishPosition: null
-      });
-      
-      // Removed system message as requested by user
-      
-      broadcastToRoom(connection.roomId, {
-        type: 'spectator_joined',
-        player: playerToReplace.nickname,
-        position: targetPosition
-      });
+    // Check if position is already taken by an active player
+    const activePlayerAtPosition = players.find(p => p.position === targetPosition && !p.isSpectator && !p.hasLeft);
+    
+    if (activePlayerAtPosition) {
+      console.log(`Position ${targetPosition} is already taken by active player ${activePlayerAtPosition.nickname}`);
+      return; // Position is occupied by an active player
     }
+    
+    // Regular join to empty position - initialize game state
+    await storage.updatePlayer(connection.playerId, {
+      isSpectator: false,
+      position: targetPosition,
+      hand: [], // Empty hand for new player
+      hasLeft: false,
+      leftAt: null,
+      hasCalledUno: false,
+      finishPosition: null
+    });
+    
+    console.log(`${playerToReplace.nickname} joined position ${targetPosition}`);
+    
+    // Removed system message as requested by user
+    
+    broadcastToRoom(connection.roomId, {
+      type: 'spectator_joined',
+      player: playerToReplace.nickname,
+      position: targetPosition
+    });
     
     await broadcastRoomState(connection.roomId);
 
