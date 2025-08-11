@@ -75,16 +75,22 @@ export default function Game() {
       // Set data first
       setGameEndData(gameState.gameEndData);
       
-      // AGGRESSIVE Safari solution - create simple DOM overlay
-      if (isSafariOrMobile) {
-        const winner = gameState.gameEndData.winner;
-        const rankings = gameState.gameEndData.rankings || [];
-        
-        console.log("🏆 Creating Safari-compatible overlay");
-        
-        // Create simple DOM overlay for Safari
-        const overlay = document.createElement('div');
-        overlay.id = 'safari-winner-overlay';
+      // FORCE DISPLAY for all browsers - debug mode 
+      console.log("🏆 GAME END - Browser detection:", {
+        userAgent: navigator.userAgent,
+        isSafariOrMobile,
+        winner: gameState.gameEndData.winner
+      });
+      
+      // Always create overlay for all browsers now
+      const winner = gameState.gameEndData.winner;
+      const rankings = gameState.gameEndData.rankings || [];
+      
+      console.log("🏆 Creating universal overlay for all browsers");
+      
+      // Create simple DOM overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'universal-winner-overlay';
         overlay.innerHTML = `
           <div style="
             position: fixed !important;
@@ -163,27 +169,26 @@ export default function Game() {
           </div>
         `;
         
-        // Remove any existing overlay
-        const existing = document.getElementById('safari-winner-overlay');
-        if (existing) existing.remove();
-        
-        // Add to body
-        document.body.appendChild(overlay);
-        console.log("🏆 Safari overlay created and added to DOM");
-        
-        // Force Safari to acknowledge it
-        overlay.offsetHeight;
-        overlay.style.display = 'flex';
-        
-        // Also show native alert as backup
-        setTimeout(() => {
-          let alertMessage = `🏆 ${winner} WINS!\n\nFinal Rankings:\n`;
-          rankings.forEach((player, index) => {
-            alertMessage += `${index + 1}. ${player.nickname}\n`;
-          });
-          alert(alertMessage);
-        }, 500);
-      }
+      // Remove any existing overlay
+      const existing = document.getElementById('universal-winner-overlay');
+      if (existing) existing.remove();
+      
+      // Add to body
+      document.body.appendChild(overlay);
+      console.log("🏆 Universal overlay created and added to DOM");
+      
+      // Force browser to acknowledge it
+      overlay.offsetHeight;
+      overlay.style.display = 'flex';
+      
+      // Also show native alert as backup for all browsers
+      setTimeout(() => {
+        let alertMessage = `🏆 ${winner} WINS!\n\nFinal Rankings:\n`;
+        rankings.forEach((player, index) => {
+          alertMessage += `${index + 1}. ${player.nickname}\n`;
+        });
+        alert(alertMessage);
+      }, 200);
       
       // Always try to show modal regardless
       setShowGameEnd(true);
@@ -476,8 +481,17 @@ export default function Game() {
           minHeight: '400px'
         }}>
           
-          {/* Game Direction Indicator - Fixed visibility and positioning */}
-          {gameState?.room?.status === 'playing' && (
+          {/* Game Direction Indicator - Always visible during games for debugging */}
+          {(() => {
+            console.log("🧭 DIRECTION BUTTON DEBUG:", {
+              gameState: !!gameState,
+              room: !!gameState?.room,
+              status: gameState?.room?.status,
+              direction: gameState?.room?.direction,
+              shouldShow: gameState && gameState.room && gameState.room.status === 'playing'
+            });
+            return gameState && gameState.room && gameState.room.status === 'playing';
+          })() && (
             <div className="absolute z-20 pointer-events-none" style={{
               top: 'max(-4rem, -12vh)',
               left: '50%',
