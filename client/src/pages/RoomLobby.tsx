@@ -232,6 +232,10 @@ export default function RoomLobby() {
             const player = playerSlots[position];
             const isOnline = player ? isPlayerOnline(player) : false;
             
+            // Check if this position was active when game started
+            const wasActiveAtStart = room?.activePositions?.includes(position) ?? false;
+            const gameInProgress = room?.status === 'playing' || room?.status === 'paused';
+            
             return (
               <div
                 key={position}
@@ -258,13 +262,15 @@ export default function RoomLobby() {
                     // Empty Slot
                     <div 
                       className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors ${
-                        room?.status === 'playing' || room?.status === 'paused' 
+                        gameInProgress && !wasActiveAtStart
                           ? 'bg-gray-200/50 border-gray-300/30 cursor-not-allowed' 
+                          : gameInProgress && wasActiveAtStart
+                          ? 'bg-blue-100/50 border-blue-300/50 cursor-pointer hover:bg-blue-200/70'
                           : 'bg-gray-300/50 border-white/30 cursor-pointer hover:bg-gray-300/70'
                       }`}
                       onClick={() => {
-                        if (room?.status === 'playing' || room?.status === 'paused') {
-                          return; // Slot is closed during game
+                        if (gameInProgress && !wasActiveAtStart) {
+                          return; // Slot was never active, permanently closed
                         }
                         if (currentPlayer?.isSpectator) {
                           takePlayerSlot(position);
@@ -277,10 +283,15 @@ export default function RoomLobby() {
                         }
                       }}
                     >
-                      {room?.status === 'playing' || room?.status === 'paused' ? (
+                      {gameInProgress && !wasActiveAtStart ? (
                         <div className="text-center">
                           <X className="w-8 h-8 text-gray-400 mx-auto" />
                           <div className="text-xs text-gray-500 mt-1">Closed</div>
+                        </div>
+                      ) : gameInProgress && wasActiveAtStart ? (
+                        <div className="text-center">
+                          <Plus className="w-8 h-8 text-blue-600 mx-auto" />
+                          <div className="text-xs text-blue-700 font-medium">Rejoin</div>
                         </div>
                       ) : currentPlayer?.isSpectator || !currentPlayer ? (
                         <div className="text-center">

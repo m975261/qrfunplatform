@@ -48,6 +48,8 @@ export class MemStorage implements IStorage {
       discardPile: insertRoom.discardPile || [],
       currentColor: insertRoom.currentColor || null,
       pendingDraw: insertRoom.pendingDraw || null,
+      positionHands: insertRoom.positionHands || {},
+      activePositions: insertRoom.activePositions || [],
     };
     this.rooms.set(id, room);
     return room;
@@ -82,6 +84,7 @@ export class MemStorage implements IStorage {
       id,
       joinedAt: new Date(),
       hand: insertPlayer.hand || null,
+      savedHand: insertPlayer.savedHand || null,
       hasLeft: insertPlayer.hasLeft || null,
       position: insertPlayer.position ?? null,
       isSpectator: insertPlayer.isSpectator || false,

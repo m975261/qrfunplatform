@@ -121,9 +121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isSpectator = false;
         playerPosition = nonSpectatorPlayers.length;
       } else if (room.status === "playing" || room.status === "paused") {
-        // For active games, check if there are available positions with cards
+        // For active games, only allow rejoining to originally active positions
         const availablePositions = [];
-        for (let pos = 0; pos < 4; pos++) {
+        const originalActivePositions = room.activePositions || [];
+        
+        for (const pos of originalActivePositions) {
           const positionTaken = existingPlayers.some(p => p.position === pos && !p.isSpectator && !p.hasLeft);
           if (!positionTaken && room.positionHands?.[pos.toString()]) {
             availablePositions.push(pos);
@@ -701,14 +703,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Update player hands and store position-based hands
     const positionHands: {[key: string]: any[]} = {};
+    const activePositions: number[] = [];
+    
     for (let i = 0; i < gamePlayers.length; i++) {
       await storage.updatePlayer(gamePlayers[i].id, { hand: hands[i] });
       // Store cards by position so anyone joining this position gets these cards
       positionHands[gamePlayers[i].position!.toString()] = hands[i];
+      // Track which positions were active when game started
+      activePositions.push(gamePlayers[i].position!);
     }
     
-    // Update room with position-based hands
-    await storage.updateRoom(connection.roomId, { positionHands });
+    console.log(`Game started with active positions: [${activePositions.join(', ')}]`);
+    
+    // Update room with position-based hands and active positions
+    await storage.updateRoom(connection.roomId, { positionHands, activePositions });
     
     await broadcastRoomState(connection.roomId);
     
