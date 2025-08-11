@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Connection Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="logs"></div>
+    
+    <script>
+        const logs = document.getElementById('logs');
+        const status = document.getElementById('status');
+        
+        function log(message) {
+            console.log(message);
+            logs.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+        
+        // Test WebSocket connection
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${protocol}//${window.location.host}/ws`;
+        
+        log('Attempting to connect to: ' + wsUrl);
+        log('Current location: ' + window.location.href);
+        log('Protocol: ' + protocol + ', Host: ' + window.location.host);
+        
+        const ws = new WebSocket(wsUrl);
+        
+        ws.onopen = function(event) {
+            status.textContent = 'Connected!';
+            status.style.color = 'green';
+            log('WebSocket connected successfully');
+            
+            // Send test message
+            ws.send(JSON.stringify({
+                type: 'heartbeat',
+                test: true
+            }));
+            log('Sent test heartbeat message');
+        };
+        
+        ws.onmessage = function(event) {
+            log('Received message: ' + event.data);
+        };
+        
+        ws.onclose = function(event) {
+            status.textContent = 'Connection closed';
+            status.style.color = 'red';
+            log('WebSocket closed. Code: ' + event.code + ', Reason: ' + event.reason);
+        };
+        
+        ws.onerror = function(error) {
+            status.textContent = 'Connection error';
+            status.style.color = 'red';
+            log('WebSocket error occurred');
+            log('Error details: ' + JSON.stringify(error));
+            log('WebSocket readyState: ' + ws.readyState);
+        };
+    </script>
+</body>
+</html>

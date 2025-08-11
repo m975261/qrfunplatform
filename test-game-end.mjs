@@ -51,7 +51,7 @@ function connectWebSocket(playerId, roomId) {
 }
 
 async function testUnoCall() {
-  console.log('🧪 Testing UNO call WebSocket functionality...');
+  console.log('🧪 Testing complete UNO call system...');
   
   try {
     // Create room and players
@@ -70,50 +70,76 @@ async function testUnoCall() {
     // Start game
     await makeRequest(`/api/rooms/${roomId}/start`, 'POST');
     
-    // Set TestPlayer to have 2 cards
+    console.log('✓ Game setup complete');
+    
+    // Test 1: UNO call with 5 cards (should work now - always available)
     await makeRequest(`/api/rooms/${roomId}/test-set-hand`, 'POST', {
       playerId: player1Id,
       hand: [
-        { color: 'red', value: '5' },
-        { color: 'red', value: '7' }
+        { color: 'red', value: '1' },
+        { color: 'red', value: '2' },
+        { color: 'red', value: '3' },
+        { color: 'red', value: '4' },
+        { color: 'red', value: '5' }
       ]
     });
     
-    // Set a valid discard pile
-    await makeRequest(`/api/rooms/${roomId}/test-set-discard`, 'POST', {
-      topCard: { color: 'red', value: '3' }
-    });
-    
-    console.log('✓ Game setup complete');
-    
-    // Connect WebSocket
     const ws = await connectWebSocket(player1Id, roomId);
     console.log('✓ WebSocket connected');
-    
-    // Wait a bit for connection to stabilize
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Test UNO call
-    console.log('📢 Calling UNO...');
-    ws.send(JSON.stringify({
-      type: 'call_uno'
-    }));
-    
-    // Wait for server to process
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Check if UNO call was registered
-    const gameState = await makeRequest(`/api/rooms/${roomId}`);
-    const testPlayer = gameState.players.find(p => p.id === player1Id);
+    console.log('📢 Test 1: Calling UNO with 5 cards...');
+    ws.send(JSON.stringify({ type: 'call_uno' }));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    console.log('UNO call result:');
+    let gameState = await makeRequest(`/api/rooms/${roomId}`);
+    let testPlayer = gameState.players.find(p => p.id === player1Id);
+    
+    console.log('UNO call with 5 cards:');
     console.log('  hasCalledUno:', testPlayer?.hasCalledUno);
     console.log('  Hand size:', testPlayer?.hand?.length);
     
     if (testPlayer?.hasCalledUno) {
-      console.log('✅ UNO call working correctly!');
+      console.log('✅ UNO call works with any number of cards!');
+      
+      // Test 2: Now reduce to 2 cards and play one (should not get penalty)
+      await makeRequest(`/api/rooms/${roomId}/test-set-hand`, 'POST', {
+        playerId: player1Id,
+        hand: [
+          { color: 'red', value: '5' },
+          { color: 'red', value: '7' }
+        ]
+      });
+      
+      // Set a valid discard pile
+      await makeRequest(`/api/rooms/${roomId}/test-set-discard`, 'POST', {
+        topCard: { color: 'red', value: '3' }
+      });
+      
+      console.log('📢 Test 2: Playing card with UNO already called...');
+      ws.send(JSON.stringify({
+        type: 'play_card',
+        cardIndex: 0
+      }));
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      gameState = await makeRequest(`/api/rooms/${roomId}`);
+      testPlayer = gameState.players.find(p => p.id === player1Id);
+      
+      console.log('After playing card:');
+      console.log('  Hand size:', testPlayer?.hand?.length);
+      console.log('  hasCalledUno:', testPlayer?.hasCalledUno);
+      
+      if (testPlayer?.hand?.length === 1) {
+        console.log('✅ Complete UNO system working correctly!');
+        console.log('✅ No penalty when UNO was called before playing second-to-last card');
+      } else {
+        console.log('❌ Card play failed or penalty applied incorrectly');
+      }
+      
     } else {
-      console.log('❌ UNO call failed - WebSocket message not processed');
+      console.log('❌ UNO call failed - should work with any hand size');
     }
     
     ws.close();

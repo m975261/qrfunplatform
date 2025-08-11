@@ -30,6 +30,15 @@ Preferred communication style: Simple, everyday language.
 - WebSocket validation prevents joining positions that weren't active at game start
 - Comprehensive debugging logs for kick operations and card restoration
 
+### UNO Call System Enhanced (Aug 11, 2025)
+- **IMPROVED**: UNO button now always available instead of only during player's turn or with 2 cards
+- **Button Behavior**: Changes from "🔥 UNO! 🔥" (red, pulsing) to "✅ UNO CALLED" (green, disabled) after clicking
+- **Functionality**: UNO call works anytime but only prevents penalty when playing second-to-last card
+- **Animated Messages**: Added funny animated UNO messages visible to all players when someone calls UNO
+- **Message Display**: Large bouncing message "🔥 PlayerName says UNO! 🔥" appears for 3 seconds
+- **WebSocket Enhancement**: Broadcasts `uno_called_success` message to all players for synchronized animation
+- **Complete Workflow**: Call UNO anytime → Play second-to-last card → No penalty (if UNO was called)
+
 ### UNO Penalty System Completely Fixed (Aug 11, 2025)
 - **RESOLVED**: Fixed critical UNO penalty bug where players received 2-card penalties even after calling UNO correctly
 - **Root Cause**: Missing HTTP start game endpoint prevented games from entering "playing" status

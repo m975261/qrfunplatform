@@ -43,12 +43,24 @@ export default function Game() {
   const [timer, setTimer] = useState(30);
   const [hasCalledUno, setHasCalledUno] = useState(false);
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
+  const [unoMessage, setUnoMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
       joinRoom(playerId, roomId);
     }
   }, [roomId, playerId, isConnected, joinRoom]);
+
+  // Handle UNO message animation
+  useEffect(() => {
+    if (gameState?.unoMessage) {
+      setUnoMessage(gameState.unoMessage);
+      // Clear local message after animation
+      setTimeout(() => {
+        setUnoMessage(null);
+      }, 3000);
+    }
+  }, [gameState?.unoMessage]);
 
   useEffect(() => {
     if (gameState?.room?.status === "finished") {
@@ -88,12 +100,10 @@ export default function Game() {
 
   const handleUnoCall = () => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
-    if (player?.hand?.length === 2) {
+    if (!player?.hasCalledUno) {
       callUno();
       setHasCalledUno(true);
-      // Removed toast notification as requested
-    } else {
-      // Invalid call - no notification needed
+      // UNO call will be validated on the server and work only when playing second-to-last card
     }
   };
 
@@ -175,6 +185,19 @@ export default function Game() {
           </div>
         ))}
       </div>
+
+      {/* UNO Call Animation */}
+      {unoMessage && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="bg-gradient-to-r from-uno-red via-red-500 to-orange-500 text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold px-6 py-4 rounded-full shadow-2xl border-4 border-white animate-bounce transform scale-110">
+            <div className="flex items-center space-x-3">
+              <span className="animate-pulse">🔥</span>
+              <span className="animate-pulse">{unoMessage} says UNO!</span>
+              <span className="animate-pulse">🔥</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile/Desktop Responsive Header */}
       <div className="absolute top-2 md:top-4 left-2 md:left-4 right-2 md:right-4 z-10">
@@ -337,17 +360,20 @@ export default function Game() {
               </div>
             </div>
 
-            {/* UNO Button - Outside Circle */}
-            {currentPlayer?.hand?.length === 2 && !currentPlayer.hasCalledUno && (
-              <div className="absolute -bottom-12 sm:-bottom-16 md:-bottom-20 left-1/2 transform -translate-x-1/2">
-                <Button
-                  onClick={handleUnoCall}
-                  className="bg-gradient-to-r from-uno-red to-red-500 hover:scale-110 transition-all shadow-lg animate-pulse text-white font-bold px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 text-sm sm:text-base md:text-lg rounded-full"
-                >
-                  🔥 UNO! 🔥
-                </Button>
-              </div>
-            )}
+            {/* UNO Button - Always Available */}
+            <div className="absolute -bottom-12 sm:-bottom-16 md:-bottom-20 left-1/2 transform -translate-x-1/2">
+              <Button
+                onClick={handleUnoCall}
+                className={`transition-all shadow-lg text-white font-bold px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 text-sm sm:text-base md:text-lg rounded-full ${
+                  currentPlayer?.hasCalledUno 
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:scale-105' 
+                    : 'bg-gradient-to-r from-uno-red to-red-500 hover:scale-110 animate-pulse'
+                }`}
+                disabled={currentPlayer?.hasCalledUno}
+              >
+                {currentPlayer?.hasCalledUno ? '✅ UNO CALLED' : '🔥 UNO! 🔥'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

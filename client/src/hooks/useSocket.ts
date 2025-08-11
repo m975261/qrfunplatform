@@ -90,6 +90,18 @@ export function useSocket(autoConnect: boolean = true) {
           case 'uno_called_success':
             // Show success feedback when UNO is called
             console.log("UNO successfully called by:", message.player);
+            // Set UNO message for animated display
+            setGameState((prev: any) => ({
+              ...prev,
+              unoMessage: message.player
+            }));
+            // Clear message after animation
+            setTimeout(() => {
+              setGameState((prev: any) => ({
+                ...prev,
+                unoMessage: null
+              }));
+            }, 3000);
             break;
           case 'kicked':
             // Player was kicked - they become a spectator but stay in the room
