@@ -873,13 +873,27 @@ export default function Game() {
             <div className="text-center">
               <div className="text-white text-sm font-medium mb-2">Game is paused</div>
               <Button
-                onClick={() => continueGame()}
+                onClick={() => {
+                  console.log('🎮 HOST CONTINUING GAME:', { playerId, roomCode: room?.code, isHost });
+                  continueGame();
+                }}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
               >
                 Continue Game
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* DEBUG: Show pause status info on screen for troubleshooting */}
+      {isPaused && (
+        <div className="fixed top-16 right-4 bg-red-600 text-white p-2 rounded text-xs font-mono z-50">
+          <div>PAUSED DEBUG:</div>
+          <div>Status: {room?.status}</div>
+          <div>Current Player: {currentPlayer?.nickname}</div>
+          <div>Host: {room?.hostId === playerId ? 'YES' : 'NO'}</div>
+          <div>Show Button: {(isPaused && isHost) ? 'YES' : 'NO'}</div>
         </div>
       )}
 

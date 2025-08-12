@@ -523,6 +523,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const connection = connections.get(connectionId);
       if (connection) {
         connection.lastSeen = Date.now();
+        // Debug pong from hosts
+        if (connection.playerId && connection.roomId) {
+          console.log(`🏓 PONG received from ${connection.playerId} (lastSeen updated: ${connection.lastSeen})`);
+        }
       }
     });
     
@@ -581,6 +585,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             connection.lastSeen = Date.now();
             connection.tabVisible = message.tabVisible !== false; // Default to true if not specified
             connection.lastActivity = message.timestamp || Date.now();
+            
+            // Debug heartbeat for host connections
+            if (connection.playerId && connection.roomId) {
+              const room = await storage.getRoom(connection.roomId);
+              if (room && room.hostId === connection.playerId) {
+                console.log(`💓 HOST HEARTBEAT: ${connection.playerId} in room ${room.code} (lastSeen: ${connection.lastSeen})`);
+              }
+            }
+            
             ws.send(JSON.stringify({ 
               type: 'heartbeat_ack',
               serverTime: Date.now()
@@ -1238,7 +1251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`🎯 DRAW TURN ADVANCE: Current: ${currentPlayerIndex}, Finished: [${finishedPlayerIndices.join(', ')}]`);
     
     // Always move to next player after drawing - turn is over
-    const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+    let nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
       currentPlayerIndex, 
       gamePlayers.length, 
       room.direction || "clockwise",
@@ -1682,16 +1695,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const playerConnections = Array.from(connections.values()).filter(conn => 
         conn.playerId === player.id && 
         conn.ws.readyState === WebSocket.OPEN &&
-        (!conn.lastSeen || Date.now() - conn.lastSeen < 120000)
+        (!conn.lastSeen || Date.now() - conn.lastSeen < 45000) // Reduced from 120s to 45s for better accuracy
       );
       
       // Sort by lastSeen to get the most recent active connection
       const mostRecentConnection = playerConnections
         .sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))[0];
       
+      const isOnline = !!mostRecentConnection;
+      
+      // Debug host online status
+      if (room?.hostId === player.id) {
+        console.log(`🏠 HOST STATUS DEBUG: ${player.nickname} (ID: ${player.id})`);
+        console.log(`   - Connections found: ${playerConnections.length}`);
+        console.log(`   - Most recent connection: ${!!mostRecentConnection}`);
+        console.log(`   - Connection lastSeen: ${mostRecentConnection?.lastSeen || 'undefined'}`);
+        console.log(`   - Time since last seen: ${mostRecentConnection?.lastSeen ? Date.now() - mostRecentConnection.lastSeen : 'N/A'}ms`);
+        console.log(`   - Final status: ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+      }
+      
       return {
         ...player,
-        isOnline: !!mostRecentConnection
+        isOnline
       };
     });
     
