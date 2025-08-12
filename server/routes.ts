@@ -959,36 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedPlayers = await storage.getPlayersByRoom(connection.roomId);
       const remainingPlayers = updatedPlayers.filter(p => !p.isSpectator && !p.hasLeft && !p.finishPosition);
       
-      // Always show game end window for the first player to finish
-      if (finishedCount === 0) {
-        // First player to finish - show initial rankings
-        const currentRankings = updatedPlayers
-          .filter(p => !p.isSpectator)
-          .map(p => ({
-            nickname: p.nickname,
-            position: p.finishPosition || 'Playing',
-            hasLeft: p.hasLeft || false
-          }))
-          .sort((a, b) => {
-            if (a.position === 'Playing' && b.position !== 'Playing') return 1;
-            if (a.position !== 'Playing' && b.position === 'Playing') return -1;
-            if (a.position === 'Playing' && b.position === 'Playing') return 0;
-            return (Number(a.position) || 999) - (Number(b.position) || 999);
-          });
 
-        const gameEndMessage = {
-          type: 'game_end',
-          winner: player.nickname,
-          rankings: currentRankings
-        };
-        
-        const roomConnections = Array.from(connections.values()).filter(c => c.roomId === connection.roomId);
-        roomConnections.forEach(conn => {
-          if (conn.ws.readyState === WebSocket.OPEN) {
-            conn.ws.send(JSON.stringify(gameEndMessage));
-          }
-        });
-      }
       
       // Check if game should fully end (only 1 player left or all finished)
       if (remainingPlayers.length <= 1) {
@@ -1021,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             conn.ws.send(JSON.stringify(finalGameEndMessage));
           }
         });
-      } else if (finishedCount > 0) {
+      } else {
         // Continue game with remaining players - notify of player finished
         broadcastToRoom(connection.roomId, {
           type: 'player_finished',
