@@ -125,6 +125,45 @@ export default function RoomLobby() {
     replacePlayer(position);
   };
 
+  const handleHostAssignSpectator = async (spectatorId: string) => {
+    if (!isHost) return;
+    
+    // Find the next available position (0-3)
+    const occupiedPositions = players
+      .filter((p: any) => !p.isSpectator && p.position !== null)
+      .map((p: any) => p.position);
+    
+    let nextPosition = null;
+    for (let i = 0; i < 4; i++) {
+      if (!occupiedPositions.includes(i)) {
+        nextPosition = i;
+        break;
+      }
+    }
+    
+    if (nextPosition === null) {
+      console.log("No available slots to assign spectator");
+      return;
+    }
+    
+    try {
+      await apiRequest(`/api/rooms/${roomId}/assign-spectator`, {
+        method: "POST", 
+        body: JSON.stringify({ 
+          spectatorId,
+          position: nextPosition
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${playerId}`
+        }
+      });
+      console.log(`Assigned spectator to position ${nextPosition}`);
+    } catch (error) {
+      console.error("Failed to assign spectator:", error);
+    }
+  };
+
   // Handle case where room/player data is stale (server restart)
   useEffect(() => {
     if (roomError && roomId && playerId) {
@@ -379,12 +418,21 @@ export default function RoomLobby() {
                 <div className="max-h-32 overflow-y-auto space-y-1">
                   {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index, arr) => (
                     <div key={spectator.id}>
-                      <div className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-md transition-colors">
+                      <div 
+                        className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
+                          isHost ? 'hover:bg-blue-50 cursor-pointer' : 'hover:bg-gray-50'
+                        }`}
+                        onClick={isHost ? () => handleHostAssignSpectator(spectator.id) : undefined}
+                        title={isHost ? "Click to assign to next available slot" : ""}
+                      >
                         <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                           {spectator.nickname?.[0]?.toUpperCase()}
                         </div>
                         <span className="text-xs text-gray-700 flex-1 truncate">{spectator.nickname}</span>
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+                        {isHost && (
+                          <div className="text-xs text-blue-600 font-medium">+</div>
+                        )}
                       </div>
                       {/* Separator line between spectators */}
                       {index < arr.length - 1 && (
@@ -394,7 +442,7 @@ export default function RoomLobby() {
                   ))}
                 </div>
                 <div className="mt-2 text-xs text-gray-500 text-center">
-                  Click empty slots to join
+                  {isHost ? "Click spectators to assign to slots" : "Click empty slots to join"}
                 </div>
               </CardContent>
             </Card>

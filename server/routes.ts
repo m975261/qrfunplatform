@@ -1698,6 +1698,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // Host assigns spectator to available slot
+  app.post("/api/rooms/:roomId/assign-spectator", async (req, res) => {
+    try {
+      const { spectatorId, position } = req.body;
+      const hostId = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!hostId) {
+        return res.status(401).json({ error: "No authentication token" });
+      }
+      
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      
+      // Verify user is host
+      const host = await storage.getPlayer(hostId);
+      if (!host || host.roomId !== room.id || !host.isHost) {
+        return res.status(403).json({ error: "Only host can assign spectators" });
+      }
+      
+      // Verify spectator exists and is actually a spectator
+      const spectator = await storage.getPlayer(spectatorId);
+      if (!spectator || spectator.roomId !== room.id || !spectator.isSpectator) {
+        return res.status(400).json({ error: "Invalid spectator" });
+      }
+      
+      // Verify position is available
+      const players = await storage.getPlayersByRoom(room.id);
+      const positionTaken = players.some(p => !p.isSpectator && p.position === position);
+      if (positionTaken) {
+        return res.status(400).json({ error: "Position already occupied" });
+      }
+      
+      // Assign spectator to position
+      await storage.updatePlayer(spectatorId, {
+        isSpectator: false,
+        position: position
+      });
+      
+      console.log(`Host assigned spectator ${spectator.nickname} to position ${position}`);
+      
+      // Broadcast room state update
+      await broadcastRoomState(room.id);
+      
+      res.json({ success: true, message: `${spectator.nickname} assigned to position ${position}` });
+    } catch (error) {
+      console.error("Error assigning spectator:", error);
+      res.status(500).json({ error: "Failed to assign spectator" });
+    }
+  });
+
   // Test endpoints for development
   app.post("/api/rooms/:roomId/test-set-hand", async (req, res) => {
     try {
