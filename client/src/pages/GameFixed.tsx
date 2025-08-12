@@ -103,12 +103,29 @@ export default function Game() {
   };
 
   // New unified end game handler - return all players to lobby as spectators
-  const handleEndGameClose = () => {
+  const handleEndGameClose = async () => {
     setShowWinnerModal(false);
     setWinnerData(null);
     
-    // Navigate back to room lobby where server will handle spectator conversion
+    // First trigger the end-game reset on server
     if (roomId) {
+      try {
+        const response = await fetch(`/api/rooms/${roomId}/end-game-reset`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${playerId}`
+          }
+        });
+        
+        if (response.ok) {
+          console.log("End-game reset completed - navigating to lobby");
+        }
+      } catch (error) {
+        console.error("Failed to reset game:", error);
+      }
+      
+      // Navigate back to room lobby
       window.location.href = `/room/${roomId}`;
     } else {
       setLocation("/");
@@ -700,7 +717,7 @@ export default function Game() {
 
 
       {/* Penalty Animation Overlay - Don't show during game end */}
-      {gameState?.penaltyAnimation?.isActive && !gameState?.gameEndData && (
+      {gameState?.penaltyAnimation?.isActive && !gameState?.gameEndData && !showWinnerModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-slate-800 rounded-lg border border-slate-600 p-6 max-w-md mx-4">
             <div className="text-center">

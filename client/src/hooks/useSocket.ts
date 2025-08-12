@@ -202,6 +202,14 @@ export function useSocket(autoConnect: boolean = true) {
               penaltyAnimation: null
             }));
             break;
+          case 'clear_penalty_animation':
+            console.log("Clearing penalty animation on server request");
+            // Clear penalty animation immediately
+            setGameState((prev: any) => ({
+              ...prev,
+              penaltyAnimation: null
+            }));
+            break;
           case 'host_left_redirect':
             // Host left during play again flow - redirect to main page
             console.log("Host left game:", message.message);

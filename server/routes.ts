@@ -981,12 +981,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
         };
         
-        const roomConnections = Array.from(connections.values()).filter(c => c.roomId === connection.roomId);
-        roomConnections.forEach(conn => {
-          if (conn.ws.readyState === WebSocket.OPEN) {
-            conn.ws.send(JSON.stringify(finalGameEndMessage));
-          }
+        // Clear any active penalty animations first
+        broadcastToRoom(connection.roomId, {
+          type: 'clear_penalty_animation'
         });
+        
+        // Broadcast game end message to all players in the room
+        console.log('🏆 Broadcasting game_end message to all players:', finalGameEndMessage);
+        broadcastToRoom(connection.roomId, finalGameEndMessage);
       } else {
         // Continue game with remaining players - notify of player finished
         broadcastToRoom(connection.roomId, {
@@ -1933,6 +1935,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               hasLeft: p.hasLeft || false
             }))
           };
+          
+          // Clear any active penalty animations first
+          broadcastToRoom(req.params.roomId, {
+            type: 'clear_penalty_animation'
+          });
           
           console.log('🏆 Test triggered game_end message:', gameEndMessage);
           broadcastToRoom(req.params.roomId, gameEndMessage);
