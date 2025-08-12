@@ -8,7 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 import PlayerArea from "@/components/game/PlayerArea";
 import GameCard from "@/components/game/Card";
 import ChatPanel from "@/components/game/ChatPanel";
-import GameEndModal from "@/components/game/GameEndModal";
 import ColorPickerModal from "@/components/game/ColorPickerModal";
 import NicknameEditor from "@/components/NicknameEditor";
 
@@ -38,8 +37,6 @@ export default function Game() {
 
   const [showChat, setShowChat] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showGameEnd, setShowGameEnd] = useState(false);
-  const [gameEndData, setGameEndData] = useState<any>(null);
   const [pendingWildCard, setPendingWildCard] = useState<number | null>(null);
   const [timer, setTimer] = useState(30);
   const [hasCalledUno, setHasCalledUno] = useState(false);
@@ -52,160 +49,12 @@ export default function Game() {
     }
   }, [roomId, playerId, isConnected, joinRoom]);
 
+  // Winner modal system completely removed - games end silently
   useEffect(() => {
-    console.log("🏆 Game state changed:", {
-      roomStatus: gameState?.room?.status,
-      hasGameEndData: !!gameState?.gameEndData,
-      gameEndData: gameState?.gameEndData,
-      showGameEnd,
-      needsContinue: gameState?.needsContinue,
-      currentPlayerId: playerId
-    });
-    
-    // SAFARI COMPATIBILITY - Immediate alert + modal fallback
-    if (gameState?.gameEndData) {
-      const isSafariOrMobile = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent) || /Mobile/.test(navigator.userAgent);
-      console.log("🏆 GAME END DETECTED - Mobile Safari Fix", {
-        winner: gameState?.gameEndData?.winner,
-        rankings: gameState?.gameEndData?.rankings,
-        isSafariOrMobile,
-        modalWillShow: true
-      });
-      
-      // Set data first
-      setGameEndData(gameState.gameEndData);
-      
-      // FORCE DISPLAY for all browsers - debug mode 
-      console.log("🏆 GAME END - Browser detection:", {
-        userAgent: navigator.userAgent,
-        isSafariOrMobile,
-        winner: gameState.gameEndData.winner
-      });
-      
-      // Always create overlay for all browsers now
-      const winner = gameState.gameEndData.winner;
-      const rankings = gameState.gameEndData.rankings || [];
-      
-      console.log("🏆 Creating universal overlay for all browsers");
-      
-      // Show immediate alert first - this MUST work on iPhone
-      alert(`🏆 ${winner} WINS!\n\nFinal Rankings:\n${rankings.map((player, index) => `${index + 1}. ${player.nickname}`).join('\n')}\n\nTap OK to continue`);
-      
-      // Create simple DOM overlay
-      const overlay = document.createElement('div');
-      overlay.id = 'universal-winner-overlay';
-        overlay.innerHTML = `
-          <div style="
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            background: rgba(0,0,0,0.9) !important;
-            z-index: 999999 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 20px !important;
-          ">
-            <div style="
-              background: white !important;
-              border-radius: 12px !important;
-              padding: 30px !important;
-              text-align: center !important;
-              max-width: 350px !important;
-              width: 90% !important;
-              box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
-              border: 3px solid #ffd700 !important;
-            ">
-              <div style="font-size: 32px; margin-bottom: 15px;">🏆</div>
-              <h2 style="color: #333; margin: 0 0 15px 0; font-size: 24px; font-weight: bold;">
-                ${winner} Wins!
-              </h2>
-              <p style="color: #666; margin: 0 0 20px 0; font-size: 16px;">
-                Congratulations! 🎉
-              </p>
-              <div style="margin-bottom: 25px;">
-                ${rankings.map((player, index) => `
-                  <div style="
-                    padding: 10px; 
-                    margin: 5px 0;
-                    background: ${index === 0 ? '#ffd700' : '#f5f5f5'};
-                    border-radius: 8px;
-                    color: ${index === 0 ? 'white' : '#333'};
-                    font-size: 16px;
-                    font-weight: ${index === 0 ? 'bold' : 'normal'};
-                  ">
-                    ${index + 1}. ${player.nickname} ${index === 0 ? '👑' : ''}
-                  </div>
-                `).join('')}
-              </div>
-              <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="window.location.reload()" style="
-                  background: #4CAF50;
-                  color: white;
-                  border: none;
-                  padding: 12px 20px;
-                  border-radius: 8px;
-                  font-size: 16px;
-                  min-height: 44px;
-                  cursor: pointer;
-                ">
-                  Play Again
-                </button>
-                <button onclick="window.location.href='/'" style="
-                  background: #f44336;
-                  color: white;
-                  border: none;
-                  padding: 12px 20px;
-                  border-radius: 8px;
-                  font-size: 16px;
-                  min-height: 44px;
-                  cursor: pointer;
-                ">
-                  Home
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-        
-      // Remove any existing overlay
-      const existing = document.getElementById('universal-winner-overlay');
-      if (existing) existing.remove();
-      
-      // Add to body
-      document.body.appendChild(overlay);
-      console.log("🏆 Universal overlay created and added to DOM");
-      
-      // Force browser to acknowledge it
-      overlay.offsetHeight;
-      overlay.style.display = 'flex';
-      
-      // Also show native alert as backup for all browsers
-      setTimeout(() => {
-        let alertMessage = `🏆 ${winner} WINS!\n\nFinal Rankings:\n`;
-        rankings.forEach((player, index) => {
-          alertMessage += `${index + 1}. ${player.nickname}\n`;
-        });
-        alert(alertMessage);
-      }, 200);
-      
-      // Always try to show modal regardless
-      setShowGameEnd(true);
-      
-      // Multiple render attempts for Safari
-      requestAnimationFrame(() => setShowGameEnd(true));
-      setTimeout(() => setShowGameEnd(true), 100);
-      setTimeout(() => setShowGameEnd(true), 300);
-    }
-    
     if (gameState?.needsContinue) {
       setShowContinuePrompt(true);
     }
-  }, [gameState?.gameEndData, gameState?.needsContinue, playerId]);
+  }, [gameState?.needsContinue]);
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -245,231 +94,256 @@ export default function Game() {
     );
   }
 
-  const room = gameState.room;
-  const players = gameState.players || [];
-  const gamePlayers = players.filter((p: any) => !p.isSpectator);
-  const currentPlayer = players.find((p: any) => p.id === playerId);
-  const currentGamePlayer = gamePlayers[room.currentPlayerIndex || 0];
-  const isMyTurn = currentGamePlayer?.id === playerId;
-  const isPaused = room.status === "paused";
-  const isHost = currentPlayer?.id === room?.hostId;
-  const topCard = room.discardPile?.[0];
-  const activePositions = room.activePositions || []; // Positions that were active when game started
+  const { room, players, spectators, messages, currentTurn, topCard, direction, needsColorChoice } = gameState;
+  const currentPlayer = players?.find((p: any) => p.id === playerId);
+  const currentGamePlayer = players?.find((p: any) => p.position === currentTurn);
+  const isMyTurn = currentPlayer && currentGamePlayer && currentPlayer.id === currentGamePlayer.id;
+  const isHost = currentPlayer?.id === room.hostId;
+  const isSpectator = spectators?.some((s: any) => s.id === playerId) || (!currentPlayer && players?.length >= 4);
 
-  // Helper functions for circular avatar layout
+  // Get player at specific position
   const getPlayerAtPosition = (position: number) => {
-    return gamePlayers.find((player: any) => player.position === position) || null;
+    return players?.find((p: any) => p.position === position);
   };
 
+  // Check if player is online
   const isPlayerOnline = (player: any) => {
-    if (!gameState?.players || !player) return false;
-    // Find the player in gameState.players and check their isOnline property
-    const playerData = gameState.players.find((p: any) => p.id === player.id);
-    return playerData?.isOnline || false;
+    if (!player) return false;
+    // In waiting rooms, show all players as online by default
+    if (room.status === "waiting") return true;
+    // Use heartbeat data for online status during games
+    return room.onlineStatus?.includes(`${player.nickname}: online`);
   };
 
+  // Position styles for circular layout
   const getPositionStyle = (position: number) => {
-    // Calculate circular positions attached to main circle edge
-    // Main circle radius + avatar radius for perfect attachment
-    const mainCircleRadius = 'max(4.5rem, min(10vw, 10vh))'; // Half of main circle size
-    const avatarRadius = 'max(2rem, min(4vw, 4vh))'; // Half of avatar size
-    const totalRadius = `calc(${mainCircleRadius} + ${avatarRadius})`; // Distance from center to avatar center
-    
     const positions = [
-      { // 12 o'clock - top
-        top: `calc(50% - ${totalRadius})`,
-        left: '50%',
-        transform: 'translate(-50%, -50%)'
-      },
-      { // 3 o'clock - right
-        top: '50%',
-        left: `calc(50% + ${totalRadius})`,
-        transform: 'translate(-50%, -50%)'
-      },
-      { // 6 o'clock - bottom
-        top: `calc(50% + ${totalRadius})`,
-        left: '50%',
-        transform: 'translate(-50%, -50%)'
-      },
-      { // 9 o'clock - left
-        top: '50%',
-        left: `calc(50% - ${totalRadius})`,
-        transform: 'translate(-50%, -50%)'
-      }
+      // Position 0: Bottom (current player)
+      { bottom: 0, left: '50%', transform: 'translateX(-50%)' },
+      // Position 1: Right
+      { top: '50%', right: 0, transform: 'translateY(-50%)' },
+      // Position 2: Top
+      { top: 0, left: '50%', transform: 'translateX(-50%)' },
+      // Position 3: Left
+      { top: '50%', left: 0, transform: 'translateY(-50%)' }
     ];
+    
     return positions[position] || positions[0];
   };
 
+  const handleExitRoom = () => {
+    if (confirm("Are you sure you want to leave the room?")) {
+      // Clean up local storage
+      localStorage.removeItem("roomId");
+      localStorage.removeItem("playerId");
+      
+      // Call exit game function if available
+      if (exitGame) {
+        exitGame();
+      }
+      
+      // Redirect to main page
+      window.location.href = "/";
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Floating emojis */}
-      {floatingEmojis.map((emoji) => (
-        <div
-          key={emoji.id}
-          className="fixed z-50 pointer-events-none animate-bounce text-xl sm:text-2xl"
-          style={{ left: emoji.x, top: emoji.y }}
-        >
-          {emoji.emoji}
-        </div>
-      ))}
+    <div className="min-h-screen bg-gradient-to-br from-uno-orange via-uno-red to-uno-purple relative overflow-hidden">
+      {/* Background patterns */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full"></div>
+        <div className="absolute top-32 right-20 w-16 h-16 bg-white rounded-full"></div>
+        <div className="absolute bottom-20 left-32 w-12 h-12 bg-white rounded-full"></div>
+        <div className="absolute bottom-32 right-16 w-24 h-24 bg-white rounded-full"></div>
+      </div>
 
       {/* Header */}
-      <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-10">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-slate-700/50 min-w-0">
-            <div className="text-xs sm:text-sm font-medium text-white mb-1">
-              Room <span className="font-mono text-blue-400">{room.code}</span>
+      <div className="relative z-10 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white font-fredoka">
+              UNO Game
+            </h1>
+            <div className="bg-white/20 px-3 py-1 rounded-full">
+              <span className="text-white font-bold">Room: {room.code}</span>
             </div>
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <Users className="h-3 w-3 text-slate-400 flex-shrink-0" />
-              <span className="text-xs text-slate-300">{players.length} players</span>
+            <div className={`px-3 py-1 rounded-full ${
+              isConnected ? 'bg-green-500/20 text-green-100' : 'bg-red-500/20 text-red-100'
+            }`}>
+              <span className="text-sm font-medium">
+                {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+              </span>
             </div>
           </div>
-
-          <div className="flex space-x-1 sm:space-x-2 flex-shrink-0">
+          
+          <div className="flex items-center space-x-2">
+            {/* Chat Toggle */}
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="bg-slate-800/90 border-slate-700 text-slate-300 hover:bg-slate-700 p-2 sm:px-3"
               onClick={() => setShowChat(!showChat)}
+              className="text-white hover:bg-white/20"
             >
-              <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline sm:ml-2">Chat</span>
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Chat
             </Button>
             
+            {/* Menu Button */}
             <Button
-              variant="outline" 
+              variant="ghost"
               size="sm"
-              className="bg-blue-900/50 border-blue-700 text-blue-300 hover:bg-blue-800/50 px-2 sm:px-3"
-              onClick={() => {
-                // Direct navigation to home without confirmation
-                localStorage.removeItem("currentRoomId");
-                localStorage.removeItem("playerId");
-                localStorage.removeItem("playerNickname");
-                window.location.replace("/");
-              }}
+              onClick={handleExitRoom}
+              className="text-white hover:bg-white/20"
             >
-              Home
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-red-900/50 border-red-700 text-red-300 hover:bg-red-800/50 px-2 sm:px-3"
-              onClick={() => {
-                if (confirm("Are you sure you want to exit the game?")) {
-                  try {
-                    // Send exit message to server
-                    exitGame();
-                  } catch (error) {
-                    console.log("Exit game message failed:", error);
-                  }
-                  // Clear all game-related storage
-                  localStorage.removeItem("currentRoomId");
-                  localStorage.removeItem("playerId");
-                  localStorage.removeItem("playerNickname");
-                  // Force navigation to main page
-                  window.location.replace("/");
-                }
-              }}
-            >
+              <Menu className="w-4 h-4 mr-2" />
               Exit
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* Central Game Area - Fully responsive with viewport units */}
-      <div className="absolute inset-0 flex items-center justify-center" style={{
-        paddingBottom: 'max(20vh, 160px)',  // Responsive bottom padding
-        paddingTop: 'max(8vh, 64px)'        // Responsive top padding
-      }}>
-        <div className="relative">
-          {/* Draw Pile - Viewport responsive positioning */}
-          <div className="absolute z-10" style={{
-            bottom: 'max(-3rem, -8vh)',
-            right: 'max(-5rem, -12vw)',
-          }}>
-            <div className="relative cursor-pointer group" onClick={drawCard}>
-              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
-                   style={{
-                     width: 'max(2rem, 6vw)',
-                     height: 'max(3rem, 8vh)',
-                     minWidth: '32px',
-                     minHeight: '48px'
-                   }}></div>
-              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"
-                   style={{
-                     width: 'max(2rem, 6vw)',
-                     height: 'max(3rem, 8vh)',
-                     minWidth: '32px',
-                     minHeight: '48px'
-                   }}></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white font-bold" style={{fontSize: 'min(0.75rem, 2.5vw)'}}>Cards</div>
-              </div>
-            </div>
-            <div className="text-center mt-1 text-blue-300 font-bold" style={{fontSize: 'min(0.75rem, 2vw)'}}>DRAW</div>
-          </div>
-
-          {/* Game Circle - Fully viewport responsive */}
-          <div className="rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50" 
-               style={{
-                 width: 'max(9rem, min(20vw, 20vh))',
-                 height: 'max(9rem, min(20vw, 20vh))',
-                 minWidth: '144px',
-                 minHeight: '144px'
-               }}>
-            
-            {/* Inner Circle - Viewport responsive sizing */}
-            <div className="rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30"
-                 style={{
-                   width: 'max(6rem, min(14vw, 14vh))',
-                   height: 'max(6rem, min(14vw, 14vh))',
-                   minWidth: '96px',
-                   minHeight: '96px'
-                 }}>
-              
-
-
-              {/* Current Card */}
-              <div className="flex flex-col items-center">
-                {topCard ? (
-                  <div className="flex flex-col items-center">
-                    <GameCard 
-                      card={topCard} 
-                      size="small"
-                      interactive={false}
-                      onClick={() => {}}
-                    />
-                    {/* Current Color Indicator for Wild Cards - Responsive */}
-                    {room.currentColor && (topCard?.type === 'wild' || topCard?.type === 'wild4') && (
-                      <div className="mt-1 sm:mt-2 px-2 sm:px-3 py-1 bg-slate-800/90 rounded-full border border-slate-600">
-                        <div className="flex items-center space-x-1 sm:space-x-2">
-                          <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full border border-white shadow-lg ${
-                            room.currentColor === 'red' ? 'bg-red-500' :
-                            room.currentColor === 'blue' ? 'bg-blue-500' :
-                            room.currentColor === 'green' ? 'bg-green-500' :
-                            'bg-yellow-500'
-                          }`}></div>
-                          <span className="text-xs sm:text-xs text-white font-bold">Play {room.currentColor}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-white shadow-xl flex items-center justify-center">
-                    <div className="text-white font-bold text-xs">?</div>
-                  </div>
-                )}
-              </div>
-
-
-            </div>
-          </div>
+        {/* Game Status Bar */}
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-white text-sm">
+          <div>Status: <span className="font-bold">{room.status}</span></div>
+          <div>Players: <span className="font-bold">{players?.length || 0}/4</span></div>
+          {spectators?.length > 0 && (
+            <div>Spectators: <span className="font-bold">{spectators.length}</span></div>
+          )}
+          {room.status === "playing" && currentGamePlayer && (
+            <div>Current Turn: <span className="font-bold">{currentGamePlayer.nickname}</span></div>
+          )}
         </div>
       </div>
 
+      {/* Main Game Area */}
+      <div className="relative flex-1 px-4 sm:px-6 pb-4">
+        {/* Game Status Messages */}
+        {room.status === "waiting" && (
+          <div className="text-center mb-6">
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 inline-block">
+              <p className="text-white text-lg">Waiting for players...</p>
+              {isHost && players?.length >= 2 && (
+                <div className="mt-4">
+                  <Button
+                    onClick={() => fetch(`/api/rooms/${room.code}/start`, { method: 'POST' })}
+                    className="bg-green-500 hover:bg-green-600 text-white font-bold"
+                  >
+                    Start Game
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Continue Game Prompt */}
+        {showContinuePrompt && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+              <h3 className="text-lg font-bold mb-4">Continue Playing?</h3>
+              <p className="text-gray-600 mb-6">The game has ended. Would you like to continue with the same players?</p>
+              <div className="flex space-x-4">
+                <Button
+                  onClick={() => {
+                    continueGame();
+                    setShowContinuePrompt(false);
+                  }}
+                  className="flex-1"
+                >
+                  Continue
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowContinuePrompt(false);
+                    window.location.href = "/";
+                  }}
+                  className="flex-1"
+                >
+                  Exit
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Game Circle */}
+        <div className="flex justify-center items-center" style={{ minHeight: 'max(60vh, 400px)' }}>
+          <div className="relative bg-white/10 backdrop-blur-sm rounded-full border-4 border-white/30 shadow-2xl" style={{
+            width: 'max(16rem, min(40vw, 40vh))',
+            height: 'max(16rem, min(40vw, 40vh))',
+            minWidth: '256px',
+            minHeight: '256px'
+          }}>
+            
+            {/* Center Game Info */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+              {/* Draw Pile */}
+              <div className="absolute" style={{
+                top: '50%',
+                right: 'max(-6rem, -15vw)',
+                transform: 'translateY(-50%)',
+                minWidth: '80px'
+              }}>
+                <div 
+                  className="bg-gray-800 rounded-lg border-2 border-gray-600 cursor-pointer hover:bg-gray-700 transition-colors flex flex-col items-center justify-center text-white shadow-lg"
+                  style={{
+                    width: 'max(5rem, min(12vw, 12vh))',
+                    height: 'max(7rem, min(17vw, 17vh))',
+                    minWidth: '80px',
+                    minHeight: '112px'
+                  }}
+                  onClick={() => isMyTurn && !needsColorChoice && drawCard()}
+                >
+                  <div className="text-xl sm:text-2xl font-bold mb-1">📚</div>
+                  <div className="text-xs sm:text-sm font-medium text-center">Cards</div>
+                </div>
+              </div>
+
+              {/* Top Card Display */}
+              <div className="mb-4">
+                {topCard && <GameCard card={topCard} />}
+              </div>
+              
+              {/* Game Direction and Info */}
+              <div className="text-center">
+                {room.status === "playing" && (
+                  <div className="flex items-center space-x-2 text-sm">
+                    <span>Direction:</span>
+                    <div className="text-xl">
+                      {direction === 'clockwise' ? '↻' : '↺'}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* UNO Button - Bottom right of center circle */}
+            {!isSpectator && room.status === "playing" && (
+              <div className="absolute" style={{
+                bottom: 'max(-2.5rem, -8vh)',
+                right: 'max(-4rem, -10vw)',
+                minWidth: '64px'
+              }}>
+                <Button
+                  onClick={handleUnoCall}
+                  disabled={hasCalledUno || currentPlayer?.hasCalledUno}
+                  className={`font-bold text-sm px-4 py-2 rounded-full shadow-lg transition-all ${
+                    hasCalledUno || currentPlayer?.hasCalledUno
+                      ? 'bg-green-500 text-white cursor-not-allowed'
+                      : 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
+                  }`}
+                  style={{
+                    minWidth: 'max(4rem, 8vw)',
+                    minHeight: 'max(2.5rem, 5vh)'
+                  }}
+                >
+                  {hasCalledUno || currentPlayer?.hasCalledUno ? '✅ UNO CALLED' : '🔥 UNO! 🔥'}
+                </Button>
+              </div>
+            )}
+
+          </div>
+        </div>
 
 
       {/* Player Avatars in Circular Layout - Fully viewport responsive */}
@@ -552,76 +426,32 @@ export default function Game() {
                       )}
                       {/* Card count - Positioned on left side to avoid name overlap, only show if player hasn't finished */}
                       {!player.finishPosition && (
-                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold border border-slate-600 shadow-lg">
+                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center">
                           {player.hand?.length || 0}
                         </div>
                       )}
                     </div>
                   ) : (
-                    // Empty Slot or Joinable Slot for Spectators - Smaller size to reduce overlap
-                    <div 
-                      className={`w-16 h-16 sm:w-20 sm:h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-4 border-white/20 ${
-                        currentPlayer?.isSpectator && isPaused && activePositions.includes(position) ? 'cursor-pointer hover:bg-gray-500/50 transition-colors' : ''
-                      }`}
-                      onClick={() => {
-                        if (currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) {
-                          replacePlayer(position);
-                        } else if (!currentPlayer) {
-                          // External user - redirect to join flow
-                          const roomCode = room?.code;
-                          if (roomCode) {
-                            window.location.href = `/?room=${roomCode}&position=${position}`;
-                          }
-                        }
-                      }}
-                    >
-                      <div className="text-center">
-                        {(currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) || (!currentPlayer && activePositions.includes(position)) ? (
-                          <>
-                            <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
-                              <span className="text-white text-sm font-bold">+</span>
-                            </div>
-                            <div className="text-xs text-blue-400 mt-1">
-                              {currentPlayer?.isSpectator ? "Join" : "Click to Join"}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-400 mx-auto" />
-                            <div className="text-xs text-gray-400 mt-1">Closed</div>
-                          </>
-                        )}
-                      </div>
+                    // Empty Slot - Responsive sizing
+                    <div className="bg-white/20 rounded-full flex items-center justify-center text-white/60 border-2 border-dashed border-white/40"
+                    style={{
+                      width: 'max(4rem, min(8vw, 8vh))',
+                      height: 'max(4rem, min(8vw, 8vh))',
+                      minWidth: '64px',
+                      minHeight: '64px'
+                    }}>
+                      <span className="text-xs sm:text-sm font-medium">Closed</span>
                     </div>
                   )}
                   
-
-                  
-                  {/* Control Buttons Attached to Avatar */}
-                  {player && (
-                    <>
-                      {/* Edit Button for Current Player - Bottom Right of Avatar */}
-                      {player.id === playerId && (
-                        <button
-                          onClick={() => setShowNicknameEditor(true)}
-                          className="absolute bottom-1 right-1 w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
-                          title="Edit nickname"
-                        >
-                          E
-                        </button>
-                      )}
-                      
-                      {/* Kick Button for Host - Bottom Left of Avatar */}
-                      {isHost && player.id !== playerId && (
-                        <button
-                          onClick={() => kickPlayer(player.id)}
-                          className="absolute bottom-1 left-1 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
-                          title={isOnline ? "Remove player" : "Remove offline player"}
-                        >
-                          K
-                        </button>
-                      )}
-                    </>
+                  {/* Host Controls for Kicking Players */}
+                  {isHost && player && player.id !== playerId && room.status === "waiting" && (
+                    <button
+                      onClick={() => kickPlayer(player.id)}
+                      className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded font-bold transition-colors"
+                    >
+                      Kick
+                    </button>
                   )}
                 </div>
               </div>
@@ -629,144 +459,32 @@ export default function Game() {
           })}
         </div>
       </div>
-
-      {/* Legacy player rendering - keeping for compatibility but hiding */}
-      <div className="hidden">
-        {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
-        const filteredIndex = gamePlayers.filter((p: any) => p.id !== playerId && !p.isSpectator).indexOf(player);
-        
-        // Position players at clock positions: 12, 3, 6, 9 o'clock
-        const positions = [
-          "top-4 left-1/2 transform -translate-x-1/2",     // 12 o'clock
-          "top-1/2 right-4 transform -translate-y-1/2",    // 3 o'clock  
-          "bottom-20 left-1/2 transform -translate-x-1/2"  // 6 o'clock (above player hand)
-        ];
-        
-        const positionClass = positions[filteredIndex] || "top-1/2 left-4 transform -translate-y-1/2"; // 9 o'clock fallback
-        const isPlayerTurn = currentGamePlayer?.id === player.id;
-
-        return (
-          <div key={player.id} className={`absolute z-20 ${positionClass}`}>
-            <div className={`bg-slate-800/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border min-w-[120px] ${
-              isPlayerTurn ? 'border-green-400 ring-1 ring-green-400/50' : 'border-slate-600'
-            }`}>
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                    isPlayerTurn ? 'bg-gradient-to-br from-green-400 to-green-600' : 'bg-gradient-to-br from-blue-400 to-blue-600'
-                  }`}>
-                    {player.nickname?.[0]?.toUpperCase()}
-                  </div>
-                  {/* Online/Offline status indicator */}
-                  <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-slate-800 ${
-                    player.isOnline !== false ? 'bg-green-500' : 'bg-red-500'
-                  }`}></div>
-                  {isPlayerTurn && (
-                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className={`font-medium text-xs truncate ${
-                    isPlayerTurn ? 'text-green-400' : 'text-white'
-                  }`}>
-                    {player.nickname}
-                  </div>
-                  <div className="text-xs text-slate-400">{player.hand?.length || 0} cards</div>
-                  <div className="text-xs">
-                    <span className={`${
-                      player.isOnline !== false ? 'text-green-400' : 'text-red-400'
-                    }`}>
-                      {player.isOnline !== false ? 'Online' : 'Offline'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        })}
       </div>
 
-      {/* Player Hand Bar - Compact design at bottom */}
-      {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
-          <div className="container mx-auto px-2 sm:px-4 py-1.5 sm:py-2">
-            {/* Compact Player Info and UNO Button */}
-            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <div className="flex items-center space-x-2">
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 ring-1 ring-green-400' : 'bg-gradient-to-br from-blue-400 to-blue-600'
-                }`}>
-                  {currentPlayer.nickname[0].toUpperCase()}
-                </div>
-                <div>
-                  <div className={`font-semibold text-white text-sm ${isMyTurn ? 'text-green-400' : ''}`}>
-                    {currentPlayer.nickname} {isMyTurn && '⭐'}
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    {currentPlayer.hand?.length || 0} cards
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                {isMyTurn && (
-                  <div className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full text-xs font-bold border border-green-500/30">
-                    YOUR TURN
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs px-2 py-1"
-                  onClick={handleUnoCall}
+      {/* Player Hand - Bottom of screen with responsive sizing */}
+      {!isSpectator && currentPlayer?.hand && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent" style={{
+          height: 'max(12vh, 96px)',
+          paddingTop: 'max(2vh, 16px)',
+          paddingBottom: 'max(2vh, 16px)'
+        }}>
+          <div className="px-4 h-full">
+            <div className="flex space-x-2 overflow-x-auto pb-2 h-full items-center" style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
+              {currentPlayer.hand.map((card: any, index: number) => (
+                <div 
+                  key={index} 
+                  className="flex-shrink-0 cursor-pointer transform hover:scale-110 transition-transform"
+                  onClick={() => isMyTurn && !needsColorChoice && handlePlayCard(index)}
+                  style={{
+                    opacity: (!isMyTurn || needsColorChoice) ? 0.6 : 1,
+                    minWidth: 'max(3.5rem, 8vw)',
+                    maxWidth: '4rem'
+                  }}
                 >
-                  🔥 UNO! 🔥
-                </Button>
-              </div>
-            </div>
-            
-            {/* Compact Card Display */}
-            <div className="overflow-x-auto">
-              {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div className="flex space-x-1 pb-1 min-w-max">
-                  {currentPlayer.hand.map((card: any, index: number) => (
-                    <div 
-                      key={index} 
-                      className={`transition-all duration-200 flex-shrink-0 ${
-                        isMyTurn ? 'hover:scale-105 hover:-translate-y-1 cursor-pointer' : 'opacity-60'
-                      }`}
-                    >
-                      <GameCard 
-                        card={card}
-                        size="extra-small"
-                        interactive={isMyTurn}
-                        disabled={!isMyTurn}
-                        onClick={() => isMyTurn && handlePlayCard(index)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-slate-400 text-sm py-2">No cards in hand</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Spectators Area - Responsive positioning */}
-      {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-        <div className="absolute top-16 sm:top-20 right-2 sm:right-4 z-20">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 sm:p-3 shadow-lg max-w-xs">
-            <div className="text-xs font-semibold text-gray-700 mb-2">Spectators:</div>
-            <div className="space-y-1">
-              {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any) => (
-                <div key={spectator.id} className="flex items-center space-x-2">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                    {spectator.nickname?.[0]?.toUpperCase()}
-                  </div>
-                  <span className="text-xs text-gray-600 truncate">{spectator.nickname}</span>
+                  <GameCard card={card} />
                 </div>
               ))}
             </div>
@@ -774,11 +492,26 @@ export default function Game() {
         </div>
       )}
 
+      {/* Floating Emojis */}
+      {floatingEmojis.map((emoji: any) => (
+        <div
+          key={emoji.id}
+          className="fixed pointer-events-none text-2xl animate-bounce z-30"
+          style={{
+            left: emoji.x,
+            top: emoji.y,
+            animation: 'float 3s ease-out forwards'
+          }}
+        >
+          {emoji.emoji}
+        </div>
+      ))}
+
       {/* Chat Panel */}
       {showChat && (
         <ChatPanel
-          messages={gameState?.messages || []}
-          players={players}
+          messages={messages || []}
+          players={players || []}
           onSendMessage={sendChatMessage}
           onSendEmoji={sendEmoji}
           onClose={() => setShowChat(false)}
@@ -788,177 +521,24 @@ export default function Game() {
       {/* Color Picker Modal */}
       {showColorPicker && (
         <ColorPickerModal
-          onChooseColor={handleColorChoice}
-          onClose={() => setShowColorPicker(false)}
+          onColorChoice={handleColorChoice}
+          onClose={() => {
+            setShowColorPicker(false);
+            setPendingWildCard(null);
+          }}
         />
       )}
 
-      {/* Game End Modal - Cross-browser compatibility with Safari-specific fixes */}
-      {showGameEnd && (gameEndData || gameState?.gameEndData) && (
-        <div 
-          key="gameEndModalWrapper"
-          className="fixed inset-0"
-          style={{
-            position: 'fixed',
-            top: '0px',
-            left: '0px',
-            right: '0px',
-            bottom: '0px',
-            width: '100vw',
-            height: '100vh',
-            zIndex: '99998',
-            pointerEvents: 'auto',
-            display: 'block',
-            visibility: 'visible'
-          }}
-        >
-          <GameEndModal
-            winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
-            rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}
-            onPlayAgain={() => {
-              console.log('🔄 Play again clicked');
-              playAgain();
-              setShowGameEnd(false);
-              setGameEndData(null);
-              if (roomId) {
-                setTimeout(() => {
-                  window.location.href = `/room/${roomId}`;
-                }, 500);
-              } else {
-                window.location.href = `/`;
-              }
-            }}
-            onBackToLobby={() => {
-              console.log('🏠 Back to lobby clicked');
-              setShowGameEnd(false);
-              setGameEndData(null);
-              localStorage.removeItem("currentRoomId");
-              localStorage.removeItem("playerId");
-              localStorage.removeItem("playerNickname");
-              window.location.href = "/";
-            }}
-          />
-        </div>
-      )}
-      
-
-
-      {/* Spectator View */}
-      {currentPlayer && currentPlayer.isSpectator && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-center">
-              <div className="bg-slate-700/80 px-6 py-3 rounded-lg border border-slate-600">
-                <div className="text-center">
-                  <div className="text-slate-300 text-sm mb-2">You are watching as a spectator</div>
-                  <div className="flex items-center justify-center space-x-4">
-                    <div className="text-xs text-slate-400">
-                      Current turn: <span className="text-green-400 font-medium">{currentGamePlayer?.nickname || 'Unknown'}</span>
-                    </div>
-                    {isPaused && (
-                      <div className="text-xs text-orange-400 font-medium">Game Paused - Click empty slots to join!</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Host Continue Game Prompt */}
-      {isPaused && isHost && (
-        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-40">
-          <div className="bg-orange-600/90 backdrop-blur-sm px-6 py-3 rounded-lg border border-orange-500 shadow-lg">
-            <div className="text-center">
-              <div className="text-white text-sm font-medium mb-2">Game is paused</div>
-              <Button
-                onClick={() => continueGame()}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
-              >
-                Continue Game
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Penalty Animation Overlay */}
-      {gameState?.penaltyAnimation?.isActive && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-slate-800 rounded-lg border border-slate-600 p-6 max-w-md mx-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-400 mb-2 animate-pulse">⚠️ Penalty Cards</div>
-              <div className="text-slate-300 mb-4 text-lg">
-                {gameState.penaltyAnimation.drawnCards === 0 ? (
-                  <>
-                    <span className="font-semibold text-white">{gameState.penaltyAnimation.player}</span> must draw{' '}
-                    <span className="text-red-400 font-bold text-2xl animate-pulse">{gameState.penaltyAnimation.totalCards}</span> cards!
-                  </>
-                ) : (
-                  <>
-                    <span className="font-semibold text-white">{gameState.penaltyAnimation.player}</span> is drawing penalty cards...
-                  </>
-                )}
-              </div>
-              
-              {/* Progress indicator */}
-              <div className="bg-slate-700 rounded-full h-6 mb-4 relative overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-red-500 to-red-400 h-6 rounded-full transition-all duration-1000 ease-out relative"
-                  style={{
-                    width: `${(gameState.penaltyAnimation.drawnCards / gameState.penaltyAnimation.totalCards) * 100}%`
-                  }}
-                >
-                  <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
-                </div>
-              </div>
-              
-              <div className="text-lg font-medium text-white">
-                {gameState.penaltyAnimation.drawnCards} / {gameState.penaltyAnimation.totalCards} cards
-              </div>
-              
-              {/* Animated card stack */}
-              <div className="flex justify-center mt-4">
-                <div className="relative">
-                  {Array.from({ length: gameState.penaltyAnimation.totalCards }, (_, i) => (
-                    <div
-                      key={i}
-                      className={`absolute w-12 h-16 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg border border-slate-500 transition-all duration-300 ${
-                        i < gameState.penaltyAnimation.drawnCards 
-                          ? 'opacity-100 transform translate-y-0 scale-100' 
-                          : 'opacity-30 transform translate-y-4 scale-95'
-                      }`}
-                      style={{
-                        left: `${i * 4}px`,
-                        zIndex: gameState.penaltyAnimation.totalCards - i,
-                        animationDelay: `${i * 100}ms`
-                      }}
-                    >
-                      {i < gameState.penaltyAnimation.drawnCards && (
-                        <div className="w-full h-full bg-gradient-to-br from-red-400 to-red-600 rounded-lg flex items-center justify-center text-white text-xs font-bold animate-bounce">
-                          <div className="animate-ping absolute w-2 h-2 bg-white rounded-full"></div>
-                          ✓
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Nickname Editor Modal */}
-      {currentPlayer && (
+      {/* Nickname Editor */}
+      {showNicknameEditor && (
         <NicknameEditor
-          currentNickname={currentPlayer.nickname}
-          playerId={playerId!}
-          isOpen={showNicknameEditor}
           onClose={() => setShowNicknameEditor(false)}
-          onNicknameChanged={(newNickname) => {
-            console.log("Nickname updated to:", newNickname);
+          onNicknameChange={() => {
+            setShowNicknameEditor(false);
+            // Refresh game state after nickname change
+            if (roomId && playerId) {
+              joinRoom(playerId, roomId);
+            }
           }}
         />
       )}
