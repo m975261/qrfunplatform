@@ -114,34 +114,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let playerPosition = null;
       let playerHand: any[] = [];
-      let isSpectator = true;
+      let isSpectator = true; // NEW SPECTATOR SYSTEM: All new joiners start as spectators
 
-      if (room.status === "waiting" && nonSpectatorPlayers.length < 4) {
-        // Normal join for waiting room
+      // ONLY exception: If room is empty, first joiner becomes host at position 0
+      if (existingPlayers.length === 0) {
         isSpectator = false;
-        playerPosition = nonSpectatorPlayers.length;
+        playerPosition = 0;
       } else if (room.status === "playing" || room.status === "paused") {
-        // For active games, only allow rejoining to originally active positions
-        const availablePositions = [];
-        const originalActivePositions = room.activePositions || [];
-        
-        for (const pos of originalActivePositions) {
-          const positionTaken = existingPlayers.some(p => p.position === pos && !p.isSpectator && !p.hasLeft);
-          if (!positionTaken && (room.positionHands || {})[pos.toString()]) {
-            availablePositions.push(pos);
-          }
-        }
-        
-        if (availablePositions.length > 0) {
-          // Join the first available position with existing cards
-          playerPosition = availablePositions[0];
-          playerHand = (room.positionHands || {})[playerPosition.toString()] || [];
-          isSpectator = false;
-          console.log(`New player ${nickname} joining active game at position ${playerPosition} with ${playerHand.length} cards`);
-        } else {
-          // No positions with cards available, join as spectator
-          console.log(`New player ${nickname} joining as spectator - no available positions with cards`);
-        }
+        // For active games, new joiners always start as spectators
+        // They can take positions using the take-slot endpoint if they want
+        console.log(`New player ${nickname} joining active/paused game as spectator`);
+        isSpectator = true;
       }
 
       const player = await storage.createPlayer({
@@ -1747,6 +1730,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  // End game reset endpoint - converts all players to spectators except host
+  app.post("/api/rooms/:roomId/end-game-reset", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const room = await storage.getRoom(roomId);
+      
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      // Reset room to waiting status
+      await storage.updateRoom(roomId, { 
+        status: "waiting",
+        deck: [],
+        discardPile: [],
+        currentPlayerIndex: 0,
+        currentColor: null,
+        pendingDraw: null,
+        positionHands: {},
+        activePositions: []
+      });
+
+      // Get all players in the room
+      const players = await storage.getPlayersByRoom(roomId);
+      
+      // Convert all players to spectators, except keep host at position 0
+      for (const player of players) {
+        if (player.id === room.hostId) {
+          // Host stays at position 0 as a player
+          await storage.updatePlayer(player.id, {
+            isSpectator: false,
+            position: 0,
+            hand: [],
+            hasCalledUno: false,
+            finishPosition: null,
+            hasLeft: false,
+            leftAt: null
+          });
+        } else {
+          // All other players become spectators
+          await storage.updatePlayer(player.id, {
+            isSpectator: true,
+            position: null,
+            hand: [],
+            hasCalledUno: false,
+            finishPosition: null,
+            hasLeft: false,
+            leftAt: null
+          });
+        }
+      }
+
+      // Broadcast updated room state
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: "Game reset and players converted to spectators" });
+    } catch (error) {
+      console.error("Error in end-game reset:", error);
+      res.status(500).json({ error: "Failed to reset game" });
     }
   });
 

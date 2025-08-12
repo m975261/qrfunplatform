@@ -1,7 +1,7 @@
 # UNO Game Application
 
 ## Overview
-This is a full-stack multiplayer UNO card game supporting up to 4 players per room with classic UNO rules and all action cards. Players can create rooms, join via codes or QR, and play in real-time. Key features include a complete ranking system for finished players, allowing games to continue seamlessly, and spectator mode with animated emojis. The application aims for a robust and engaging real-time multiplayer experience.
+This is a full-stack multiplayer UNO card game supporting up to 4 players per room with classic UNO rules and all action cards. Players can create rooms, join via codes or QR, and play in real-time. Key features include a complete ranking system for finished players, a spectator-centric lobby system where all new joiners start as spectators and can click to join game slots, and streamlined end-game flow that returns all players to lobby as spectators (except host). The application prioritizes user control and seamless multiplayer interactions.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -45,11 +45,13 @@ Preferred communication style: Simple, everyday language.
 - Room creation with 5-digit codes, join via code, QR scan, or QR photo upload.
 - Real-time game state synchronization.
 - Ranking system (1st, 2nd, 3rd, 4th) for finished players, who are excluded from turn rotation.
-- Spectator mode with animated emoji interaction.
+- **NEW: Spectator-centric lobby system** - All new joiners start as spectators and can click avatar slots to join
+- **NEW: Streamlined end-game flow** - Single "Close" button returns all to lobby as spectators (host keeps position 0)
 - Seamless QR code integration for direct room joining.
 - Position-based card memory system for persistent card storage across reconnections or kicks.
 - Enhanced UNO call system with visual and auditory feedback (voice synthesis).
-- Host exit redirection for all players upon host departure in 'play again' scenario.
+- **NEW: Improved spectator table** - Prevents 3 o'clock avatar overlap, includes separator lines, scroll container
+- **NEW: Duplicate player protection** - Prevents kick/rejoin issues that caused offline/online conflicts
 
 ## External Dependencies
 - **Database**: Neon Database (PostgreSQL).

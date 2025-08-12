@@ -11,11 +11,10 @@ interface WinnerModalProps {
   isOpen: boolean;
   players: Player[];
   isSpectator: boolean;
-  onPlayAgain: () => void;
-  onGoHome: () => void;
+  onClose: () => void;
 }
 
-export function WinnerModal({ isOpen, players, isSpectator, onPlayAgain, onGoHome }: WinnerModalProps) {
+export function WinnerModal({ isOpen, players, isSpectator, onClose }: WinnerModalProps) {
   if (!isOpen) return null;
 
   const sortedPlayers = [...players].sort((a, b) => (a.position || 0) - (b.position || 0));
@@ -60,29 +59,12 @@ export function WinnerModal({ isOpen, players, isSpectator, onPlayAgain, onGoHom
 
           {/* Action Buttons */}
           <div className="flex gap-3">
-            {!isSpectator ? (
-              <>
-                <Button
-                  onClick={onPlayAgain}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3"
-                >
-                  Play Again
-                </Button>
-                <Button
-                  onClick={onGoHome}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3"
-                >
-                  Home
-                </Button>
-              </>
-            ) : (
-              <Button
-                onClick={onGoHome}
-                className="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-3"
-              >
-                Close
-              </Button>
-            )}
+            <Button
+              onClick={onClose}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3"
+            >
+              Close
+            </Button>
           </div>
         </div>
       </div>

@@ -38,11 +38,36 @@ export default function RoomLobby() {
     }
   }, [roomId, playerId, isConnected, joinRoom]);
 
+  // Handle game state transitions
   useEffect(() => {
     if (gameState?.room?.status === "playing") {
       setLocation(`/game/${roomId}`);
     }
   }, [gameState?.room?.status, roomId, setLocation]);
+
+  // Handle end-game reset when room status changes from "finished"
+  useEffect(() => {
+    if (gameState?.room?.status === "finished") {
+      // Trigger end-game reset after a small delay
+      setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/rooms/${roomId}/end-game-reset`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${playerId}`
+            }
+          });
+          
+          if (response.ok) {
+            console.log("End-game reset completed - all players except host converted to spectators");
+          }
+        } catch (error) {
+          console.error("Failed to reset game:", error);
+        }
+      }, 1000);
+    }
+  }, [gameState?.room?.status, roomId, playerId]);
 
   const handleCopyLink = () => {
     const roomLink = `${window.location.origin}/?room=${gameState?.room?.code}`;
@@ -343,22 +368,35 @@ export default function RoomLobby() {
           })}
         </div>
 
-        {/* Spectators Section - Show spectators who are still connected */}
+        {/* Spectators Section - Improved design to avoid 3 o'clock avatar overlap */}
         {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-          <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6">
+          <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6 max-w-lg mx-auto">
             <CardContent className="p-4">
-              <div className="text-sm font-semibold text-gray-700 mb-3">Spectators:</div>
-              <div className="flex flex-wrap gap-2">
-                {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any) => (
-                  <div key={spectator.id} className="flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-1">
-                    <div className="w-6 h-6 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                      {spectator.nickname?.[0]?.toUpperCase()}
+              <div className="text-sm font-semibold text-gray-700 mb-3">
+                Spectators ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
+              </div>
+              <div className="max-h-48 overflow-y-auto space-y-2">
+                {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index, arr) => (
+                  <div key={spectator.id}>
+                    <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                      <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {spectator.nickname?.[0]?.toUpperCase()}
+                      </div>
+                      <span className="text-sm text-gray-700 flex-1">{spectator.nickname}</span>
+                      <div className={`w-3 h-3 rounded-full ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
                     </div>
-                    <span className="text-sm text-gray-700">{spectator.nickname}</span>
-                    <div className={`w-2 h-2 rounded-full ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+                    {/* Separator line between spectators */}
+                    {index < arr.length - 1 && (
+                      <hr className="border-gray-200 mx-2" />
+                    )}
                   </div>
                 ))}
               </div>
+              {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
+                <div className="mt-3 text-xs text-gray-500 text-center">
+                  Click any empty avatar slot to join the game
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

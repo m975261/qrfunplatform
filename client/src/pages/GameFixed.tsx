@@ -102,30 +102,17 @@ export default function Game() {
     }
   };
 
-  const handlePlayAgain = () => {
+  // New unified end game handler - return all players to lobby as spectators
+  const handleEndGameClose = () => {
     setShowWinnerModal(false);
     setWinnerData(null);
-    // Call playAgain first
-    playAgain();
-    // Wait a moment for the server to process, then navigate
-    setTimeout(() => {
-      if (roomId) {
-        window.location.href = `/room/${roomId}`;
-      } else {
-        window.location.reload();
-      }
-    }, 500);
-  };
-
-  const handleGoHome = () => {
-    setShowWinnerModal(false);
-    setWinnerData(null);
-    // Clear localStorage first
-    localStorage.removeItem("currentRoomId");
-    localStorage.removeItem("playerId");
-    localStorage.removeItem("playerNickname");
-    // Navigate to home
-    window.location.href = '/';
+    
+    // Navigate back to room lobby where server will handle spectator conversion
+    if (roomId) {
+      window.location.href = `/room/${roomId}`;
+    } else {
+      setLocation("/");
+    }
   };
 
   if (!gameState || !gameState.room) {
@@ -790,8 +777,7 @@ export default function Game() {
         isOpen={showWinnerModal}
         players={winnerData?.finalRankings || []}
         isSpectator={currentPlayer?.isSpectator || false}
-        onPlayAgain={handlePlayAgain}
-        onGoHome={handleGoHome}
+        onClose={handleEndGameClose}
       />
 
 
