@@ -368,37 +368,37 @@ export default function RoomLobby() {
           })}
         </div>
 
-        {/* Spectators Section - Improved design to avoid 3 o'clock avatar overlap */}
+        {/* Spectators Section - Positioned to avoid 3 o'clock avatar overlap */}
         {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-          <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6 max-w-lg mx-auto">
-            <CardContent className="p-4">
-              <div className="text-sm font-semibold text-gray-700 mb-3">
-                Spectators ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
-              </div>
-              <div className="max-h-48 overflow-y-auto space-y-2">
-                {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index, arr) => (
-                  <div key={spectator.id}>
-                    <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {spectator.nickname?.[0]?.toUpperCase()}
-                      </div>
-                      <span className="text-sm text-gray-700 flex-1">{spectator.nickname}</span>
-                      <div className={`w-3 h-3 rounded-full ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-                    </div>
-                    {/* Separator line between spectators */}
-                    {index < arr.length - 1 && (
-                      <hr className="border-gray-200 mx-2" />
-                    )}
-                  </div>
-                ))}
-              </div>
-              {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-                <div className="mt-3 text-xs text-gray-500 text-center">
-                  Click any empty avatar slot to join the game
+          <div className="w-full flex justify-end pr-4">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6 w-72 ml-auto mr-8">
+              <CardContent className="p-3">
+                <div className="text-xs font-semibold text-gray-700 mb-2">
+                  Spectators ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index, arr) => (
+                    <div key={spectator.id}>
+                      <div className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-md transition-colors">
+                        <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                          {spectator.nickname?.[0]?.toUpperCase()}
+                        </div>
+                        <span className="text-xs text-gray-700 flex-1 truncate">{spectator.nickname}</span>
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+                      </div>
+                      {/* Separator line between spectators */}
+                      {index < arr.length - 1 && (
+                        <hr className="border-gray-200 mx-1" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 text-xs text-gray-500 text-center">
+                  Click empty slots to join
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Game Controls */}
