@@ -952,38 +952,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
       const finishedCount = activePlayers.filter(p => p.finishPosition).length;
       
-
-      
       // Set finish position for current winner
       await storage.updatePlayer(connection.playerId, { finishPosition: finishedCount + 1 });
       
-      // Check if game should end (only 1 player left or all finished)
-      const remainingPlayers = activePlayers.filter(p => !p.finishPosition && p.id !== connection.playerId);
+      // Get updated players after setting position
+      const updatedPlayers = await storage.getPlayersByRoom(connection.roomId);
+      const remainingPlayers = updatedPlayers.filter(p => !p.isSpectator && !p.hasLeft && !p.finishPosition);
       
+      // Always show game end window for the first player to finish
+      if (finishedCount === 0) {
+        // First player to finish - show initial rankings
+        const currentRankings = updatedPlayers
+          .filter(p => !p.isSpectator)
+          .map(p => ({
+            nickname: p.nickname,
+            position: p.finishPosition || 'Playing',
+            hasLeft: p.hasLeft || false
+          }))
+          .sort((a, b) => {
+            if (a.position === 'Playing' && b.position !== 'Playing') return 1;
+            if (a.position !== 'Playing' && b.position === 'Playing') return -1;
+            if (a.position === 'Playing' && b.position === 'Playing') return 0;
+            return (Number(a.position) || 999) - (Number(b.position) || 999);
+          });
 
+        const gameEndMessage = {
+          type: 'game_end',
+          winner: player.nickname,
+          rankings: currentRankings
+        };
+        
+        const roomConnections = Array.from(connections.values()).filter(c => c.roomId === connection.roomId);
+        roomConnections.forEach(conn => {
+          if (conn.ws.readyState === WebSocket.OPEN) {
+            conn.ws.send(JSON.stringify(gameEndMessage));
+          }
+        });
+      }
       
+      // Check if game should fully end (only 1 player left or all finished)
       if (remainingPlayers.length <= 1) {
         // Game ends, set last player's position if any
         if (remainingPlayers.length === 1) {
           await storage.updatePlayer(remainingPlayers[0].id, { finishPosition: finishedCount + 2 });
-
         }
         
         await storage.updateRoom(connection.roomId, { status: "finished" });
-
         
-        // Get final rankings
+        // Get final rankings for complete game end
         const finalPlayers = await storage.getPlayersByRoom(connection.roomId);
-        const rankings = finalPlayers
+        const finalRankings = finalPlayers
           .filter(p => !p.isSpectator)
           .sort((a, b) => (a.finishPosition || 999) - (b.finishPosition || 999));
         
-
-        
-        const gameEndMessage = {
+        const finalGameEndMessage = {
           type: 'game_end',
           winner: player.nickname,
-          rankings: rankings.map(p => ({
+          rankings: finalRankings.map(p => ({
             nickname: p.nickname,
             position: p.finishPosition || (p.hasLeft ? 'Left' : 'Last'),
             hasLeft: p.hasLeft || false
@@ -991,15 +1016,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         const roomConnections = Array.from(connections.values()).filter(c => c.roomId === connection.roomId);
-        
-        // Simple broadcast to all room connections
         roomConnections.forEach(conn => {
           if (conn.ws.readyState === WebSocket.OPEN) {
-            conn.ws.send(JSON.stringify(gameEndMessage));
+            conn.ws.send(JSON.stringify(finalGameEndMessage));
           }
         });
-      } else {
-        // Continue game with remaining players
+      } else if (finishedCount > 0) {
+        // Continue game with remaining players - notify of player finished
         broadcastToRoom(connection.roomId, {
           type: 'player_finished',
           player: player.nickname,
