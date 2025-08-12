@@ -62,11 +62,39 @@ export default function Game() {
       currentPlayerId: playerId
     });
     
-    // Clean game end handling - just set the data for the overlay component
-    if (gameState?.gameEndData && !gameEndData) {
+    // SAFARI COMPATIBILITY - Immediate alert + modal fallback
+    if (gameState?.gameEndData) {
+      const isSafariOrMobile = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent) || /Mobile/.test(navigator.userAgent);
+      console.log("🏆 GAME END DETECTED - Mobile Safari Fix", {
+        winner: gameState?.gameEndData?.winner,
+        rankings: gameState?.gameEndData?.rankings,
+        isSafariOrMobile,
+        modalWillShow: true
+      });
+      
+      // Set data first
       setGameEndData(gameState.gameEndData);
-      console.log("🏆 Game ended, showing winner overlay:", gameState.gameEndData.winner);
-    }
+      
+      // FORCE DISPLAY for all browsers - debug mode 
+      console.log("🏆 GAME END - Browser detection:", {
+        userAgent: navigator.userAgent,
+        isSafariOrMobile,
+        winner: gameState.gameEndData.winner
+      });
+      
+      // Always create overlay for all browsers now
+      const winner = gameState.gameEndData.winner;
+      const rankings = gameState.gameEndData.rankings || [];
+      
+      console.log("🏆 Creating universal overlay for all browsers");
+      
+      // Show immediate alert first - this MUST work on iPhone
+      alert(`🏆 ${winner} WINS!\n\nFinal Rankings:\n${rankings.map((player, index) => `${index + 1}. ${player.nickname}`).join('\n')}\n\nTap OK to continue`);
+      
+      // Create simple DOM overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'universal-winner-overlay';
+        overlay.innerHTML = `
           <div style="
             position: fixed !important;
             top: 0 !important;
@@ -456,8 +484,8 @@ export default function Game() {
           minHeight: '400px'
         }}>
           
-          {/* Game Direction Indicator - Only during active games */}
-          {gameState && gameState.room && gameState.room.status === 'playing' && (
+          {/* Game Direction Indicator - Always show if game exists */}
+          {gameState && gameState.room && (
             <div className="absolute z-20 pointer-events-none" style={{
               top: 'max(-4rem, -12vh)',
               left: '50%',
@@ -465,7 +493,8 @@ export default function Game() {
               minHeight: '32px'
             }}>
               <div className="bg-purple-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-purple-500 flex items-center space-x-2">
-                <span>Game Direction</span>
+                <span>Status: {gameState?.room?.status || 'none'}</span>
+                <span>Dir: {gameState?.room?.direction || 'none'}</span>
                 <div className="flex items-center text-lg">
                   {gameState?.room?.direction === 'clockwise' ? (
                     <span className="text-white font-bold">↻</span>
@@ -476,65 +505,6 @@ export default function Game() {
               </div>
             </div>
           )}
-
-          {/* Winner Overlay - Game component style for iOS Safari compatibility */}
-          {gameEndData && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75" style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 9999
-            }}>
-              <div className="bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600 p-8 rounded-3xl shadow-2xl text-center max-w-md mx-4" style={{
-                border: '4px solid #FFD700',
-                boxShadow: '0 0 50px rgba(255, 215, 0, 0.8)'
-              }}>
-                <div className="text-6xl mb-4">🏆</div>
-                <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">
-                  {gameEndData.winner} WINS!
-                </h2>
-                
-                <div className="bg-white bg-opacity-20 rounded-2xl p-4 mb-6">
-                  <h3 className="text-xl font-bold text-white mb-3">Final Rankings</h3>
-                  {gameEndData.rankings?.map((player: any, index: number) => (
-                    <div key={index} className="flex items-center justify-between py-2 text-white">
-                      <span className="font-bold text-lg">
-                        {index + 1}. {player.nickname}
-                      </span>
-                      <span className="text-yellow-200 font-bold">
-                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '4️⃣'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-4 justify-center">
-                  <button
-                    onClick={() => {
-                      setGameEndData(null);
-                      window.location.reload();
-                    }}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all transform hover:scale-105"
-                  >
-                    🎮 Play Again
-                  </button>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem('playerNickname');
-                      localStorage.removeItem('currentRoomId');
-                      window.location.href = '/';
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all transform hover:scale-105"
-                  >
-                    🏠 Go Home
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* 4 Fixed Avatar Positions */}
           {[0, 1, 2, 3].map((position) => {
             const player = getPlayerAtPosition(position);
