@@ -236,34 +236,28 @@ export function useSocket(autoConnect: boolean = true) {
     
     socketRef.current.onclose = (event) => {
       setIsConnected(false);
-      console.log(`WebSocket closed: code=${event.code}, reason="${event.reason || 'No reason'}", wasClean=${event.wasClean}`);
+      console.log(`WebSocket closed: code=${event.code}, reason="${event.reason}", wasClean=${event.wasClean}`);
+      
+      // Log additional context for game end related disconnections
+      if (event.code === 1006) {
+        console.log("WebSocket closed abnormally (1006) - possible network issue or server termination");
+      }
       
       // Clear heartbeat
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
       }
       
-      // Handle specific disconnection scenarios
-      let reconnectDelay = 3000;
-      let shouldReconnect = true;
-      
-      if (event.code === 1005) {
-        console.log("Code 1005 (no status code) - likely connection interrupted during game start");
-        reconnectDelay = 500; // Immediate reconnect for game start issues
-      } else if (event.code === 1006) {
-        console.log("Code 1006 (abnormal closure) - checking if HMR related");
-        shouldReconnect = !event.reason?.includes('HMR');
-        reconnectDelay = 1000; // Quick reconnect for network issues
-      } else if (event.code === 1000 || event.code === 1001) {
-        console.log("Connection closed cleanly - not reconnecting");
-        shouldReconnect = false;
-      }
+      // Don't reconnect automatically on code 1006 (abnormal closure) if it's due to HMR
+      // But do reconnect for other close codes or if not HMR related
+      const shouldReconnect = event.code !== 1006 || !event.reason?.includes('HMR');
       
       if (shouldReconnect) {
-        console.log(`Attempting to reconnect in ${reconnectDelay}ms...`);
-        reconnectTimeoutRef.current = setTimeout(connect, reconnectDelay);
+        console.log("Attempting to reconnect in 3 seconds...");
+        // Attempt to reconnect after 3 seconds
+        reconnectTimeoutRef.current = setTimeout(connect, 3000);
       } else {
-        console.log("Not reconnecting - clean closure or HMR");
+        console.log("Skipping reconnect - appears to be HMR related");
       }
     };
     
