@@ -486,23 +486,44 @@ export default function Game() {
           minHeight: '400px'
         }}>
           
-          {/* Game Direction Indicator - Clean arrows only */}
-          {gameState && gameState.room && gameState.room.status === 'playing' && (
-            <div className="absolute z-20 pointer-events-none" style={{
-              top: 'max(-4rem, -12vh)',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              minHeight: '32px'
-            }}>
-              <div className="bg-slate-700/90 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-slate-500 flex items-center space-x-2">
-                <span>Game Direction</span>
-                <div className="flex items-center text-lg">
-                  {gameState?.room?.direction === 'clockwise' ? (
-                    <span className="text-white font-bold">↻</span>
-                  ) : (
-                    <span className="text-white font-bold">↺</span>
-                  )}
-                </div>
+          {/* Game Direction Indicator - Enhanced cross-browser visibility */}
+          {gameState && gameState.room && gameState.room.direction && (
+            <div 
+              className="absolute z-20 pointer-events-none"
+              style={{
+                top: 'max(-4rem, -12vh)',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                minHeight: '32px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              <div 
+                className="bg-slate-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg border-2 border-slate-500"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: 'rgba(51, 65, 85, 0.95)',
+                  backdropFilter: 'blur(4px)',
+                  WebkitBackdropFilter: 'blur(4px)',
+                  minWidth: 'fit-content',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Game Direction</span>
+                <span 
+                  style={{ 
+                    fontSize: '20px', 
+                    fontWeight: 'bold',
+                    display: 'inline-block',
+                    lineHeight: '1'
+                  }}
+                >
+                  {gameState.room.direction === 'clockwise' ? '↻' : '↺'}
+                </span>
               </div>
             </div>
           )}

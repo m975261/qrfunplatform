@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Direction Indicator Cross-Browser Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .game-area {
+            position: relative;
+            width: 320px;
+            height: 400px;
+            margin: 20px auto;
+            background: linear-gradient(135deg, #374151, #1f2937);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .direction-indicator {
+            position: absolute;
+            top: -4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .direction-badge {
+            background-color: rgba(51, 65, 85, 0.95);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid #64748b;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: fit-content;
+            white-space: nowrap;
+        }
+        .arrow {
+            font-size: 20px;
+            font-weight: bold;
+            display: inline-block;
+            line-height: 1;
+        }
+        .browser-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Game Direction Indicator Cross-Browser Test</h1>
+        
+        <div class="browser-info" id="browserInfo">
+            Loading browser information...
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 1: Clockwise Direction</h3>
+            <div class="game-area">
+                <div class="direction-indicator">
+                    <div class="direction-badge">
+                        <span>Game Direction</span>
+                        <span class="arrow">↻</span>
+                    </div>
+                </div>
+                <div style="color: white; text-align: center;">
+                    <div>Game Area</div>
+                    <div style="font-size: 12px; opacity: 0.7;">Direction should appear above</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 2: Counterclockwise Direction</h3>
+            <div class="game-area">
+                <div class="direction-indicator">
+                    <div class="direction-badge">
+                        <span>Game Direction</span>
+                        <span class="arrow">↺</span>
+                    </div>
+                </div>
+                <div style="color: white; text-align: center;">
+                    <div>Game Area</div>
+                    <div style="font-size: 12px; opacity: 0.7;">Direction should appear above</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Interactive Tests</h3>
+            <button class="test-button" onclick="toggleVisibility()">Toggle Visibility</button>
+            <button class="test-button" onclick="changeDirection()">Change Direction</button>
+            <button class="test-button" onclick="testResponsive()">Test Responsive</button>
+            
+            <div id="testResults" style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 6px;">
+                <strong>Test Results:</strong>
+                <div id="results">Click buttons above to run tests</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Browser detection and info
+        function getBrowserInfo() {
+            const ua = navigator.userAgent;
+            let browser = 'Unknown';
+            let version = 'Unknown';
+            
+            if (ua.includes('Chrome') && !ua.includes('Edg')) {
+                browser = 'Chrome';
+                version = ua.match(/Chrome\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.includes('Firefox')) {
+                browser = 'Firefox';
+                version = ua.match(/Firefox\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+                browser = 'Safari';
+                version = ua.match(/Version\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.includes('Edg')) {
+                browser = 'Edge';
+                version = ua.match(/Edg\/([0-9.]+)/)?.[1] || 'Unknown';
+            }
+            
+            return {
+                browser,
+                version,
+                userAgent: ua,
+                platform: navigator.platform,
+                isMobile: /Mobile|Android|iPhone|iPad/.test(ua)
+            };
+        }
+        
+        function updateBrowserInfo() {
+            const info = getBrowserInfo();
+            document.getElementById('browserInfo').innerHTML = `
+                <strong>Browser:</strong> ${info.browser} ${info.version}<br>
+                <strong>Platform:</strong> ${info.platform}<br>
+                <strong>Mobile:</strong> ${info.isMobile ? 'Yes' : 'No'}<br>
+                <strong>User Agent:</strong> ${info.userAgent}
+            `;
+        }
+        
+        let currentDirection = 'clockwise';
+        let isVisible = true;
+        
+        function toggleVisibility() {
+            const indicators = document.querySelectorAll('.direction-indicator');
+            isVisible = !isVisible;
+            indicators.forEach(indicator => {
+                indicator.style.display = isVisible ? 'flex' : 'none';
+            });
+            updateResults(`Visibility toggled: ${isVisible ? 'VISIBLE' : 'HIDDEN'}`);
+        }
+        
+        function changeDirection() {
+            currentDirection = currentDirection === 'clockwise' ? 'counterclockwise' : 'clockwise';
+            const arrows = document.querySelectorAll('.arrow');
+            arrows.forEach(arrow => {
+                arrow.textContent = currentDirection === 'clockwise' ? '↻' : '↺';
+            });
+            updateResults(`Direction changed to: ${currentDirection.toUpperCase()}`);
+        }
+        
+        function testResponsive() {
+            const indicators = document.querySelectorAll('.direction-badge');
+            let testsPassed = 0;
+            let totalTests = 0;
+            
+            indicators.forEach((badge, index) => {
+                totalTests++;
+                const rect = badge.getBoundingClientRect();
+                const isVisible = rect.width > 0 && rect.height > 0;
+                const hasCorrectDisplay = window.getComputedStyle(badge).display === 'flex';
+                
+                if (isVisible && hasCorrectDisplay) {
+                    testsPassed++;
+                }
+                
+                console.log(`Indicator ${index + 1}:`, {
+                    visible: isVisible,
+                    correctDisplay: hasCorrectDisplay,
+                    dimensions: { width: rect.width, height: rect.height },
+                    computedDisplay: window.getComputedStyle(badge).display
+                });
+            });
+            
+            updateResults(`Responsive test: ${testsPassed}/${totalTests} indicators working properly`);
+        }
+        
+        function updateResults(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const results = document.getElementById('results');
+            results.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        }
+        
+        // Initialize
+        updateBrowserInfo();
+        updateResults('Page loaded successfully - Direction indicators should be visible above both game areas');
+        
+        // Test on load
+        setTimeout(() => {
+            testResponsive();
+        }, 1000);
+    </script>
+</body>
+</html>
