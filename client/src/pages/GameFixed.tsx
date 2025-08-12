@@ -123,7 +123,7 @@ export default function Game() {
                 `).join('')}
               </div>
               <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="window.location.reload()" style="
+                <button id="play-again-btn" style="
                   background: #4CAF50;
                   color: white;
                   border: none;
@@ -135,7 +135,7 @@ export default function Game() {
                 ">
                   Play Again
                 </button>
-                <button onclick="window.location.href='/'" style="
+                <button id="home-btn" style="
                   background: #f44336;
                   color: white;
                   border: none;
@@ -158,7 +158,34 @@ export default function Game() {
       
       // Add to body
       document.body.appendChild(overlay);
-      console.log("🏆 Universal overlay created and added to DOM");
+      
+      // Add button event listeners
+      const playAgainBtn = overlay.querySelector('#play-again-btn');
+      const homeBtn = overlay.querySelector('#home-btn');
+      
+      if (playAgainBtn) {
+        playAgainBtn.addEventListener('click', () => {
+          // Remove overlay
+          overlay.remove();
+          // Clear localStorage and reload
+          localStorage.removeItem("currentRoomId");
+          localStorage.removeItem("playerId");
+          localStorage.removeItem("playerNickname");
+          window.location.reload();
+        });
+      }
+      
+      if (homeBtn) {
+        homeBtn.addEventListener('click', () => {
+          // Remove overlay
+          overlay.remove();
+          // Clear localStorage and go home
+          localStorage.removeItem("currentRoomId");
+          localStorage.removeItem("playerId");
+          localStorage.removeItem("playerNickname");
+          window.location.href = '/';
+        });
+      }
       
       // Force browser to acknowledge it
       overlay.offsetHeight;
@@ -859,8 +886,8 @@ export default function Game() {
 
 
 
-      {/* Penalty Animation Overlay */}
-      {gameState?.penaltyAnimation?.isActive && (
+      {/* Penalty Animation Overlay - Don't show during game end */}
+      {gameState?.penaltyAnimation?.isActive && !gameState?.gameEndData && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-slate-800 rounded-lg border border-slate-600 p-6 max-w-md mx-4">
             <div className="text-center">
