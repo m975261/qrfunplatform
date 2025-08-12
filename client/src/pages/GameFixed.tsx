@@ -58,7 +58,12 @@ export default function Game() {
 
   useEffect(() => {
     if (gameState?.gameEndData) {
-      setWinnerData(gameState.gameEndData);
+      // Map the server data to what the component expects
+      const mappedData = {
+        ...gameState.gameEndData,
+        finalRankings: gameState.gameEndData.rankings || gameState.gameEndData.finalRankings || []
+      };
+      setWinnerData(mappedData);
       setShowWinnerModal(true);
     }
     
@@ -99,18 +104,27 @@ export default function Game() {
 
   const handlePlayAgain = () => {
     setShowWinnerModal(false);
+    setWinnerData(null);
+    // Call playAgain first
     playAgain();
-    localStorage.removeItem("currentRoomId");
-    localStorage.removeItem("playerId");
-    localStorage.removeItem("playerNickname");
-    window.location.reload();
+    // Wait a moment for the server to process, then navigate
+    setTimeout(() => {
+      if (roomId) {
+        window.location.href = `/room/${roomId}`;
+      } else {
+        window.location.reload();
+      }
+    }, 500);
   };
 
   const handleGoHome = () => {
     setShowWinnerModal(false);
+    setWinnerData(null);
+    // Clear localStorage first
     localStorage.removeItem("currentRoomId");
     localStorage.removeItem("playerId");
     localStorage.removeItem("playerNickname");
+    // Navigate to home
     window.location.href = '/';
   };
 
@@ -779,6 +793,8 @@ export default function Game() {
         onPlayAgain={handlePlayAgain}
         onGoHome={handleGoHome}
       />
+
+
 
       {/* Nickname Editor Modal */}
       {currentPlayer && (
