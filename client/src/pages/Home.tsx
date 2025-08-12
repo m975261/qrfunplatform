@@ -39,9 +39,9 @@ export default function Home() {
       localStorage.removeItem("currentRoomId");
       console.log("Cleared old session due to shared link access");
     } else if (existingPlayerId && existingNickname && existingRoomId) {
-      console.log("Found existing session, redirecting to room:", { existingPlayerId, existingNickname, existingRoomId });
-      setLocation(`/room/${existingRoomId}`);
-      return;
+      console.log("Found existing session, but NOT auto-redirecting to avoid unwanted room access");
+      // Don't auto-redirect - let user manually choose to rejoin or create new room
+      // This prevents unwanted automatic room access when just visiting the home page
     }
     
     // Check for room parameter in URL (from shared links) - already extracted above
