@@ -10,7 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Turn Management & Safari Modal Debug Fixed (Latest - Aug 11, 2025)
+### Duplicate End Messages & Game Direction Fixed (Latest - Aug 12, 2025)
+- **HOST DUPLICATE ALERTS FIXED**: Added overlay existence check to prevent multiple end-game messages for host browser ✅ FIXED
+- **GAME DIRECTION CROSS-BROWSER**: Restored clean direction indicator (↻ ↺) with "Game Direction" label, visible in all browsers ✅ FIXED
+- **DEBUG MESSAGE CLEANUP**: Removed all console.log debug messages from server and client for clean production output ✅ COMPLETED
+- **VISUAL CONSISTENCY**: Direction indicator now uses clean slate styling matching game design, only shows during active play ✅ ENHANCED
+
+### Turn Management & Safari Modal Debug Fixed (Aug 11, 2025)
 - **TURN LOGIC COMPLETELY FIXED**: Resolved critical issues where players lost turns unexpectedly during games ✅ FIXED
 - **DIRECTION CARD FIXED**: Reverse cards now properly change direction before calculating next player ✅ FIXED  
 - **FINISHED PLAYER HANDLING**: Enhanced logic prevents finished players from getting turns with fallback validation ✅ IMPROVED

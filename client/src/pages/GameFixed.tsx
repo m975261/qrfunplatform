@@ -62,31 +62,14 @@ export default function Game() {
       currentPlayerId: playerId
     });
     
-    // SAFARI COMPATIBILITY - Immediate alert + modal fallback
-    if (gameState?.gameEndData) {
-      const isSafariOrMobile = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent) || /Mobile/.test(navigator.userAgent);
-      console.log("🏆 GAME END DETECTED - Mobile Safari Fix", {
-        winner: gameState?.gameEndData?.winner,
-        rankings: gameState?.gameEndData?.rankings,
-        isSafariOrMobile,
-        modalWillShow: true
-      });
-      
+    // SINGLE GAME END OVERLAY - Prevent duplicates
+    if (gameState?.gameEndData && !document.getElementById('universal-winner-overlay')) {
       // Set data first
       setGameEndData(gameState.gameEndData);
-      
-      // FORCE DISPLAY for all browsers - debug mode 
-      console.log("🏆 GAME END - Browser detection:", {
-        userAgent: navigator.userAgent,
-        isSafariOrMobile,
-        winner: gameState.gameEndData.winner
-      });
       
       // Always create overlay for all browsers now
       const winner = gameState.gameEndData.winner;
       const rankings = gameState.gameEndData.rankings || [];
-      
-
       
       // Create simple DOM overlay - no alert needed
       const overlay = document.createElement('div');
@@ -476,17 +459,16 @@ export default function Game() {
           minHeight: '400px'
         }}>
           
-          {/* Game Direction Indicator - Always show if game exists */}
-          {gameState && gameState.room && (
+          {/* Game Direction Indicator - Clean arrows only */}
+          {gameState && gameState.room && gameState.room.status === 'playing' && (
             <div className="absolute z-20 pointer-events-none" style={{
               top: 'max(-4rem, -12vh)',
               left: '50%',
               transform: 'translateX(-50%)',
               minHeight: '32px'
             }}>
-              <div className="bg-purple-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-purple-500 flex items-center space-x-2">
-                <span>Status: {gameState?.room?.status || 'none'}</span>
-                <span>Dir: {gameState?.room?.direction || 'none'}</span>
+              <div className="bg-slate-700/90 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg border border-slate-500 flex items-center space-x-2">
+                <span>Game Direction</span>
                 <div className="flex items-center text-lg">
                   {gameState?.room?.direction === 'clockwise' ? (
                     <span className="text-white font-bold">↻</span>
