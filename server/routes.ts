@@ -878,16 +878,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let newDirection = room.direction;
     let newPendingDraw = room.pendingDraw || 0;
     
+    // Get finished player indices for turn skipping - do this once at the start
+    const finishedPlayerIndices = gamePlayers
+      .map((p, idx) => ({ player: p, index: idx }))
+      .filter(item => item.player.finishPosition)
+      .map(item => item.index);
+    
+    console.log(`🎯 TURN LOGIC: Current: ${currentPlayerIndex}, Finished players: [${finishedPlayerIndices.join(', ')}]`);
+    console.log(`🃏 CARD EFFECT: Skip: ${effect.skip}, Reverse: ${effect.reverse}, Draw: ${effect.draw}`);
+    
     // Handle stacking draw cards
     if (effect.draw > 0) {
       // Stack the draw effect - pass the penalty to next player
       newPendingDraw = (room.pendingDraw || 0) + effect.draw;
-      
-      // Get finished player indices for turn skipping
-      const finishedPlayerIndices = gamePlayers
-        .map((p, idx) => ({ player: p, index: idx }))
-        .filter(item => item.player.finishPosition)
-        .map(item => item.index);
       
       // Move to next player (they can either draw or stack)
       nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
@@ -899,21 +902,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         finishedPlayerIndices
       );
     } else {
-      // Handle other effects first
+      // Handle direction change BEFORE calculating next player
       if (effect.reverse) {
         newDirection = room.direction === "clockwise" ? "counterclockwise" : "clockwise";
+        console.log(`🔄 DIRECTION CHANGED: ${room.direction} → ${newDirection}`);
       }
       
-      // Get finished player indices for turn skipping
-      const finishedPlayerIndices = gamePlayers
-        .map((p, idx) => ({ player: p, index: idx }))
-        .filter(item => item.player.finishPosition)
-        .map(item => item.index);
-      
+      // Calculate next player using the NEW direction
       nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
         currentPlayerIndex, 
         gamePlayers.length, 
-        newDirection || "clockwise", 
+        newDirection || room.direction || "clockwise", 
         effect.skip,
         effect.reverse,
         finishedPlayerIndices
@@ -921,6 +920,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Clear pending draw since this is not a draw card
       newPendingDraw = 0;
+    }
+    
+    console.log(`➡️ NEXT PLAYER: Index ${nextPlayerIndex} (${gamePlayers[nextPlayerIndex]?.nickname || 'Unknown'})`);
+    console.log(`🧭 NEW DIRECTION: ${newDirection || room.direction}`);
+    
+    // Validation: Ensure next player is not finished
+    if (finishedPlayerIndices.includes(nextPlayerIndex)) {
+      console.log(`⚠️ WARNING: Next player ${nextPlayerIndex} is finished! Finding alternative...`);
+      for (let i = 0; i < gamePlayers.length; i++) {
+        if (!finishedPlayerIndices.includes(i)) {
+          nextPlayerIndex = i;
+          console.log(`✅ FALLBACK: Using player ${nextPlayerIndex} (${gamePlayers[nextPlayerIndex]?.nickname})`);
+          break;
+        }
+      }
     }
     
     // Update room state
@@ -1221,6 +1235,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .filter(item => item.player.finishPosition)
       .map(item => item.index);
     
+    console.log(`🎯 DRAW TURN ADVANCE: Current: ${currentPlayerIndex}, Finished: [${finishedPlayerIndices.join(', ')}]`);
+    
     // Always move to next player after drawing - turn is over
     const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
       currentPlayerIndex, 
@@ -1230,6 +1246,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       false,
       finishedPlayerIndices
     );
+    
+    console.log(`➡️ DRAW NEXT PLAYER: ${nextPlayerIndex} (${gamePlayers[nextPlayerIndex]?.nickname || 'Unknown'})`);
+    
+    // Validation: Ensure next player is active
+    if (finishedPlayerIndices.includes(nextPlayerIndex)) {
+      console.log(`⚠️ WARNING: Draw next player ${nextPlayerIndex} is finished! Finding alternative...`);
+      for (let i = 0; i < gamePlayers.length; i++) {
+        if (!finishedPlayerIndices.includes(i)) {
+          nextPlayerIndex = i;
+          console.log(`✅ DRAW FALLBACK: Using player ${nextPlayerIndex} (${gamePlayers[nextPlayerIndex]?.nickname})`);
+          break;
+        }
+      }
+    }
     
     await storage.updateRoom(connection.roomId, { 
       deck,

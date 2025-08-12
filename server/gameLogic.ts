@@ -191,8 +191,16 @@ export class UnoGameLogic {
   }
   
   static getNextPlayerIndex(currentIndex: number, playerCount: number, direction: string, skip = false, isReverse = false, finishedPlayers: number[] = []): number {
+    const activePlayerCount = playerCount - finishedPlayers.length;
+    
+    // If only one active player remains, they keep their turn
+    if (activePlayerCount <= 1) {
+      return currentIndex;
+    }
+    
     // Special 2-player rule: Skip and Reverse both result in same player playing again
-    if (playerCount === 2 && (skip || isReverse)) {
+    // But only apply this if both players are still active
+    if (activePlayerCount === 2 && (skip || isReverse)) {
       return currentIndex; // Same player plays again
     }
     
@@ -201,12 +209,21 @@ export class UnoGameLogic {
     let nextIndex = (currentIndex + skipStep + playerCount) % playerCount;
     
     // Skip finished players - keep advancing until we find a player who hasn't finished
-    const maxIterations = playerCount; // Prevent infinite loops
+    const maxIterations = playerCount * 2; // Prevent infinite loops with safety margin
     let iterations = 0;
     
     while (finishedPlayers.includes(nextIndex) && iterations < maxIterations) {
       nextIndex = (nextIndex + step + playerCount) % playerCount;
       iterations++;
+    }
+    
+    // Fallback: if we can't find a valid next player, find first active player
+    if (iterations >= maxIterations || finishedPlayers.includes(nextIndex)) {
+      for (let i = 0; i < playerCount; i++) {
+        if (!finishedPlayers.includes(i)) {
+          return i;
+        }
+      }
     }
     
     return nextIndex;

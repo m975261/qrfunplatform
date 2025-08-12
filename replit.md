@@ -10,7 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### UNO Bug Fixed & Safari Winner Modal Enhanced (Latest - Aug 11, 2025)
+### Turn Management & Safari Modal Debug Fixed (Latest - Aug 11, 2025)
+- **TURN LOGIC COMPLETELY FIXED**: Resolved critical issues where players lost turns unexpectedly during games ✅ FIXED
+- **DIRECTION CARD FIXED**: Reverse cards now properly change direction before calculating next player ✅ FIXED  
+- **FINISHED PLAYER HANDLING**: Enhanced logic prevents finished players from getting turns with fallback validation ✅ IMPROVED
+- **COMPREHENSIVE LOGGING**: Added detailed turn management debugging for production troubleshooting ✅ ADDED
+- **SAFARI MODAL DEBUG**: Simplified winner modal to show immediate alerts on iPhone Safari for testing ✅ ENHANCED
+
+### UNO Bug Fixed & Safari Winner Modal Enhanced (Aug 11, 2025)
 - **UNO PENALTY BUG COMPLETELY FIXED**: Root cause was HTTP start game endpoint using room code instead of room ID for storage updates ✅ FIXED
 - **ROOM STATUS UPDATE FIX**: Fixed room.id vs roomId parameter mismatch in /api/rooms/:roomId/start endpoint ✅ APPLIED
 - **GAME STATE SYNCHRONIZATION**: Room status now properly updates from "waiting" to "playing" after game start ✅ CONFIRMED
