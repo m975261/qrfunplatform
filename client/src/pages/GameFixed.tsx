@@ -11,6 +11,8 @@ import ChatPanel from "@/components/game/ChatPanel";
 import GameEndModal from "@/components/game/GameEndModal";
 import ColorPickerModal from "@/components/game/ColorPickerModal";
 import NicknameEditor from "@/components/NicknameEditor";
+import { GameDirectionIndicator } from "@/components/game/GameDirectionIndicator";
+import { WinnerModal } from "@/components/game/WinnerModal";
 
 export default function Game() {
   const [, params] = useRoute("/game/:roomId");
@@ -45,6 +47,8 @@ export default function Game() {
   const [hasCalledUno, setHasCalledUno] = useState(false);
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [winnerData, setWinnerData] = useState<any>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -53,153 +57,9 @@ export default function Game() {
   }, [roomId, playerId, isConnected, joinRoom]);
 
   useEffect(() => {
-    console.log("🏆 Game state changed:", {
-      roomStatus: gameState?.room?.status,
-      hasGameEndData: !!gameState?.gameEndData,
-      gameEndData: gameState?.gameEndData,
-      showGameEnd,
-      needsContinue: gameState?.needsContinue,
-      currentPlayerId: playerId
-    });
-    
-    // SINGLE GAME END OVERLAY - Prevent duplicates
-    if (gameState?.gameEndData && !document.getElementById('universal-winner-overlay')) {
-      // Set data first
-      setGameEndData(gameState.gameEndData);
-      
-      // Always create overlay for all browsers now
-      const winner = gameState.gameEndData.winner;
-      const rankings = gameState.gameEndData.rankings || [];
-      
-      // Create simple DOM overlay - no alert needed
-      const overlay = document.createElement('div');
-      overlay.id = 'universal-winner-overlay';
-        overlay.innerHTML = `
-          <div style="
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            background: rgba(0,0,0,0.9) !important;
-            z-index: 999999 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 20px !important;
-          ">
-            <div style="
-              background: white !important;
-              border-radius: 12px !important;
-              padding: 30px !important;
-              text-align: center !important;
-              max-width: 350px !important;
-              width: 90% !important;
-              box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
-              border: 3px solid #ffd700 !important;
-            ">
-              <div style="font-size: 32px; margin-bottom: 15px;">🏆</div>
-              <h2 style="color: #333; margin: 0 0 15px 0; font-size: 24px; font-weight: bold;">
-                ${winner} Wins!
-              </h2>
-              <p style="color: #666; margin: 0 0 20px 0; font-size: 16px;">
-                Congratulations! 🎉
-              </p>
-              <div style="margin-bottom: 25px;">
-                ${rankings.map((player, index) => `
-                  <div style="
-                    padding: 10px; 
-                    margin: 5px 0;
-                    background: ${index === 0 ? '#ffd700' : '#f5f5f5'};
-                    border-radius: 8px;
-                    color: ${index === 0 ? 'white' : '#333'};
-                    font-size: 16px;
-                    font-weight: ${index === 0 ? 'bold' : 'normal'};
-                  ">
-                    ${index + 1}. ${player.nickname} ${index === 0 ? '👑' : ''}
-                  </div>
-                `).join('')}
-              </div>
-              <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="play-again-btn" style="
-                  background: #4CAF50;
-                  color: white;
-                  border: none;
-                  padding: 12px 20px;
-                  border-radius: 8px;
-                  font-size: 16px;
-                  min-height: 44px;
-                  cursor: pointer;
-                ">
-                  Play Again
-                </button>
-                <button id="home-btn" style="
-                  background: #f44336;
-                  color: white;
-                  border: none;
-                  padding: 12px 20px;
-                  border-radius: 8px;
-                  font-size: 16px;
-                  min-height: 44px;
-                  cursor: pointer;
-                ">
-                  Home
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-        
-      // Remove any existing overlay
-      const existing = document.getElementById('universal-winner-overlay');
-      if (existing) existing.remove();
-      
-      // Add to body
-      document.body.appendChild(overlay);
-      
-      // Add button event listeners
-      const playAgainBtn = overlay.querySelector('#play-again-btn');
-      const homeBtn = overlay.querySelector('#home-btn');
-      
-      if (playAgainBtn) {
-        playAgainBtn.addEventListener('click', () => {
-          // Remove overlay
-          overlay.remove();
-          // Clear localStorage and reload
-          localStorage.removeItem("currentRoomId");
-          localStorage.removeItem("playerId");
-          localStorage.removeItem("playerNickname");
-          window.location.reload();
-        });
-      }
-      
-      if (homeBtn) {
-        homeBtn.addEventListener('click', () => {
-          // Remove overlay
-          overlay.remove();
-          // Clear localStorage and go home
-          localStorage.removeItem("currentRoomId");
-          localStorage.removeItem("playerId");
-          localStorage.removeItem("playerNickname");
-          window.location.href = '/';
-        });
-      }
-      
-      // Force browser to acknowledge it
-      overlay.offsetHeight;
-      overlay.style.display = 'flex';
-      
-      // No alert needed - overlay is sufficient
-      
-      // Always try to show modal regardless
-      setShowGameEnd(true);
-      
-      // Multiple render attempts for Safari
-      requestAnimationFrame(() => setShowGameEnd(true));
-      setTimeout(() => setShowGameEnd(true), 100);
-      setTimeout(() => setShowGameEnd(true), 300);
+    if (gameState?.gameEndData) {
+      setWinnerData(gameState.gameEndData);
+      setShowWinnerModal(true);
     }
     
     if (gameState?.needsContinue) {
@@ -235,6 +95,23 @@ export default function Game() {
       setHasCalledUno(true);
       // UNO call will be validated on the server and work only when playing second-to-last card
     }
+  };
+
+  const handlePlayAgain = () => {
+    setShowWinnerModal(false);
+    playAgain();
+    localStorage.removeItem("currentRoomId");
+    localStorage.removeItem("playerId");
+    localStorage.removeItem("playerNickname");
+    window.location.reload();
+  };
+
+  const handleGoHome = () => {
+    setShowWinnerModal(false);
+    localStorage.removeItem("currentRoomId");
+    localStorage.removeItem("playerId");
+    localStorage.removeItem("playerNickname");
+    window.location.href = '/';
   };
 
   if (!gameState || !gameState.room) {
@@ -486,47 +363,7 @@ export default function Game() {
           minHeight: '400px'
         }}>
           
-          {/* Game Direction Indicator - Enhanced cross-browser visibility */}
-          {gameState && gameState.room && gameState.room.direction && (
-            <div 
-              className="absolute z-20 pointer-events-none"
-              style={{
-                top: 'max(-4rem, -12vh)',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                minHeight: '32px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              <div 
-                className="bg-slate-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg border-2 border-slate-500"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  backgroundColor: 'rgba(51, 65, 85, 0.95)',
-                  backdropFilter: 'blur(4px)',
-                  WebkitBackdropFilter: 'blur(4px)',
-                  minWidth: 'fit-content',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Game Direction</span>
-                <span 
-                  style={{ 
-                    fontSize: '20px', 
-                    fontWeight: 'bold',
-                    display: 'inline-block',
-                    lineHeight: '1'
-                  }}
-                >
-                  {gameState.room.direction === 'clockwise' ? '↻' : '↺'}
-                </span>
-              </div>
-            </div>
-          )}
+
           {/* 4 Fixed Avatar Positions */}
           {[0, 1, 2, 3].map((position) => {
             const player = getPlayerAtPosition(position);
@@ -815,53 +652,7 @@ export default function Game() {
         />
       )}
 
-      {/* Game End Modal - Cross-browser compatibility with Safari-specific fixes */}
-      {showGameEnd && (gameEndData || gameState?.gameEndData) && (
-        <div 
-          key="gameEndModalWrapper"
-          className="fixed inset-0"
-          style={{
-            position: 'fixed',
-            top: '0px',
-            left: '0px',
-            right: '0px',
-            bottom: '0px',
-            width: '100vw',
-            height: '100vh',
-            zIndex: '99998',
-            pointerEvents: 'auto',
-            display: 'block',
-            visibility: 'visible'
-          }}
-        >
-          <GameEndModal
-            winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Unknown"}
-            rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings || []}
-            onPlayAgain={() => {
-              console.log('🔄 Play again clicked');
-              playAgain();
-              setShowGameEnd(false);
-              setGameEndData(null);
-              if (roomId) {
-                setTimeout(() => {
-                  window.location.href = `/room/${roomId}`;
-                }, 500);
-              } else {
-                window.location.href = `/`;
-              }
-            }}
-            onBackToLobby={() => {
-              console.log('🏠 Back to lobby clicked');
-              setShowGameEnd(false);
-              setGameEndData(null);
-              localStorage.removeItem("currentRoomId");
-              localStorage.removeItem("playerId");
-              localStorage.removeItem("playerNickname");
-              window.location.href = "/";
-            }}
-          />
-        </div>
-      )}
+
       
 
 
@@ -973,6 +764,21 @@ export default function Game() {
           </div>
         </div>
       )}
+
+      {/* Game Direction Indicator */}
+      <GameDirectionIndicator 
+        direction={room?.direction || 'clockwise'}
+        isVisible={!!room?.direction && room?.status === 'playing'}
+      />
+
+      {/* Winner Modal */}
+      <WinnerModal
+        isOpen={showWinnerModal}
+        players={winnerData?.finalRankings || []}
+        isSpectator={currentPlayer?.isSpectator || false}
+        onPlayAgain={handlePlayAgain}
+        onGoHome={handleGoHome}
+      />
 
       {/* Nickname Editor Modal */}
       {currentPlayer && (
