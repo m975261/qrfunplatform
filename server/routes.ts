@@ -523,10 +523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const connection = connections.get(connectionId);
       if (connection) {
         connection.lastSeen = Date.now();
-        // Debug pong from hosts
-        if (connection.playerId && connection.roomId) {
-          console.log(`🏓 PONG received from ${connection.playerId} (lastSeen updated: ${connection.lastSeen})`);
-        }
+
       }
     });
     
@@ -586,13 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             connection.tabVisible = message.tabVisible !== false; // Default to true if not specified
             connection.lastActivity = message.timestamp || Date.now();
             
-            // Debug heartbeat for host connections
-            if (connection.playerId && connection.roomId) {
-              const room = await storage.getRoom(connection.roomId);
-              if (room && room.hostId === connection.playerId) {
-                console.log(`💓 HOST HEARTBEAT: ${connection.playerId} in room ${room.code} (lastSeen: ${connection.lastSeen})`);
-              }
-            }
+
             
             ws.send(JSON.stringify({ 
               type: 'heartbeat_ack',
@@ -834,13 +825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Remove card from player's hand first
     let newHand = playerHand.filter((_, index) => index !== cardIndex);
     
-    // Debug hand size changes for troubleshooting extra card issue
-    console.log(`🃏 CARD PLAY DEBUG: ${player.nickname}`);
-    console.log(`   - Hand before: ${currentHandSize} cards`);
-    console.log(`   - Hand after: ${newHand.length} cards`);
-    console.log(`   - hasCalledUno: ${player.hasCalledUno}`);
-    console.log(`   - Should trigger UNO check: ${currentHandSize === 2 && newHand.length === 1}`);
-    
+
     // Check UNO penalty - apply only if player went from 2 cards to 1 card without calling UNO
     let shouldApplyUnoPenalty = false;
     if (currentHandSize === 2 && newHand.length === 1 && !player.hasCalledUno) {
@@ -942,16 +927,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       newPendingDraw = 0;
     }
     
-    console.log(`➡️ NEXT PLAYER: Index ${nextPlayerIndex} (${gamePlayers[nextPlayerIndex]?.nickname || 'Unknown'})`);
-    console.log(`🧭 NEW DIRECTION: ${newDirection || room.direction}`);
-    
     // Validation: Ensure next player is not finished
     if (finishedPlayerIndices.includes(nextPlayerIndex)) {
-      console.log(`⚠️ WARNING: Next player ${nextPlayerIndex} is finished! Finding alternative...`);
       for (let i = 0; i < gamePlayers.length; i++) {
         if (!finishedPlayerIndices.includes(i)) {
           nextPlayerIndex = i;
-          console.log(`✅ FALLBACK: Using player ${nextPlayerIndex} (${gamePlayers[nextPlayerIndex]?.nickname})`);
           break;
         }
       }
@@ -972,7 +952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
       const finishedCount = activePlayers.filter(p => p.finishPosition).length;
       
-      console.log(`${player.nickname} won! Setting finish position ${finishedCount + 1}`);
+
       
       // Set finish position for current winner
       await storage.updatePlayer(connection.playerId, { finishPosition: finishedCount + 1 });
@@ -980,17 +960,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if game should end (only 1 player left or all finished)
       const remainingPlayers = activePlayers.filter(p => !p.finishPosition && p.id !== connection.playerId);
       
-      console.log(`Remaining players after ${player.nickname} won: ${remainingPlayers.length}`);
+
       
       if (remainingPlayers.length <= 1) {
         // Game ends, set last player's position if any
         if (remainingPlayers.length === 1) {
           await storage.updatePlayer(remainingPlayers[0].id, { finishPosition: finishedCount + 2 });
-          console.log(`Set last player ${remainingPlayers[0].nickname} to position ${finishedCount + 2}`);
+
         }
         
         await storage.updateRoom(connection.roomId, { status: "finished" });
-        console.log(`Game finished in room ${connection.roomId}`);
+
         
         // Get final rankings
         const finalPlayers = await storage.getPlayersByRoom(connection.roomId);
@@ -998,7 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .filter(p => !p.isSpectator)
           .sort((a, b) => (a.finishPosition || 999) - (b.finishPosition || 999));
         
-        console.log('Final rankings:', rankings.map(p => `${p.nickname}: ${p.finishPosition}`));
+
         
         const gameEndMessage = {
           type: 'game_end',
@@ -1010,70 +990,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
         };
         
-        console.log('🏆 Broadcasting game_end message:', gameEndMessage);
         const roomConnections = Array.from(connections.values()).filter(c => c.roomId === connection.roomId);
-        console.log('🏆 Active connections for room:', roomConnections.length);
         
-        // Before broadcasting, ensure all connections are stable
+        // Simple broadcast to all room connections
         roomConnections.forEach(conn => {
-          if (conn.ws.readyState !== WebSocket.OPEN) {
-            console.log('⚠️ Warning: Connection not open before game_end broadcast');
+          if (conn.ws.readyState === WebSocket.OPEN) {
+            conn.ws.send(JSON.stringify(gameEndMessage));
           }
         });
-        
-        // Enhanced broadcast with error handling and connection monitoring
-        try {
-          console.log('🏆 Broadcasting game_end message to room connections...');
-          let successCount = 0;
-          let failCount = 0;
-          
-          roomConnections.forEach((conn, index) => {
-            try {
-              if (conn.ws.readyState === WebSocket.OPEN) {
-                conn.ws.send(JSON.stringify(gameEndMessage));
-                successCount++;
-                console.log(`✅ Game end message sent to connection ${index + 1}`);
-              } else {
-                failCount++;
-                console.log(`❌ Connection ${index + 1} not open (state: ${conn.ws.readyState})`);
-              }
-            } catch (sendError) {
-              failCount++;
-              console.error(`❌ Failed to send game_end to connection ${index + 1}:`, sendError);
-            }
-          });
-          
-          console.log(`🏆 Game end broadcast complete: ${successCount} sent, ${failCount} failed`);
-          
-          // Monitor connection stability over time
-          const checkConnectionStability = (checkNum: number) => {
-            setTimeout(() => {
-              const stillActiveConnections = Array.from(connections.values())
-                .filter(c => c.roomId === connection.roomId && c.ws.readyState === WebSocket.OPEN);
-              console.log(`🏆 Check ${checkNum}: ${stillActiveConnections.length}/${roomConnections.length} connections active`);
-              
-              // If connections are dropping, log detailed info
-              if (stillActiveConnections.length < roomConnections.length) {
-                console.log('⚠️ Connection loss detected after game_end:');
-                roomConnections.forEach((conn, idx) => {
-                  const isStillActive = stillActiveConnections.some(active => active === conn);
-                  console.log(`  Connection ${idx + 1}: ${isStillActive ? 'ACTIVE' : 'LOST'} (state: ${conn.ws.readyState})`);
-                });
-              }
-            }, checkNum * 1000);
-          };
-          
-          // Check at 1s, 3s, and 5s intervals
-          checkConnectionStability(1);
-          checkConnectionStability(3);
-          checkConnectionStability(5);
-          
-        } catch (broadcastError) {
-          console.error('❌ Fatal error during game_end broadcast:', broadcastError);
-        }
       } else {
         // Continue game with remaining players
-        console.log(`${player.nickname} finished in position ${finishedCount + 1}, game continues`);
         broadcastToRoom(connection.roomId, {
           type: 'player_finished',
           player: player.nickname,
@@ -1236,10 +1162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const drawnCards = deck.splice(0, 1);
     const newHand = [...(player.hand || []), ...drawnCards];
     
-    console.log(`🎯 DRAW CARD DEBUG: ${player.nickname}`);
-    console.log(`   - Hand before: ${(player.hand || []).length} cards`);
-    console.log(`   - Hand after: ${newHand.length} cards`);
-    console.log(`   - Drew cards: ${drawnCards.length}`);
+
     
     // Reset UNO call if player now has more than 1 card  
     await storage.updatePlayer(connection.playerId, { 
@@ -1716,15 +1639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const isOnline = !!mostRecentConnection;
       
-      // Debug host online status
-      if (room?.hostId === player.id) {
-        console.log(`🏠 HOST STATUS DEBUG: ${player.nickname} (ID: ${player.id})`);
-        console.log(`   - Connections found: ${playerConnections.length}`);
-        console.log(`   - Most recent connection: ${!!mostRecentConnection}`);
-        console.log(`   - Connection lastSeen: ${mostRecentConnection?.lastSeen || 'undefined'}`);
-        console.log(`   - Time since last seen: ${mostRecentConnection?.lastSeen ? Date.now() - mostRecentConnection.lastSeen : 'N/A'}ms`);
-        console.log(`   - Final status: ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
-      }
+
       
       return {
         ...player,

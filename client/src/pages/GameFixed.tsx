@@ -86,10 +86,9 @@ export default function Game() {
       const winner = gameState.gameEndData.winner;
       const rankings = gameState.gameEndData.rankings || [];
       
-      console.log("🏆 Creating universal overlay for all browsers");
+
       
-      // Only show ONE final alert - remove duplicate alerts
-      // Create simple DOM overlay
+      // Create simple DOM overlay - no alert needed
       const overlay = document.createElement('div');
       overlay.id = 'universal-winner-overlay';
         overlay.innerHTML = `
@@ -182,14 +181,7 @@ export default function Game() {
       overlay.offsetHeight;
       overlay.style.display = 'flex';
       
-      // Show ONE final alert only after overlay is created
-      setTimeout(() => {
-        let alertMessage = `🏆 ${winner} WINS!\n\nFinal Rankings:\n`;
-        rankings.forEach((player, index) => {
-          alertMessage += `${index + 1}. ${player.nickname}\n`;
-        });
-        alert(alertMessage);
-      }, 500);
+      // No alert needed - overlay is sufficient
       
       // Always try to show modal regardless
       setShowGameEnd(true);
@@ -247,12 +239,7 @@ export default function Game() {
   const players = gameState.players || [];
   const gamePlayers = players.filter((p: any) => !p.isSpectator);
   
-  // Debug avatar display for troubleshooting 3rd player issue
-  console.log('🎭 AVATAR DEBUG:', {
-    totalPlayers: players.length,
-    gamePlayers: gamePlayers.length,
-    positions: gamePlayers.map(p => ({ nickname: p.nickname, position: p.position, isSpectator: p.isSpectator }))
-  });
+
   const currentPlayer = players.find((p: any) => p.id === playerId);
   const currentGamePlayer = gamePlayers[room.currentPlayerIndex || 0];
   const isMyTurn = currentGamePlayer?.id === playerId;
@@ -878,10 +865,7 @@ export default function Game() {
             <div className="text-center">
               <div className="text-white text-sm font-medium mb-2">Game is paused</div>
               <Button
-                onClick={() => {
-                  console.log('🎮 HOST CONTINUING GAME:', { playerId, roomCode: room?.code, isHost });
-                  continueGame();
-                }}
+                onClick={() => continueGame()}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
               >
                 Continue Game
@@ -891,16 +875,7 @@ export default function Game() {
         </div>
       )}
 
-      {/* DEBUG: Show pause status info on screen for troubleshooting */}
-      {isPaused && (
-        <div className="fixed top-16 right-4 bg-red-600 text-white p-2 rounded text-xs font-mono z-50">
-          <div>PAUSED DEBUG:</div>
-          <div>Status: {room?.status}</div>
-          <div>Current Player: {currentPlayer?.nickname}</div>
-          <div>Host: {room?.hostId === playerId ? 'YES' : 'NO'}</div>
-          <div>Show Button: {(isPaused && isHost) ? 'YES' : 'NO'}</div>
-        </div>
-      )}
+
 
       {/* Penalty Animation Overlay */}
       {gameState?.penaltyAnimation?.isActive && (
