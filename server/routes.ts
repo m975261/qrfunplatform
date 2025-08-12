@@ -27,10 +27,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create room
   app.post("/api/rooms", async (req, res) => {
     try {
-      const { nickname } = z.object({
-        nickname: z.string().min(1).max(20)
+      const { hostNickname } = z.object({
+        hostNickname: z.string().min(1).max(20)
       }).parse(req.body);
-      const hostNickname = nickname;
 
       const code = UnoGameLogic.generateRoomCode();
       // Create the room first
