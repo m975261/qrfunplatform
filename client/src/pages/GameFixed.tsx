@@ -49,12 +49,170 @@ export default function Game() {
     }
   }, [roomId, playerId, isConnected, joinRoom]);
 
-  // Winner modal system completely removed - games end silently
+  // Universal winner modal - works on all browsers including iOS Safari
   useEffect(() => {
+    if (gameState?.gameEndData) {
+      const { winner, rankings } = gameState.gameEndData;
+      console.log("🏆 Game ended - Winner:", winner, "Rankings:", rankings);
+      
+      // Create universal modal that works on all browsers
+      const createWinnerModal = () => {
+        // Remove any existing modal
+        const existing = document.getElementById('winner-modal');
+        if (existing) existing.remove();
+        
+        // Create modal container
+        const modal = document.createElement('div');
+        modal.id = 'winner-modal';
+        modal.style.cssText = `
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          background-color: rgba(0, 0, 0, 0.8) !important;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          z-index: 10000 !important;
+          font-family: system-ui, -apple-system, sans-serif !important;
+        `;
+        
+        // Create modal content
+        const content = document.createElement('div');
+        content.style.cssText = `
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          border-radius: 16px !important;
+          padding: 32px !important;
+          text-align: center !important;
+          color: white !important;
+          max-width: 90% !important;
+          width: 400px !important;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
+        `;
+        
+        // Trophy icon
+        const trophy = document.createElement('div');
+        trophy.textContent = '🏆';
+        trophy.style.cssText = `
+          font-size: 48px !important;
+          margin-bottom: 16px !important;
+        `;
+        
+        // Winner title
+        const title = document.createElement('h2');
+        title.textContent = `${winner} Wins!`;
+        title.style.cssText = `
+          font-size: 28px !important;
+          margin: 0 0 16px 0 !important;
+          font-weight: bold !important;
+        `;
+        
+        // Rankings section
+        const rankingsDiv = document.createElement('div');
+        rankingsDiv.style.cssText = `
+          background: rgba(255,255,255,0.2) !important;
+          border-radius: 12px !important;
+          padding: 20px !important;
+          margin: 20px 0 !important;
+        `;
+        
+        const rankingsTitle = document.createElement('h3');
+        rankingsTitle.textContent = 'Final Rankings:';
+        rankingsTitle.style.cssText = `
+          margin: 0 0 16px 0 !important;
+          font-size: 18px !important;
+        `;
+        
+        rankingsDiv.appendChild(rankingsTitle);
+        
+        // Add each ranking
+        rankings.forEach((player, index) => {
+          const rankItem = document.createElement('div');
+          rankItem.textContent = `${index + 1}${index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'} - ${player.nickname}`;
+          rankItem.style.cssText = `
+            padding: 8px 0 !important;
+            font-size: 16px !important;
+            font-weight: ${index === 0 ? 'bold' : 'normal'} !important;
+            border-bottom: ${index < rankings.length - 1 ? '1px solid rgba(255,255,255,0.3)' : 'none'} !important;
+          `;
+          rankingsDiv.appendChild(rankItem);
+        });
+        
+        // Buttons container
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.style.cssText = `
+          display: flex !important;
+          gap: 12px !important;
+          margin-top: 24px !important;
+        `;
+        
+        // Play Again button
+        const playAgainBtn = document.createElement('button');
+        playAgainBtn.textContent = 'Play Again';
+        playAgainBtn.style.cssText = `
+          flex: 1 !important;
+          background: #4CAF50 !important;
+          color: white !important;
+          border: none !important;
+          padding: 16px !important;
+          border-radius: 8px !important;
+          font-size: 16px !important;
+          font-weight: bold !important;
+          cursor: pointer !important;
+          min-height: 48px !important;
+        `;
+        playAgainBtn.onclick = () => {
+          modal.remove();
+          window.location.reload();
+        };
+        
+        // Home button
+        const homeBtn = document.createElement('button');
+        homeBtn.textContent = 'Home';
+        homeBtn.style.cssText = `
+          flex: 1 !important;
+          background: #f44336 !important;
+          color: white !important;
+          border: none !important;
+          padding: 16px !important;
+          border-radius: 8px !important;
+          font-size: 16px !important;
+          font-weight: bold !important;
+          cursor: pointer !important;
+          min-height: 48px !important;
+        `;
+        homeBtn.onclick = () => {
+          modal.remove();
+          localStorage.removeItem("roomId");
+          localStorage.removeItem("playerId");
+          window.location.href = "/";
+        };
+        
+        // Assemble modal
+        buttonsDiv.appendChild(playAgainBtn);
+        buttonsDiv.appendChild(homeBtn);
+        
+        content.appendChild(trophy);
+        content.appendChild(title);
+        content.appendChild(rankingsDiv);
+        content.appendChild(buttonsDiv);
+        
+        modal.appendChild(content);
+        
+        // Add to document
+        document.body.appendChild(modal);
+        console.log("🏆 Universal winner modal created and displayed");
+      };
+      
+      // Create modal immediately
+      createWinnerModal();
+    }
+    
     if (gameState?.needsContinue) {
       setShowContinuePrompt(true);
     }
-  }, [gameState?.needsContinue]);
+  }, [gameState?.gameEndData, gameState?.needsContinue]);
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
