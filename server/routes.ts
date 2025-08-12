@@ -27,9 +27,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create room
   app.post("/api/rooms", async (req, res) => {
     try {
-      const { hostNickname } = z.object({
-        hostNickname: z.string().min(1).max(20)
+      const { nickname } = z.object({
+        nickname: z.string().min(1).max(20)
       }).parse(req.body);
+      const hostNickname = nickname;
 
       const code = UnoGameLogic.generateRoomCode();
       // Create the room first
@@ -86,7 +87,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ room: updatedRoom, qrCode, player: hostPlayer });
     } catch (error) {
-      res.status(400).json({ error: "Failed to create room" });
+      console.error("Room creation error:", error);
+      res.status(400).json({ error: "Failed to create room", details: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -1650,7 +1652,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return {
         ...player,
-        isOnline
+        isOnline,
+        isHost: room?.hostId === player.id
       };
     });
     
@@ -1715,7 +1718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify user is host
       const host = await storage.getPlayer(hostId);
-      if (!host || host.roomId !== room.id || !host.isHost) {
+      if (!host || host.roomId !== room.id || room.hostId !== hostId) {
         return res.status(403).json({ error: "Only host can assign spectators" });
       }
       

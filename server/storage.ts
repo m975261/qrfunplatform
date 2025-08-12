@@ -50,7 +50,7 @@ export class MemStorage implements IStorage {
       currentColor: insertRoom.currentColor || null,
       pendingDraw: insertRoom.pendingDraw || null,
       positionHands: insertRoom.positionHands || {},
-      activePositions: insertRoom.activePositions || [] as number[],
+      activePositions: insertRoom.activePositions || [],
     };
     this.rooms.set(id, room);
     return room;

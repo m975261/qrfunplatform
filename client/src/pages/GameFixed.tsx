@@ -697,18 +697,31 @@ export default function Game() {
         </div>
       )}
 
-      {/* Host Continue Game Prompt */}
-      {isPaused && isHost && (
+      {/* Host Continue Game Prompt - Only show to host */}
+      {isPaused && currentPlayer?.isHost && (
         <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-40">
           <div className="bg-orange-600/90 backdrop-blur-sm px-6 py-3 rounded-lg border border-orange-500 shadow-lg">
             <div className="text-center">
               <div className="text-white text-sm font-medium mb-2">Game is paused</div>
+              <div className="text-orange-200 text-xs mb-2">A player disconnected</div>
               <Button
                 onClick={() => continueGame()}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm"
               >
                 Continue Game
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Non-host pause message */}
+      {isPaused && !currentPlayer?.isHost && (
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-40">
+          <div className="bg-slate-600/90 backdrop-blur-sm px-6 py-3 rounded-lg border border-slate-500 shadow-lg">
+            <div className="text-center">
+              <div className="text-white text-sm font-medium mb-1">Game Paused</div>
+              <div className="text-slate-300 text-xs">Waiting for host to continue...</div>
             </div>
           </div>
         </div>

@@ -147,18 +147,26 @@ export default function RoomLobby() {
     }
     
     try {
-      await apiRequest(`/api/rooms/${roomId}/assign-spectator`, {
+      const response = await fetch(`/api/rooms/${roomId}/assign-spectator`, {
         method: "POST", 
-        body: JSON.stringify({ 
-          spectatorId,
-          position: nextPosition
-        }),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${playerId}`
-        }
+        },
+        body: JSON.stringify({ 
+          spectatorId,
+          position: nextPosition
+        })
       });
-      console.log(`Assigned spectator to position ${nextPosition}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to assign spectator:", errorData);
+        return;
+      }
+      
+      const result = await response.json();
+      console.log(`✅ Assigned spectator to position ${nextPosition}:`, result);
     } catch (error) {
       console.error("Failed to assign spectator:", error);
     }
@@ -190,7 +198,7 @@ export default function RoomLobby() {
   const players = gameState.players || [];
   const gamePlayers = players.filter((p: any) => !p.isSpectator);
   const currentPlayer = players.find((p: any) => p.id === playerId);
-  const isHost = currentPlayer?.id === room?.hostId;
+  const isHost = currentPlayer?.isHost || currentPlayer?.id === room?.hostId;
 
   // Debug logging
   console.log("RoomLobby state:", {
