@@ -834,6 +834,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Remove card from player's hand first
     let newHand = playerHand.filter((_, index) => index !== cardIndex);
     
+    // Debug hand size changes for troubleshooting extra card issue
+    console.log(`🃏 CARD PLAY DEBUG: ${player.nickname}`);
+    console.log(`   - Hand before: ${currentHandSize} cards`);
+    console.log(`   - Hand after: ${newHand.length} cards`);
+    console.log(`   - hasCalledUno: ${player.hasCalledUno}`);
+    console.log(`   - Should trigger UNO check: ${currentHandSize === 2 && newHand.length === 1}`);
+    
     // Check UNO penalty - apply only if player went from 2 cards to 1 card without calling UNO
     let shouldApplyUnoPenalty = false;
     if (currentHandSize === 2 && newHand.length === 1 && !player.hasCalledUno) {
@@ -1228,6 +1235,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Normal single card draw (no penalty)
     const drawnCards = deck.splice(0, 1);
     const newHand = [...(player.hand || []), ...drawnCards];
+    
+    console.log(`🎯 DRAW CARD DEBUG: ${player.nickname}`);
+    console.log(`   - Hand before: ${(player.hand || []).length} cards`);
+    console.log(`   - Hand after: ${newHand.length} cards`);
+    console.log(`   - Drew cards: ${drawnCards.length}`);
     
     // Reset UNO call if player now has more than 1 card  
     await storage.updatePlayer(connection.playerId, { 

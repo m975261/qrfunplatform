@@ -88,9 +88,7 @@ export default function Game() {
       
       console.log("🏆 Creating universal overlay for all browsers");
       
-      // Show immediate alert first - this MUST work on iPhone
-      alert(`🏆 ${winner} WINS!\n\nFinal Rankings:\n${rankings.map((player, index) => `${index + 1}. ${player.nickname}`).join('\n')}\n\nTap OK to continue`);
-      
+      // Only show ONE final alert - remove duplicate alerts
       // Create simple DOM overlay
       const overlay = document.createElement('div');
       overlay.id = 'universal-winner-overlay';
@@ -184,14 +182,14 @@ export default function Game() {
       overlay.offsetHeight;
       overlay.style.display = 'flex';
       
-      // Also show native alert as backup for all browsers
+      // Show ONE final alert only after overlay is created
       setTimeout(() => {
         let alertMessage = `🏆 ${winner} WINS!\n\nFinal Rankings:\n`;
         rankings.forEach((player, index) => {
           alertMessage += `${index + 1}. ${player.nickname}\n`;
         });
         alert(alertMessage);
-      }, 200);
+      }, 500);
       
       // Always try to show modal regardless
       setShowGameEnd(true);
@@ -248,6 +246,13 @@ export default function Game() {
   const room = gameState.room;
   const players = gameState.players || [];
   const gamePlayers = players.filter((p: any) => !p.isSpectator);
+  
+  // Debug avatar display for troubleshooting 3rd player issue
+  console.log('🎭 AVATAR DEBUG:', {
+    totalPlayers: players.length,
+    gamePlayers: gamePlayers.length,
+    positions: gamePlayers.map(p => ({ nickname: p.nickname, position: p.position, isSpectator: p.isSpectator }))
+  });
   const currentPlayer = players.find((p: any) => p.id === playerId);
   const currentGamePlayer = gamePlayers[room.currentPlayerIndex || 0];
   const isMyTurn = currentGamePlayer?.id === playerId;
