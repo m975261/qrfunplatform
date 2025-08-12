@@ -401,10 +401,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if the position is available
       const roomPlayers = await storage.getPlayersByRoom(roomId);
-      const positionTaken = roomPlayers.some(p => p.position === position && !p.isSpectator);
+      const positionTaken = roomPlayers.some(p => p.position === position && !p.isSpectator && !p.hasLeft);
       
       if (positionTaken) {
         return res.status(400).json({ error: "Position already taken" });
+      }
+
+      // CRITICAL FIX: Check for duplicate nicknames and clean them up
+      const duplicatePlayer = roomPlayers.find(p => 
+        p.nickname.toLowerCase() === player.nickname.toLowerCase() && 
+        p.id !== player.id && 
+        p.isSpectator
+      );
+      
+      if (duplicatePlayer) {
+        console.log(`Removing duplicate player entry: ${duplicatePlayer.id} (${duplicatePlayer.nickname})`);
+        await storage.deletePlayer(duplicatePlayer.id);
       }
 
       // Get cards for this position - either from positionHands or deal new ones
@@ -1619,7 +1631,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const messages = await storage.getMessagesByRoom(roomId, 20);
     
     // Add online status to players - check for active connections (only latest per user)
-    const playersWithStatus = players.map(player => {
+    // CRITICAL FIX: Remove duplicate players with same nickname
+    const uniquePlayers = players.reduce((acc, player) => {
+      const existing = acc.find(p => p.nickname.toLowerCase() === player.nickname.toLowerCase());
+      if (existing) {
+        // Keep the non-spectator one, or the one that's not left, or the more recent one
+        if (!player.isSpectator && existing.isSpectator) {
+          return acc.map(p => p.id === existing.id ? player : p);
+        } else if (!player.hasLeft && existing.hasLeft) {
+          return acc.map(p => p.id === existing.id ? player : p);
+        }
+        // Keep existing if it's better
+        return acc;
+      } else {
+        acc.push(player);
+        return acc;
+      }
+    }, [] as typeof players);
+
+    const playersWithStatus = uniquePlayers.map(player => {
       // Find the most recent connection for this player (in case of multiple devices)
       const playerConnections = Array.from(connections.values()).filter(conn => 
         conn.playerId === player.id && 
@@ -1632,8 +1662,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))[0];
       
       const isOnline = !!mostRecentConnection;
-      
-
       
       return {
         ...player,
