@@ -749,11 +749,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Update room with position-based hands and active positions
     await storage.updateRoom(connection.roomId, { positionHands, activePositions });
     
-    await broadcastRoomState(connection.roomId);
-    
-    // Check if the first player needs to automatically draw penalty cards
-    // (This handles cases where the first player after game start has pending draws)
-    await checkAndApplyAutomaticPenalty(connection.roomId, 0, gamePlayers);
+    // Wait briefly before broadcasting to ensure all connections are stable
+    setTimeout(async () => {
+      await broadcastRoomState(connection.roomId!);
+      
+      // Check if the first player needs to automatically draw penalty cards
+      // (This handles cases where the first player after game start has pending draws)
+      await checkAndApplyAutomaticPenalty(connection.roomId!, 0, gamePlayers);
+    }, 250);
   }
 
   async function handlePlayCard(connection: SocketConnection, message: any) {
@@ -1698,12 +1701,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } else {
           failedCount++;
-          if (message.type === 'game_end') {
-            console.log(`⚠️ Connection not open for game_end broadcast (state: ${connection.ws.readyState})`);
+          // Log connection state issues for debugging
+          if (connection.ws.readyState === WebSocket.CONNECTING) {
+            console.log(`⚠️ Connection still connecting during broadcast (roomId: ${roomId})`);
+          } else if (connection.ws.readyState === WebSocket.CLOSING || connection.ws.readyState === WebSocket.CLOSED) {
+            console.log(`⚠️ Connection closed/closing during broadcast (roomId: ${roomId}, state: ${connection.ws.readyState})`);
           }
         }
       }
     });
+    
+    // Enhanced logging for critical messages
+    if (message.type === 'room_state' && message.data?.room?.status === 'playing') {
+      console.log(`🎮 Game state broadcast: ${sentCount} successful, ${failedCount} failed in room ${roomId}`);
+    }
     if (message.type === 'game_end') {
       console.log(`🏆 Sent game_end message: ${sentCount} successful, ${failedCount} failed in room ${roomId}`);
     }
