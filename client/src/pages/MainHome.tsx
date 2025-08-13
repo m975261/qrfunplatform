@@ -91,91 +91,87 @@ export default function MainHome() {
 
       <main className="container mx-auto px-4 py-12">
         {/* Games Grid */}
-        <div className="grid md:grid-cols-2 gap-8 mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8 mb-16 max-w-7xl mx-auto">
           {games.map((game) => (
-            <Card key={game.id} className="relative group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-lg">
-              <div className="p-8">
+            <Card key={game.id} className="relative group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-lg h-full flex flex-col">
+              <div className="p-6 lg:p-8 flex-1 flex flex-col">
                 {/* Game Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="text-6xl">{game.logo}</div>
+                <div className="mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-4">
+                    <div className="text-5xl lg:text-6xl">{game.logo}</div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                        <h3 className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white">
                           {game.name}
                         </h3>
                         {game.status === "available" && (
                           <Link href={game.path}>
-                            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 px-3 py-2 text-sm">
+                            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 px-3 py-2 text-sm w-fit">
                               <Play className="w-3 h-3 mr-1" />
                               Play Now
                             </Button>
                           </Link>
                         )}
                       </div>
-                      <p className="text-gray-600 dark:text-gray-300">
+                      <p className="text-gray-600 dark:text-gray-300 text-sm lg:text-base">
                         {game.description}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="text-right">
+                  <div className="flex justify-between items-center">
                     <Badge 
                       variant={game.status === "available" ? "default" : "secondary"}
-                      className="mb-2"
+                      className="text-xs"
                     >
                       {game.status === "available" ? "Available" : "Coming Soon"}
                     </Badge>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {game.players}
                     </p>
                   </div>
                 </div>
 
                 {/* Game Rules */}
-                <div className="mb-6">
-                  <h4 className="font-semibold text-gray-800 dark:text-white mb-3">
+                <div className="mb-4 lg:mb-6 flex-1">
+                  <h4 className="font-semibold text-gray-800 dark:text-white mb-2 lg:mb-3 text-sm lg:text-base">
                     Game Rules
                   </h4>
-                  <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                    {game.rules.map((rule, index) => (
+                  <ul className="space-y-1 text-xs lg:text-sm text-gray-600 dark:text-gray-300">
+                    {game.rules.slice(0, 3).map((rule, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <span className="text-blue-500 mt-1.5 w-1.5 h-1.5 rounded-full bg-current flex-shrink-0"></span>
+                        <span className="text-blue-500 mt-1 lg:mt-1.5 w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-current flex-shrink-0"></span>
                         {rule}
                       </li>
                     ))}
+                    {game.rules.length > 3 && (
+                      <li className="text-gray-400 dark:text-gray-500 text-xs">
+                        +{game.rules.length - 3} more rules...
+                      </li>
+                    )}
                   </ul>
                 </div>
 
                 {/* Features */}
-                <div className="mb-6">
-                  <h4 className="font-semibold text-gray-800 dark:text-white mb-3">
+                <div className="mt-auto">
+                  <h4 className="font-semibold text-gray-800 dark:text-white mb-2 text-sm lg:text-base">
                     Features
                   </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {game.features.map((feature, index) => (
+                  <div className="flex flex-wrap gap-1 lg:gap-2">
+                    {game.features.slice(0, 4).map((feature, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {feature}
                       </Badge>
                     ))}
+                    {game.features.length > 4 && (
+                      <Badge variant="outline" className="text-xs text-gray-400">
+                        +{game.features.length - 4}
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
-                {/* Play Button */}
-                {game.status === "available" ? (
-                  <Link href={game.path}>
-                    <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg hover:shadow-xl">
-                      Play {game.name}
-                    </button>
-                  </Link>
-                ) : (
-                  <button 
-                    disabled 
-                    className="w-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 font-semibold py-4 px-6 rounded-xl cursor-not-allowed"
-                  >
-                    Coming Soon
-                  </button>
-                )}
+
               </div>
 
               {/* Hover Effect Gradient */}
