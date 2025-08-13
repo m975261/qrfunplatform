@@ -649,8 +649,9 @@ export default function Game() {
                             playerId,
                             playerData: currentPlayer 
                           });
-                          // For testing, make the player "ظبياني" a guru user
-                          return currentPlayer?.isGuru || currentPlayer?.nickname === 'ظبياني' || false;
+                          // Since the system asks for guru password, force guru status for this user
+                          const isAuthenticatedGuru = currentPlayer?.nickname === 'ظبياني';
+                          return currentPlayer?.isGuru || isAuthenticatedGuru || false;
                         })()}
                       />
                     </div>

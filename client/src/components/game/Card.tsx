@@ -331,7 +331,7 @@ export default function GameCard({ card, onClick, onGuruReplace, cardIndex, disa
             e.stopPropagation();
             onGuruReplace(cardIndex);
           }}
-          className="mt-1 w-6 h-4 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-full flex items-center justify-center transition-colors shadow-sm"
+          className="mt-1 w-6 h-4 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-full flex items-center justify-center transition-colors shadow-sm z-10"
           title="Replace this card"
         >
           ✨
