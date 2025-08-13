@@ -655,10 +655,16 @@ export default function Game() {
                             playerId,
                             playerData: currentPlayer 
                           });
-                          // Since the system asks for guru password, force guru status for this user
-                          const isAuthenticatedGuru = currentPlayer?.nickname === 'ظبياني';
+                          // Check for authenticated guru users - both database isGuru flag and known guru usernames
+                          const knownGuruUsers = ['ظبياني', 'unom975261'];
+                          const isAuthenticatedGuru = knownGuruUsers.includes(currentPlayer?.nickname || '');
                           const hasGuruStatus = currentPlayer?.isGuru || isAuthenticatedGuru || false;
-                          console.log('Final guru status:', hasGuruStatus);
+                          console.log('Final guru status:', { 
+                            nickname: currentPlayer?.nickname,
+                            dbIsGuru: currentPlayer?.isGuru,
+                            isAuthenticatedGuru,
+                            hasGuruStatus 
+                          });
                           return hasGuruStatus;
                         })()}
                       />
