@@ -669,13 +669,13 @@ export default function Home() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center font-fredoka text-2xl bg-gradient-to-r from-uno-blue to-uno-green bg-clip-text text-transparent">
-              Guru User Authentication
+              User Authentication
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div className="text-center mb-4">
               <p className="text-sm text-gray-600">
-                "{popupNickname}" is a special authenticated player.
+                Authentication required for "{popupNickname}".
               </p>
               <p className="text-xs text-gray-500">
                 Please enter your password to continue.

@@ -411,14 +411,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: z.string().min(1)
       }).parse(req.body);
 
-      // Check if playerName exists as a guru user (check by username OR playerName)
+      // Check if playerName exists as a guru user (check ONLY by username)
       const [guruUser] = await db.select()
         .from(guruUsers)
         .where(and(
-          or(
-            eq(guruUsers.username, playerName),
-            eq(guruUsers.playerName, playerName)
-          ),
+          eq(guruUsers.username, playerName),
           eq(guruUsers.isActive, true)
         ))
         .limit(1);
@@ -456,6 +453,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in guru login:", error);
       res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Admin authentication middleware
+  const requireAdminAuth = async (req: any, res: any, next: any) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+      }
+      
+      const session = await adminAuthService.validateSession(token);
+      if (!session.success) {
+        return res.status(401).json({ error: 'Invalid session' });
+      }
+      
+      req.adminUser = session.admin;
+      next();
+    } catch (error) {
+      res.status(401).json({ error: 'Authentication failed' });
+    }
+  };
+
+  // Game status endpoint for admin
+  app.get("/api/admin/game-status", requireAdminAuth, async (req, res) => {
+    try {
+      const gameStatuses = [
+        {
+          name: "UNO",
+          type: "uno",
+          status: "up", // TODO: Implement actual status checking
+          activeRooms: (await storage.getAllRooms()).filter(room => room.gameType === 'uno').length,
+          activePlayers: (await storage.getAllRooms())
+            .filter(room => room.gameType === 'uno')
+            .reduce((total, room) => total + room.players.length, 0)
+        },
+        {
+          name: "XO (Tic Tac Toe)",
+          type: "xo", 
+          status: "maintenance", // XO is not implemented yet
+          activeRooms: 0,
+          activePlayers: 0
+        }
+      ];
+      
+      res.json(gameStatuses);
+    } catch (error) {
+      console.error("Error fetching game status:", error);
+      res.status(500).json({ error: "Failed to fetch game status" });
+    }
+  });
+
+  // Restart specific game endpoint
+  app.post("/api/admin/restart-game/:gameType", requireAdminAuth, async (req, res) => {
+    try {
+      const { gameType } = req.params;
+      
+      // Get all rooms for this game type and restart them
+      const rooms = (await storage.getAllRooms()).filter(room => room.gameType === gameType);
+      
+      for (const room of rooms) {
+        // Reset room to waiting state
+        room.status = "waiting";
+        room.currentPlayerIndex = 0;
+        // Clear game state but keep players
+        if (room.gameState) {
+          delete room.gameState;
+        }
+      }
+      
+      res.json({ success: true, message: `${gameType.toUpperCase()} game restarted`, restartedRooms: rooms.length });
+    } catch (error) {
+      console.error("Error restarting game:", error);
+      res.status(500).json({ error: "Failed to restart game" });
+    }
+  });
+
+  // Toggle maintenance mode endpoint
+  app.post("/api/admin/game-maintenance/:gameType", requireAdminAuth, async (req, res) => {
+    try {
+      const { gameType } = req.params;
+      const { status } = req.body;
+      
+      // TODO: Implement actual maintenance mode storage
+      // For now, just acknowledge the request
+      res.json({ success: true, gameType, status });
+    } catch (error) {
+      console.error("Error setting maintenance mode:", error);
+      res.status(500).json({ error: "Failed to set maintenance mode" });
+    }
+  });
+
+  // System health endpoint
+  app.get("/api/admin/system-health", requireAdminAuth, async (req, res) => {
+    try {
+      const startTime = process.uptime();
+      const hours = Math.floor(startTime / 3600);
+      const minutes = Math.floor((startTime % 3600) / 60);
+      const seconds = Math.floor(startTime % 60);
+      
+      const systemHealth = {
+        serverUptime: `${hours}h ${minutes}m ${seconds}s`,
+        databaseStatus: "connected", // TODO: Implement actual DB health check
+        websocketStatus: "active", // TODO: Check WebSocket server status
+        memoryUsage: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`
+      };
+      
+      res.json(systemHealth);
+    } catch (error) {
+      console.error("Error fetching system health:", error);
+      res.status(500).json({ error: "Failed to fetch system health" });
+    }
+  });
+
+  // System restart endpoint
+  app.post("/api/admin/system-restart", requireAdminAuth, async (req, res) => {
+    try {
+      res.json({ success: true, message: "System restart initiated" });
+      
+      // Delay the restart slightly to allow response to be sent
+      setTimeout(() => {
+        console.log("Admin initiated system restart");
+        process.exit(0); // Replit will automatically restart the process
+      }, 1000);
+    } catch (error) {
+      console.error("Error restarting system:", error);
+      res.status(500).json({ error: "Failed to restart system" });
     }
   });
   
