@@ -21,6 +21,10 @@ export default function Home() {
   const [showHostPopup, setShowHostPopup] = useState(false);
   const [qrDetectedCode, setQrDetectedCode] = useState("");
   const [popupNickname, setPopupNickname] = useState("");
+  const [showGuruLogin, setShowGuruLogin] = useState(false);
+  const [guruPassword, setGuruPassword] = useState("");
+  const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
+  const [guruLoginError, setGuruLoginError] = useState("");
   const { toast } = useToast();
 
   // Smart session and nickname management
@@ -174,7 +178,74 @@ export default function Home() {
     setShowHostPopup(true);
   };
 
-  const handleHostRoom = () => {
+  // Check if nickname is a guru user
+  const checkGuruUser = async (nickname: string, action: 'create' | 'join') => {
+    try {
+      const response = await fetch('/api/guru-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerName: nickname, password: 'check' })
+      });
+      
+      if (response.status === 404) {
+        // Not a guru user, proceed normally
+        return false;
+      } else if (response.status === 401) {
+        // Is a guru user but needs password
+        return true;
+      } else {
+        // Unexpected response
+        return false;
+      }
+    } catch (error) {
+      console.error('Error checking guru user:', error);
+      return false;
+    }
+  };
+
+  const handleGuruAuthentication = async () => {
+    if (!guruPassword.trim()) {
+      setGuruLoginError("Please enter your password.");
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/guru-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerName: popupNickname, password: guruPassword })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Store guru user status
+        localStorage.setItem("isGuruUser", "true");
+        localStorage.setItem("guruUserData", JSON.stringify(data.guruUser));
+        
+        // Close guru login and proceed with original action
+        setShowGuruLogin(false);
+        setGuruPassword("");
+        setGuruLoginError("");
+        
+        if (pendingAction === 'create') {
+          createRoomMutation.mutate(popupNickname);
+        } else if (pendingAction === 'join') {
+          if (qrDetectedCode) {
+            joinRoomMutation.mutate({ code: qrDetectedCode, nickname: popupNickname });
+          }
+        }
+        setPendingAction(null);
+      } else {
+        const errorData = await response.json();
+        setGuruLoginError(errorData.error || "Invalid password.");
+      }
+    } catch (error) {
+      console.error('Error authenticating guru user:', error);
+      setGuruLoginError("Authentication failed. Please try again.");
+    }
+  };
+
+  const handleHostRoom = async () => {
     if (!popupNickname.trim()) {
       toast({
         title: "Error",
@@ -184,6 +255,17 @@ export default function Home() {
       });
       return;
     }
+
+    // Check if this is a guru user
+    const isGuruUser = await checkGuruUser(popupNickname, 'create');
+    if (isGuruUser) {
+      setPendingAction('create');
+      setShowHostPopup(false);
+      setShowGuruLogin(true);
+      return;
+    }
+
+    // Regular user - proceed normally
     createRoomMutation.mutate(popupNickname);
   };
 
@@ -223,7 +305,7 @@ export default function Home() {
     setShowNicknamePopup(true);
   };
 
-  const handleDirectJoin = () => {
+  const handleDirectJoin = async () => {
     if (!popupNickname.trim()) {
       toast({
         title: "Error",
@@ -233,6 +315,16 @@ export default function Home() {
       });
       return;
     }
+
+    // Check if this is a guru user
+    const isGuruUser = await checkGuruUser(popupNickname, 'join');
+    if (isGuruUser) {
+      setPendingAction('join');
+      setShowNicknamePopup(false);
+      setShowGuruLogin(true);
+      return;
+    }
+
     directJoinMutation.mutate({ code: qrDetectedCode, nickname: popupNickname });
   };
 
@@ -546,6 +638,97 @@ export default function Home() {
                   <Plus className="mr-2 h-4 w-4" />
                 )}
                 Create Room
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guru User Login Dialog */}
+      <Dialog open={showGuruLogin} onOpenChange={(open) => {
+        if (!open) {
+          setShowGuruLogin(false);
+          setGuruPassword("");
+          setGuruLoginError("");
+          setPendingAction(null);
+          // Reopen the previous dialog
+          if (pendingAction === 'create') {
+            setShowHostPopup(true);
+          } else if (pendingAction === 'join') {
+            setShowNicknamePopup(true);
+          }
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center font-fredoka text-2xl bg-gradient-to-r from-uno-blue to-uno-green bg-clip-text text-transparent">
+              Guru User Authentication
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-600">
+                "{popupNickname}" is a special authenticated player.
+              </p>
+              <p className="text-xs text-gray-500">
+                Please enter your password to continue.
+              </p>
+            </div>
+            
+            {guruLoginError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                <p className="text-red-600 text-sm">{guruLoginError}</p>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="guru-password" className="text-sm font-medium text-gray-700 mb-2">
+                Password
+              </Label>
+              <Input
+                id="guru-password"
+                type="password"
+                placeholder="Enter your password..."
+                value={guruPassword}
+                onChange={(e) => {
+                  setGuruPassword(e.target.value);
+                  setGuruLoginError(""); // Clear error on input
+                }}
+                className="text-center font-medium"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleGuruAuthentication();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+            
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => {
+                  setShowGuruLogin(false);
+                  setGuruPassword("");
+                  setGuruLoginError("");
+                  // Reopen the previous dialog
+                  if (pendingAction === 'create') {
+                    setShowHostPopup(true);
+                  } else if (pendingAction === 'join') {
+                    setShowNicknamePopup(true);
+                  }
+                  setPendingAction(null);
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGuruAuthentication}
+                disabled={!guruPassword.trim()}
+                className="flex-1 bg-gradient-to-r from-uno-blue to-uno-green hover:scale-105 transition-all"
+              >
+                Authenticate
               </Button>
             </div>
           </div>

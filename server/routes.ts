@@ -424,6 +424,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
 
+      // If password is "check", just return that user exists (for checking purposes)
+      if (password === "check") {
+        return res.status(401).json({ error: "Password required", userExists: true });
+      }
+
       // Validate password
       const isValidPassword = await bcrypt.compare(password, guruUser.passwordHash);
       
