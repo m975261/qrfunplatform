@@ -90,7 +90,7 @@ export default function Home() {
     },
     onSuccess: (data) => {
       localStorage.setItem("playerId", data.player.id);
-      localStorage.setItem("playerNickname", popupNickname);
+      localStorage.setItem("playerNickname", data.hostNickname || popupNickname);
       localStorage.setItem("currentRoomId", data.room.id);
       setShowHostPopup(false);
       setLocation(`/room/${data.room.id}?code=${data.room.code}`);
@@ -229,13 +229,16 @@ export default function Home() {
         setGuruPassword("");
         setGuruLoginError("");
         
+        // Update the nickname to use guru user's playerName for display
+        setPopupNickname(data.guruUser.playerName);
+        
         if (pendingAction === 'create') {
           // Use guru user's playerName instead of entered nickname
           createRoomMutation.mutate(data.guruUser.playerName);
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
             // Use guru user's playerName instead of entered nickname
-            joinRoomMutation.mutate({ code: qrDetectedCode, nickname: data.guruUser.playerName });
+            directJoinMutation.mutate({ code: qrDetectedCode, nickname: data.guruUser.playerName });
           }
         }
         setPendingAction(null);
