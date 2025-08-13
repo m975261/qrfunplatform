@@ -9,7 +9,7 @@ import jwt from "jsonwebtoken";
 import { Card, guruUsers, gameSessions } from "@shared/schema";
 import { adminAuthService } from "./adminAuth";
 import { db } from "./db";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, ne } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 interface SocketConnection {
@@ -580,6 +580,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error restarting system:", error);
       res.status(500).json({ error: "Failed to restart system" });
+    }
+  });
+
+  // Update guru user endpoint
+  app.put("/api/admin/guru-users/:id", requireAdminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { playerName, username, email, gameType } = z.object({
+        playerName: z.string().min(1),
+        username: z.string().min(1),
+        email: z.string().email(),
+        gameType: z.enum(['uno', 'xo'])
+      }).parse(req.body);
+
+      // Check if username is already taken by another user
+      const [existingUser] = await db.select()
+        .from(guruUsers)
+        .where(and(
+          eq(guruUsers.username, username),
+          ne(guruUsers.id, id)
+        ))
+        .limit(1);
+
+      if (existingUser) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+
+      const [updatedUser] = await db.update(guruUsers)
+        .set({
+          playerName,
+          username,
+          email,
+          gameType,
+          updatedAt: new Date()
+        })
+        .where(eq(guruUsers.id, id))
+        .returning();
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: "Guru user not found" });
+      }
+
+      res.json({
+        success: true,
+        guruUser: {
+          id: updatedUser.id,
+          playerName: updatedUser.playerName,
+          username: updatedUser.username,
+          email: updatedUser.email,
+          gameType: updatedUser.gameType,
+          isActive: updatedUser.isActive,
+          lastLogin: updatedUser.lastLogin,
+          createdAt: updatedUser.createdAt
+        }
+      });
+    } catch (error) {
+      console.error("Error updating guru user:", error);
+      res.status(500).json({ error: "Failed to update guru user" });
     }
   });
   
