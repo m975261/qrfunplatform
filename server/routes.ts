@@ -30,6 +30,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Initialize default admin on server start
   await adminAuthService.initializeDefaultAdmin();
+
+  // Admin authentication middleware
+  const requireAdminAuth = async (req: any, res: any, next: any) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+      }
+      
+      const session = await adminAuthService.validateSession(token);
+      if (!session.success) {
+        return res.status(401).json({ error: 'Invalid session' });
+      }
+      
+      req.adminUser = session.admin;
+      next();
+    } catch (error) {
+      res.status(401).json({ error: 'Authentication failed' });
+    }
+  };
   
   // Admin authentication routes
   app.post("/api/admin/login", async (req, res) => {
@@ -283,6 +303,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all guru users endpoint for admin dashboard
+  app.get("/api/admin/guru-users", requireAdminAuth, async (req, res) => {
+    try {
+      console.log("Admin fetching all guru users...");
+      const allGuruUsers = await db.select({
+        id: guruUsers.id,
+        playerName: guruUsers.playerName,
+        username: guruUsers.username,
+        email: guruUsers.email,
+        gameType: guruUsers.gameType,
+        isActive: guruUsers.isActive,
+        lastLogin: guruUsers.lastLogin,
+        createdAt: guruUsers.createdAt
+      }).from(guruUsers);
+      
+      console.log("Found guru users:", allGuruUsers.length);
+      res.json(allGuruUsers);
+    } catch (error) {
+      console.error("Error fetching guru users:", error);
+      res.status(500).json({ error: "Failed to fetch guru users" });
+    }
+  });
+
   // Get guru users for a specific game
   app.get("/api/admin/guru-users/:gameType", validateAdminSession, async (req, res) => {
     try {
@@ -312,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new guru user
-  app.post("/api/admin/guru-users", validateAdminSession, async (req, res) => {
+  app.post("/api/admin/guru-users", requireAdminAuth, async (req, res) => {
     try {
       const { username, playerName, email, password, gameType } = z.object({
         username: z.string().min(3).max(20),
@@ -364,10 +407,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Toggle guru user active status
-  app.patch("/api/admin/guru-users/:userId/toggle", validateAdminSession, async (req, res) => {
+  // Toggle guru user active status  
+  app.post("/api/admin/guru-users/:id/toggle", requireAdminAuth, async (req, res) => {
     try {
-      const { userId } = req.params;
+      const { id: userId } = req.params;
 
       // Get current user
       const [currentUser] = await db.select()
@@ -455,26 +498,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Login failed" });
     }
   });
-
-  // Admin authentication middleware
-  const requireAdminAuth = async (req: any, res: any, next: any) => {
-    try {
-      const token = req.headers.authorization?.replace('Bearer ', '');
-      if (!token) {
-        return res.status(401).json({ error: 'No token provided' });
-      }
-      
-      const session = await adminAuthService.validateSession(token);
-      if (!session.success) {
-        return res.status(401).json({ error: 'Invalid session' });
-      }
-      
-      req.adminUser = session.admin;
-      next();
-    } catch (error) {
-      res.status(401).json({ error: 'Authentication failed' });
-    }
-  };
 
   // Game status endpoint for admin
   app.get("/api/admin/game-status", requireAdminAuth, async (req, res) => {
