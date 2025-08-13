@@ -99,22 +99,24 @@ export default function MainHome() {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-4">
                     <div className="text-6xl">{game.logo}</div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                        {game.name}
-                      </h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                          {game.name}
+                        </h3>
+                        {game.status === "available" && (
+                          <Link href={game.path}>
+                            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 px-3 py-2 text-sm">
+                              <Play className="w-3 h-3 mr-1" />
+                              Play Now
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
                       <p className="text-gray-600 dark:text-gray-300">
                         {game.description}
                       </p>
                     </div>
-                    {game.status === "available" && (
-                      <Link href={game.path}>
-                        <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 ml-4 px-3 py-2 text-sm">
-                          <Play className="w-3 h-3 mr-1" />
-                          Play Now
-                        </Button>
-                      </Link>
-                    )}
                   </div>
                   
                   <div className="text-right">
