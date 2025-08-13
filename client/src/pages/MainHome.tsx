@@ -1,8 +1,25 @@
-import { Link } from "wouter";
+import { useEffect } from "react";
+import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default function MainHome() {
+  const [, setLocation] = useLocation();
+
+  // Handle shared room links - redirect to UNO page with room parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomFromUrl = urlParams.get('room') || urlParams.get('code');
+    
+    if (roomFromUrl) {
+      // Redirect to UNO page with room parameters preserved
+      console.log("Room link detected on main page, redirecting to UNO:", roomFromUrl);
+      const currentSearch = window.location.search;
+      setLocation(`/uno${currentSearch}`);
+      return;
+    }
+  }, [setLocation]);
+
   const games = [
     {
       id: "uno",
