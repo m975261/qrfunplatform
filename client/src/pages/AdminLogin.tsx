@@ -556,7 +556,7 @@ export default function AdminLogin() {
     const token = urlParams.get('token');
     if (token) {
       setCurrentStep('reset-confirm');
-      setFormData({ ...formData, resetToken: token });
+      setFormData(prev => ({ ...prev, resetToken: token }));
     }
   }, []);
 
