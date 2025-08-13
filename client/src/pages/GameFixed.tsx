@@ -521,26 +521,6 @@ export default function Game() {
           </div>
         </div>
       )}
-              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
-                   style={{
-                     width: 'max(2rem, 6vw)',
-                     height: 'max(3rem, 8vh)',
-                     minWidth: '32px',
-                     minHeight: '48px'
-                   }}></div>
-              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"
-                   style={{
-                     width: 'max(2rem, 6vw)',
-                     height: 'max(3rem, 8vh)',
-                     minWidth: '32px',
-                     minHeight: '48px'
-                   }}></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white font-bold" style={{fontSize: 'min(0.75rem, 2.5vw)'}}>Cards</div>
-              </div>
-            </div>
-            <div className="text-center mt-1 text-blue-300 font-bold" style={{fontSize: 'min(0.75rem, 2vw)'}}>DRAW</div>
-          </div>
 
           {/* Game Circle - Fully viewport responsive */}
           <div className="rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50" 
