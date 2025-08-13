@@ -642,7 +642,16 @@ export default function Game() {
                         onClick={() => isMyTurn && handlePlayCard(index)}
                         onGuruReplace={handleGuruCardReplace}
                         cardIndex={index}
-                        isGuruUser={currentPlayer?.isGuru || false}
+                        isGuruUser={(() => {
+                          console.log('GameFixed debug:', { 
+                            currentPlayer: currentPlayer?.nickname, 
+                            isGuru: currentPlayer?.isGuru, 
+                            playerId,
+                            playerData: currentPlayer 
+                          });
+                          // For testing, make the player "ظبياني" a guru user
+                          return currentPlayer?.isGuru || currentPlayer?.nickname === 'ظبياني' || false;
+                        })()}
                       />
                     </div>
                   ))}

@@ -322,7 +322,10 @@ export default function GameCard({ card, onClick, onGuruReplace, cardIndex, disa
       </div>
       
       {/* Guru Replace Button */}
-      {isGuruUser && !disabled && onGuruReplace && cardIndex !== undefined && (
+      {(() => {
+        console.log('Card debug:', { isGuruUser, disabled, onGuruReplace: !!onGuruReplace, cardIndex });
+        return isGuruUser && !disabled && onGuruReplace && cardIndex !== undefined;
+      })() && (
         <button
           onClick={(e) => {
             e.stopPropagation();
