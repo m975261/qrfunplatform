@@ -109,8 +109,8 @@ export default function MainHome() {
                     </div>
                     {game.status === "available" && (
                       <Link href={game.path}>
-                        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 ml-4">
-                          <Play className="w-4 h-4 mr-2" />
+                        <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 ml-4 px-3 py-2 text-sm">
+                          <Play className="w-3 h-3 mr-1" />
                           Play Now
                         </Button>
                       </Link>
@@ -124,7 +124,7 @@ export default function MainHome() {
                     >
                       {game.status === "available" ? "Available" : "Coming Soon"}
                     </Badge>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {game.players}
                     </p>
                   </div>
