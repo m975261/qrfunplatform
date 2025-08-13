@@ -221,6 +221,8 @@ export default function Home() {
         // Store guru user status
         localStorage.setItem("isGuruUser", "true");
         localStorage.setItem("guruUserData", JSON.stringify(data.guruUser));
+        // Store the guru user's actual playerName as the nickname to use
+        localStorage.setItem("playerNickname", data.guruUser.playerName);
         
         // Close guru login and proceed with original action
         setShowGuruLogin(false);
@@ -228,10 +230,12 @@ export default function Home() {
         setGuruLoginError("");
         
         if (pendingAction === 'create') {
-          createRoomMutation.mutate(popupNickname);
+          // Use guru user's playerName instead of entered nickname
+          createRoomMutation.mutate(data.guruUser.playerName);
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
-            joinRoomMutation.mutate({ code: qrDetectedCode, nickname: popupNickname });
+            // Use guru user's playerName instead of entered nickname
+            joinRoomMutation.mutate({ code: qrDetectedCode, nickname: data.guruUser.playerName });
           }
         }
         setPendingAction(null);
@@ -292,7 +296,7 @@ export default function Home() {
     
     const existingNickname = localStorage.getItem("playerNickname");
     if (existingNickname) {
-      // Auto-join with saved nickname
+      // Auto-join with saved nickname (works for both regular and guru users)
       console.log("Auto-joining with saved nickname:", existingNickname);
       setQrDetectedCode(roomCode);
       setPopupNickname(existingNickname);

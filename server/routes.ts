@@ -9,7 +9,7 @@ import jwt from "jsonwebtoken";
 import { Card, guruUsers, gameSessions } from "@shared/schema";
 import { adminAuthService } from "./adminAuth";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 interface SocketConnection {
@@ -411,11 +411,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: z.string().min(1)
       }).parse(req.body);
 
-      // Check if playerName exists as a guru user
+      // Check if playerName exists as a guru user (check by username OR playerName)
       const [guruUser] = await db.select()
         .from(guruUsers)
         .where(and(
-          eq(guruUsers.username, playerName),
+          or(
+            eq(guruUsers.username, playerName),
+            eq(guruUsers.playerName, playerName)
+          ),
           eq(guruUsers.isActive, true)
         ))
         .limit(1);
