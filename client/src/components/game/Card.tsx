@@ -1,31 +1,14 @@
 import { Card } from "@shared/schema";
-import { useState, useRef, useEffect } from "react";
 
 interface GameCardProps {
   card: Card;
   onClick?: () => void;
-  onGuruReplace?: (cardIndex: number) => void;
-  cardIndex?: number;
   disabled?: boolean;
   interactive?: boolean;
   size?: "extra-small" | "small" | "medium" | "large";
-  isGuruUser?: boolean;
 }
 
-export default function GameCard({ card, onClick, onGuruReplace, cardIndex, disabled = false, interactive = false, size = "medium", isGuruUser = false }: GameCardProps) {
-  const [isLongPressing, setIsLongPressing] = useState(false);
-  const longPressTimer = useRef<NodeJS.Timeout>();
-  const pressStart = useRef<number>(0);
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-      }
-    };
-  }, []);
-
+export default function GameCard({ card, onClick, disabled = false, interactive = false, size = "medium" }: GameCardProps) {
   const getCardColors = () => {
     switch (card.color) {
       case "red":
@@ -266,16 +249,11 @@ export default function GameCard({ card, onClick, onGuruReplace, cardIndex, disa
   }
 
   return (
-    <div className="relative flex flex-col items-center">
-      <div 
-        className={`
-          ${colors.bg} ${getSizeClasses()} ${colors.border} ${colors.shadow}
-          rounded-xl border-4 shadow-lg relative cursor-pointer transition-all duration-200 select-none
-          ${disabled ? "opacity-50" : ""}
-          ${isGuruUser && !disabled ? 'ring-1 ring-purple-300' : ''}
-        `}
-        onClick={onClick}
-      >
+    <div className={`
+      ${colors.bg} ${getSizeClasses()} ${colors.border} ${colors.shadow}
+      rounded-xl border-4 shadow-lg relative
+      ${disabled ? "opacity-50" : ""}
+    `}>
       {/* Card Content */}
       {getCardContent()}
 
@@ -318,24 +296,6 @@ export default function GameCard({ card, onClick, onGuruReplace, cardIndex, disa
           <div className="absolute top-1 left-1 text-white text-xs font-bold">↻</div>
           <div className="absolute bottom-1 right-1 text-white text-xs font-bold rotate-180">↻</div>
         </>
-      )}
-      </div>
-      
-      {/* Guru Replace Button */}
-      {(() => {
-        console.log('Card debug:', { isGuruUser, disabled, onGuruReplace: !!onGuruReplace, cardIndex });
-        return isGuruUser && !disabled && onGuruReplace && cardIndex !== undefined;
-      })() && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onGuruReplace(cardIndex);
-          }}
-          className="mt-1 w-6 h-4 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-full flex items-center justify-center transition-colors shadow-sm z-10"
-          title="Replace this card"
-        >
-          ✨
-        </button>
       )}
     </div>
   );

@@ -97,7 +97,6 @@ export class MemStorage implements IStorage {
       socketId: insertPlayer.socketId || null,
       leftAt: insertPlayer.leftAt || null,
       finishPosition: insertPlayer.finishPosition || null,
-      isGuru: insertPlayer.isGuru || false,
     };
     this.players.set(id, player);
     return player;

@@ -417,8 +417,8 @@ export default function RoomLobby() {
 
         {/* Spectators Section - Positioned to avoid 3 o'clock avatar overlap */}
         {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-          <div className="w-full flex justify-center">
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6 w-72">
+          <div className="w-full flex justify-end pr-4">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6 w-72 ml-auto mr-8">
               <CardContent className="p-3">
                 <div className="text-xs font-semibold text-gray-700 mb-2">
                   Spectators ({players.filter((p: any) => p.isSpectator && p.isOnline).length})

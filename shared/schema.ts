@@ -38,7 +38,6 @@ export const players = pgTable("players", {
   socketId: text("socket_id"),
   hasLeft: boolean("has_left").default(false),
   finishPosition: integer("finish_position"), // 1st, 2nd, 3rd, 4th place
-  isGuru: boolean("is_guru").default(false), // Guru user status for special powers
   leftAt: timestamp("left_at"),
   joinedAt: timestamp("joined_at").default(sql`now()`),
 });

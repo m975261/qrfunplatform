@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRoute, useLocation } from "wouter";
+import { useRoute } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle } from "lucide-react";
@@ -13,11 +13,9 @@ import ColorPickerModal from "@/components/game/ColorPickerModal";
 import NicknameEditor from "@/components/NicknameEditor";
 import { GameDirectionIndicator } from "@/components/game/GameDirectionIndicator";
 import { WinnerModal } from "@/components/game/WinnerModal";
-import GuruCardReplaceModal from "@/components/game/GuruCardReplaceModal";
 
 export default function Game() {
   const [, params] = useRoute("/game/:roomId");
-  const [, setLocation] = useLocation();
   const roomId = params?.roomId;
   const playerId = localStorage.getItem("playerId");
   const { toast } = useToast();
@@ -37,7 +35,6 @@ export default function Game() {
     continueGame,
     replacePlayer,
     playAgain,
-    guruReplaceCard,
     isConnected
   } = useSocket();
 
@@ -52,8 +49,6 @@ export default function Game() {
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
   const [winnerData, setWinnerData] = useState<any>(null);
-  const [showGuruReplaceModal, setShowGuruReplaceModal] = useState(false);
-  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -63,13 +58,11 @@ export default function Game() {
 
   useEffect(() => {
     if (gameState?.gameEndData) {
-      console.log("Game end data received:", gameState.gameEndData);
       // Map the server data to what the component expects
       const mappedData = {
         ...gameState.gameEndData,
         finalRankings: gameState.gameEndData.rankings || gameState.gameEndData.finalRankings || []
       };
-      console.log("Mapped winner data:", mappedData);
       setWinnerData(mappedData);
       setShowWinnerModal(true);
     }
@@ -107,19 +100,6 @@ export default function Game() {
       setHasCalledUno(true);
       // UNO call will be validated on the server and work only when playing second-to-last card
     }
-  };
-
-  const handleGuruCardReplace = (cardIndex: number) => {
-    setSelectedCardIndex(cardIndex);
-    setShowGuruReplaceModal(true);
-  };
-
-  const handleGuruReplaceCard = (replacementType: string, replacementValue?: string, specificCard?: any) => {
-    if (selectedCardIndex !== null) {
-      guruReplaceCard(selectedCardIndex, replacementType, replacementValue, specificCard);
-    }
-    setShowGuruReplaceModal(false);
-    setSelectedCardIndex(null);
   };
 
   // New unified end game handler - return all players to lobby as spectators
@@ -296,279 +276,55 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Hidden Grid Layout System - Invisible table for perfect positioning */}
-      <div className="absolute inset-0" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(12, 1fr)',
-        gridTemplateRows: 'repeat(12, 1fr)',
-        gap: '0',
-        padding: '2vh 2vw'
+      {/* Central Game Area - Fully responsive with viewport units */}
+      <div className="absolute inset-0 flex items-center justify-center" style={{
+        paddingBottom: 'max(20vh, 160px)',  // Responsive bottom padding
+        paddingTop: 'max(8vh, 64px)'        // Responsive top padding
       }}>
-        
-        {/* Game Direction Indicator - Grid slot */}
-        <div style={{ gridColumn: '2 / 4', gridRow: '2 / 3' }}>
-          <GameDirectionIndicator 
-            direction={room?.direction || 'clockwise'}
-            isVisible={!!room?.direction && room?.status === 'playing'}
-          />
-        </div>
-        
-        {/* Central Game Circle - Grid slot */}
-        <div style={{ 
-          gridColumn: '5 / 9', 
-          gridRow: '4 / 8',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div className="rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50" 
-               style={{
-                 width: 'min(180px, 15vw)',
-                 height: 'min(180px, 15vw)',
-                 minWidth: '120px',
-                 minHeight: '120px'
-               }}>
-            
-            {/* Inner Circle */}
-            <div className="rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30"
-                 style={{
-                   width: '75%',
-                   height: '75%'
-                 }}>
-              
-              {/* Current Card */}
-              <div className="flex flex-col items-center">
-                {topCard ? (
-                  <div className="flex flex-col items-center">
-                    <GameCard 
-                      card={topCard} 
-                      size="small"
-                      interactive={false}
-                      onClick={() => {}}
-                    />
-                    {/* Current Color Indicator for Wild Cards */}
-                    {room.currentColor && (topCard?.type === 'wild' || topCard?.type === 'wild4') && (
-                      <div className="mt-1 px-2 py-1 bg-slate-800/90 rounded-full border border-slate-600">
-                        <div className="flex items-center space-x-1">
-                          <div 
-                            className="w-3 h-3 rounded-full border border-white/50" 
-                            style={{
-                              backgroundColor: room.currentColor === 'red' ? '#dc2626' : 
-                                             room.currentColor === 'blue' ? '#2563eb' : 
-                                             room.currentColor === 'green' ? '#16a34a' : 
-                                             room.currentColor === 'yellow' ? '#ca8a04' : '#6b7280'
-                            }}
-                          ></div>
-                          <span className="text-xs text-slate-300 font-medium capitalize">
-                            {room.currentColor}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="w-12 h-16 bg-slate-600 rounded-lg border border-slate-500 flex items-center justify-center">
-                    <span className="text-slate-400 text-xs font-bold">UNO</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Avatar slots positioned around circle */}
-            <div className="absolute inset-0">
-              {players.filter((p: any) => !p.isSpectator).map((player: any, index: number) => {
-                const positions = [
-                  { top: '-25px', left: '50%', transform: 'translateX(-50%)' }, // 12 o'clock
-                  { top: '50%', right: '-25px', transform: 'translateY(-50%)' }, // 3 o'clock
-                  { bottom: '-25px', left: '50%', transform: 'translateX(-50%)' }, // 6 o'clock
-                  { top: '50%', left: '-25px', transform: 'translateY(-50%)' } // 9 o'clock
-                ];
-                
-                const position = positions[index] || positions[0];
-                
-                return (
-                  <div 
-                    key={player.id}
-                    className={`absolute w-12 h-12 rounded-full border-2 flex items-center justify-center text-white font-bold text-xs cursor-pointer transition-all ${
-                      player.isOnline ? 
-                        (room.currentPlayer === player.id ? 
-                          'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-300 shadow-lg shadow-yellow-500/50 animate-pulse' : 
-                          'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-400 hover:scale-110') :
-                        'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-500 opacity-60'
-                    }`}
-                    style={position}
-                    onClick={() => !player.isSpectator && room.hostId === playerId && handleKickPlayer && handleKickPlayer(player.id)}
-                    title={player.isOnline ? `${player.nickname} (${player.hand?.length || 0} cards)` : `${player.nickname} (offline)`}
-                  >
-                    <div className="flex flex-col items-center">
-                      <span>{player.nickname?.[0]?.toUpperCase()}</span>
-                      {player.hand?.length > 0 && (
-                        <span className="text-xs">{player.hand.length}</span>
-                      )}
-                    </div>
-                    {player.isOnline && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white"></div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-        
-        {/* Draw Pile - Grid slot */}
-        <div style={{ 
-          gridColumn: '9 / 11', 
-          gridRow: '6 / 8',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div className="flex flex-col items-center">
+        <div className="relative">
+          {/* Draw Pile - Viewport responsive positioning */}
+          <div className="absolute z-10" style={{
+            bottom: 'max(-3rem, -8vh)',
+            right: 'max(-5rem, -12vw)',
+          }}>
             <div className="relative cursor-pointer group" onClick={drawCard}>
-              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-8 h-12"></div>
-              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-8 h-12"></div>
+              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
+                   style={{
+                     width: 'max(2rem, 6vw)',
+                     height: 'max(3rem, 8vh)',
+                     minWidth: '32px',
+                     minHeight: '48px'
+                   }}></div>
+              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"
+                   style={{
+                     width: 'max(2rem, 6vw)',
+                     height: 'max(3rem, 8vh)',
+                     minWidth: '32px',
+                     minHeight: '48px'
+                   }}></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white font-bold text-xs">Cards</div>
+                <div className="text-white font-bold" style={{fontSize: 'min(0.75rem, 2.5vw)'}}>Cards</div>
               </div>
             </div>
-            <div className="text-center mt-1 text-blue-300 font-bold text-xs">DRAW</div>
+            <div className="text-center mt-1 text-blue-300 font-bold" style={{fontSize: 'min(0.75rem, 2vw)'}}>DRAW</div>
           </div>
-        </div>
-      </div>
 
-      {/* Player Cards Area - Grid-based positioning */}
-      {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="absolute bottom-0 left-0 right-0" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(12, 1fr)',
-          gridTemplateRows: 'auto auto',
-          gap: '4px',
-          padding: '10px'
-        }}>
-          
-          {/* Cards Row */}
-          <div style={{ 
-            gridColumn: '1 / -1', 
-            gridRow: '1',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '2px',
-            overflowX: 'auto',
-            paddingBottom: '4px'
-          }}>
-            {currentPlayer.hand && currentPlayer.hand.length > 0 && currentPlayer.hand.map((card: any, index: number) => (
-              <div 
-                key={index} 
-                className={`transition-all duration-200 flex-shrink-0 ${
-                  isMyTurn ? 'hover:scale-105 hover:-translate-y-1 cursor-pointer' : 'opacity-60'
-                }`}
-              >
-                <GameCard 
-                  card={card}
-                  size="extra-small"
-                  interactive={isMyTurn}
-                  disabled={!isMyTurn}
-                  onClick={() => isMyTurn && handlePlayCard(index)}
-                  onGuruReplace={handleGuruCardReplace}
-                  cardIndex={index}
-                  isGuruUser={(() => {
-                    const knownGuruUsers = ['ظبياني', 'unom975261'];
-                    const isAuthenticatedGuru = knownGuruUsers.includes(currentPlayer?.nickname || '');
-                    const hasGuruStatus = currentPlayer?.isGuru || isAuthenticatedGuru || false;
-                    return hasGuruStatus;
-                  })()}
-                />
-              </div>
-            ))}
-          </div>
-          
-          {/* Guru Buttons Row - Hidden grid slots for each button */}
-          <div style={{ 
-            gridColumn: '1 / -1', 
-            gridRow: '2',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '2px',
-            height: '20px'
-          }}>
-            {currentPlayer.hand && currentPlayer.hand.length > 0 && currentPlayer.hand.map((card: any, index: number) => {
-              const knownGuruUsers = ['ظبياني', 'unom975261'];
-              const isAuthenticatedGuru = knownGuruUsers.includes(currentPlayer?.nickname || '');
-              const hasGuruStatus = currentPlayer?.isGuru || isAuthenticatedGuru || false;
-              
-              return (
-                <div 
-                  key={`guru-${index}`}
-                  className="flex-shrink-0 flex items-center justify-center"
-                  style={{ width: '44px', height: '20px' }} // Match card width
-                >
-                  {hasGuruStatus && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleGuruCardReplace(index);
-                      }}
-                      className="w-6 h-4 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-full flex items-center justify-center transition-colors shadow-sm z-10"
-                      title="Replace this card"
-                    >
-                      ✨
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Hidden 12x12 Grid Layout System - Invisible table for perfect positioning */}
-      <div className="fixed inset-0 z-10" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(12, 1fr)',
-        gridTemplateRows: 'repeat(12, 1fr)',
-        gap: '0',
-        padding: '20px',
-        pointerEvents: 'none'
-      }}>
-        
-        {/* Game Direction Indicator - Grid Position: Top-left area */}
-        <div style={{ 
-          gridColumn: '2 / 4', 
-          gridRow: '2 / 3',
-          pointerEvents: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <GameDirectionIndicator 
-            direction={room?.direction || 'clockwise'}
-            isVisible={!!room?.direction && room?.status === 'playing'}
-          />
-        </div>
-        
-        {/* Central Game Circle - Grid Position: Center */}
-        <div style={{ 
-          gridColumn: '5 / 9', 
-          gridRow: '4 / 8',
-          pointerEvents: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
+          {/* Game Circle - Fully viewport responsive */}
           <div className="rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50" 
                style={{
-                 width: 'min(160px, 12vw)',
-                 height: 'min(160px, 12vw)',
-                 minWidth: '120px',
-                 minHeight: '120px'
+                 width: 'max(9rem, min(20vw, 20vh))',
+                 height: 'max(9rem, min(20vw, 20vh))',
+                 minWidth: '144px',
+                 minHeight: '144px'
                }}>
             
-            {/* Inner Circle */}
+            {/* Inner Circle - Viewport responsive sizing */}
             <div className="rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30"
                  style={{
-                   width: '75%',
-                   height: '75%'
+                   width: 'max(6rem, min(14vw, 14vh))',
+                   height: 'max(6rem, min(14vw, 14vh))',
+                   minWidth: '96px',
+                   minHeight: '96px'
                  }}>
               
 
@@ -607,213 +363,152 @@ export default function Game() {
 
 
             </div>
+          </div>
+        </div>
+      </div>
+
+
+
+      {/* Player Avatars in Circular Layout - Fully viewport responsive */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
+        paddingBottom: 'max(20vh, 160px)',
+        paddingTop: 'max(8vh, 64px)'
+      }}>
+        <div className="relative" style={{
+          width: 'max(20rem, min(40vw, 40vh))',
+          height: 'max(25rem, min(50vw, 50vh))',
+          minWidth: '320px',
+          minHeight: '400px'
+        }}>
+          
+
+          {/* 4 Fixed Avatar Positions */}
+          {[0, 1, 2, 3].map((position) => {
+            const player = getPlayerAtPosition(position);
+            const isOnline = player ? isPlayerOnline(player) : false;
+            const isPlayerTurn = currentGamePlayer?.id === player?.id;
             
-            {/* Avatar slots positioned around circle */}
-            <div className="absolute inset-0">
-              {players.filter((p: any) => !p.isSpectator).map((player: any, index: number) => {
-                const positions = [
-                  { top: '-30px', left: '50%', transform: 'translateX(-50%)' }, // 12 o'clock
-                  { top: '50%', right: '-30px', transform: 'translateY(-50%)' }, // 3 o'clock
-                  { bottom: '-30px', left: '50%', transform: 'translateX(-50%)' }, // 6 o'clock
-                  { top: '50%', left: '-30px', transform: 'translateY(-50%)' } // 9 o'clock
-                ];
-                
-                const position = positions[index] || positions[0];
-                
-                return (
-                  <div 
-                    key={player.id}
-                    className={`absolute w-14 h-14 rounded-full border-2 flex items-center justify-center text-white font-bold text-xs cursor-pointer transition-all ${
-                      player.isOnline ? 
-                        (room.currentPlayer === player.id ? 
-                          'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-300 shadow-lg shadow-yellow-500/50 animate-pulse' : 
-                          'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-400 hover:scale-110') :
-                        'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-500 opacity-60'
+            return (
+              <div
+                key={position}
+                className="absolute pointer-events-auto"
+                style={getPositionStyle(position)}
+              >
+                <div className="relative">
+                  {player ? (
+                    // Player Avatar - Viewport responsive sizing
+                    <div className={`bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 ${
+                      isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
                     }`}
-                    style={position}
-                    title={player.isOnline ? `${player.nickname} (${player.hand?.length || 0} cards)` : `${player.nickname} (offline)`}
-                  >
-                    <div className="flex flex-col items-center">
-                      <span>{player.nickname?.[0]?.toUpperCase()}</span>
-                      {player.hand?.length > 0 && (
-                        <span className="text-xs">{player.hand.length}</span>
+                    style={{
+                      width: 'max(4rem, min(8vw, 8vh))',
+                      height: 'max(4rem, min(8vw, 8vh))',
+                      minWidth: '64px',
+                      minHeight: '64px'
+                    }}>
+                      <div className="text-sm sm:text-lg">{player.nickname[0].toUpperCase()}</div>
+                      <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
+                      {/* Online/Offline indicator - Responsive */}
+                      <div className={`absolute -top-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 rounded-full border-1 sm:border-2 border-white ${
+                        isOnline ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                      {/* Host crown - Responsive */}
+                      {player.id === room?.hostId && (
+                        <div className="absolute -top-2 sm:-top-3 left-1/2 -translate-x-1/2">
+                          <div className="text-lg sm:text-xl text-yellow-400">👑</div>
+                        </div>
+                      )}
+                      {/* Ranking badge for finished players */}
+                      {player.finishPosition && (
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black text-xs px-2 py-1 rounded-full font-bold border-2 border-yellow-400 shadow-lg">
+                          {player.finishPosition === 1 ? '1ST' : 
+                           player.finishPosition === 2 ? '2ND' : 
+                           player.finishPosition === 3 ? '3RD' : 
+                           `${player.finishPosition}TH`}
+                        </div>
+                      )}
+                      {/* Card count - Positioned on left side to avoid name overlap, only show if player hasn't finished */}
+                      {!player.finishPosition && (
+                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold border border-slate-600 shadow-lg">
+                          {player.hand?.length || 0}
+                        </div>
                       )}
                     </div>
-                    {player.isOnline && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white"></div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-        
-        {/* Draw Pile - Grid Position: Right side of center */}
-        <div style={{ 
-          gridColumn: '9 / 11', 
-          gridRow: '6 / 8',
-          pointerEvents: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div className="flex flex-col items-center cursor-pointer group" onClick={drawCard}>
-            <div className="relative">
-              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14"></div>
-              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white font-bold text-xs">Cards</div>
-              </div>
-            </div>
-            <div className="text-center mt-1 text-blue-300 font-bold text-xs">DRAW</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Player Cards Area - Grid-based positioning at bottom */}
-      {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="fixed bottom-0 left-0 right-0 z-20" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(12, 1fr)',
-          gridTemplateRows: 'auto auto',
-          gap: '4px',
-          padding: '10px',
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          backdropFilter: 'blur(8px)'
-        }}>
-          
-          {/* Cards Row */}
-          <div style={{ 
-            gridColumn: '1 / -1', 
-            gridRow: '1',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '2px',
-            overflowX: 'auto',
-            paddingBottom: '4px'
-          }}>
-            {currentPlayer.hand && currentPlayer.hand.length > 0 && currentPlayer.hand.map((card: any, index: number) => (
-              <div 
-                key={index} 
-                className={`transition-all duration-200 flex-shrink-0 ${
-                  isMyTurn ? 'hover:scale-105 hover:-translate-y-1 cursor-pointer' : 'opacity-60'
-                }`}
-              >
-                <GameCard 
-                  card={card}
-                  size="extra-small"
-                  interactive={isMyTurn}
-                  disabled={!isMyTurn}
-                  onClick={() => isMyTurn && handlePlayCard(index)}
-                  onGuruReplace={handleGuruCardReplace}
-                  cardIndex={index}
-                  isGuruUser={(() => {
-                    const knownGuruUsers = ['ظبياني', 'unom975261'];
-                    const isAuthenticatedGuru = knownGuruUsers.includes(currentPlayer?.nickname || '');
-                    return currentPlayer?.isGuru || isAuthenticatedGuru || false;
-                  })()}
-                />
-              </div>
-            ))}
-          </div>
-          
-          {/* Guru Buttons Row - Dedicated grid slots below cards */}
-          <div style={{ 
-            gridColumn: '1 / -1', 
-            gridRow: '2',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '2px',
-            height: '24px'
-          }}>
-            {currentPlayer.hand && currentPlayer.hand.length > 0 && currentPlayer.hand.map((card: any, index: number) => {
-              const knownGuruUsers = ['ظبياني', 'unom975261'];
-              const isAuthenticatedGuru = knownGuruUsers.includes(currentPlayer?.nickname || '');
-              const hasGuruStatus = currentPlayer?.isGuru || isAuthenticatedGuru || false;
-              
-              return (
-                <div 
-                  key={`guru-slot-${index}`}
-                  className="flex-shrink-0 flex items-center justify-center"
-                  style={{ width: '44px', height: '24px' }}
-                >
-                  {hasGuruStatus && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleGuruCardReplace(index);
+                  ) : (
+                    // Empty Slot or Joinable Slot for Spectators - Smaller size to reduce overlap
+                    <div 
+                      className={`w-16 h-16 sm:w-20 sm:h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-4 border-white/20 ${
+                        currentPlayer?.isSpectator && isPaused && activePositions.includes(position) ? 'cursor-pointer hover:bg-gray-500/50 transition-colors' : ''
+                      }`}
+                      onClick={() => {
+                        if (currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) {
+                          replacePlayer(position);
+                        } else if (!currentPlayer) {
+                          // External user - redirect to join flow
+                          const roomCode = room?.code;
+                          if (roomCode) {
+                            window.location.href = `/?room=${roomCode}&position=${position}`;
+                          }
+                        }
                       }}
-                      className="w-6 h-4 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-full flex items-center justify-center transition-colors shadow-sm z-10"
-                      title="Replace this card"
                     >
-                      ✨
-                    </button>
+                      <div className="text-center">
+                        {(currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) || (!currentPlayer && activePositions.includes(position)) ? (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
+                              <span className="text-white text-sm font-bold">+</span>
+                            </div>
+                            <div className="text-xs text-blue-400 mt-1">
+                              {currentPlayer?.isSpectator ? "Join" : "Click to Join"}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-400 mx-auto" />
+                            <div className="text-xs text-gray-400 mt-1">Closed</div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+
+                  
+                  {/* Control Buttons Attached to Avatar */}
+                  {player && (
+                    <>
+                      {/* Edit Button for Current Player - Bottom Right of Avatar */}
+                      {player.id === playerId && (
+                        <button
+                          onClick={() => setShowNicknameEditor(true)}
+                          className="absolute bottom-1 right-1 w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
+                          title="Edit nickname"
+                        >
+                          E
+                        </button>
+                      )}
+                      
+                      {/* Kick Button for Host - Bottom Left of Avatar */}
+                      {isHost && player.id !== playerId && (
+                        <button
+                          onClick={() => kickPlayer(player.id)}
+                          className="absolute bottom-1 left-1 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
+                          title={isOnline ? "Remove player" : "Remove offline player"}
+                        >
+                          K
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
-      )}
-
-      {/* UNO Call Button - Grid Position: Bottom right */}
-      {currentPlayer && !currentPlayer.isSpectator && (
-        <div style={{ 
-          gridColumn: '10 / 12', 
-          gridRow: '10 / 11',
-          pointerEvents: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs px-3 py-1"
-            onClick={handleUnoCall}
-          >
-            🔥 UNO! 🔥
-          </Button>
-        </div>
-      )}
-      
-      {/* Game state indicators - Grid Position: Top center */}
-      {isMyTurn && (
-        <div style={{ 
-          gridColumn: '5 / 9', 
-          gridRow: '1 / 2',
-          pointerEvents: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm font-bold border border-green-500/30 animate-pulse">
-            YOUR TURN ⭐
-          </div>
-        </div>
-      )}
-      
       </div>
 
-      {/* Chat overlay */}
-      {showChat && (
-        <Chat 
-          gameId={gameState?.gameId || ''}
-          players={players}
-          onSendMessage={sendChatMessage}
-          onSendEmoji={sendEmoji}
-          onClose={() => setShowChat(false)}
-        />
-      )}
-
-      {/* Color Picker Modal */}
-      {showColorPicker && (
-        <ColorPicker 
-          onColorSelect={handleColorChoice}
-          onClose={() => setShowColorPicker(false)}
-        />
-      )}
+      {/* Legacy player rendering - keeping for compatibility but hiding */}
+      <div className="hidden">
         {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
         const filteredIndex = gamePlayers.filter((p: any) => p.id !== playerId && !p.isSpectator).indexOf(player);
         
@@ -925,27 +620,6 @@ export default function Game() {
                         interactive={isMyTurn}
                         disabled={!isMyTurn}
                         onClick={() => isMyTurn && handlePlayCard(index)}
-                        onGuruReplace={handleGuruCardReplace}
-                        cardIndex={index}
-                        isGuruUser={(() => {
-                          console.log('GameFixed debug:', { 
-                            currentPlayer: currentPlayer?.nickname, 
-                            isGuru: currentPlayer?.isGuru, 
-                            playerId,
-                            playerData: currentPlayer 
-                          });
-                          // Check for authenticated guru users - both database isGuru flag and known guru usernames
-                          const knownGuruUsers = ['ظبياني', 'unom975261'];
-                          const isAuthenticatedGuru = knownGuruUsers.includes(currentPlayer?.nickname || '');
-                          const hasGuruStatus = currentPlayer?.isGuru || isAuthenticatedGuru || false;
-                          console.log('Final guru status:', { 
-                            nickname: currentPlayer?.nickname,
-                            dbIsGuru: currentPlayer?.isGuru,
-                            isAuthenticatedGuru,
-                            hasGuruStatus 
-                          });
-                          return hasGuruStatus;
-                        })()}
                       />
                     </div>
                   ))}
@@ -1122,7 +796,11 @@ export default function Game() {
         </div>
       )}
 
-
+      {/* Game Direction Indicator */}
+      <GameDirectionIndicator 
+        direction={room?.direction || 'clockwise'}
+        isVisible={!!room?.direction && room?.status === 'playing'}
+      />
 
       {/* Winner Modal */}
       <WinnerModal
@@ -1130,14 +808,6 @@ export default function Game() {
         players={winnerData?.finalRankings || []}
         isSpectator={currentPlayer?.isSpectator || false}
         onClose={handleEndGameClose}
-      />
-
-      {/* Guru Card Replace Modal */}
-      <GuruCardReplaceModal
-        isOpen={showGuruReplaceModal}
-        onClose={() => setShowGuruReplaceModal(false)}
-        onReplaceCard={handleGuruReplaceCard}
-        currentCard={selectedCardIndex !== null && currentPlayer?.hand?.[selectedCardIndex] ? currentPlayer.hand[selectedCardIndex] : undefined}
       />
 
 
