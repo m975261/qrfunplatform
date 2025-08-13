@@ -17,47 +17,51 @@ export default function GameCard({ card, onClick, onLongPress, cardIndex, disabl
   const longPressTimer = useRef<NodeJS.Timeout>();
   const pressStart = useRef<number>(0);
 
-  const handleMouseDown = () => {
+  const handlePressStart = (e: any) => {
     if (disabled || !isGuruUser || !onLongPress || cardIndex === undefined) return;
+    
+    console.log("Guru long press starting for card", cardIndex);
+    e.preventDefault();
     
     pressStart.current = Date.now();
     setIsLongPressing(false);
     
     longPressTimer.current = setTimeout(() => {
+      console.log("Guru long press triggered for card", cardIndex);
       setIsLongPressing(true);
       onLongPress(cardIndex);
-    }, 800); // 800ms long press
+    }, 500); // Reduced to 500ms for easier use
   };
 
-  const handleMouseUp = () => {
+  const handlePressEnd = (e: any) => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
     }
     
     const pressDuration = Date.now() - pressStart.current;
     
-    if (!isLongPressing && pressDuration < 800 && onClick && !disabled) {
+    if (!isLongPressing && pressDuration < 500 && onClick && !disabled) {
       onClick();
     }
     
     setIsLongPressing(false);
   };
 
-  const handleMouseLeave = () => {
+  const handlePressCancel = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
     }
     setIsLongPressing(false);
   };
 
-  // Touch events for mobile
-  const handleTouchStart = () => {
-    handleMouseDown();
-  };
-
-  const handleTouchEnd = () => {
-    handleMouseUp();
-  };
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+      }
+    };
+  }, []);
 
   const getCardColors = () => {
     switch (card.color) {
@@ -307,11 +311,11 @@ export default function GameCard({ card, onClick, onLongPress, cardIndex, disabl
         ${isLongPressing ? 'ring-2 ring-purple-500 scale-110' : ''}
         ${isGuruUser && !disabled ? 'ring-1 ring-purple-300' : ''}
       `}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      onMouseDown={handlePressStart}
+      onMouseUp={handlePressEnd}
+      onMouseLeave={handlePressCancel}
+      onTouchStart={handlePressStart}
+      onTouchEnd={handlePressEnd}
     >
       {/* Card Content */}
       {getCardContent()}

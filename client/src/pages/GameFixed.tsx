@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle } from "lucide-react";
@@ -17,6 +17,7 @@ import GuruCardReplaceModal from "@/components/game/GuruCardReplaceModal";
 
 export default function Game() {
   const [, params] = useRoute("/game/:roomId");
+  const [, setLocation] = useLocation();
   const roomId = params?.roomId;
   const playerId = localStorage.getItem("playerId");
   const { toast } = useToast();
@@ -62,11 +63,13 @@ export default function Game() {
 
   useEffect(() => {
     if (gameState?.gameEndData) {
+      console.log("Game end data received:", gameState.gameEndData);
       // Map the server data to what the component expects
       const mappedData = {
         ...gameState.gameEndData,
         finalRankings: gameState.gameEndData.rankings || gameState.gameEndData.finalRankings || []
       };
+      console.log("Mapped winner data:", mappedData);
       setWinnerData(mappedData);
       setShowWinnerModal(true);
     }
