@@ -109,7 +109,7 @@ export default function Game() {
     }
   };
 
-  const handleGuruCardLongPress = (cardIndex: number) => {
+  const handleGuruCardReplace = (cardIndex: number) => {
     setSelectedCardIndex(cardIndex);
     setShowGuruReplaceModal(true);
   };
@@ -640,7 +640,7 @@ export default function Game() {
                         interactive={isMyTurn}
                         disabled={!isMyTurn}
                         onClick={() => isMyTurn && handlePlayCard(index)}
-                        onLongPress={handleGuruCardLongPress}
+                        onGuruReplace={handleGuruCardReplace}
                         cardIndex={index}
                         isGuruUser={currentPlayer?.isGuru || false}
                       />

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 interface GameCardProps {
   card: Card;
   onClick?: () => void;
-  onLongPress?: (cardIndex: number) => void;
+  onGuruReplace?: (cardIndex: number) => void;
   cardIndex?: number;
   disabled?: boolean;
   interactive?: boolean;
@@ -12,47 +12,10 @@ interface GameCardProps {
   isGuruUser?: boolean;
 }
 
-export default function GameCard({ card, onClick, onLongPress, cardIndex, disabled = false, interactive = false, size = "medium", isGuruUser = false }: GameCardProps) {
+export default function GameCard({ card, onClick, onGuruReplace, cardIndex, disabled = false, interactive = false, size = "medium", isGuruUser = false }: GameCardProps) {
   const [isLongPressing, setIsLongPressing] = useState(false);
   const longPressTimer = useRef<NodeJS.Timeout>();
   const pressStart = useRef<number>(0);
-
-  const handlePressStart = (e: any) => {
-    if (disabled || !isGuruUser || !onLongPress || cardIndex === undefined) return;
-    
-    console.log("Guru long press starting for card", cardIndex);
-    e.preventDefault();
-    
-    pressStart.current = Date.now();
-    setIsLongPressing(false);
-    
-    longPressTimer.current = setTimeout(() => {
-      console.log("Guru long press triggered for card", cardIndex);
-      setIsLongPressing(true);
-      onLongPress(cardIndex);
-    }, 500); // Reduced to 500ms for easier use
-  };
-
-  const handlePressEnd = (e: any) => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-    }
-    
-    const pressDuration = Date.now() - pressStart.current;
-    
-    if (!isLongPressing && pressDuration < 500 && onClick && !disabled) {
-      onClick();
-    }
-    
-    setIsLongPressing(false);
-  };
-
-  const handlePressCancel = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-    }
-    setIsLongPressing(false);
-  };
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -303,20 +266,16 @@ export default function GameCard({ card, onClick, onLongPress, cardIndex, disabl
   }
 
   return (
-    <div 
-      className={`
-        ${colors.bg} ${getSizeClasses()} ${colors.border} ${colors.shadow}
-        rounded-xl border-4 shadow-lg relative cursor-pointer transition-all duration-200 select-none
-        ${disabled ? "opacity-50" : ""}
-        ${isLongPressing ? 'ring-2 ring-purple-500 scale-110' : ''}
-        ${isGuruUser && !disabled ? 'ring-1 ring-purple-300' : ''}
-      `}
-      onMouseDown={handlePressStart}
-      onMouseUp={handlePressEnd}
-      onMouseLeave={handlePressCancel}
-      onTouchStart={handlePressStart}
-      onTouchEnd={handlePressEnd}
-    >
+    <div className="relative flex flex-col items-center">
+      <div 
+        className={`
+          ${colors.bg} ${getSizeClasses()} ${colors.border} ${colors.shadow}
+          rounded-xl border-4 shadow-lg relative cursor-pointer transition-all duration-200 select-none
+          ${disabled ? "opacity-50" : ""}
+          ${isGuruUser && !disabled ? 'ring-1 ring-purple-300' : ''}
+        `}
+        onClick={onClick}
+      >
       {/* Card Content */}
       {getCardContent()}
 
@@ -359,6 +318,21 @@ export default function GameCard({ card, onClick, onLongPress, cardIndex, disabl
           <div className="absolute top-1 left-1 text-white text-xs font-bold">↻</div>
           <div className="absolute bottom-1 right-1 text-white text-xs font-bold rotate-180">↻</div>
         </>
+      )}
+      </div>
+      
+      {/* Guru Replace Button */}
+      {isGuruUser && !disabled && onGuruReplace && cardIndex !== undefined && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onGuruReplace(cardIndex);
+          }}
+          className="mt-1 w-6 h-4 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-full flex items-center justify-center transition-colors shadow-sm"
+          title="Replace this card"
+        >
+          ✨
+        </button>
       )}
     </div>
   );
