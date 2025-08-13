@@ -6,8 +6,11 @@ import { UnoGameLogic } from "./gameLogic";
 import { z } from "zod";
 import QRCode from "qrcode";
 import jwt from "jsonwebtoken";
-import { Card } from "@shared/schema";
+import { Card, guruUsers, gameSessions } from "@shared/schema";
 import { adminAuthService } from "./adminAuth";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 interface SocketConnection {
   ws: WebSocket;
@@ -166,6 +169,285 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Admin session validation error:", error);
       res.status(500).json({ error: "Session validation failed" });
+    }
+  });
+
+  // Admin middleware for protected routes
+  async function validateAdminSession(req: any, res: any, next: any) {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
+
+      const result = await adminAuthService.validateSession(token);
+      
+      if (!result.success) {
+        return res.status(401).json({ error: "Invalid admin session" });
+      }
+
+      req.adminUser = result.admin;
+      next();
+    } catch (error) {
+      return res.status(500).json({ error: "Session validation failed" });
+    }
+  }
+
+  // Get all active game sessions
+  app.get("/api/admin/games", validateAdminSession, async (req, res) => {
+    try {
+      // Get active rooms from storage
+      const allRooms = await storage.getAllRooms();
+      const activeGames = allRooms.map(room => ({
+        roomCode: room.code,
+        roomId: room.id,
+        status: room.status,
+        playerCount: 0, // Will be populated by player count
+        gameType: 'uno', // Currently only UNO supported
+        createdAt: room.createdAt
+      }));
+
+      // Get player counts for each room
+      for (const game of activeGames) {
+        const players = await storage.getPlayersByRoom(game.roomId);
+        game.playerCount = players.filter(p => !p.isSpectator && !p.hasLeft).length;
+      }
+
+      res.json({ games: activeGames });
+    } catch (error) {
+      console.error("Error fetching games:", error);
+      res.status(500).json({ error: "Failed to fetch games" });
+    }
+  });
+
+  // Restart a specific game
+  app.post("/api/admin/games/:roomCode/restart", validateAdminSession, async (req, res) => {
+    try {
+      const { roomCode } = req.params;
+      
+      // Find the room by code
+      const room = await storage.getRoomByCode(roomCode.toUpperCase());
+      if (!room) {
+        return res.status(404).json({ error: "Game not found" });
+      }
+
+      // Reset room to waiting status and clear game state
+      await storage.updateRoom(room.id, {
+        status: "waiting",
+        deck: [],
+        discardPile: [],
+        currentPlayerIndex: 0,
+        currentColor: null,
+        pendingDraw: 0,
+        positionHands: {},
+        activePositions: []
+      });
+
+      // Get all players and convert them to spectators, except keep host at position 0
+      const players = await storage.getPlayersByRoom(room.id);
+      
+      for (const player of players) {
+        if (player.id === room.hostId) {
+          // Host stays at position 0 as a player
+          await storage.updatePlayer(player.id, {
+            isSpectator: false,
+            position: 0,
+            hand: [],
+            hasCalledUno: false,
+            finishPosition: null,
+            hasLeft: false,
+            leftAt: null
+          });
+        } else {
+          // All other players become spectators
+          await storage.updatePlayer(player.id, {
+            isSpectator: true,
+            position: null,
+            hand: [],
+            hasCalledUno: false,
+            finishPosition: null,
+            hasLeft: false,
+            leftAt: null
+          });
+        }
+      }
+
+      // Broadcast room state to all connected players
+      await broadcastRoomState(room.id);
+
+      res.json({ success: true, message: "Game restarted successfully" });
+    } catch (error) {
+      console.error("Error restarting game:", error);
+      res.status(500).json({ error: "Failed to restart game" });
+    }
+  });
+
+  // Get guru users for a specific game
+  app.get("/api/admin/guru-users/:gameType", validateAdminSession, async (req, res) => {
+    try {
+      const { gameType } = req.params;
+      
+      if (!['uno', 'xo'].includes(gameType)) {
+        return res.status(400).json({ error: "Invalid game type" });
+      }
+
+      const guruUsersList = await db.select({
+        id: guruUsers.id,
+        playerName: guruUsers.playerName,
+        email: guruUsers.email,
+        gameType: guruUsers.gameType,
+        isActive: guruUsers.isActive,
+        lastLogin: guruUsers.lastLogin,
+        createdAt: guruUsers.createdAt
+      })
+      .from(guruUsers)
+      .where(eq(guruUsers.gameType, gameType as "uno" | "xo"));
+
+      res.json({ guruUsers: guruUsersList });
+    } catch (error) {
+      console.error("Error fetching guru users:", error);
+      res.status(500).json({ error: "Failed to fetch guru users" });
+    }
+  });
+
+  // Create new guru user
+  app.post("/api/admin/guru-users", validateAdminSession, async (req, res) => {
+    try {
+      const { username, playerName, email, password, gameType } = z.object({
+        username: z.string().min(3).max(20),
+        playerName: z.string().min(1).max(20),
+        email: z.string().email(),
+        password: z.string().min(6),
+        gameType: z.enum(["uno", "xo"])
+      }).parse(req.body);
+
+      // Check if username already exists
+      const existingUser = await db.select()
+        .from(guruUsers)
+        .where(eq(guruUsers.username, username))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      // Create guru user
+      const [newGuruUser] = await db.insert(guruUsers).values({
+        username,
+        playerName,
+        email,
+        passwordHash,
+        gameType,
+        createdBy: req.adminUser.id,
+        isActive: true
+      }).returning({
+        id: guruUsers.id,
+        playerName: guruUsers.playerName,
+        email: guruUsers.email,
+        gameType: guruUsers.gameType,
+        isActive: guruUsers.isActive,
+        createdAt: guruUsers.createdAt
+      });
+
+      res.json({ success: true, guruUser: newGuruUser });
+    } catch (error) {
+      console.error("Error creating guru user:", error);
+      if (error.code === '23505') { // Unique constraint violation
+        res.status(400).json({ error: "Username already exists" });
+      } else {
+        res.status(500).json({ error: "Failed to create guru user" });
+      }
+    }
+  });
+
+  // Toggle guru user active status
+  app.patch("/api/admin/guru-users/:userId/toggle", validateAdminSession, async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      // Get current user
+      const [currentUser] = await db.select()
+        .from(guruUsers)
+        .where(eq(guruUsers.id, userId))
+        .limit(1);
+
+      if (!currentUser) {
+        return res.status(404).json({ error: "Guru user not found" });
+      }
+
+      // Toggle active status
+      const [updatedUser] = await db.update(guruUsers)
+        .set({ 
+          isActive: !currentUser.isActive,
+          updatedAt: new Date()
+        })
+        .where(eq(guruUsers.id, userId))
+        .returning({
+          id: guruUsers.id,
+          playerName: guruUsers.playerName,
+          email: guruUsers.email,
+          gameType: guruUsers.gameType,
+          isActive: guruUsers.isActive,
+          lastLogin: guruUsers.lastLogin,
+          createdAt: guruUsers.createdAt
+        });
+
+      res.json({ success: true, guruUser: updatedUser });
+    } catch (error) {
+      console.error("Error toggling guru user:", error);
+      res.status(500).json({ error: "Failed to update guru user" });
+    }
+  });
+
+  // Guru user login validation endpoint
+  app.post("/api/guru-login", async (req, res) => {
+    try {
+      const { playerName, password } = z.object({
+        playerName: z.string().min(1),
+        password: z.string().min(1)
+      }).parse(req.body);
+
+      // Check if playerName exists as a guru user
+      const [guruUser] = await db.select()
+        .from(guruUsers)
+        .where(and(
+          eq(guruUsers.username, playerName),
+          eq(guruUsers.isActive, true)
+        ))
+        .limit(1);
+
+      if (!guruUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Validate password
+      const isValidPassword = await bcrypt.compare(password, guruUser.passwordHash);
+      
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Invalid password" });
+      }
+
+      // Update last login
+      await db.update(guruUsers)
+        .set({ lastLogin: new Date() })
+        .where(eq(guruUsers.id, guruUser.id));
+
+      res.json({
+        success: true,
+        guruUser: {
+          id: guruUser.id,
+          playerName: guruUser.playerName,
+          gameType: guruUser.gameType,
+          isGuru: true
+        }
+      });
+    } catch (error) {
+      console.error("Error in guru login:", error);
+      res.status(500).json({ error: "Login failed" });
     }
   });
   

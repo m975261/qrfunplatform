@@ -3,6 +3,8 @@
 ## Overview
 This is a full-stack multiplayer gaming platform featuring multiple games with instant QR code sharing. Currently includes a complete UNO card game supporting up to 4 players per room with classic UNO rules and all action cards. Players can create rooms, join via codes or QR, and play in real-time. The platform features a main home page for game selection, with individual games accessible via dedicated routes (/uno, /xo). Key features include complete ranking systems, spectator-centric lobby systems, and streamlined multiplayer interactions across all games.
 
+**Admin System**: Includes a secure hidden admin system at `/man` route with Google Authenticator 2FA, Gmail-based email functionality, and a complete guru user management system where special authenticated users can be created per game with email/username/playername credentials.
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
@@ -29,11 +31,15 @@ Preferred communication style: Simple, everyday language.
 - **API Design**: RESTful endpoints for room management, complemented by WebSocket for game actions.
 
 ### Data Storage Solutions
-- **Current**: In-memory storage.
-- **Database Ready**: Drizzle ORM configured for PostgreSQL with normalized schema for users, rooms, players, and game messages. Drizzle Kit for schema management.
+- **Current**: In-memory storage for game data.
+- **Database**: PostgreSQL with Drizzle ORM for admin system, guru users, and game sessions.
+- **Schema**: Normalized tables for admins, guru_users, game_sessions, rooms, players, and game messages.
+- **Management**: Drizzle Kit for schema migrations and management.
 
 ### Authentication and Authorization
-- **Access**: Nickname-based, no user registration.
+- **Player Access**: Nickname-based, no user registration for regular players.
+- **Guru User System**: Special authenticated players created via admin dashboard with hidden username/password authentication.
+- **Admin System**: Secure 2FA authentication system at hidden `/man` route with Gmail integration.
 - **Room Security**: JWT tokens for secure room access and player identification.
 - **Session Management**: Socket-based session tracking with player validation and browser fingerprinting.
 - **Host Privileges**: Room creators have administrative controls (kick, start games).
@@ -72,6 +78,15 @@ Preferred communication style: Simple, everyday language.
 - Smart AI opponent mode
 - Tournament functionality
 - Statistics tracking
+
+#### Admin System Features
+- **Hidden Admin Access**: Secure login at `/man` route with username/password + 2FA
+- **Google Authenticator**: Time-based 2FA for enhanced security
+- **Gmail Integration**: Password reset emails via Gmail SMTP
+- **Game Management**: View active games, restart specific rooms, monitor player counts
+- **Guru User System**: Create special authenticated players per game type
+- **User Management**: Create/deactivate guru users with email, hidden username, and visible player name
+- **Guru Authentication**: Players entering guru usernames are prompted for password authentication
 
 ## External Dependencies
 - **Database**: Neon Database (PostgreSQL).

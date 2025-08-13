@@ -83,6 +83,33 @@ export const adminSessions = pgTable("admin_sessions", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+// Guru users schema - special authenticated players created by admin
+export const guruUsers = pgTable("guru_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(), // Hidden login credential
+  playerName: text("player_name").notNull(), // Visible game name
+  email: text("email").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  gameType: varchar("game_type", { enum: ["uno", "xo"] }).notNull(),
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").notNull(), // Admin ID who created this user
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Game sessions for restart functionality
+export const gameSessions = pgTable("game_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  roomCode: varchar("room_code", { length: 6 }).notNull(),
+  gameType: varchar("game_type", { enum: ["uno", "xo"] }).notNull(),
+  status: varchar("status", { enum: ["waiting", "playing", "finished", "paused"] }).notNull(),
+  playerCount: integer("player_count").default(0),
+  startedAt: timestamp("started_at"),
+  endedAt: timestamp("ended_at"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 // Card schema
 export const cardSchema = z.object({
   type: z.enum(["number", "skip", "reverse", "draw2", "wild", "wild4"]),
@@ -124,6 +151,17 @@ export const insertAdminSessionSchema = createInsertSchema(adminSessions).omit({
   createdAt: true,
 });
 
+export const insertGuruUserSchema = createInsertSchema(guruUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGameSessionSchema = createInsertSchema(gameSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
 export type Room = typeof rooms.$inferSelect;
@@ -137,6 +175,10 @@ export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSc
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;
 export type AdminSession = typeof adminSessions.$inferSelect;
+export type InsertGuruUser = z.infer<typeof insertGuruUserSchema>;
+export type GuruUser = typeof guruUsers.$inferSelect;
+export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
+export type GameSession = typeof gameSessions.$inferSelect;
 
 // Game state schema
 export const gameStateSchema = z.object({
