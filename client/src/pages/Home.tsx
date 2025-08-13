@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Upload, Camera, ArrowRight } from "lucide-react";
+import { Plus, Upload, Camera, ArrowRight, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -346,6 +347,10 @@ export default function Home() {
       <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-2xl animate-fade-in">
         <CardContent className="p-8">
           <div className="text-center mb-8">
+            <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors">
+              <ArrowLeft size={20} />
+              Back to Games
+            </Link>
             <h1 className="font-fredoka text-4xl bg-gradient-to-r from-uno-red to-uno-yellow bg-clip-text text-transparent mb-2">
               UNO Multiplayer
             </h1>
