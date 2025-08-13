@@ -679,12 +679,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "waiting"
       });
 
+      // Check if host is a guru user
+      const [guruUser] = await db.select()
+        .from(guruUsers)
+        .where(and(
+          eq(guruUsers.username, hostNickname),
+          eq(guruUsers.isActive, true),
+          eq(guruUsers.gameType, "uno")
+        ))
+        .limit(1);
+
       // Create the host player immediately
       const hostPlayer = await storage.createPlayer({
         nickname: hostNickname,
         roomId: room.id,
         isSpectator: false,
-        position: 0
+        position: 0,
+        isGuru: !!guruUser
       });
 
       // Update room with host ID
@@ -768,12 +779,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isSpectator = true;
       }
 
+      // Check if joining player is a guru user
+      const [guruUser] = await db.select()
+        .from(guruUsers)
+        .where(and(
+          eq(guruUsers.username, nickname),
+          eq(guruUsers.isActive, true),
+          eq(guruUsers.gameType, "uno")
+        ))
+        .limit(1);
+
       const player = await storage.createPlayer({
         nickname,
         roomId: room.id,
         isSpectator,
         position: playerPosition,
-        hand: playerHand
+        hand: playerHand,
+        isGuru: !!guruUser
       });
 
       // Set this player as host if room had no host
@@ -1212,6 +1234,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
           case 'play_again':
             await handlePlayAgain(connection, message);
+            break;
+          case 'guru_replace_card':
+            await handleGuruReplaceCard(connection, message);
             break;
           case 'heartbeat':
             // Update last seen time and handle tab visibility
@@ -2249,6 +2274,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     await broadcastRoomState(roomId);
+  }
+
+  async function handleGuruReplaceCard(connection: SocketConnection, message: any) {
+    console.log("Guru card replacement requested");
+    
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const { cardIndex, replacementType, replacementValue } = message;
+    
+    const room = await storage.getRoom(connection.roomId);
+    if (!room || room.status !== "playing") return;
+    
+    const player = await storage.getPlayer(connection.playerId);
+    if (!player || !player.isGuru) {
+      console.log("Only guru users can replace cards");
+      return;
+    }
+    
+    if (!player.hand || cardIndex < 0 || cardIndex >= player.hand.length) {
+      console.log("Invalid card index for replacement");
+      return;
+    }
+    
+    // Get available cards based on replacement type
+    let availableCards = [];
+    
+    if (replacementType === "special") {
+      availableCards = room.deck!.filter((card: any) => 
+        card.type !== "number" && (card.type === "skip" || card.type === "reverse" || card.type === "draw2" || card.type === "wild" || card.type === "wild4")
+      );
+    } else if (replacementType === "number") {
+      availableCards = room.deck!.filter((card: any) => card.type === "number");
+    } else if (replacementType === "color") {
+      availableCards = room.deck!.filter((card: any) => card.color === replacementValue);
+    }
+    
+    if (availableCards.length === 0) {
+      console.log("No cards available for replacement type:", replacementType);
+      return;
+    }
+    
+    // If specific card is requested, find it
+    let newCard;
+    if (message.specificCard) {
+      newCard = availableCards.find((card: any) => 
+        card.type === message.specificCard.type && 
+        card.color === message.specificCard.color &&
+        card.value === message.specificCard.value
+      );
+    } else {
+      // Random card from available options
+      newCard = availableCards[Math.floor(Math.random() * availableCards.length)];
+    }
+    
+    if (!newCard) {
+      console.log("Requested card not available");
+      return;
+    }
+    
+    // Replace the card in player's hand
+    const oldCard = player.hand[cardIndex];
+    player.hand[cardIndex] = newCard;
+    
+    // Remove the new card from deck and add old card back
+    const newCardIndex = room.deck!.findIndex((card: any) => 
+      card.type === newCard.type && 
+      card.color === newCard.color &&
+      card.value === newCard.value
+    );
+    if (newCardIndex !== -1) {
+      room.deck!.splice(newCardIndex, 1);
+      room.deck!.push(oldCard);
+    }
+    
+    // Update player and room
+    await storage.updatePlayer(connection.playerId, { hand: player.hand });
+    await storage.updateRoom(connection.roomId, { deck: room.deck });
+    
+    console.log(`Guru ${player.nickname} replaced ${oldCard.type}:${oldCard.color} with ${newCard.type}:${newCard.color}`);
+    
+    // Only broadcast to the guru player - secret replacement
+    connection.ws.send(JSON.stringify({
+      type: 'guru_card_replaced',
+      cardIndex,
+      newCard,
+      success: true
+    }));
   }
 
   async function broadcastRoomState(roomId: string) {

@@ -13,6 +13,7 @@ import ColorPickerModal from "@/components/game/ColorPickerModal";
 import NicknameEditor from "@/components/NicknameEditor";
 import { GameDirectionIndicator } from "@/components/game/GameDirectionIndicator";
 import { WinnerModal } from "@/components/game/WinnerModal";
+import GuruCardReplaceModal from "@/components/game/GuruCardReplaceModal";
 
 export default function Game() {
   const [, params] = useRoute("/game/:roomId");
@@ -35,6 +36,7 @@ export default function Game() {
     continueGame,
     replacePlayer,
     playAgain,
+    guruReplaceCard,
     isConnected
   } = useSocket();
 
@@ -49,6 +51,8 @@ export default function Game() {
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
   const [winnerData, setWinnerData] = useState<any>(null);
+  const [showGuruReplaceModal, setShowGuruReplaceModal] = useState(false);
+  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -100,6 +104,19 @@ export default function Game() {
       setHasCalledUno(true);
       // UNO call will be validated on the server and work only when playing second-to-last card
     }
+  };
+
+  const handleGuruCardLongPress = (cardIndex: number) => {
+    setSelectedCardIndex(cardIndex);
+    setShowGuruReplaceModal(true);
+  };
+
+  const handleGuruReplaceCard = (replacementType: string, replacementValue?: string, specificCard?: any) => {
+    if (selectedCardIndex !== null) {
+      guruReplaceCard(selectedCardIndex, replacementType, replacementValue, specificCard);
+    }
+    setShowGuruReplaceModal(false);
+    setSelectedCardIndex(null);
   };
 
   // New unified end game handler - return all players to lobby as spectators
@@ -620,6 +637,9 @@ export default function Game() {
                         interactive={isMyTurn}
                         disabled={!isMyTurn}
                         onClick={() => isMyTurn && handlePlayCard(index)}
+                        onLongPress={handleGuruCardLongPress}
+                        cardIndex={index}
+                        isGuruUser={currentPlayer?.isGuru || false}
                       />
                     </div>
                   ))}
@@ -808,6 +828,14 @@ export default function Game() {
         players={winnerData?.finalRankings || []}
         isSpectator={currentPlayer?.isSpectator || false}
         onClose={handleEndGameClose}
+      />
+
+      {/* Guru Card Replace Modal */}
+      <GuruCardReplaceModal
+        isOpen={showGuruReplaceModal}
+        onClose={() => setShowGuruReplaceModal(false)}
+        onReplaceCard={handleGuruReplaceCard}
+        currentCard={selectedCardIndex !== null && currentPlayer?.hand?.[selectedCardIndex] ? currentPlayer.hand[selectedCardIndex] : undefined}
       />
 
 

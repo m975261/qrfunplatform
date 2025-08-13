@@ -233,6 +233,18 @@ export function useSocket(autoConnect: boolean = true) {
               window.location.href = "/";
             }
             break;
+          case 'guru_card_replaced':
+            // Handle successful guru card replacement
+            console.log("Guru card replaced successfully:", message);
+            // Update game state if needed - the card should already be updated in the player's hand
+            if (gameState && gameState.currentPlayer) {
+              // Force a subtle update to trigger re-render
+              setGameState((prev: any) => ({
+                ...prev,
+                timestamp: Date.now()
+              }));
+            }
+            break;
           case 'heartbeat_ack':
             // Server acknowledged our heartbeat - connection is stable
             break;
@@ -429,6 +441,16 @@ export function useSocket(autoConnect: boolean = true) {
     });
   };
 
+  const guruReplaceCard = (cardIndex: number, replacementType: string, replacementValue?: string, specificCard?: any) => {
+    sendMessage({
+      type: 'guru_replace_card',
+      cardIndex,
+      replacementType,
+      replacementValue,
+      specificCard
+    });
+  };
+
   useEffect(() => {
     if (autoConnect) {
       connect();
@@ -500,6 +522,7 @@ export function useSocket(autoConnect: boolean = true) {
     continueGame,
     replacePlayer,
     playAgain,
+    guruReplaceCard,
     connect: manualConnect
   };
 }

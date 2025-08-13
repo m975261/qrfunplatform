@@ -1,14 +1,64 @@
 import { Card } from "@shared/schema";
+import { useState, useRef, useEffect } from "react";
 
 interface GameCardProps {
   card: Card;
   onClick?: () => void;
+  onLongPress?: (cardIndex: number) => void;
+  cardIndex?: number;
   disabled?: boolean;
   interactive?: boolean;
   size?: "extra-small" | "small" | "medium" | "large";
+  isGuruUser?: boolean;
 }
 
-export default function GameCard({ card, onClick, disabled = false, interactive = false, size = "medium" }: GameCardProps) {
+export default function GameCard({ card, onClick, onLongPress, cardIndex, disabled = false, interactive = false, size = "medium", isGuruUser = false }: GameCardProps) {
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const longPressTimer = useRef<NodeJS.Timeout>();
+  const pressStart = useRef<number>(0);
+
+  const handleMouseDown = () => {
+    if (disabled || !isGuruUser || !onLongPress || cardIndex === undefined) return;
+    
+    pressStart.current = Date.now();
+    setIsLongPressing(false);
+    
+    longPressTimer.current = setTimeout(() => {
+      setIsLongPressing(true);
+      onLongPress(cardIndex);
+    }, 800); // 800ms long press
+  };
+
+  const handleMouseUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+    
+    const pressDuration = Date.now() - pressStart.current;
+    
+    if (!isLongPressing && pressDuration < 800 && onClick && !disabled) {
+      onClick();
+    }
+    
+    setIsLongPressing(false);
+  };
+
+  const handleMouseLeave = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+    setIsLongPressing(false);
+  };
+
+  // Touch events for mobile
+  const handleTouchStart = () => {
+    handleMouseDown();
+  };
+
+  const handleTouchEnd = () => {
+    handleMouseUp();
+  };
+
   const getCardColors = () => {
     switch (card.color) {
       case "red":
@@ -249,11 +299,20 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
   }
 
   return (
-    <div className={`
-      ${colors.bg} ${getSizeClasses()} ${colors.border} ${colors.shadow}
-      rounded-xl border-4 shadow-lg relative
-      ${disabled ? "opacity-50" : ""}
-    `}>
+    <div 
+      className={`
+        ${colors.bg} ${getSizeClasses()} ${colors.border} ${colors.shadow}
+        rounded-xl border-4 shadow-lg relative cursor-pointer transition-all duration-200 select-none
+        ${disabled ? "opacity-50" : ""}
+        ${isLongPressing ? 'ring-2 ring-purple-500 scale-110' : ''}
+        ${isGuruUser && !disabled ? 'ring-1 ring-purple-300' : ''}
+      `}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Card Content */}
       {getCardContent()}
 
