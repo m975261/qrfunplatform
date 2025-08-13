@@ -52,6 +52,37 @@ export const gameMessages = pgTable("game_messages", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+// Admin schema
+export const admins = pgTable("admins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  email: text("email").unique(),
+  passwordHash: text("password_hash"),
+  totpSecret: text("totp_secret"), // Google Authenticator secret
+  isInitialSetup: boolean("is_initial_setup").default(true),
+  emailVerified: boolean("email_verified").default(false),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const adminSessions = pgTable("admin_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull(),
+  sessionToken: text("session_token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 // Card schema
 export const cardSchema = z.object({
   type: z.enum(["number", "skip", "reverse", "draw2", "wild", "wild4"]),
@@ -77,6 +108,22 @@ export const insertGameMessageSchema = createInsertSchema(gameMessages).omit({
   createdAt: true,
 });
 
+export const insertAdminSchema = createInsertSchema(admins).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAdminSessionSchema = createInsertSchema(adminSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
 export type Room = typeof rooms.$inferSelect;
@@ -84,6 +131,12 @@ export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
 export type Player = typeof players.$inferSelect;
 export type InsertGameMessage = z.infer<typeof insertGameMessageSchema>;
 export type GameMessage = typeof gameMessages.$inferSelect;
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+export type Admin = typeof admins.$inferSelect;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertAdminSession = z.infer<typeof insertAdminSessionSchema>;
+export type AdminSession = typeof adminSessions.$inferSelect;
 
 // Game state schema
 export const gameStateSchema = z.object({

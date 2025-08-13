@@ -7,6 +7,7 @@ import { z } from "zod";
 import QRCode from "qrcode";
 import jwt from "jsonwebtoken";
 import { Card } from "@shared/schema";
+import { adminAuthService } from "./adminAuth";
 
 interface SocketConnection {
   ws: WebSocket;
@@ -23,6 +24,150 @@ const connections = new Map<string, SocketConnection>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const JWT_SECRET = process.env.JWT_SECRET || "uno-game-secret";
+  
+  // Initialize default admin on server start
+  await adminAuthService.initializeDefaultAdmin();
+  
+  // Admin authentication routes
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { username, password } = z.object({
+        username: z.string().min(1),
+        password: z.string().min(1),
+      }).parse(req.body);
+
+      const result = await adminAuthService.validateInitialLogin(username, password);
+      
+      if (!result.success) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      res.json({
+        success: true,
+        admin: result.admin,
+        requiresSetup: result.requiresSetup
+      });
+    } catch (error) {
+      console.error("Admin login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/admin/setup", async (req, res) => {
+    try {
+      const { adminId, email, newPassword } = z.object({
+        adminId: z.string().min(1),
+        email: z.string().email(),
+        newPassword: z.string().min(8),
+      }).parse(req.body);
+
+      const result = await adminAuthService.setupAdminEmail(adminId, email, newPassword);
+      
+      if (!result.success) {
+        return res.status(400).json({ error: "Setup failed" });
+      }
+
+      res.json({
+        success: true,
+        qrCode: result.qrCode,
+        totpSecret: result.totpSecret
+      });
+    } catch (error) {
+      console.error("Admin setup error:", error);
+      res.status(500).json({ error: "Setup failed" });
+    }
+  });
+
+  app.post("/api/admin/verify-2fa", async (req, res) => {
+    try {
+      const { username, password, totpCode } = z.object({
+        username: z.string().min(1),
+        password: z.string().min(1),
+        totpCode: z.string().length(6),
+      }).parse(req.body);
+
+      const result = await adminAuthService.validateLogin(username, password, totpCode);
+      
+      if (!result.success) {
+        return res.status(401).json({ error: "Invalid credentials or 2FA code" });
+      }
+
+      res.json({
+        success: true,
+        admin: result.admin,
+        sessionToken: result.sessionToken
+      });
+    } catch (error) {
+      console.error("Admin 2FA verification error:", error);
+      res.status(500).json({ error: "Verification failed" });
+    }
+  });
+
+  app.post("/api/admin/reset-request", async (req, res) => {
+    try {
+      const { email } = z.object({
+        email: z.string().email(),
+      }).parse(req.body);
+
+      const result = await adminAuthService.generatePasswordResetToken(email);
+      
+      res.json({
+        success: result.success,
+        message: result.message
+      });
+    } catch (error) {
+      console.error("Admin reset request error:", error);
+      res.status(500).json({ error: "Reset request failed" });
+    }
+  });
+
+  app.post("/api/admin/reset-confirm", async (req, res) => {
+    try {
+      const { token, newPassword, totpCode } = z.object({
+        token: z.string().min(1),
+        newPassword: z.string().min(8),
+        totpCode: z.string().length(6),
+      }).parse(req.body);
+
+      const result = await adminAuthService.validatePasswordReset(token, newPassword, totpCode);
+      
+      if (!result.success) {
+        return res.status(400).json({ error: result.message });
+      }
+
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      console.error("Admin reset confirm error:", error);
+      res.status(500).json({ error: "Password reset failed" });
+    }
+  });
+
+  app.get("/api/admin/validate-session", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        return res.status(401).json({ error: "No session token provided" });
+      }
+
+      const result = await adminAuthService.validateSession(token);
+      
+      if (!result.success) {
+        return res.status(401).json({ error: "Invalid or expired session" });
+      }
+
+      res.json({
+        success: true,
+        admin: result.admin
+      });
+    } catch (error) {
+      console.error("Admin session validation error:", error);
+      res.status(500).json({ error: "Session validation failed" });
+    }
+  });
   
   // Create room
   app.post("/api/rooms", async (req, res) => {
