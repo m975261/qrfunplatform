@@ -296,24 +296,231 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - Fully responsive with viewport units */}
-      <div className="absolute inset-0 flex items-center justify-center" style={{
-        paddingBottom: 'max(20vh, 160px)',  // Responsive bottom padding
-        paddingTop: 'max(8vh, 64px)'        // Responsive top padding
+      {/* Hidden Grid Layout System - Invisible table for perfect positioning */}
+      <div className="absolute inset-0" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(12, 1fr)',
+        gridTemplateRows: 'repeat(12, 1fr)',
+        gap: '0',
+        padding: '2vh 2vw'
       }}>
-        <div className="relative">
-          {/* Game Direction Indicator - positioned relative to circle */}
+        
+        {/* Game Direction Indicator - Grid slot */}
+        <div style={{ gridColumn: '2 / 4', gridRow: '2 / 3' }}>
           <GameDirectionIndicator 
             direction={room?.direction || 'clockwise'}
             isVisible={!!room?.direction && room?.status === 'playing'}
           />
-          
-          {/* Draw Pile - positioned between 3 and 6 o'clock avatars */}
-          <div className="absolute z-10" style={{
-            bottom: 'max(-1rem, -2.5vh)',
-            right: 'max(-8rem, -18vw)',
-          }}>
+        </div>
+        
+        {/* Central Game Circle - Grid slot */}
+        <div style={{ 
+          gridColumn: '5 / 9', 
+          gridRow: '4 / 8',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div className="rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50" 
+               style={{
+                 width: 'min(180px, 15vw)',
+                 height: 'min(180px, 15vw)',
+                 minWidth: '120px',
+                 minHeight: '120px'
+               }}>
+            
+            {/* Inner Circle */}
+            <div className="rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30"
+                 style={{
+                   width: '75%',
+                   height: '75%'
+                 }}>
+              
+              {/* Current Card */}
+              <div className="flex flex-col items-center">
+                {topCard ? (
+                  <div className="flex flex-col items-center">
+                    <GameCard 
+                      card={topCard} 
+                      size="small"
+                      interactive={false}
+                      onClick={() => {}}
+                    />
+                    {/* Current Color Indicator for Wild Cards */}
+                    {room.currentColor && (topCard?.type === 'wild' || topCard?.type === 'wild4') && (
+                      <div className="mt-1 px-2 py-1 bg-slate-800/90 rounded-full border border-slate-600">
+                        <div className="flex items-center space-x-1">
+                          <div 
+                            className="w-3 h-3 rounded-full border border-white/50" 
+                            style={{
+                              backgroundColor: room.currentColor === 'red' ? '#dc2626' : 
+                                             room.currentColor === 'blue' ? '#2563eb' : 
+                                             room.currentColor === 'green' ? '#16a34a' : 
+                                             room.currentColor === 'yellow' ? '#ca8a04' : '#6b7280'
+                            }}
+                          ></div>
+                          <span className="text-xs text-slate-300 font-medium capitalize">
+                            {room.currentColor}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-12 h-16 bg-slate-600 rounded-lg border border-slate-500 flex items-center justify-center">
+                    <span className="text-slate-400 text-xs font-bold">UNO</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Avatar slots positioned around circle */}
+            <div className="absolute inset-0">
+              {players.filter((p: any) => !p.isSpectator).map((player: any, index: number) => {
+                const positions = [
+                  { top: '-25px', left: '50%', transform: 'translateX(-50%)' }, // 12 o'clock
+                  { top: '50%', right: '-25px', transform: 'translateY(-50%)' }, // 3 o'clock
+                  { bottom: '-25px', left: '50%', transform: 'translateX(-50%)' }, // 6 o'clock
+                  { top: '50%', left: '-25px', transform: 'translateY(-50%)' } // 9 o'clock
+                ];
+                
+                const position = positions[index] || positions[0];
+                
+                return (
+                  <div 
+                    key={player.id}
+                    className={`absolute w-12 h-12 rounded-full border-2 flex items-center justify-center text-white font-bold text-xs cursor-pointer transition-all ${
+                      player.isOnline ? 
+                        (room.currentPlayer === player.id ? 
+                          'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-300 shadow-lg shadow-yellow-500/50 animate-pulse' : 
+                          'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-400 hover:scale-110') :
+                        'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-500 opacity-60'
+                    }`}
+                    style={position}
+                    onClick={() => !player.isSpectator && room.hostId === playerId && handleKickPlayer && handleKickPlayer(player.id)}
+                    title={player.isOnline ? `${player.nickname} (${player.hand?.length || 0} cards)` : `${player.nickname} (offline)`}
+                  >
+                    <div className="flex flex-col items-center">
+                      <span>{player.nickname?.[0]?.toUpperCase()}</span>
+                      {player.hand?.length > 0 && (
+                        <span className="text-xs">{player.hand.length}</span>
+                      )}
+                    </div>
+                    {player.isOnline && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white"></div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        
+        {/* Draw Pile - Grid slot */}
+        <div style={{ 
+          gridColumn: '9 / 11', 
+          gridRow: '6 / 8',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div className="flex flex-col items-center">
             <div className="relative cursor-pointer group" onClick={drawCard}>
+              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-8 h-12"></div>
+              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-8 h-12"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-white font-bold text-xs">Cards</div>
+              </div>
+            </div>
+            <div className="text-center mt-1 text-blue-300 font-bold text-xs">DRAW</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Player Cards Area - Grid-based positioning */}
+      {currentPlayer && !currentPlayer.isSpectator && (
+        <div className="absolute bottom-0 left-0 right-0" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(12, 1fr)',
+          gridTemplateRows: 'auto auto',
+          gap: '4px',
+          padding: '10px'
+        }}>
+          
+          {/* Cards Row */}
+          <div style={{ 
+            gridColumn: '1 / -1', 
+            gridRow: '1',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '2px',
+            overflowX: 'auto',
+            paddingBottom: '4px'
+          }}>
+            {currentPlayer.hand && currentPlayer.hand.length > 0 && currentPlayer.hand.map((card: any, index: number) => (
+              <div 
+                key={index} 
+                className={`transition-all duration-200 flex-shrink-0 ${
+                  isMyTurn ? 'hover:scale-105 hover:-translate-y-1 cursor-pointer' : 'opacity-60'
+                }`}
+              >
+                <GameCard 
+                  card={card}
+                  size="extra-small"
+                  interactive={isMyTurn}
+                  disabled={!isMyTurn}
+                  onClick={() => isMyTurn && handlePlayCard(index)}
+                  onGuruReplace={handleGuruCardReplace}
+                  cardIndex={index}
+                  isGuruUser={(() => {
+                    const knownGuruUsers = ['ظبياني', 'unom975261'];
+                    const isAuthenticatedGuru = knownGuruUsers.includes(currentPlayer?.nickname || '');
+                    const hasGuruStatus = currentPlayer?.isGuru || isAuthenticatedGuru || false;
+                    return hasGuruStatus;
+                  })()}
+                />
+              </div>
+            ))}
+          </div>
+          
+          {/* Guru Buttons Row - Hidden grid slots for each button */}
+          <div style={{ 
+            gridColumn: '1 / -1', 
+            gridRow: '2',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '2px',
+            height: '20px'
+          }}>
+            {currentPlayer.hand && currentPlayer.hand.length > 0 && currentPlayer.hand.map((card: any, index: number) => {
+              const knownGuruUsers = ['ظبياني', 'unom975261'];
+              const isAuthenticatedGuru = knownGuruUsers.includes(currentPlayer?.nickname || '');
+              const hasGuruStatus = currentPlayer?.isGuru || isAuthenticatedGuru || false;
+              
+              return (
+                <div 
+                  key={`guru-${index}`}
+                  className="flex-shrink-0 flex items-center justify-center"
+                  style={{ width: '44px', height: '20px' }} // Match card width
+                >
+                  {hasGuruStatus && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGuruCardReplace(index);
+                      }}
+                      className="w-6 h-4 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-full flex items-center justify-center transition-colors shadow-sm z-10"
+                      title="Replace this card"
+                    >
+                      ✨
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
               <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
                    style={{
                      width: 'max(2rem, 6vw)',
