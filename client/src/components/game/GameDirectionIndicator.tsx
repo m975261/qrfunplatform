@@ -9,7 +9,10 @@ export function GameDirectionIndicator({ direction, isVisible }: GameDirectionIn
   if (!isVisible) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-30">
+    <div className="absolute z-30" style={{
+      top: 'max(-2rem, -5vh)',
+      left: 'max(-6rem, -15vw)',
+    }}>
       <div className="bg-slate-800/95 backdrop-blur-sm border-2 border-slate-600 rounded-full p-2 shadow-lg">
         <div className="flex items-center justify-center">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">

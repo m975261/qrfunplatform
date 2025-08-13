@@ -302,10 +302,16 @@ export default function Game() {
         paddingTop: 'max(8vh, 64px)'        // Responsive top padding
       }}>
         <div className="relative">
-          {/* Draw Pile - Viewport responsive positioning */}
+          {/* Game Direction Indicator - positioned relative to circle */}
+          <GameDirectionIndicator 
+            direction={room?.direction || 'clockwise'}
+            isVisible={!!room?.direction && room?.status === 'playing'}
+          />
+          
+          {/* Draw Pile - positioned between 3 and 6 o'clock avatars */}
           <div className="absolute z-10" style={{
-            bottom: 'max(-3rem, -8vh)',
-            right: 'max(-5rem, -12vw)',
+            bottom: 'max(-1rem, -2.5vh)',
+            right: 'max(-8rem, -18vw)',
           }}>
             <div className="relative cursor-pointer group" onClick={drawCard}>
               <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
@@ -651,7 +657,9 @@ export default function Game() {
                           });
                           // Since the system asks for guru password, force guru status for this user
                           const isAuthenticatedGuru = currentPlayer?.nickname === 'ظبياني';
-                          return currentPlayer?.isGuru || isAuthenticatedGuru || false;
+                          const hasGuruStatus = currentPlayer?.isGuru || isAuthenticatedGuru || false;
+                          console.log('Final guru status:', hasGuruStatus);
+                          return hasGuruStatus;
                         })()}
                       />
                     </div>
@@ -829,11 +837,7 @@ export default function Game() {
         </div>
       )}
 
-      {/* Game Direction Indicator */}
-      <GameDirectionIndicator 
-        direction={room?.direction || 'clockwise'}
-        isVisible={!!room?.direction && room?.status === 'playing'}
-      />
+
 
       {/* Winner Modal */}
       <WinnerModal
