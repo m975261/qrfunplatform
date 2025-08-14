@@ -317,6 +317,7 @@ export default function GameCard({
       {isGuruUser && !disabled && onGuruReplace && cardIndex !== undefined && (
         <button
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             console.log("🔧 Guru R button clicked for card index:", cardIndex);
             onGuruReplace();

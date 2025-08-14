@@ -23,13 +23,14 @@ Preferred communication style: Simple, everyday language.
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
 **CRITICAL - RECENTLY FIXED**: Avatar System, Card Replacement & UNO Penalties (Fixed Aug 14, 2025)
-- **Avatar Positioning**: Positioned at exact clock positions (12, 3, 6, 10) attached to circle without overlapping
+- **Avatar Positioning**: Fixed exact positioning at clock positions (12, 3, 6, 9) using absolute positioning around game circle
 - **Avatar Selection System**: Click-to-open popup with male/female selection, instant broadcast to all players
-- **Card Replacement Timing**: Optimized to update within 1 second using multiple refresh intervals
+- **Card Replacement Timing**: Optimized to update within 1 second using multiple refresh intervals  
 - **Card Replacement UI**: Removed success notifications and enhanced dropdown logic with fallbacks
 - **UNO Penalty Animation**: Added full-screen penalty animation when players forget to call UNO
 - **UNO Penalty Broadcast**: All players see animated notification with violator's name and reason
-- **Status**: Complete avatar system, guru card replacement, and UNO penalty animations working seamlessly
+- **R Button Navigation Fix**: Fixed R button to prevent page navigation using preventDefault() and stopPropagation()
+- **Status**: Complete avatar system with correct positioning, guru card replacement modal, and UNO penalty animations working seamlessly
 
 ## System Architecture
 

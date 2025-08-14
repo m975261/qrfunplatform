@@ -573,26 +573,26 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Attached to Circle Equally */}
+      {/* Avatar Container - Centered for proper positioning */}
       <div className="relative mx-auto mb-8" style={{ width: '400px', height: '400px' }}>
         {/* Game Circle Background */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-80 h-80 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
         </div>
 
-        {/* 4 Fixed Avatar Positions - Attached to Circle Perimeter */}
+        {/* 4 Fixed Avatar Positions using absolute positioning to match reference image */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Position avatars using CSS Grid to match reference image exactly
-          const getPositionClass = (pos: number) => {
+          // Absolute positioning to match reference image exactly
+          const getPositionStyle = (pos: number) => {
             const positions = [
-              'col-start-6 col-end-8 row-start-2 row-end-4', // 12 o'clock - top center, moved down from edge
-              'col-start-9 col-end-11 row-start-6 row-end-8', // 3 o'clock - right center, moved in from edge
-              'col-start-6 col-end-8 row-start-10 row-end-12', // 6 o'clock - bottom center, moved up from edge
-              'col-start-3 col-end-5 row-start-6 row-end-8'  // 9 o'clock - left center (not 10), moved in from edge
+              { top: '15%', left: '50%', transform: 'translateX(-50%)' }, // 12 o'clock - top center
+              { top: '50%', right: '5%', transform: 'translateY(-50%)' }, // 3 o'clock - right center
+              { bottom: '15%', left: '50%', transform: 'translateX(-50%)' }, // 6 o'clock - bottom center  
+              { top: '50%', left: '5%', transform: 'translateY(-50%)' }  // 9 o'clock - left center
             ];
             return positions[pos] || positions[0];
           };
@@ -600,7 +600,8 @@ export default function Game() {
           return (
             <div
               key={position}
-              className={`${getPositionClass(position)} pointer-events-auto flex items-center justify-center`}
+              className="absolute pointer-events-auto"
+              style={getPositionStyle(position)}
             >
                 <div className="relative">
                   {player ? (
