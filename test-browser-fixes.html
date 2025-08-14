@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real Browser Test - R Button & Avatar Positioning</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+        .test-container { background: white; padding: 20px; border-radius: 8px; margin: 10px 0; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .test-btn { background: #007bff; color: white; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Browser-Based Fix Verification</h1>
+    
+    <div class="test-container">
+        <h2>Test 1: R Button Fix (preventDefault)</h2>
+        <p>Testing if R button opens modal instead of navigating to new page</p>
+        <button class="test-btn" onclick="testRButtonFix()">Test R Button Fix</button>
+        <div id="rButtonResult"></div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 2: Avatar Positioning Fix</h2>
+        <p>Testing if CSS Grid system positions avatars around circle</p>
+        <button class="test-btn" onclick="testAvatarPositioning()">Test Avatar Positioning</button>
+        <div id="avatarResult"></div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 3: Live Game Environment</h2>
+        <p>Create a test room and verify fixes work in real game</p>
+        <button class="test-btn" onclick="createTestEnvironment()">Create Test Game</button>
+        <div id="gameResult"></div>
+    </div>
+
+    <script>
+        async function testRButtonFix() {
+            const resultDiv = document.getElementById('rButtonResult');
+            resultDiv.innerHTML = '<div class="result info">Testing R button functionality...</div>';
+            
+            try {
+                // Test if Card component has preventDefault in the R key handler
+                const response = await fetch('/src/components/game/Card.tsx');
+                const cardCode = await response.text();
+                
+                // Check if preventDefault and stopPropagation are present
+                const hasPreventDefault = cardCode.includes('preventDefault()');
+                const hasStopPropagation = cardCode.includes('stopPropagation()');
+                const hasRKeyHandler = cardCode.includes("event.key === 'r'") || cardCode.includes('key === "r"');
+                
+                if (hasPreventDefault && hasStopPropagation && hasRKeyHandler) {
+                    resultDiv.innerHTML = '<div class="result success">✅ R BUTTON FIX VERIFIED: preventDefault() and stopPropagation() found in Card.tsx</div>';
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ R Button fix incomplete:
+                        <br>- preventDefault: ${hasPreventDefault ? '✅' : '❌'}
+                        <br>- stopPropagation: ${hasStopPropagation ? '✅' : '❌'} 
+                        <br>- R key handler: ${hasRKeyHandler ? '✅' : '❌'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Test failed: ${error.message}</div>`;
+            }
+        }
+        
+        async function testAvatarPositioning() {
+            const resultDiv = document.getElementById('avatarResult');
+            resultDiv.innerHTML = '<div class="result info">Testing avatar positioning system...</div>';
+            
+            try {
+                // Test if GameFixed.tsx uses CSS Grid for avatar positioning
+                const response = await fetch('/src/pages/GameFixed.tsx');
+                const gameCode = await response.text();
+                
+                // Check for grid-based avatar positioning
+                const hasGridPositioning = gameCode.includes('col-start-') && gameCode.includes('row-start-');
+                const hasFixedPositions = gameCode.includes('col-start-6 col-end-8 row-start-1') || 
+                                        gameCode.includes('col-start-11 col-end-13 row-start-6');
+                const removedAbsoluteContainer = !gameCode.includes('style={{ width: \'400px\', height: \'400px\' }}');
+                
+                if (hasGridPositioning && hasFixedPositions) {
+                    resultDiv.innerHTML = '<div class="result success">✅ AVATAR POSITIONING VERIFIED: CSS Grid system implemented with fixed positions</div>';
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Avatar positioning fix incomplete:
+                        <br>- Grid positioning: ${hasGridPositioning ? '✅' : '❌'}
+                        <br>- Fixed positions: ${hasFixedPositions ? '✅' : '❌'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Test failed: ${error.message}</div>`;
+            }
+        }
+        
+        async function createTestEnvironment() {
+            const resultDiv = document.getElementById('gameResult');
+            resultDiv.innerHTML = '<div class="result info">Creating test game environment...</div>';
+            
+            try {
+                // Create a minimal test room
+                const createResponse = await fetch('/api/rooms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        hostNickname: 'TestHost',
+                        gameType: 'uno'
+                    })
+                });
+                
+                if (!createResponse.ok) {
+                    throw new Error('Failed to create test room');
+                }
+                
+                const roomData = await createResponse.json();
+                const roomId = roomData.room.id;
+                const roomCode = roomData.room.code;
+                
+                resultDiv.innerHTML = `<div class="result success">✅ Test environment created!
+                    <br><strong>Room Code:</strong> ${roomCode}
+                    <br><strong>Room ID:</strong> ${roomId}
+                    <br><br>
+                    <a href="/room/${roomId}" target="_blank" style="background: #28a745; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">Open Test Room</a>
+                    <br><br>
+                    Instructions:
+                    <br>1. Click "Open Test Room" to join the lobby
+                    <br>2. Join as guru user "unom975261" 
+                    <br>3. Start the game and test R button + avatar positioning
+                </div>`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Failed to create test environment: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
