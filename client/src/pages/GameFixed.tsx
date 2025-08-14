@@ -494,10 +494,10 @@ export default function Game() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
           {/* Curved Direction Arrow around center card */}
           {room?.direction && room?.status === 'playing' && (
-            <div className="absolute inset-0 w-64 h-64 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 z-5">
+            <div className="absolute inset-0 w-80 h-80 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 z-5">
               <svg 
                 className="w-full h-full animate-pulse" 
-                viewBox="0 0 256 256" 
+                viewBox="0 0 320 320" 
                 fill="none" 
                 xmlns="http://www.w3.org/2000/svg"
               >
@@ -511,33 +511,33 @@ export default function Game() {
                 
                 {room.direction === 'clockwise' ? (
                   <>
-                    {/* Clockwise curved arrow - much larger radius */}
+                    {/* Clockwise curved arrow - extra large radius for no overlap */}
                     <path
-                      d="M 128 40 A 70 70 0 1 1 188 128"
+                      d="M 160 50 A 90 90 0 1 1 230 160"
                       stroke="url(#arrowGradient)"
-                      strokeWidth="6"
+                      strokeWidth="8"
                       fill="none"
                       strokeLinecap="round"
                     />
-                    {/* Arrow head for clockwise - larger */}
+                    {/* Arrow head for clockwise - proportionally larger */}
                     <polygon
-                      points="188,128 175,118 175,126 165,126 165,130 175,130 175,138"
+                      points="230,160 215,148 215,157 203,157 203,163 215,163 215,172"
                       fill="url(#arrowGradient)"
                     />
                   </>
                 ) : (
                   <>
-                    {/* Counterclockwise curved arrow - much larger radius */}
+                    {/* Counterclockwise curved arrow - extra large radius for no overlap */}
                     <path
-                      d="M 128 40 A 70 70 0 1 0 68 128"
+                      d="M 160 50 A 90 90 0 1 0 90 160"
                       stroke="url(#arrowGradient)"
-                      strokeWidth="6"
+                      strokeWidth="8"
                       fill="none"
                       strokeLinecap="round"
                     />
-                    {/* Arrow head for counterclockwise - larger */}
+                    {/* Arrow head for counterclockwise - proportionally larger */}
                     <polygon
-                      points="68,128 81,118 81,126 91,126 91,130 81,130 81,138"
+                      points="90,160 105,148 105,157 117,157 117,163 105,163 105,172"
                       fill="url(#arrowGradient)"
                     />
                   </>
