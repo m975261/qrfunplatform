@@ -38,6 +38,14 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: Draw button positioned in `col-start-10 col-end-12 row-start-10 row-end-12` grid cells
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
+**CRITICAL - RECENTLY FIXED**: White Page Issue & Function Hoisting (Fixed Aug 14, 2025)
+- **White Page Fix**: Resolved critical React component crash caused by function hoisting issue
+- **Function Scope**: Moved `isPlayerOnline` function definition before its usage to prevent "Cannot access before initialization" error
+- **Error Handling**: Added enhanced loading state with connection debugging and 3-second timeout detection
+- **Connection Recovery**: Implemented refresh button for stuck loading states with proper WebSocket error detection
+- **Debug Logging**: Added comprehensive debug logs to track gameState and connection status during loading
+- **Status**: White page issue completely resolved - game now loads properly without React crashes
+
 **CRITICAL - RECENTLY FIXED**: Card Replacement & Single-Click System (Fixed Aug 14, 2025)
 - **Avatar Positioning**: Positioned at exact clock positions (12, 3, 6, 9) attached to circle without overlapping
 - **Avatar Selection System**: First-time nickname entry includes male/female avatar selection, remembered in localStorage
