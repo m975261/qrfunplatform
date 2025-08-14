@@ -189,6 +189,8 @@ export default function Home() {
       });
       
       console.log('🔧 Guru check response:', response.status);
+      const data = await response.json();
+      console.log('🔧 Guru check data:', data);
       
       if (response.status === 404) {
         // Not a guru user, proceed normally
@@ -196,7 +198,6 @@ export default function Home() {
         return false;
       } else if (response.status === 200) {
         // Is a guru user but needs password (fixed response from server)
-        const data = await response.json();
         console.log('🔧 Guru user found, needs password:', data);
         return data.requiresPassword || data.userExists;
       } else {

@@ -1,129 +1,76 @@
-import WebSocket from 'ws';
+#!/usr/bin/env node
+
+/**
+ * Complete test of the guru authentication flow
+ * to understand why the password dialog didn't appear
+ */
+
 import fetch from 'node-fetch';
 
 const BASE_URL = 'http://localhost:5000';
-const WS_URL = 'ws://localhost:5000/ws';
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+console.log('🔧 COMPLETE GURU AUTHENTICATION FLOW TEST');
+console.log('=' .repeat(60));
 
-async function testCompleteSystem() {
-  console.log('🔧 COMPLETE UNO BUG FIX TEST');
-  console.log('='.repeat(50));
+async function testCompleteFlow() {
+  console.log('Testing the exact scenario:');
+  console.log('1. User enters "unom975261" as nickname');
+  console.log('2. System should detect guru user');
+  console.log('3. System should show password dialog');
+  console.log('4. But user went directly to room creation');
   
-  let player1WS, player2WS;
-  let player1Id, player2Id;
-  
+  console.log('\n🔍 STEP 1: Test guru user detection');
   try {
-    // Step 1: Create room and get players
-    const roomResponse = await fetch(`${BASE_URL}/api/rooms`, {
+    const response = await fetch(`${BASE_URL}/api/guru-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hostNickname: 'BugTestHost' })
+      body: JSON.stringify({ playerName: 'unom975261', password: 'check' })
     });
-    const roomData = await roomResponse.json();
-    const roomCode = roomData.room?.code || roomData.code;
-    player1Id = roomData.room?.hostId || roomData.hostId;
-    console.log(`✅ Room created: ${roomCode}, Host ID: ${player1Id}`);
     
-    // Join second player
-    const joinResponse = await fetch(`${BASE_URL}/api/rooms/${roomCode}/join`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nickname: 'BugTestPlayer' })
-    });
-    const joinData = await joinResponse.json();
-    player2Id = joinData.player?.id;
-    console.log(`✅ Player 2 joined: ${player2Id}`);
+    console.log(`Response status: ${response.status}`);
+    const data = await response.json();
+    console.log('Response data:', data);
     
-    // Step 2: Connect WebSockets with proper authentication
-    player1WS = new WebSocket(WS_URL);
-    player2WS = new WebSocket(WS_URL);
+    if (response.status === 200 && data.requiresPassword) {
+      console.log('✅ Guru detection works - should trigger password dialog');
+    } else {
+      console.log('❌ Guru detection failed - explains why no dialog appeared');
+    }
     
-    await new Promise(resolve => {
-      let connectedCount = 0;
-      const onConnect = () => {
-        connectedCount++;
-        if (connectedCount === 2) resolve();
-      };
-      player1WS.on('open', onConnect);
-      player2WS.on('open', onConnect);
-    });
-    console.log('🔗 WebSocket connections established');
+    console.log('\n🔍 STEP 2: Test what client checkGuruUser should return');
+    const isGuruUser = (response.status === 200) && (data.requiresPassword || data.userExists);
+    console.log(`checkGuruUser should return: ${isGuruUser}`);
     
-    // Step 3: Authenticate WebSocket connections
-    player1WS.send(JSON.stringify({
-      type: 'authenticate',
-      playerId: player1Id,
-      roomCode
-    }));
+    if (isGuruUser) {
+      console.log('✅ This should have triggered the guru login dialog');
+      console.log('📋 The dialog should appear with:');
+      console.log('   - setShowHostPopup(false)');
+      console.log('   - setShowGuruLogin(true)');
+      console.log('   - setPendingAction("create")');
+    } else {
+      console.log('❌ This would have bypassed guru authentication');
+      console.log('📋 Instead it would call:');
+      console.log('   - createRoomMutation.mutate(popupNickname)');
+    }
     
-    player2WS.send(JSON.stringify({
-      type: 'authenticate', 
-      playerId: player2Id,
-      roomCode
-    }));
+    console.log('\n🔍 STEP 3: Analyze what likely happened');
+    console.log('From the user logs, we only see:');
+    console.log('   "🔧 Checking if user is guru: unom975261"');
+    console.log('But we don\'t see:');
+    console.log('   "🔧 Guru check response: 200"');
+    console.log('   "🔧 Guru check data: {...}"');
+    console.log('   "🔧 Guru user found, needs password: {...}"');
     
-    await sleep(500);
-    console.log('🔐 WebSocket authentication sent');
-    
-    // Step 4: Start game
-    await fetch(`${BASE_URL}/api/rooms/${roomCode}/start`, {
-      method: 'POST'
-    });
-    console.log('🚀 Game started');
-    await sleep(1000);
-    
-    // Step 5: Get current game state
-    const gameResponse = await fetch(`${BASE_URL}/api/rooms/${roomCode}`);
-    const gameState = await gameResponse.json();
-    console.log(`🎮 Current player: ${gameState.room?.currentPlayerIndex || 0}`);
-    
-    // Step 6: Test UNO bug scenario
-    console.log('\n🐛 TESTING UNO BUG SCENARIO:');
-    console.log('1. Current player calls UNO');
-    console.log('2. Same player immediately plays card');
-    console.log('3. Should NOT get penalty if UNO was called');
-    
-    // Call UNO first
-    console.log('📢 Calling UNO...');
-    player1WS.send(JSON.stringify({
-      type: 'call_uno'
-    }));
-    
-    await sleep(500); // Wait for UNO call to process
-    
-    // Play a card
-    console.log('🃏 Playing card...');
-    player1WS.send(JSON.stringify({
-      type: 'play_card',
-      cardIndex: 0
-    }));
-    
-    await sleep(2000); // Wait for card play to process
-    
-    console.log('\n🔍 CHECK SERVER LOGS FOR:');
-    console.log('✅ "UNO CALL VERIFICATION: ... hasCalledUno=true"');
-    console.log('✅ "UNO STATUS CONFIRMED: ... has called UNO"');
-    console.log('✅ "UNO SUCCESS: ... played from 2→1 cards WITH UNO called"');
-    console.log('❌ Should NOT see: "UNO PENALTY: ... without calling UNO"');
-    
-    return { success: true, roomCode };
+    console.log('\n💡 LIKELY CAUSE:');
+    console.log('The fetch request in the browser may have failed silently,');
+    console.log('causing checkGuruUser to return false and skip guru auth.');
     
   } catch (error) {
-    console.error('❌ Test error:', error.message);
-    return { success: false, error: error.message };
-  } finally {
-    if (player1WS) player1WS.close();
-    if (player2WS) player2WS.close();
+    console.error('Error during test:', error.message);
+    console.log('\n❌ NETWORK ERROR - This could be the issue!');
+    console.log('If the client can\'t reach /api/guru-login, it would fail silently');
+    console.log('and proceed with normal room creation.');
   }
 }
 
-testCompleteSystem().then(result => {
-  console.log('\n📋 SUMMARY:', result.success ? 'TEST COMPLETED' : 'TEST FAILED');
-  if (result.roomCode) {
-    console.log(`🏠 Room Code: ${result.roomCode}`);
-  }
-  process.exit(result.success ? 0 : 1);
-});
+testCompleteFlow();
