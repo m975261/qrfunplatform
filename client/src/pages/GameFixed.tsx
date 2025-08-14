@@ -37,7 +37,8 @@ export default function Game() {
     continueGame,
     replacePlayer,
     playAgain,
-    isConnected
+    isConnected,
+    socket
   } = useSocket();
 
   const [showChat, setShowChat] = useState(false);
@@ -309,16 +310,13 @@ export default function Game() {
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
         
-        // Force immediate visual update - target 1 second total
-        setTimeout(async () => {
-          await refreshGameState();
+        // Force immediate visual update - target 1 second total  
+        setTimeout(() => {
+          // Force re-fetch by calling joinRoom again
+          if (roomId && playerId) {
+            joinRoom(roomId, playerId);
+          }
         }, 200);
-        setTimeout(async () => {
-          await refreshGameState();
-        }, 600);
-        setTimeout(async () => {
-          await refreshGameState();
-        }, 1000);
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
@@ -573,26 +571,19 @@ export default function Game() {
 
 
 
-      {/* Avatar Container - Centered for proper positioning */}
-      <div className="relative mx-auto mb-8" style={{ width: '400px', height: '400px' }}>
-        {/* Game Circle Background */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-80 h-80 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
-        </div>
-
-        {/* 4 Fixed Avatar Positions using absolute positioning to match reference image */}
+        {/* 4 Fixed Avatar Positions using CSS Grid positioning to match reference image */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Absolute positioning to match reference image exactly
-          const getPositionStyle = (pos: number) => {
+          // Grid positioning to match reference image exactly - FIXED
+          const getPositionClass = (pos: number) => {
             const positions = [
-              { top: '15%', left: '50%', transform: 'translateX(-50%)' }, // 12 o'clock - top center
-              { top: '50%', right: '5%', transform: 'translateY(-50%)' }, // 3 o'clock - right center
-              { bottom: '15%', left: '50%', transform: 'translateX(-50%)' }, // 6 o'clock - bottom center  
-              { top: '50%', left: '5%', transform: 'translateY(-50%)' }  // 9 o'clock - left center
+              'col-start-6 col-end-8 row-start-1 row-end-3', // 12 o'clock - top center
+              'col-start-11 col-end-13 row-start-6 row-end-8', // 3 o'clock - right edge
+              'col-start-6 col-end-8 row-start-11 row-end-13', // 6 o'clock - bottom edge  
+              'col-start-1 col-end-3 row-start-6 row-end-8'  // 9 o'clock - left edge
             ];
             return positions[pos] || positions[0];
           };
@@ -600,8 +591,7 @@ export default function Game() {
           return (
             <div
               key={position}
-              className="absolute pointer-events-auto"
-              style={getPositionStyle(position)}
+              className={`${getPositionClass(position)} pointer-events-auto flex items-center justify-center`}
             >
                 <div className="relative">
                   {player ? (
@@ -719,12 +709,11 @@ export default function Game() {
                     </>
                   )}
                 </div>
-              </div>
-            );
+            </div>
+          );
         })}
-      </div>
 
-      {/* Legacy player rendering - keeping for compatibility but hiding */}
+      {/* Remove legacy player rendering completely */}
       <div className="hidden">
         {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
         const filteredIndex = gamePlayers.filter((p: any) => p.id !== playerId && !p.isSpectator).indexOf(player);
@@ -1124,7 +1113,11 @@ export default function Game() {
             setSelectedCardIndex(null);
           }}
           onReplaceCard={handleGuruReplaceCard}
-          refreshGameState={refreshGameState}
+          refreshGameState={() => {
+            if (roomId && playerId) {
+              joinRoom(roomId, playerId);
+            }
+          }}
         />
       )}
 
@@ -1137,7 +1130,7 @@ export default function Game() {
               <button
                 onClick={() => {
                   localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'male');
-                  sendMessage('avatar_changed', { playerId: selectedAvatarPlayerId, gender: 'male' });
+                  socket?.send(JSON.stringify({ type: 'avatar_changed', playerId: selectedAvatarPlayerId, gender: 'male' }));
                   setShowAvatarSelector(false);
                   setSelectedAvatarPlayerId(null);
                 }}
@@ -1148,7 +1141,7 @@ export default function Game() {
               <button
                 onClick={() => {
                   localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'female');
-                  sendMessage('avatar_changed', { playerId: selectedAvatarPlayerId, gender: 'female' });
+                  socket?.send(JSON.stringify({ type: 'avatar_changed', playerId: selectedAvatarPlayerId, gender: 'female' }));
                   setShowAvatarSelector(false);
                   setSelectedAvatarPlayerId(null);
                 }}
