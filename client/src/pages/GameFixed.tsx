@@ -223,7 +223,12 @@ export default function Game() {
         description: `Adding ${spectator.nickname} to position ${availablePosition + 1}...`,
       });
       
-      const response = await fetch(`/api/rooms/${roomId}/assign-spectator-to-game`, {
+      // Use the correct endpoint based on room status
+      const endpoint = room.status === 'playing' 
+        ? `/api/rooms/${roomId}/assign-spectator-to-game`
+        : `/api/rooms/${roomId}/assign-spectator`;
+        
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -809,17 +814,17 @@ export default function Game() {
                 <div key={spectator.id}>
                   <div 
                     className={`flex items-center space-x-2 p-1.5 rounded transition-colors ${
-                      isHost && room.status === "playing" 
+                      isHost 
                         ? 'hover:bg-blue-50 cursor-pointer' 
                         : ''
                     }`}
                     onClick={
-                      isHost && room.status === "playing" 
+                      isHost
                         ? () => handleHostAssignSpectatorToGame(spectator.id)
                         : undefined
                     }
                     title={
-                      isHost && room.status === "playing"
+                      isHost
                         ? "Click to assign to next available slot"
                         : ""
                     }
@@ -828,8 +833,8 @@ export default function Game() {
                       {spectator.nickname?.[0]?.toUpperCase()}
                     </div>
                     <span className="text-xs text-gray-600 truncate flex-1">{spectator.nickname}</span>
-                    {/* Show assignment indicator for host during active game */}
-                    {isHost && room.status === "playing" && (
+                    {/* Show assignment indicator for host */}
+                    {isHost && (
                       <div className="text-blue-600 text-xs font-medium">+</div>
                     )}
                   </div>
@@ -840,8 +845,8 @@ export default function Game() {
                 </div>
               ))}
             </div>
-            {/* Instructions for host during active game */}
-            {isHost && room.status === "playing" && players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
+            {/* Instructions for host */}
+            {isHost && players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
               <div className="mt-2 pt-2 border-t border-gray-200">
                 <div className="text-xs text-blue-600 text-center font-medium">
                   Host Controls

@@ -2559,17 +2559,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid spectator" });
       }
       
-      // Verify position is available
-      const players = await storage.getPlayersByRoom(room.id);
-      const positionTaken = players.some(p => !p.isSpectator && p.position === position);
-      if (positionTaken) {
-        return res.status(400).json({ error: "Position already occupied" });
+      // CRITICAL: Handle complex player state scenarios (kick/rejoin/duplicate handling)
+      const roomPlayers = await storage.getPlayersByRoom(room.id);
+      
+      // Clean up any duplicate spectator entries for the same nickname
+      const duplicateSpectators = roomPlayers.filter(p => 
+        p.nickname.toLowerCase() === spectator.nickname.toLowerCase() && 
+        p.id !== spectator.id && 
+        p.isSpectator
+      );
+      
+      for (const duplicate of duplicateSpectators) {
+        console.log(`Cleaning up duplicate spectator entry: ${duplicate.id} (${duplicate.nickname})`);
+        await storage.deletePlayer(duplicate.id);
       }
       
-      // Assign spectator to position
+      // Re-fetch players after cleanup
+      const cleanedPlayers = await storage.getPlayersByRoom(room.id);
+      
+      // Check if position is available (exclude left players and spectators)
+      const positionTaken = cleanedPlayers.some(p => 
+        p.position === position && 
+        !p.isSpectator && 
+        !p.hasLeft
+      );
+      
+      if (positionTaken) {
+        return res.status(400).json({ error: 'Position already taken' });
+      }
+      
+      // Additional safety check: Ensure spectator is still valid after cleanup
+      const currentSpectator = await storage.getPlayer(spectatorId);
+      if (!currentSpectator || currentSpectator.roomId !== room.id || !currentSpectator.isSpectator) {
+        return res.status(400).json({ error: 'Spectator no longer valid after cleanup' });
+      }
+      
+      // Get cards for this position from positionHands or clear hand for lobby
+      let newHand: Card[] = [];
+      if (room.positionHands && room.positionHands[position.toString()]) {
+        newHand = room.positionHands[position.toString()];
+        console.log(`Host assigning position ${position} cards to spectator ${spectator.nickname}`);
+      } 
+      
+      // Assign spectator to position with comprehensive update
       await storage.updatePlayer(spectatorId, {
+        position,
         isSpectator: false,
-        position: position
+        hasLeft: false,
+        leftAt: null,
+        hand: newHand,
+        hasCalledUno: false,
+        finishPosition: null
       });
       
       console.log(`Host assigned spectator ${spectator.nickname} to position ${position}`);
