@@ -257,14 +257,27 @@ export function useSocket(autoConnect: boolean = true) {
             break;
           case 'card_replaced':
             console.log(`Card replaced by ${message.playerId}:`, message.message);
-            // Force immediate refresh of game state to show the replaced card
+            // Faster refresh targeting 1-second response time
             if (typeof refreshGameState === 'function') {
-              setTimeout(() => refreshGameState(), 100); // Small delay to ensure server update is complete
+              setTimeout(() => refreshGameState(), 50);
+              setTimeout(() => refreshGameState(), 200);
+              setTimeout(() => refreshGameState(), 500);
             }
-            // Also trigger a re-render of the component
+            // Force component re-render
             setGameState((prev: any) => ({
               ...prev,
               lastCardReplacedAt: Date.now(),
+              forceRefresh: Math.random()
+            }));
+            break;
+          case 'avatar_changed':
+            console.log(`Avatar changed for player ${message.playerId}: ${message.gender}`);
+            // Update localStorage for all clients
+            localStorage.setItem(`avatar_${message.playerId}`, message.gender);
+            // Force re-render to show updated avatar
+            setGameState((prev: any) => ({
+              ...prev,
+              avatarUpdate: Date.now(),
               forceRefresh: Math.random()
             }));
             break;

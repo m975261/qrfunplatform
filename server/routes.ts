@@ -1434,6 +1434,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               serverTime: Date.now()
             }));
             break;
+          case 'avatar_changed':
+            // Broadcast avatar change to all players in the room
+            if (connection.roomId && message.playerId && message.gender) {
+              broadcastToRoom(connection.roomId, {
+                type: 'avatar_changed',
+                playerId: message.playerId,
+                gender: message.gender
+              }, connection.id);
+            }
+            break;
         }
       } catch (error) {
         console.error('WebSocket message error:', error);

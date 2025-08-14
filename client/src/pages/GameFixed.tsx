@@ -53,6 +53,8 @@ export default function Game() {
   const [winnerData, setWinnerData] = useState<any>(null);
   const [showGuruReplaceModal, setShowGuruReplaceModal] = useState(false);
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  const [selectedAvatarPlayerId, setSelectedAvatarPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -289,23 +291,20 @@ export default function Game() {
       
       if (response.ok) {
         console.log("✅ Card replaced successfully");
-        toast({
-          title: "Success",
-          description: "Card replaced successfully",
-        });
+        // Remove success notification as requested
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
         
-        // Force immediate visual update with multiple refresh attempts
+        // Force immediate visual update - target 1 second total
         setTimeout(async () => {
           await refreshGameState();
-        }, 100);
-        setTimeout(async () => {
-          await refreshGameState();
-        }, 300);
+        }, 200);
         setTimeout(async () => {
           await refreshGameState();
         }, 600);
+        setTimeout(async () => {
+          await refreshGameState();
+        }, 1000);
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
@@ -573,13 +572,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Position avatars on circle perimeter at cardinal points
+          // Position avatars at requested clock positions: 12, 3, 6, 10 o'clock
           const getPositionClass = (pos: number) => {
             const positions = [
-              'top-2 left-1/2 -translate-x-1/2', // 12 o'clock - attached to top of circle
-              'right-2 top-1/2 -translate-y-1/2', // 3 o'clock - attached to right of circle
-              'bottom-2 left-1/2 -translate-x-1/2', // 6 o'clock - attached to bottom of circle
-              'left-2 top-1/2 -translate-y-1/2' // 9 o'clock - attached to left of circle
+              'top-0 left-1/2 -translate-x-1/2', // 12 o'clock - top of circle
+              'right-0 top-1/2 -translate-y-1/2', // 3 o'clock - right of circle
+              'bottom-0 left-1/2 -translate-x-1/2', // 6 o'clock - bottom of circle
+              'left-6 top-1/4 -translate-y-1/2' // 10 o'clock - upper left diagonal
             ];
             return positions[pos] || positions[0];
           };
@@ -602,16 +601,8 @@ export default function Game() {
                       minHeight: '64px'
                     }}
                     onClick={() => {
-                      // Only allow player to change their own avatar or host to change any
-                      if (player.id === playerId || isHost) {
-                        const currentGender = localStorage.getItem(`avatar_${player.id}`) || 'male';
-                        const newGender = currentGender === 'male' ? 'female' : 'male';
-                        localStorage.setItem(`avatar_${player.id}`, newGender);
-                        // Trigger re-render by refreshing game state
-                        if (typeof refreshGameState === 'function') {
-                          refreshGameState();
-                        }
-                      }
+                      setSelectedAvatarPlayerId(player.id);
+                      setShowAvatarSelector(true);
                     }}
                     >
                       {/* Avatar Picture */}
@@ -1119,6 +1110,48 @@ export default function Game() {
           }}
           onReplaceCard={handleGuruReplaceCard}
         />
+      )}
+
+      {/* Avatar Selection Modal */}
+      {showAvatarSelector && selectedAvatarPlayerId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full mx-4">
+            <h3 className="text-lg font-bold mb-4 text-center">Choose Avatar</h3>
+            <div className="flex justify-center space-x-6">
+              <button
+                onClick={() => {
+                  localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'male');
+                  sendMessage('avatar_changed', { playerId: selectedAvatarPlayerId, gender: 'male' });
+                  setShowAvatarSelector(false);
+                  setSelectedAvatarPlayerId(null);
+                }}
+                className="text-6xl hover:scale-110 transition-transform p-4 rounded-lg hover:bg-gray-100"
+              >
+                👨
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'female');
+                  sendMessage('avatar_changed', { playerId: selectedAvatarPlayerId, gender: 'female' });
+                  setShowAvatarSelector(false);
+                  setSelectedAvatarPlayerId(null);
+                }}
+                className="text-6xl hover:scale-110 transition-transform p-4 rounded-lg hover:bg-gray-100"
+              >
+                👩
+              </button>
+            </div>
+            <button
+              onClick={() => {
+                setShowAvatarSelector(false);
+                setSelectedAvatarPlayerId(null);
+              }}
+              className="mt-4 w-full px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
