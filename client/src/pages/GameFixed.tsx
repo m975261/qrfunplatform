@@ -295,7 +295,17 @@ export default function Game() {
         });
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
-        // The WebSocket will automatically update the game state
+        
+        // Force immediate visual update with multiple refresh attempts
+        setTimeout(async () => {
+          await refreshGameState();
+        }, 100);
+        setTimeout(async () => {
+          await refreshGameState();
+        }, 300);
+        setTimeout(async () => {
+          await refreshGameState();
+        }, 600);
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
@@ -550,26 +560,26 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Exact Lobby Layout */}
-      <div className="relative mx-auto mb-8" style={{ maxWidth: '400px', height: '500px' }}>
+      {/* Player Avatars - Attached to Circle Equally */}
+      <div className="relative mx-auto mb-8" style={{ width: '400px', height: '400px' }}>
         {/* Game Circle Background */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
+          <div className="w-80 h-80 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
         </div>
 
-        {/* 4 Fixed Avatar Positions - Exact Lobby Positioning */}
+        {/* 4 Fixed Avatar Positions - Attached to Circle Perimeter */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Exact same positioning as lobby
+          // Position avatars on circle perimeter at cardinal points
           const getPositionClass = (pos: number) => {
             const positions = [
-              'top-4 left-1/2 -translate-x-1/2', // 12 o'clock
-              'right-4 top-1/2 -translate-y-1/2', // 3 o'clock  
-              'bottom-4 left-1/2 -translate-x-1/2', // 6 o'clock
-              'left-4 top-1/2 -translate-y-1/2' // 9 o'clock
+              'top-2 left-1/2 -translate-x-1/2', // 12 o'clock - attached to top of circle
+              'right-2 top-1/2 -translate-y-1/2', // 3 o'clock - attached to right of circle
+              'bottom-2 left-1/2 -translate-x-1/2', // 6 o'clock - attached to bottom of circle
+              'left-2 top-1/2 -translate-y-1/2' // 9 o'clock - attached to left of circle
             ];
             return positions[pos] || positions[0];
           };

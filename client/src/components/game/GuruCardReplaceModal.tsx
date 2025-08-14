@@ -93,8 +93,14 @@ export default function GuruCardReplaceModal({
     }
 
     onReplaceCard(newCard);
-    resetForm();
+    
+    // Close modal immediately but don't reset form until after successful replacement
     onClose();
+    
+    // Reset form after a brief delay to allow for server processing
+    setTimeout(() => {
+      resetForm();
+    }, 500);
   };
 
   const resetForm = () => {

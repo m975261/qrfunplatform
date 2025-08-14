@@ -257,10 +257,16 @@ export function useSocket(autoConnect: boolean = true) {
             break;
           case 'card_replaced':
             console.log(`Card replaced by ${message.playerId}:`, message.message);
-            // Refresh game state to show the replaced card
+            // Force immediate refresh of game state to show the replaced card
             if (typeof refreshGameState === 'function') {
-              refreshGameState();
+              setTimeout(() => refreshGameState(), 100); // Small delay to ensure server update is complete
             }
+            // Also trigger a re-render of the component
+            setGameState((prev: any) => ({
+              ...prev,
+              lastCardReplacedAt: Date.now(),
+              forceRefresh: Math.random()
+            }));
             break;
         }
       } catch (error) {
