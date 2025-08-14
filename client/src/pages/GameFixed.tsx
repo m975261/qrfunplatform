@@ -567,37 +567,50 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - 12x12 Grid System */}
+      {/* Player Avatars - Polar Coordinate Positioning System */}
       <div className="relative mx-auto mb-8" style={{ width: '400px', height: '400px' }}>
-        {/* 12x12 CSS Grid Container for Perfect Positioning */}
-        <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 w-full h-full">
-          {/* Game Circle Background positioned in center of 12x12 grid */}
-          <div className="col-start-4 col-end-10 row-start-4 row-end-10 flex items-center justify-center">
-            <div className="w-full h-full rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
-          </div>
+        {/* Game Circle Background - Centered */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
+        </div>
 
-          {/* 4 Fixed Avatar Positions using CSS Grid - Clock positions 12, 3, 6, 10 */}
-          {[0, 1, 2, 3].map((position) => {
-            const player = getPlayerAtPosition(position);
-            const isOnline = player ? isPlayerOnline(player) : false;
-            const isPlayerTurn = currentGamePlayer?.id === player?.id;
-            
-            // Grid positions for exact clock placement attached to circle edge
-            const getGridPosition = (pos: number) => {
-              const positions = [
-                'col-start-6 col-end-8 row-start-1 row-end-2', // 12 o'clock - very top edge
-                'col-start-11 col-end-13 row-start-6 row-end-8', // 3 o'clock - far right edge
-                'col-start-6 col-end-8 row-start-11 row-end-13', // 6 o'clock - very bottom edge
-                'col-start-2 col-end-4 row-start-3 row-end-5' // 10 o'clock - upper left diagonal
-              ];
-              return positions[pos] || positions[0];
-            };
+        {/* 4 Fixed Avatar Positions using Polar Coordinates - Clock positions 12, 3, 6, 10 */}
+        {[0, 1, 2, 3].map((position) => {
+          const player = getPlayerAtPosition(position);
+          const isOnline = player ? isPlayerOnline(player) : false;
+          const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-            return (
-              <div
-                key={position}
-                className={`${getGridPosition(position)} flex items-center justify-center pointer-events-auto`}
-              >
+          // Polar coordinate positioning for exact clock placement
+          const getPolarPosition = (pos: number) => {
+            const radius = 160; // Distance from center (32px avatar + 128px circle radius)
+            const angles = [
+              0,   // 12 o'clock - 0 degrees (top)
+              90,  // 3 o'clock - 90 degrees (right) 
+              180, // 6 o'clock - 180 degrees (bottom)
+              300  // 10 o'clock - 300 degrees (upper left)
+            ];
+            
+            const angle = angles[pos] || 0;
+            const radians = (angle * Math.PI) / 180;
+            
+            // Calculate x,y using polar to cartesian conversion
+            const x = radius * Math.sin(radians);
+            const y = -radius * Math.cos(radians); // Negative because CSS y increases downward
+            
+            return {
+              position: 'absolute' as const,
+              top: `calc(50% + ${y}px)`,
+              left: `calc(50% + ${x}px)`,
+              transform: 'translate(-50%, -50%)'
+            };
+          };
+          
+          return (
+            <div
+              key={position}
+              style={getPolarPosition(position)}
+              className="pointer-events-auto"
+            >
                 <div className="relative">
                   {player ? (
                     // Player Avatar - With picture and clickable gender toggle
@@ -714,10 +727,9 @@ export default function Game() {
                     </>
                   )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Player Hand Area - Using same 12x12 CSS Grid Layout System */}
