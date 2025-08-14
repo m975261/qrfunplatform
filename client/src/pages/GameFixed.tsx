@@ -654,11 +654,11 @@ export default function Game() {
                   {/* Control Buttons Attached to Avatar */}
                   {player && (
                     <>
-                      {/* Edit Button for Current Player - Bottom Right of Avatar */}
+                      {/* Edit Button for Current Player - 4:30 o'clock position */}
                       {player.id === playerId && (
                         <button
                           onClick={() => setShowNicknameEditor(true)}
-                          className="absolute bottom-1 right-1 w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
+                          className="absolute bottom-0 right-0 transform translate-x-1/2 translate-y-1/2 w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
                           title="Edit nickname"
                         >
                           E
