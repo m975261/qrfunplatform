@@ -830,7 +830,12 @@ export default function Game() {
                       className={`transition-all duration-200 flex-shrink-0 ${
                         isMyTurn ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer' : 'opacity-60'
                       }`}
-                      onClick={() => {
+                      onClick={(e) => {
+                        // Check if click came from guru replace button
+                        if (e.target && (e.target as HTMLElement).closest('.guru-replace-button')) {
+                          return; // Don't handle card click if it's from the R button
+                        }
+                        
                         if (!isMyTurn) return;
                         if (selectedCardIndex === index) {
                           playCard(index);
