@@ -511,7 +511,7 @@ export default function Game() {
                 <>
                   {/* Clockwise circle with proper positioning within viewBox */}
                   <path
-                    d="M 282 192 A 200 200 0 1 1 282 188"
+                    d="M 392 192 A 200 200 0 0 1 192 392 A 200 200 0 0 1 392 192"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -519,7 +519,7 @@ export default function Game() {
                   />
                   {/* Arrow head for clockwise - detached from circle */}
                   <polygon
-                    points="282,188 275,175 282,175 290,175 290,181 282,181 289,181"
+                    points="398,192 385,185 385,190 385,194 385,199 398,192"
                     fill="url(#arrowGradient)"
                   />
                 </>
@@ -527,7 +527,7 @@ export default function Game() {
                 <>
                   {/* Counterclockwise circle with proper positioning within viewBox */}
                   <path
-                    d="M 282 192 A 200 200 0 1 0 282 196"
+                    d="M 392 192 A 200 200 0 0 0 192 392 A 200 200 0 0 0 392 192"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -535,7 +535,7 @@ export default function Game() {
                   />
                   {/* Arrow head for counterclockwise - detached from circle */}
                   <polygon
-                    points="282,196 275,209 282,209 290,209 290,203 282,203 289,203"
+                    points="398,192 385,199 385,194 385,190 385,185 398,192"
                     fill="url(#arrowGradient)"
                   />
                 </>
