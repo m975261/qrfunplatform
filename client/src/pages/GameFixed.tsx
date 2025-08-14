@@ -403,6 +403,21 @@ export default function Game() {
     currentPlayer: currentPlayer?.nickname,
     playerHand: currentPlayer?.hand?.length
   });
+  
+  // Debug spectator/viewer status
+  const spectators = players.filter((p: any) => p.isSpectator);
+  const onlineSpectators = spectators.filter((p: any) => isPlayerOnline(p));
+  console.log("👥 Viewer Debug:", {
+    totalPlayers: players.length,
+    spectators: spectators.length,
+    onlineSpectators: onlineSpectators.length,
+    spectatorList: spectators.map(p => ({
+      nickname: p.nickname,
+      isSpectator: p.isSpectator,
+      isOnline: isPlayerOnline(p),
+      hasLeft: p.hasLeft
+    }))
+  });
   const activePositions = room.activePositions || []; // Positions that were active when game started
 
   // Helper functions for circular avatar layout
@@ -850,11 +865,11 @@ export default function Game() {
       }}>
         <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 shadow-lg h-full flex flex-col">
           <div className="text-xs font-semibold text-gray-700 mb-2">
-            Viewers ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
+            Viewers ({players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length})
           </div>
           <div className="space-y-1 overflow-y-auto flex-1">
-            {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 ? (
-              players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index: number, arr: any[]) => (
+            {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length > 0 ? (
+              players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).map((spectator: any, index: number, arr: any[]) => (
                 <div key={spectator.id}>
                   <div 
                     className={`flex items-center space-x-2 p-1.5 rounded transition-colors ${
@@ -898,7 +913,7 @@ export default function Game() {
                 Host Controls
               </div>
               <div className="text-xs text-gray-500 text-center mt-1">
-                {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 
+                {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length > 0 
                   ? "Click viewers to assign to empty slots"
                   : "Viewers will appear here when they join"
                 }
