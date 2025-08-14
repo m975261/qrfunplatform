@@ -589,7 +589,7 @@ export default function Game() {
                         position === 0 ? 'left-full top-1/2 -translate-y-1/2 ml-2' : // 12 o'clock avatar -> nickname at 3 o'clock
                         position === 1 ? 'top-full left-1/2 -translate-x-1/2 mt-2' : // 3 o'clock avatar -> nickname at 6 o'clock  
                         position === 2 ? 'right-3/4 top-full mt-2' : // 6 o'clock avatar -> nickname at 7 o'clock
-                        'left-full top-1/2 -translate-y-1/2 ml-2' // 9 o'clock avatar -> nickname at 9 o'clock (right side)
+                        'right-1/4 bottom-full -translate-x-1/2 mb-2' // 9 o'clock avatar -> nickname at 11 o'clock
                       }`}>
                         {player.nickname}
                       </div>
