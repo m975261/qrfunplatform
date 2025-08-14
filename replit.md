@@ -22,15 +22,14 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: Draw button positioned in `col-start-10 col-end-12 row-start-10 row-end-12` grid cells
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
-**CRITICAL - RECENTLY FIXED**: Avatar System & Guru Card Replacement (Fixed Aug 14, 2025)
-- **Avatar Positioning Issue**: Game avatars positioned differently from lobby layout
-- **Avatar Positioning Solution**: Implemented exact lobby positioning with relative container and proper clock positions
-- **Avatar Gender System**: Added male/female avatar pictures (👨👩) with permission-based toggle
-- **Avatar Permission**: Only players can change their own avatar, hosts can change any avatar
-- **Card Selection Issue**: Guru card replacement dropdowns not functioning properly
-- **Card Selection Solution**: Enhanced dropdown logic with fallback options and proper state management
-- **Available Cards Logic**: Modal shows only cards available in current deck with debug information
-- **Status**: Complete avatar system and guru card replacement working seamlessly
+**CRITICAL - RECENTLY FIXED**: Avatar System, Card Replacement & UNO Penalties (Fixed Aug 14, 2025)
+- **Avatar Positioning**: Positioned at exact clock positions (12, 3, 6, 10) attached to circle without overlapping
+- **Avatar Selection System**: Click-to-open popup with male/female selection, instant broadcast to all players
+- **Card Replacement Timing**: Optimized to update within 1 second using multiple refresh intervals
+- **Card Replacement UI**: Removed success notifications and enhanced dropdown logic with fallbacks
+- **UNO Penalty Animation**: Added full-screen penalty animation when players forget to call UNO
+- **UNO Penalty Broadcast**: All players see animated notification with violator's name and reason
+- **Status**: Complete avatar system, guru card replacement, and UNO penalty animations working seamlessly
 
 ## System Architecture
 

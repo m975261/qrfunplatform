@@ -281,6 +281,20 @@ export function useSocket(autoConnect: boolean = true) {
               forceRefresh: Math.random()
             }));
             break;
+          case 'uno_penalty':
+            console.log(`UNO penalty for player: ${message.playerName}`);
+            // Show penalty animation to all players
+            if (typeof setGameState === 'function') {
+              setGameState((prev: any) => ({
+                ...prev,
+                unoPenaltyAnimation: {
+                  playerName: message.playerName,
+                  show: true,
+                  timestamp: Date.now()
+                }
+              }));
+            }
+            break;
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);

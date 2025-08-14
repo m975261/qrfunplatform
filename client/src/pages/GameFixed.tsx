@@ -55,6 +55,7 @@ export default function Game() {
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [selectedAvatarPlayerId, setSelectedAvatarPlayerId] = useState<string | null>(null);
+  const [unoPenaltyAnimation, setUnoPenaltyAnimation] = useState<{ playerName: string; show: boolean } | null>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -108,7 +109,20 @@ export default function Game() {
     if (gameState?.needsContinue) {
       setShowContinuePrompt(true);
     }
-  }, [gameState?.gameEndData, gameState?.needsContinue, gameState?.room?.status, showWinnerModal, roomId, playerId]);
+    
+    // Handle UNO penalty animation
+    if (gameState?.unoPenaltyAnimation?.show) {
+      setUnoPenaltyAnimation({
+        playerName: gameState.unoPenaltyAnimation.playerName,
+        show: true
+      });
+      
+      // Hide animation after 4 seconds
+      setTimeout(() => {
+        setUnoPenaltyAnimation(null);
+      }, 4000);
+    }
+  }, [gameState?.gameEndData, gameState?.needsContinue, gameState?.room?.status, showWinnerModal, roomId, playerId, gameState?.unoPenaltyAnimation]);
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -1150,6 +1164,22 @@ export default function Game() {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* UNO Penalty Animation */}
+      {(gameState?.unoPenaltyAnimation?.show || unoPenaltyAnimation?.show) && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-red-500 to-red-700 text-white p-8 rounded-lg shadow-2xl animate-bounce max-w-lg mx-4 text-center">
+            <div className="text-6xl mb-4">😱</div>
+            <h2 className="text-2xl font-bold mb-2">UNO PENALTY!</h2>
+            <p className="text-xl mb-4">
+              {gameState?.unoPenaltyAnimation?.playerName || unoPenaltyAnimation?.playerName} forgot to call UNO!
+            </p>
+            <p className="text-lg opacity-90">
+              Must draw 2 penalty cards for not calling UNO before playing second-to-last card
+            </p>
           </div>
         </div>
       )}

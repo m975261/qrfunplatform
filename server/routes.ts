@@ -1703,6 +1703,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `${player.nickname} didn't call UNO and drew 2 penalty cards!`,
         type: "system"
       });
+
+      // Broadcast UNO penalty animation to all players
+      broadcastToRoom(connection.roomId, {
+        type: 'uno_penalty',
+        playerName: player.nickname,
+        message: 'forgot to call UNO before playing second-to-last card'
+      });
     }
     
     // Reset UNO call status logic:
