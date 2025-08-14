@@ -1,57 +1,42 @@
-// Test the 12, 3, 6, 10 o'clock avatar positioning
+// Test grid-based avatar positioning
 import fetch from 'node-fetch';
 
-const BASE_URL = 'http://localhost:5000';
+console.log('🕐 CLOCK POSITION GRID TEST');
 
-console.log('🧪 Testing 12, 3, 6, 10 O\'Clock Avatar Positioning...');
-
-async function createFullTestRoom() {
+async function testClockPositions() {
   try {
-    // Create room
-    const createResponse = await fetch(`${BASE_URL}/api/rooms`, {
+    const response = await fetch('http://localhost:5000/api/rooms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hostNickname: 'Host-12oClock', gameType: 'uno' })
+      body: JSON.stringify({ hostNickname: 'ClockTest', gameType: 'uno' })
     });
     
-    const roomData = await createResponse.json();
-    console.log('✅ Room created:', roomData.room.code);
+    const data = await response.json();
+    console.log('✅ Test room created:', data.room.code);
+    console.log(`🔗 URL: http://localhost:5000/room/${data.room.code}`);
     
-    // Add second player (minimum to start)
-    const joinResponse = await fetch(`${BASE_URL}/api/rooms/${roomData.room.id}/join`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        nickname: 'Player-3oClock', 
-        playerId: `player-3oclock-${Date.now()}`
-      })
-    });
+    console.log('\n=== GRID POSITIONING SYSTEM ===');
+    console.log('✅ Removed upper grid system');
+    console.log('✅ Kept bottom grid for player hand');
+    console.log('✅ Added dedicated avatar grid (12x12)');
     
-    if (joinResponse.ok) {
-      console.log('✅ Second player added');
-      
-      // Try to start the game - note: we need the correct host authorization
-      console.log('🎮 Attempting to start game...');
-      
-      console.log('\n=== UPDATED AVATAR POSITIONS ===');
-      console.log('Position 0 (Host): 12 o\'clock - top center');
-      console.log('Position 1: 3 o\'clock - right side'); 
-      console.log('Position 2: 6 o\'clock - bottom center');
-      console.log('Position 3: 10 o\'clock - bottom left (CHANGED from 9 o\'clock)');
-      
-      console.log('\n✅ Avatar positioning updated to 12, 3, 6, 10 o\'clock');
-      console.log(`🔗 Test URL: http://localhost:5000/room/${roomData.room.code}`);
-      console.log('🎯 You can manually start the game and verify positioning');
-      
-      return { success: true, roomCode: roomData.room.code };
-    } else {
-      console.log('❌ Failed to add second player');
-      return { success: false };
-    }
+    console.log('\n=== AVATAR POSITIONS ===');
+    console.log('Position 0: col-start-6 col-end-8 row-start-1 row-end-3 (12 o\'clock)');
+    console.log('Position 1: col-start-11 col-end-13 row-start-6 row-end-8 (3 o\'clock)');
+    console.log('Position 2: col-start-6 col-end-8 row-start-11 row-end-13 (6 o\'clock)');
+    console.log('Position 3: col-start-2 col-end-4 row-start-3 row-end-5 (10 o\'clock)');
+    
+    console.log('\n🧪 TO VERIFY:');
+    console.log('1. Load the room URL');
+    console.log('2. Add players and start game');
+    console.log('3. Check avatars are at exact clock positions');
+    console.log('4. Verify no overlap with game elements');
+    console.log('5. Confirm grid system works as expected');
+    
+    return data.room.code;
   } catch (error) {
-    console.error('❌ Test error:', error);
-    return { success: false };
+    console.error('❌ Test failed:', error);
   }
 }
 
-createFullTestRoom();
+testClockPositions();

@@ -484,8 +484,8 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - CSS Grid Layout */}
-      <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-1 p-4" style={{
+      {/* Central Game Area - Simple Container */}
+      <div className="absolute inset-0 p-4" style={{
         paddingBottom: 'max(30vh, 240px)',
         paddingTop: 'max(8vh, 64px)'
       }}>
@@ -569,46 +569,21 @@ export default function Game() {
         </div>
       </div>
 
-
-
-        {/* 4 Fixed Avatar Positions using absolute positioning for 12, 3, 6, 10 o'clock */}
+      {/* Avatar Grid System - 12x12 Grid for precise positioning */}
+      <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-0 pointer-events-none">
+        {/* 4 Fixed Avatar Positions using grid positioning for 12, 3, 6, 10 o'clock */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Calculate positions attached to circle edge at exact clock positions
-          const getPositionStyle = (pos: number) => {
-            // Center of the screen is the circle center
-            // Circle radius is approximately 140px from center
-            // Avatar size is 64px, so we need to position avatar center at circle edge + avatar radius
-            const circleRadius = 140; // Distance from screen center to circle edge
-            const avatarRadius = 32; // Half of avatar size (64px)
-            const totalDistance = circleRadius + avatarRadius; // Distance from center to avatar center
-            
+          // Grid positioning for exact clock positions
+          const getGridClass = (pos: number) => {
             const positions = [
-              { // 12 o'clock - top center
-                top: `calc(50% - ${totalDistance}px)`,
-                left: '50%',
-                transform: 'translate(-50%, -50%)'
-              },
-              { // 3 o'clock - right side  
-                top: '50%',
-                left: `calc(50% + ${totalDistance}px)`,
-                transform: 'translate(-50%, -50%)'
-              },
-              { // 6 o'clock - bottom center
-                top: `calc(50% + ${totalDistance}px)`,
-                left: '50%',
-                transform: 'translate(-50%, -50%)'
-              },
-              { // 10 o'clock - calculate using trigonometry
-                // 10 o'clock is 240 degrees (or -120 degrees from 12 o'clock)
-                // x = cos(240°) * distance, y = sin(240°) * distance
-                top: `calc(50% + ${Math.round(totalDistance * Math.sin(240 * Math.PI / 180))}px)`,
-                left: `calc(50% + ${Math.round(totalDistance * Math.cos(240 * Math.PI / 180))}px)`,
-                transform: 'translate(-50%, -50%)'
-              }
+              'col-start-6 col-end-8 row-start-1 row-end-3', // 12 o'clock - top center
+              'col-start-11 col-end-13 row-start-6 row-end-8', // 3 o'clock - right side
+              'col-start-6 col-end-8 row-start-11 row-end-13', // 6 o'clock - bottom center  
+              'col-start-2 col-end-4 row-start-3 row-end-5'  // 10 o'clock - upper left
             ];
             return positions[pos] || positions[0];
           };
@@ -616,8 +591,7 @@ export default function Game() {
           return (
             <div
               key={position}
-              className="absolute pointer-events-auto flex items-center justify-center"
-              style={getPositionStyle(position)}
+              className={`${getGridClass(position)} pointer-events-auto flex items-center justify-center`}
             >
                 <div className="relative">
                   {player ? (
@@ -738,6 +712,7 @@ export default function Game() {
             </div>
           );
         })}
+      </div>
 
       {/* Remove legacy player rendering completely */}
       <div className="hidden">
