@@ -509,9 +509,9 @@ export default function Game() {
               
               {room.direction === 'clockwise' ? (
                 <>
-                  {/* Clockwise circle with guaranteed radius to encompass all avatar positions */}
+                  {/* Clockwise circle with proper positioning within viewBox */}
                   <path
-                    d="M 192 -53 A 245 245 0 1 1 185 -58"
+                    d="M 192 35 A 180 180 0 1 1 185 30"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -519,15 +519,15 @@ export default function Game() {
                   />
                   {/* Arrow head for clockwise - detached from circle */}
                   <polygon
-                    points="185,-58 170,-70 170,-61 158,-61 158,-55 170,-55 170,-46"
+                    points="185,30 170,18 170,27 158,27 158,33 170,33 170,42"
                     fill="url(#arrowGradient)"
                   />
                 </>
               ) : (
                 <>
-                  {/* Counterclockwise circle with guaranteed radius to encompass all avatar positions */}
+                  {/* Counterclockwise circle with proper positioning within viewBox */}
                   <path
-                    d="M 192 -53 A 245 245 0 1 0 199 -58"
+                    d="M 192 35 A 180 180 0 1 0 199 30"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -535,7 +535,7 @@ export default function Game() {
                   />
                   {/* Arrow head for counterclockwise - detached from circle */}
                   <polygon
-                    points="199,-58 214,-70 214,-61 226,-61 226,-55 214,-55 214,-46"
+                    points="199,30 214,18 214,27 226,27 226,33 214,33 214,42"
                     fill="url(#arrowGradient)"
                   />
                 </>
