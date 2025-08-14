@@ -322,21 +322,34 @@ export default function Game() {
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
         
-        // Force immediate visual update - ULTRA FAST (3x faster than before)
+        // Force immediate visual update - INSTANT (multiple immediate triggers)
         if (refreshGameState) {
           refreshGameState(); // Immediate refresh
-          setTimeout(() => refreshGameState(), 8);
-          setTimeout(() => refreshGameState(), 16);
-          setTimeout(() => refreshGameState(), 32);
-          setTimeout(() => refreshGameState(), 50);
-          setTimeout(() => refreshGameState(), 75);
+          refreshGameState(); // Double immediate
+          setTimeout(() => refreshGameState(), 1);
+          setTimeout(() => refreshGameState(), 5);
+          setTimeout(() => refreshGameState(), 10);
+          setTimeout(() => refreshGameState(), 20);
+          setTimeout(() => refreshGameState(), 30);
         }
         
-        // Force hand re-render by updating key - ULTRA FAST visual update
+        // Force hand re-render by updating key - INSTANT visual update (multiple immediate)
         setHandRefreshKey(prev => prev + 1);
-        setTimeout(() => setHandRefreshKey(prev => prev + 1), 8);
-        setTimeout(() => setHandRefreshKey(prev => prev + 1), 16);
-        setTimeout(() => setHandRefreshKey(prev => prev + 1), 32);
+        setHandRefreshKey(prev => prev + 1); // Double immediate
+        setTimeout(() => setHandRefreshKey(prev => prev + 1), 1);
+        setTimeout(() => setHandRefreshKey(prev => prev + 1), 5);
+        setTimeout(() => setHandRefreshKey(prev => prev + 1), 10);
+        setTimeout(() => setHandRefreshKey(prev => prev + 1), 20);
+        
+        // Force immediate state update for all triggers
+        setGameState?.((prev: any) => ({
+          ...prev,
+          lastCardReplacedAt: Date.now(),
+          forceRefresh: Math.random(),
+          cardReplacementTrigger: Date.now(),
+          handUpdateForce: Math.random(),
+          instantUpdate: Math.random()
+        }));
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
