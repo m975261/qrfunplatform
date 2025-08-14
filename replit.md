@@ -23,7 +23,7 @@ Preferred communication style: Simple, everyday language.
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
 **CRITICAL - RECENTLY FIXED**: Avatar System, Card Replacement & UNO Penalties (Fixed Aug 14, 2025)
-- **Avatar Positioning**: Fixed exact positioning at clock positions (12, 3, 6, 9) using absolute positioning around game circle
+- **Avatar Positioning**: Fixed exact positioning at clock positions (12, 3, 6, 10) using CSS Grid system around game circle
 - **Avatar Selection System**: Click-to-open popup with male/female selection, instant broadcast to all players
 - **Card Replacement Timing**: Optimized to update within 1 second using multiple refresh intervals  
 - **Card Replacement UI**: Removed success notifications and enhanced dropdown logic with fallbacks

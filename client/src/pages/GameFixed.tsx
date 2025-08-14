@@ -577,13 +577,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Grid positioning to match reference image exactly - FIXED
+          // Grid positioning for 12, 3, 6, 10 o'clock positions
           const getPositionClass = (pos: number) => {
             const positions = [
               'col-start-6 col-end-8 row-start-1 row-end-3', // 12 o'clock - top center
               'col-start-11 col-end-13 row-start-6 row-end-8', // 3 o'clock - right edge
               'col-start-6 col-end-8 row-start-11 row-end-13', // 6 o'clock - bottom edge  
-              'col-start-1 col-end-3 row-start-6 row-end-8'  // 9 o'clock - left edge
+              'col-start-2 col-end-4 row-start-9 row-end-11'  // 10 o'clock - bottom left
             ];
             return positions[pos] || positions[0];
           };
