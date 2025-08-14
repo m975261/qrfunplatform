@@ -1441,7 +1441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 type: 'avatar_changed',
                 playerId: message.playerId,
                 gender: message.gender
-              }, connection.id);
+              });
             }
             break;
         }

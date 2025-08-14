@@ -472,6 +472,14 @@ export function useSocket(autoConnect: boolean = true) {
     });
   };
 
+  const sendAvatarChange = (playerId: string, gender: 'male' | 'female') => {
+    sendMessage({
+      type: 'avatar_changed',
+      playerId,
+      gender
+    });
+  };
+
   const playAgain = () => {
     sendMessage({ type: 'play_again' });
   };
@@ -581,6 +589,7 @@ export function useSocket(autoConnect: boolean = true) {
     chooseColor,
     sendChatMessage,
     sendEmoji,
+    sendAvatarChange,
     exitGame,
     kickPlayer,
     continueGame,

@@ -32,6 +32,7 @@ export default function Game() {
     chooseColor,
     sendChatMessage,
     sendEmoji,
+    sendAvatarChange,
     exitGame,
     kickPlayer,
     continueGame,
@@ -378,6 +379,14 @@ export default function Game() {
   const topCard = room.discardPile?.[0];
   const isGuruUser = localStorage.getItem("isGuruUser") === "true";
   
+  // Helper function to get avatar emoji
+  const getPlayerAvatar = (playerId: string, nickname: string) => {
+    const savedAvatar = localStorage.getItem(`avatar_${playerId}`);
+    if (savedAvatar === 'male') return '👨';
+    if (savedAvatar === 'female') return '👩';
+    return nickname[0].toUpperCase(); // Default to first letter
+  };
+  
   // Debug guru user status
   console.log("🔧 Guru Debug:", {
     isGuruUser,
@@ -554,12 +563,17 @@ export default function Game() {
                       isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
                     }`}
                     onClick={() => {
-                      setSelectedAvatarPlayerId(player.id);
-                      setShowAvatarSelector(true);
+                      // Players can only change their own avatar, hosts can change any avatar
+                      if (player.id === playerId || isHost) {
+                        setSelectedAvatarPlayerId(player.id);
+                        setShowAvatarSelector(true);
+                      }
                     }}
                     >
-                      {/* Simplified Avatar Content - Like Lobby */}
-                      <div className="text-lg">{player.nickname[0].toUpperCase()}</div>
+                      {/* Avatar Content - Show emoji or first letter */}
+                      <div className="text-lg">
+                        {getPlayerAvatar(player.id, player.nickname)}
+                      </div>
                       <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
                       
                       {/* Essential Indicators Only */}
@@ -710,10 +724,16 @@ export default function Game() {
             
             {/* Player Avatar - Grid positioned */}
             <div className="col-start-1 col-end-3 row-start-1 row-end-4 flex items-center justify-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg border-3 ${
-                isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' : 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
-              }`}>
-                {currentPlayer.nickname[0].toUpperCase()}
+              <div 
+                className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg border-3 cursor-pointer hover:scale-105 transition-all ${
+                  isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' : 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
+                }`}
+                onClick={() => {
+                  setSelectedAvatarPlayerId(currentPlayer.id);
+                  setShowAvatarSelector(true);
+                }}
+              >
+                {getPlayerAvatar(currentPlayer.id, currentPlayer.nickname)}
               </div>
             </div>
 
@@ -1049,13 +1069,7 @@ export default function Game() {
                 onClick={() => {
                   localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'male');
                   // Broadcast avatar change to all players via WebSocket
-                  if (gameState?.room?.id) {
-                    fetch(`/api/rooms/${gameState.room.id}/avatar`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ playerId: selectedAvatarPlayerId, gender: 'male' })
-                    });
-                  }
+                  sendAvatarChange(selectedAvatarPlayerId!, 'male');
                   setShowAvatarSelector(false);
                   setSelectedAvatarPlayerId(null);
                 }}
@@ -1066,14 +1080,8 @@ export default function Game() {
               <button
                 onClick={() => {
                   localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'female');
-                  // Broadcast avatar change to all players via WebSocket  
-                  if (gameState?.room?.id) {
-                    fetch(`/api/rooms/${gameState.room.id}/avatar`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ playerId: selectedAvatarPlayerId, gender: 'female' })
-                    });
-                  }
+                  // Broadcast avatar change to all players via WebSocket
+                  sendAvatarChange(selectedAvatarPlayerId!, 'female');
                   setShowAvatarSelector(false);
                   setSelectedAvatarPlayerId(null);
                 }}
