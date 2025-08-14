@@ -40,14 +40,16 @@ Preferred communication style: Simple, everyday language.
 
 **CRITICAL - RECENTLY FIXED**: Card Replacement & Single-Click System (Fixed Aug 14, 2025)
 - **Avatar Positioning**: Positioned at exact clock positions (12, 3, 6, 9) attached to circle without overlapping
-- **Avatar Selection System**: Click-to-open popup with male/female selection, instant broadcast to all players
+- **Avatar Selection System**: First-time nickname entry includes male/female avatar selection, remembered in localStorage
+- **Position-Specific Nicknames**: Nicknames positioned around avatar circles at 3, 6, 7, 9 o'clock positions
+- **4th Player Card Fix**: Fixed critical bug where 4th player joining mid-game got 0 cards - now pre-reserves 7 cards for all positions
 - **Card Replacement Speed**: Ultra-fast updates within 30ms using double immediate calls + 1ms, 5ms, 10ms, 20ms, 30ms intervals
 - **Single-Click Card Playing**: Fixed double-click requirement - cards now play immediately on first click
 - **Wild Card Color Selection**: Fixed post-replacement wild cards to properly show color picker
 - **Wild Card Server Logic**: Server sends choose_color_request message, sets currentColor to null until chosen
 - **UNO Penalty Animation**: Added full-screen penalty animation when players forget to call UNO
 - **UNO Penalty Broadcast**: All players see animated notification with violator's name and reason
-- **Status**: Complete ultra-fast card replacement, single-click playing, wild card color selection, and UNO penalties working seamlessly
+- **Status**: Complete ultra-fast card replacement, single-click playing, wild card color selection, UNO penalties, and 4th player card dealing working seamlessly
 
 **CRITICAL - AVATAR LAYOUT SYSTEM FINALIZED** (Aug 14, 2025)
 - **Layout Architecture**: Single responsive container (w-72 h-72 to w-96 h-96) with iPhone-optimized positioning

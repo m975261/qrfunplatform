@@ -1600,21 +1600,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Update player hands and store position-based hands
     const positionHands: {[key: string]: any[]} = {};
-    const activePositions: number[] = [];
+    const activePositions: number[] = [0, 1, 2, 3]; // Always include all 4 positions for UNO
     
     for (let i = 0; i < gamePlayers.length; i++) {
       await storage.updatePlayer(gamePlayers[i].id, { hand: hands[i] });
       // Store cards by position so anyone joining this position gets these cards
       positionHands[gamePlayers[i].position!.toString()] = hands[i];
-      // Track which positions were active when game started
-      activePositions.push(gamePlayers[i].position!);
+    }
+    
+    // For empty positions, reserve 7 cards from the deck for future players
+    const remainingPositions = [0, 1, 2, 3].filter(pos => 
+      !gamePlayers.some(p => p.position === pos)
+    );
+    
+    let currentDeck = [...finalDeck];
+    for (const emptyPos of remainingPositions) {
+      if (currentDeck.length >= 7) {
+        const reservedCards = currentDeck.splice(0, 7);
+        positionHands[emptyPos.toString()] = reservedCards;
+        console.log(`🃏 Reserved 7 cards for empty position ${emptyPos}`);
+      }
     }
     
     console.log(`Game started with active positions: [${activePositions.join(', ')}]`);
     console.log(`Position hands saved:`, Object.keys(positionHands));
+    console.log(`Remaining deck size: ${currentDeck.length}`);
     
-    // Update room with position-based hands and active positions
-    await storage.updateRoom(connection.roomId, { positionHands, activePositions });
+    // Update room with position-based hands, active positions, and updated deck
+    await storage.updateRoom(connection.roomId, { 
+      positionHands, 
+      activePositions,
+      deck: currentDeck // Use updated deck after reserving cards
+    });
     
     await broadcastRoomState(connection.roomId);
     
