@@ -450,7 +450,7 @@ export default function Game() {
 
       {/* Central Game Area - CSS Grid Layout */}
       <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-1 p-4" style={{
-        paddingBottom: 'max(20vh, 160px)',
+        paddingBottom: 'max(25vh, 200px)',
         paddingTop: 'max(8vh, 64px)'
       }}>
         {/* Draw Pile - Grid positioned to avoid overlap */}
@@ -730,15 +730,17 @@ export default function Game() {
         })}
       </div>
 
-      {/* Player Hand Area - CSS Grid Layout System */}
+      {/* Player Hand Area - Using same 12x12 CSS Grid Layout System */}
       {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="fixed bottom-0 left-0 right-0 z-30">
-          {/* Grid Container - 12x4 grid for bottom player interface */}
-          <div className="grid grid-cols-12 grid-rows-4 gap-1 p-2 h-32 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
+        <div className="absolute bottom-0 left-0 right-0 z-30">
+          {/* Use same 12x12 grid system as main game area */}
+          <div className="grid grid-cols-12 grid-rows-12 gap-1 p-4 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md" style={{
+            height: 'max(25vh, 200px)'
+          }}>
             
             {/* Player Avatar - Grid positioned */}
-            <div className="col-start-1 col-end-2 row-start-1 row-end-3 flex items-center justify-center">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 ${
+            <div className="col-start-1 col-end-3 row-start-1 row-end-4 flex items-center justify-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg border-3 ${
                 isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' : 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
               }`}>
                 {currentPlayer.nickname[0].toUpperCase()}
@@ -746,49 +748,47 @@ export default function Game() {
             </div>
 
             {/* Player Name - Grid positioned */}
-            <div className="col-start-2 col-end-4 row-start-1 row-end-2 flex items-center">
-              <div className={`font-semibold text-white text-sm truncate ${isMyTurn ? 'text-green-400' : ''}`}>
-                {currentPlayer.nickname}
-              </div>
-            </div>
-
-            {/* Card Count - Grid positioned */}
-            <div className="col-start-2 col-end-4 row-start-2 row-end-3 flex items-center">
-              <div className="text-xs text-slate-400">
-                {currentPlayer.hand?.length || 0} cards
+            <div className="col-start-3 col-end-7 row-start-1 row-end-3 flex items-center">
+              <div>
+                <div className={`font-semibold text-white text-lg ${isMyTurn ? 'text-green-400' : ''}`}>
+                  {currentPlayer.nickname}
+                </div>
+                <div className="text-sm text-slate-400">
+                  {currentPlayer.hand?.length || 0} cards
+                </div>
               </div>
             </div>
 
             {/* YOUR TURN Indicator - Grid positioned */}
             {isMyTurn && (
-              <div className="col-start-5 col-end-7 row-start-1 row-end-2 flex items-center">
-                <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 whitespace-nowrap">
+              <div className="col-start-7 col-end-10 row-start-1 row-end-3 flex items-center">
+                <div className="bg-green-500/20 text-green-400 px-3 py-2 rounded-full text-sm font-bold border border-green-500/30">
                   YOUR TURN ⭐
                 </div>
               </div>
             )}
 
             {/* UNO Button - Grid positioned */}
-            <div className="col-start-11 col-end-13 row-start-1 row-end-3 flex items-center justify-center">
+            <div className="col-start-10 col-end-13 row-start-1 row-end-4 flex items-center justify-center">
               <Button
                 variant="outline"
-                size="sm"
-                className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs px-3 py-2 w-full"
+                size="lg"
+                className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-sm px-4 py-3 w-full h-full"
                 onClick={handleUnoCall}
               >
                 🔥 UNO! 🔥
               </Button>
             </div>
 
-            {/* Player Cards - Grid positioned with horizontal scroll */}
-            <div className="col-start-1 col-end-13 row-start-3 row-end-5 overflow-x-auto overflow-y-hidden">
+            {/* Player Cards - Grid positioned with full height for cards */}
+            <div className="col-start-1 col-end-13 row-start-4 row-end-13 overflow-x-auto overflow-y-visible p-2">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div className="flex space-x-2 pb-2 pt-1 min-w-max h-full">
+                <div className="flex space-x-3 min-w-max h-full items-end pb-4">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
                       className={`transition-all duration-200 flex-shrink-0 ${
-                        isMyTurn ? 'hover:scale-105 hover:-translate-y-1 cursor-pointer' : 'opacity-60'
+                        isMyTurn ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer' : 'opacity-60'
                       }`}
                       onClick={() => {
                         if (!isMyTurn) return;
@@ -801,7 +801,7 @@ export default function Game() {
                     >
                       <GameCard
                         card={card}
-                        size="compact"
+                        size="medium"
                         selected={selectedCardIndex === index}
                         disabled={!isMyTurn}
                         isGuruUser={isGuruUser}
@@ -816,7 +816,7 @@ export default function Game() {
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <div className="text-center text-slate-400 text-sm">No cards in hand</div>
+                  <div className="text-center text-slate-400 text-lg">No cards in hand</div>
                 </div>
               )}
             </div>
