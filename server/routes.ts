@@ -1171,11 +1171,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hand: updatedHand
       });
       
-      // Broadcast the update to room
+      // Get updated room state and broadcast complete update
+      const room = await storage.getRoom(roomId);
+      const players = await storage.getPlayersInRoom(roomId);
+      
       broadcastToRoom(roomId, {
-        type: 'card_replaced',
-        playerId,
-        cardIndex,
+        type: 'game_state_update',
+        room,
+        players,
         message: `${player.nickname} replaced a card`
       });
       

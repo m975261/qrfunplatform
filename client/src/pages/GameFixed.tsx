@@ -295,8 +295,7 @@ export default function Game() {
         });
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
-        // Refresh game state to see the new card
-        window.location.reload();
+        // The WebSocket will automatically update the game state
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
@@ -551,31 +550,35 @@ export default function Game() {
 
 
 
-      {/* Player Avatars in Circular Layout - Fully viewport responsive */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
-        paddingBottom: 'max(20vh, 160px)',
+      {/* Player Avatars using 12x12 Grid System - Clock positions (12, 3, 6, 10) */}
+      <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-1 p-4 pointer-events-none" style={{
+        paddingBottom: 'max(30vh, 240px)',
         paddingTop: 'max(8vh, 64px)'
       }}>
-        <div className="relative" style={{
-          width: 'max(20rem, min(40vw, 40vh))',
-          height: 'max(25rem, min(50vw, 50vh))',
-          minWidth: '320px',
-          minHeight: '400px'
-        }}>
           
 
-          {/* 4 Fixed Avatar Positions */}
-          {[0, 1, 2, 3].map((position) => {
-            const player = getPlayerAtPosition(position);
-            const isOnline = player ? isPlayerOnline(player) : false;
-            const isPlayerTurn = currentGamePlayer?.id === player?.id;
-            
-            return (
-              <div
-                key={position}
-                className="absolute pointer-events-auto"
-                style={getPositionStyle(position)}
-              >
+        {/* 4 Fixed Avatar Positions - Grid positioned at clock positions */}
+        {[0, 1, 2, 3].map((position) => {
+          const player = getPlayerAtPosition(position);
+          const isOnline = player ? isPlayerOnline(player) : false;
+          const isPlayerTurn = currentGamePlayer?.id === player?.id;
+          
+          // Grid positions for clock positions: 12, 3, 6, 10
+          const getGridPosition = (pos: number) => {
+            const positions = [
+              "col-start-6 col-end-8 row-start-1 row-end-3", // 12 o'clock (top)
+              "col-start-10 col-end-12 row-start-5 row-end-7", // 3 o'clock (right)
+              "col-start-6 col-end-8 row-start-10 row-end-12", // 6 o'clock (bottom) 
+              "col-start-2 col-end-4 row-start-6 row-end-8" // 10 o'clock (left-ish)
+            ];
+            return positions[pos] || positions[0];
+          };
+          
+          return (
+            <div
+              key={position}
+              className={`${getGridPosition(position)} flex items-center justify-center pointer-events-auto z-20`}
+            >
                 <div className="relative">
                   {player ? (
                     // Player Avatar - Viewport responsive sizing
@@ -685,8 +688,7 @@ export default function Game() {
                 </div>
               </div>
             );
-          })}
-        </div>
+        })}
       </div>
 
       {/* Legacy player rendering - keeping for compatibility but hiding */}
