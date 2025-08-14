@@ -382,7 +382,6 @@ export default function Game() {
   // Helper function to get avatar emoji
   const getPlayerAvatar = (playerId: string, nickname: string) => {
     const savedAvatar = localStorage.getItem(`avatar_${playerId}`);
-    console.log(`Avatar for ${nickname} (${playerId}):`, savedAvatar); // Debug log
     if (savedAvatar === 'male') return '👨';
     if (savedAvatar === 'female') return '👩';
     return '👨'; // Default to male avatar instead of first letter

@@ -21,6 +21,7 @@ export default function Home() {
   const [showHostPopup, setShowHostPopup] = useState(false);
   const [qrDetectedCode, setQrDetectedCode] = useState("");
   const [popupNickname, setPopupNickname] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState<'male' | 'female'>('male');
   const [showGuruLogin, setShowGuruLogin] = useState(false);
   const [guruPassword, setGuruPassword] = useState("");
   const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
@@ -92,6 +93,8 @@ export default function Home() {
       localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", data.hostNickname || popupNickname);
       localStorage.setItem("currentRoomId", data.room.id);
+      // Save selected avatar
+      localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
       setShowHostPopup(false);
       setLocation(`/room/${data.room.id}?code=${data.room.code}`);
       // Room created - no toast notification needed
@@ -116,6 +119,21 @@ export default function Home() {
       localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", data.player.nickname);
       localStorage.setItem("currentRoomId", data.room.id);
+      // Save selected avatar (but use existing saved nickname for manual joins)
+      const existingNickname = localStorage.getItem("playerNickname");
+      if (existingNickname) {
+        const savedAvatarKey = Object.keys(localStorage).find(key => 
+          key.startsWith('avatar_') && localStorage.getItem(key)
+        );
+        if (savedAvatarKey) {
+          const savedAvatar = localStorage.getItem(savedAvatarKey);
+          localStorage.setItem(`avatar_${data.player.id}`, savedAvatar || 'male');
+        } else {
+          localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
+        }
+      } else {
+        localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
+      }
       
       // Clear room code input
       setRoomCode("");
@@ -148,6 +166,8 @@ export default function Home() {
       localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", data.player.nickname);
       localStorage.setItem("currentRoomId", data.room.id);
+      // Save selected avatar
+      localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
       setShowNicknamePopup(false);
       
       console.log("Successfully joined room via link:", data);
@@ -546,7 +566,10 @@ export default function Home() {
       {/* Nickname Popup for Direct QR Join */}
       <Dialog open={showNicknamePopup} onOpenChange={(open) => {
         setShowNicknamePopup(open);
-        if (!open) setPopupNickname("");
+        if (!open) {
+          setPopupNickname("");
+          setSelectedAvatar('male');
+        }
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -575,11 +598,43 @@ export default function Home() {
                 autoFocus
               />
             </div>
+            
+            {/* Avatar Selection */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                Choose Your Avatar
+              </Label>
+              <div className="flex justify-center space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAvatar('male')}
+                  className={`w-16 h-16 rounded-full border-4 transition-all flex items-center justify-center text-2xl hover:scale-105 ${
+                    selectedAvatar === 'male' 
+                      ? 'border-blue-500 bg-blue-50 shadow-lg' 
+                      : 'border-gray-300 bg-white hover:border-gray-400'
+                  }`}
+                >
+                  👨
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAvatar('female')}
+                  className={`w-16 h-16 rounded-full border-4 transition-all flex items-center justify-center text-2xl hover:scale-105 ${
+                    selectedAvatar === 'female' 
+                      ? 'border-pink-500 bg-pink-50 shadow-lg' 
+                      : 'border-gray-300 bg-white hover:border-gray-400'
+                  }`}
+                >
+                  👩
+                </button>
+              </div>
+            </div>
             <div className="flex space-x-2">
               <Button
                 onClick={() => {
                   setShowNicknamePopup(false);
                   setPopupNickname("");
+                  setSelectedAvatar('male');
                 }}
                 variant="outline"
                 className="flex-1"
@@ -607,7 +662,10 @@ export default function Home() {
       {/* Host Popup for Creating Room */}
       <Dialog open={showHostPopup} onOpenChange={(open) => {
         setShowHostPopup(open);
-        if (!open) setPopupNickname("");
+        if (!open) {
+          setPopupNickname("");
+          setSelectedAvatar('male');
+        }
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -636,11 +694,43 @@ export default function Home() {
                 autoFocus
               />
             </div>
+            
+            {/* Avatar Selection */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                Choose Your Avatar
+              </Label>
+              <div className="flex justify-center space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAvatar('male')}
+                  className={`w-16 h-16 rounded-full border-4 transition-all flex items-center justify-center text-2xl hover:scale-105 ${
+                    selectedAvatar === 'male' 
+                      ? 'border-blue-500 bg-blue-50 shadow-lg' 
+                      : 'border-gray-300 bg-white hover:border-gray-400'
+                  }`}
+                >
+                  👨
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAvatar('female')}
+                  className={`w-16 h-16 rounded-full border-4 transition-all flex items-center justify-center text-2xl hover:scale-105 ${
+                    selectedAvatar === 'female' 
+                      ? 'border-pink-500 bg-pink-50 shadow-lg' 
+                      : 'border-gray-300 bg-white hover:border-gray-400'
+                  }`}
+                >
+                  👩
+                </button>
+              </div>
+            </div>
             <div className="flex space-x-2">
               <Button
                 onClick={() => {
                   setShowHostPopup(false);
                   setPopupNickname("");
+                  setSelectedAvatar('male');
                 }}
                 variant="outline"
                 className="flex-1"
