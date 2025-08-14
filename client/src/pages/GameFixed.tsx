@@ -11,7 +11,7 @@ import ChatPanel from "@/components/game/ChatPanel";
 import GameEndModal from "@/components/game/GameEndModal";
 import ColorPickerModal from "@/components/game/ColorPickerModal";
 import NicknameEditor from "@/components/NicknameEditor";
-import { GameDirectionIndicator } from "@/components/game/GameDirectionIndicator";
+
 import { WinnerModal } from "@/components/game/WinnerModal";
 import GuruCardReplaceModal from "@/components/game/GuruCardReplaceModal";
 
@@ -490,9 +490,63 @@ export default function Game() {
 
       {/* Player Avatars - Clean Layout (No Duplicate Background) */}
       <div className="relative w-96 h-96 mx-auto mb-8">
-        {/* Center Card Play Area */}
+        {/* Center Card Play Area with Direction Arrow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          <div className="flex flex-col items-center space-y-2">
+          {/* Curved Direction Arrow around center card */}
+          {room?.direction && room?.status === 'playing' && (
+            <div className="absolute inset-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
+              <svg 
+                className="w-full h-full animate-pulse" 
+                viewBox="0 0 128 128" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Curved arrow path */}
+                <defs>
+                  <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 0.8 }} />
+                    <stop offset="100%" style={{ stopColor: '#1d4ed8', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
+                
+                {room.direction === 'clockwise' ? (
+                  <>
+                    {/* Clockwise curved arrow */}
+                    <path
+                      d="M 64 20 A 32 32 0 1 1 95 64"
+                      stroke="url(#arrowGradient)"
+                      strokeWidth="3"
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                    {/* Arrow head for clockwise */}
+                    <polygon
+                      points="95,64 88,58 88,62 82,62 82,66 88,66 88,70"
+                      fill="url(#arrowGradient)"
+                    />
+                  </>
+                ) : (
+                  <>
+                    {/* Counterclockwise curved arrow */}
+                    <path
+                      d="M 64 20 A 32 32 0 1 0 33 64"
+                      stroke="url(#arrowGradient)"
+                      strokeWidth="3"
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                    {/* Arrow head for counterclockwise */}
+                    <polygon
+                      points="33,64 40,58 40,62 46,62 46,66 40,66 40,70"
+                      fill="url(#arrowGradient)"
+                    />
+                  </>
+                )}
+              </svg>
+            </div>
+          )}
+
+          <div className="flex flex-col items-center space-y-2 relative z-20">
             {topCard ? (
               <div className="flex flex-col items-center">
                 <GameCard 
@@ -973,11 +1027,8 @@ export default function Game() {
         </div>
       )}
 
-      {/* Game Direction Indicator */}
-      <GameDirectionIndicator 
-        direction={room?.direction || 'clockwise'}
-        isVisible={!!room?.direction && room?.status === 'playing'}
-      />
+
+
 
       {/* Winner Modal */}
       <WinnerModal
