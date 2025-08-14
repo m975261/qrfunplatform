@@ -540,13 +540,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - Closer to center for mobile compatibility
+          // Get position class for avatar placement - Attached to circle edge for iPhone
           const getPositionClass = (pos: number) => {
             const positions = [
-              'top-3 sm:top-4 md:top-6 left-1/2 -translate-x-1/2', // 12 o'clock - closer on mobile
-              'right-3 sm:right-4 md:right-6 top-1/2 -translate-y-1/2', // 3 o'clock - closer on mobile  
-              'bottom-3 sm:bottom-4 md:bottom-6 left-1/2 -translate-x-1/2', // 6 o'clock - closer on mobile
-              'left-3 sm:left-4 md:left-6 top-1/2 -translate-y-1/2' // 9 o'clock - closer on mobile
+              'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - attached to circle
+              'right-0 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - attached to circle  
+              'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - attached to circle
+              'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - attached to circle
             ];
             return positions[pos] || positions[0];
           };
@@ -699,8 +699,8 @@ export default function Game() {
           </div>
         )}
 
-        {/* Draw Pile - Positioned outside circle but attached to it - Responsive */}
-        <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 md:bottom-4 md:right-4 z-20">
+        {/* Draw Pile - Positioned on left side between 3 and 6 o'clock for iPhone */}
+        <div className="absolute bottom-8 left-8 sm:bottom-10 sm:left-10 md:bottom-12 md:left-12 z-20">
           <div className="relative cursor-pointer group" onClick={drawCard}>
             <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
             <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
@@ -714,66 +714,62 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Player Hand Area - Centered for all window sizes */}
+      {/* Player Hand Area - Fixed at bottom with no space, horizontal cards for iPhone */}
       {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-7xl">
-          {/* Use same 12x12 grid system as main game area */}
-          <div className="grid grid-cols-12 grid-rows-12 gap-1 p-4 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md mx-4" style={{
-            height: 'max(30vh, 240px)'
+        <div className="fixed bottom-0 left-0 right-0 z-30">
+          {/* Horizontal layout optimized for iPhone portrait - reserve space for R button */}
+          <div className="bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md px-2 pb-10" style={{
+            height: 'max(20vh, 120px)'
           }}>
             
-            {/* Player Avatar - Grid positioned */}
-            <div className="col-start-1 col-end-3 row-start-1 row-end-4 flex items-center justify-center">
-              <div 
-                className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg border-3 cursor-pointer hover:scale-105 transition-all ${
-                  isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' : 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
-                }`}
-                onClick={() => {
-                  setSelectedAvatarPlayerId(currentPlayer.id);
-                  setShowAvatarSelector(true);
-                }}
-              >
-                {getPlayerAvatar(currentPlayer.id, currentPlayer.nickname)}
+            {/* Player Info Header - Horizontal layout */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <div 
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 cursor-pointer hover:scale-105 transition-all ${
+                    isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' : 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
+                  }`}
+                  onClick={() => {
+                    setSelectedAvatarPlayerId(currentPlayer.id);
+                    setShowAvatarSelector(true);
+                  }}
+                >
+                  {getPlayerAvatar(currentPlayer.id, currentPlayer.nickname)}
+                </div>
+                <div className="ml-2">
+                  <div className={`font-semibold text-white text-sm ${isMyTurn ? 'text-green-400' : ''}`}>
+                    {currentPlayer.nickname}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {currentPlayer.hand?.length || 0} cards
+                  </div>
+                </div>
+                {isMyTurn && (
+                  <div className="ml-3">
+                    <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-bold border border-green-500/30">
+                      YOUR TURN ⭐
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Player Name - Grid positioned */}
-            <div className="col-start-3 col-end-7 row-start-1 row-end-3 flex items-center">
-              <div>
-                <div className={`font-semibold text-white text-lg ${isMyTurn ? 'text-green-400' : ''}`}>
-                  {currentPlayer.nickname}
-                </div>
-                <div className="text-sm text-slate-400">
-                  {currentPlayer.hand?.length || 0} cards
-                </div>
-              </div>
-            </div>
-
-            {/* YOUR TURN Indicator - Grid positioned */}
-            {isMyTurn && (
-              <div className="col-start-7 col-end-10 row-start-1 row-end-3 flex items-center">
-                <div className="bg-green-500/20 text-green-400 px-3 py-2 rounded-full text-sm font-bold border border-green-500/30">
-                  YOUR TURN ⭐
-                </div>
-              </div>
-            )}
-
-            {/* UNO Button - Grid positioned */}
-            <div className="col-start-10 col-end-13 row-start-1 row-end-4 flex items-center justify-center">
+            {/* UNO Button - Positioned at top right for horizontal layout */}
+            <div className="absolute top-2 right-2">
               <Button
                 variant="outline"
-                size="lg"
-                className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-sm px-4 py-3 w-full h-full"
+                size="sm"
+                className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs px-2 py-1"
                 onClick={handleUnoCall}
               >
                 🔥 UNO! 🔥
               </Button>
             </div>
 
-            {/* Player Cards - Centered under YOUR TURN indicator */}
-            <div className="col-start-1 col-end-13 row-start-4 row-end-13 overflow-x-auto overflow-y-visible px-2 py-4">
+            {/* Player Cards - Horizontal layout at bottom for iPhone */}
+            <div className="overflow-x-auto overflow-y-visible px-1">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-1 sm:space-x-2 md:space-x-3 min-w-max h-full items-start pt-2 justify-center">
+                <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-1 min-w-max h-full items-center py-1 justify-start">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
@@ -787,7 +783,7 @@ export default function Game() {
                     >
                       <GameCard
                         card={card}
-                        size="small"
+                        size="extra-small"
                         selected={false}
                         disabled={!isMyTurn}
                         isGuruUser={isGuruUser}
