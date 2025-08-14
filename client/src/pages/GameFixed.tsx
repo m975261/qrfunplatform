@@ -571,19 +571,36 @@ export default function Game() {
 
 
 
-        {/* 4 Fixed Avatar Positions using CSS Grid positioning to match reference image */}
+        {/* 4 Fixed Avatar Positions using absolute positioning for 12, 3, 6, 10 o'clock */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Grid positioning for 12, 3, 6, 10 o'clock positions
-          const getPositionClass = (pos: number) => {
+          // Calculate proper 12, 3, 6, 10 o'clock positions
+          const getPositionStyle = (pos: number) => {
+            const radius = 180; // Distance from center
             const positions = [
-              'col-start-6 col-end-8 row-start-1 row-end-3', // 12 o'clock - top center
-              'col-start-11 col-end-13 row-start-6 row-end-8', // 3 o'clock - right edge
-              'col-start-6 col-end-8 row-start-11 row-end-13', // 6 o'clock - bottom edge  
-              'col-start-2 col-end-4 row-start-9 row-end-11'  // 10 o'clock - bottom left
+              { // 12 o'clock - top center
+                top: '15%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)'
+              },
+              { // 3 o'clock - right side
+                top: '50%',
+                right: '8%',
+                transform: 'translate(0, -50%)'
+              },
+              { // 6 o'clock - bottom center
+                bottom: '25%',
+                left: '50%',
+                transform: 'translate(-50%, 50%)'
+              },
+              { // 10 o'clock - bottom left
+                bottom: '35%',
+                left: '15%',
+                transform: 'translate(-50%, 50%)'
+              }
             ];
             return positions[pos] || positions[0];
           };
@@ -591,7 +608,8 @@ export default function Game() {
           return (
             <div
               key={position}
-              className={`${getPositionClass(position)} pointer-events-auto flex items-center justify-center`}
+              className="absolute pointer-events-auto flex items-center justify-center"
+              style={getPositionStyle(position)}
             >
                 <div className="relative">
                   {player ? (
@@ -831,9 +849,12 @@ export default function Game() {
                         isMyTurn ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer' : 'opacity-60'
                       }`}
                       onClick={(e) => {
-                        // Check if click came from guru replace button
-                        if (e.target && (e.target as HTMLElement).closest('.guru-replace-button')) {
-                          return; // Don't handle card click if it's from the R button
+                        // Prevent card click if it's from the guru replace button
+                        if ((e.target as HTMLElement).classList.contains('guru-replace-button') || 
+                            (e.target as HTMLElement).closest('.guru-replace-button')) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return;
                         }
                         
                         if (!isMyTurn) return;
