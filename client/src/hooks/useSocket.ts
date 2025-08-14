@@ -257,17 +257,19 @@ export function useSocket(autoConnect: boolean = true) {
             break;
           case 'card_replaced':
             console.log(`Card replaced by ${message.playerId}:`, message.message);
-            // Faster refresh targeting 1-second response time
+            // Force immediate game state refresh for card replacement
             if (typeof refreshGameState === 'function') {
-              setTimeout(() => refreshGameState(), 50);
-              setTimeout(() => refreshGameState(), 200);
-              setTimeout(() => refreshGameState(), 500);
+              refreshGameState();
+              setTimeout(() => refreshGameState(), 100);
+              setTimeout(() => refreshGameState(), 300);
+              setTimeout(() => refreshGameState(), 600);
             }
-            // Force component re-render
+            // Force component re-render with timestamp
             setGameState((prev: any) => ({
               ...prev,
               lastCardReplacedAt: Date.now(),
-              forceRefresh: Math.random()
+              forceRefresh: Math.random(),
+              cardReplacementTrigger: Date.now()
             }));
             break;
           case 'avatar_changed':
@@ -568,6 +570,7 @@ export function useSocket(autoConnect: boolean = true) {
     replacePlayer,
     assignSpectator,
     playAgain,
-    connect: manualConnect
+    connect: manualConnect,
+    refreshGameState
   };
 }

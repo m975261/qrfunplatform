@@ -37,7 +37,8 @@ export default function Game() {
     continueGame,
     replacePlayer,
     playAgain,
-    isConnected
+    isConnected,
+    refreshGameState
   } = useSocket();
 
   const [showChat, setShowChat] = useState(false);
@@ -310,15 +311,15 @@ export default function Game() {
         setSelectedCardIndex(null);
         
         // Force immediate visual update - target 1 second total
-        setTimeout(async () => {
-          await refreshGameState();
-        }, 200);
-        setTimeout(async () => {
-          await refreshGameState();
-        }, 600);
-        setTimeout(async () => {
-          await refreshGameState();
-        }, 1000);
+        if (refreshGameState) {
+          refreshGameState(); // Immediate refresh
+          setTimeout(() => refreshGameState(), 100);
+          setTimeout(() => refreshGameState(), 300);
+          setTimeout(() => refreshGameState(), 700);
+        }
+        
+        // Force component re-render for immediate visual feedback
+        window.location.reload();
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
