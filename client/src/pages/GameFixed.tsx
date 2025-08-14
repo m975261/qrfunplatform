@@ -571,8 +571,8 @@ export default function Game() {
       <div className="relative mx-auto mb-8" style={{ width: '400px', height: '400px' }}>
         {/* 12x12 CSS Grid Container for Perfect Positioning */}
         <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 w-full h-full">
-          {/* Game Circle Background positioned in center */}
-          <div className="col-start-3 col-end-11 row-start-3 row-end-11 flex items-center justify-center">
+          {/* Game Circle Background positioned in center of 12x12 grid */}
+          <div className="col-start-4 col-end-10 row-start-4 row-end-10 flex items-center justify-center">
             <div className="w-full h-full rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
           </div>
 
@@ -582,13 +582,13 @@ export default function Game() {
             const isOnline = player ? isPlayerOnline(player) : false;
             const isPlayerTurn = currentGamePlayer?.id === player?.id;
             
-            // Grid positions for exact clock placement attached to circle
+            // Grid positions for exact clock placement attached to circle edge
             const getGridPosition = (pos: number) => {
               const positions = [
-                'col-start-6 col-end-8 row-start-1 row-end-3', // 12 o'clock - top
-                'col-start-10 col-end-12 row-start-6 row-end-8', // 3 o'clock - right
-                'col-start-6 col-end-8 row-start-10 row-end-12', // 6 o'clock - bottom
-                'col-start-1 col-end-3 row-start-3 row-end-5' // 10 o'clock - upper left
+                'col-start-6 col-end-8 row-start-1 row-end-2', // 12 o'clock - very top edge
+                'col-start-11 col-end-13 row-start-6 row-end-8', // 3 o'clock - far right edge
+                'col-start-6 col-end-8 row-start-11 row-end-13', // 6 o'clock - very bottom edge
+                'col-start-2 col-end-4 row-start-3 row-end-5' // 10 o'clock - upper left diagonal
               ];
               return positions[pos] || positions[0];
             };
