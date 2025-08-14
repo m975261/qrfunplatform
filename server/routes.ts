@@ -454,11 +454,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: z.string().min(1)
       }).parse(req.body);
 
-      // Check if playerName exists as a guru user (check ONLY by username)
+      // Check if playerName exists as a guru user (check ONLY by username, trim spaces)
+      const trimmedPlayerName = playerName.trim();
       const [guruUser] = await db.select()
         .from(guruUsers)
         .where(and(
-          eq(guruUsers.username, playerName),
+          eq(guruUsers.username, trimmedPlayerName),
           eq(guruUsers.isActive, true)
         ))
         .limit(1);

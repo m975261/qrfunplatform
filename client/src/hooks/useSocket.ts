@@ -21,15 +21,20 @@ export function useSocket(autoConnect: boolean = true) {
     let host = window.location.host;
     
     // Fix for undefined host issue - handle all variations
-    if (!host || host === 'undefined' || host.includes('undefined')) {
-      // In development environment
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    if (!host || host === 'undefined' || host.includes('undefined') || !window.location.host) {
+      // Get the current page's hostname and port separately
+      const hostname = window.location.hostname || 'localhost';
+      const port = window.location.port || '5000';
+      
+      // Construct proper host
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
         host = 'localhost:5000';
       } else {
-        // In production environment, use current hostname
-        host = window.location.hostname + ':5000';
+        // For production, use the actual hostname with port 5000
+        host = `${hostname}:5000`;
       }
       console.warn("⚠️ Host was undefined/invalid, falling back to:", host);
+      console.warn("⚠️ Original values - hostname:", window.location.hostname, "port:", window.location.port, "host:", window.location.host);
     }
     
     const wsUrl = `${protocol}//${host}/ws`;
