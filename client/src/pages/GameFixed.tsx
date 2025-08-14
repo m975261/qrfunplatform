@@ -501,9 +501,11 @@ export default function Game() {
       <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 mx-auto mb-8">
 
 
-        {/* Center Card Play Area */}
+        {/* Center Card Play Area with Circular Background */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-
+          {/* Circular background for center area */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 bg-gradient-to-br from-slate-700 to-slate-800 rounded-full border-4 border-slate-600 shadow-2xl z-0"></div>
+          
           <div className="flex flex-col items-center space-y-2 relative z-20">
             {topCard ? (
               <div className="flex flex-col items-center">
