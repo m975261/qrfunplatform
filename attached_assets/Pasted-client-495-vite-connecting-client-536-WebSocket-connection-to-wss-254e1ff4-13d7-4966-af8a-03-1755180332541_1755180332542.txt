@@ -1,0 +1,115 @@
+client:495 [vite] connecting...
+client:536 WebSocket connection to 'wss://254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev/?token=AMSyuC_oKsOK' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=AMSyuC_oKsOK' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+setupWebSocket @ client:536
+fallback @ client:509
+(anonymous) @ client:555
+chunk-WERSD76P.js?v=5221e5e1:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev/:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+Home.tsx:47 Found existing session, but NOT auto-redirecting to avoid unwanted room access
+@radix-ui_react-dialog.js?v=5221e5e1:337 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ @radix-ui_react-dialog.js?v=5221e5e1:337
+commitHookEffectListMount @ chunk-WERSD76P.js?v=5221e5e1:16915
+commitPassiveMountOnFiber @ chunk-WERSD76P.js?v=5221e5e1:18156
+commitPassiveMountEffects_complete @ chunk-WERSD76P.js?v=5221e5e1:18129
+commitPassiveMountEffects_begin @ chunk-WERSD76P.js?v=5221e5e1:18119
+commitPassiveMountEffects @ chunk-WERSD76P.js?v=5221e5e1:18109
+flushPassiveEffectsImpl @ chunk-WERSD76P.js?v=5221e5e1:19490
+flushPassiveEffects @ chunk-WERSD76P.js?v=5221e5e1:19447
+commitRootImpl @ chunk-WERSD76P.js?v=5221e5e1:19416
+commitRoot @ chunk-WERSD76P.js?v=5221e5e1:19277
+performSyncWorkOnRoot @ chunk-WERSD76P.js?v=5221e5e1:18895
+flushSyncCallbacks @ chunk-WERSD76P.js?v=5221e5e1:9119
+(anonymous) @ chunk-WERSD76P.js?v=5221e5e1:18627
+/uno:1 [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) <input data-replit-metadata=​"client/​src/​pages/​Home.tsx:​696:​14" data-component-name=​"Input" type=​"password" class=​"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:​border-0 file:​bg-transparent file:​text-sm file:​font-medium file:​text-foreground placeholder:​text-muted-foreground focus-visible:​outline-none focus-visible:​ring-2 focus-visible:​ring-ring focus-visible:​ring-offset-2 disabled:​cursor-not-allowed disabled:​opacity-50 md:​text-sm text-center font-medium" id=​"guru-password" placeholder=​"Enter your password..." value>​
+@radix-ui_react-dialog.js?v=5221e5e1:337 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ @radix-ui_react-dialog.js?v=5221e5e1:337
+commitHookEffectListMount @ chunk-WERSD76P.js?v=5221e5e1:16915
+commitPassiveMountOnFiber @ chunk-WERSD76P.js?v=5221e5e1:18156
+commitPassiveMountEffects_complete @ chunk-WERSD76P.js?v=5221e5e1:18129
+commitPassiveMountEffects_begin @ chunk-WERSD76P.js?v=5221e5e1:18119
+commitPassiveMountEffects @ chunk-WERSD76P.js?v=5221e5e1:18109
+flushPassiveEffectsImpl @ chunk-WERSD76P.js?v=5221e5e1:19490
+flushPassiveEffects @ chunk-WERSD76P.js?v=5221e5e1:19447
+commitRootImpl @ chunk-WERSD76P.js?v=5221e5e1:19416
+commitRoot @ chunk-WERSD76P.js?v=5221e5e1:19277
+performSyncWorkOnRoot @ chunk-WERSD76P.js?v=5221e5e1:18895
+flushSyncCallbacks @ chunk-WERSD76P.js?v=5221e5e1:9119
+commitRootImpl @ chunk-WERSD76P.js?v=5221e5e1:19432
+commitRoot @ chunk-WERSD76P.js?v=5221e5e1:19277
+finishConcurrentRender @ chunk-WERSD76P.js?v=5221e5e1:18805
+performConcurrentWorkOnRoot @ chunk-WERSD76P.js?v=5221e5e1:18718
+workLoop @ chunk-WERSD76P.js?v=5221e5e1:197
+flushWork @ chunk-WERSD76P.js?v=5221e5e1:176
+performWorkUntilDeadline @ chunk-WERSD76P.js?v=5221e5e1:384
+useSocket.ts:35 Attempting WebSocket connection to: wss://254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev/ws
+useSocket.ts:36 Current location: https://254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev/room/550fa5fe-39f6-447a-b213-becb5295ef9a?code=11822
+useSocket.ts:37 Protocol: wss: Host: 254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev
+useSocket.ts:42 WebSocket connected successfully
+RoomLobby.tsx:44 Joining room via WebSocket: Object
+useSocket.ts:411 Sending join_room message: Object
+RoomLobby.tsx:175 RoomLobby state: Object
+RoomLobby.tsx:175 RoomLobby state: Object
+RoomLobby.tsx:175 RoomLobby state: Object
+RoomLobby.tsx:143 ✅ Assigning spectator to position 1 via WebSocket
+RoomLobby.tsx:175 RoomLobby state: Object
+RoomLobby.tsx:88 Starting game with players: Array(2)
+RoomLobby.tsx:175 RoomLobby state: Object
+useSocket.ts:35 Attempting WebSocket connection to: wss://254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev/ws
+useSocket.ts:36 Current location: https://254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev/game/550fa5fe-39f6-447a-b213-becb5295ef9a
+useSocket.ts:37 Protocol: wss: Host: 254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev
+useSocket.ts:303 WebSocket closed: code=1005, reason="", wasClean=true
+useSocket.ts:320 Attempting to reconnect in 3 seconds...
+useSocket.ts:42 WebSocket connected successfully
+useSocket.ts:411 Sending join_room message: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+useSocket.ts:35 Attempting WebSocket connection to: wss://254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev/ws
+useSocket.ts:36 Current location: https://254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev/game/550fa5fe-39f6-447a-b213-becb5295ef9a
+useSocket.ts:37 Protocol: wss: Host: 254e1ff4-13d7-4966-af8a-0361d0c50c25-00-3gg1lgj12ixdv.janeway.replit.dev
+useSocket.ts:42 WebSocket connected successfully
+GameFixed.tsx:367 🔧 Guru Debug: Object
+Card.tsx:321 🔧 Guru R button clicked for card index: 6
+GameFixed.tsx:367 🔧 Guru Debug: Object
+@radix-ui_react-dialog.js?v=5221e5e1:337 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ @radix-ui_react-dialog.js?v=5221e5e1:337
+commitHookEffectListMount @ chunk-WERSD76P.js?v=5221e5e1:16915
+commitPassiveMountOnFiber @ chunk-WERSD76P.js?v=5221e5e1:18156
+commitPassiveMountEffects_complete @ chunk-WERSD76P.js?v=5221e5e1:18129
+commitPassiveMountEffects_begin @ chunk-WERSD76P.js?v=5221e5e1:18119
+commitPassiveMountEffects @ chunk-WERSD76P.js?v=5221e5e1:18109
+flushPassiveEffectsImpl @ chunk-WERSD76P.js?v=5221e5e1:19490
+flushPassiveEffects @ chunk-WERSD76P.js?v=5221e5e1:19447
+commitRootImpl @ chunk-WERSD76P.js?v=5221e5e1:19416
+commitRoot @ chunk-WERSD76P.js?v=5221e5e1:19277
+performSyncWorkOnRoot @ chunk-WERSD76P.js?v=5221e5e1:18895
+flushSyncCallbacks @ chunk-WERSD76P.js?v=5221e5e1:9119
+(anonymous) @ chunk-WERSD76P.js?v=5221e5e1:18627
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:294 🔧 Guru replacing card: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+useSocket.ts:252 Card replaced by 136a9af8-2b91-4309-843c-18eb31ed16c4: ظبياني replaced a card
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:316 ✅ Card replaced successfully
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: Object
+GameFixed.tsx:367 🔧 Guru Debug: {isGuruUser: true, localStorage_isGuruUser: 'true', currentPlayer: 'ظبياني', playerHand: 7}
+GameFixed.tsx:367 🔧 Guru Debug: {isGuruUser: true, localStorage_isGuruUser: 'true', currentPlayer: 'ظبياني', playerHand: 7}
+GameFixed.tsx:367 🔧 Guru Debug: {isGuruUser: true, localStorage_isGuruUser: 'true', currentPlayer: 'ظبياني', playerHand: 7}
+GameFixed.tsx:367 🔧 Guru Debug: {isGuruUser: true, localStorage_isGuruUser: 'true', currentPlayer: 'ظبياني', playerHand: 7}
+GameFixed.tsx:367 🔧 Guru Debug: {isGuruUser: true, localStorage_isGuruUser: 'true', currentPlayer: 'ظبياني', playerHand: 7}
+GameFixed.tsx:367 🔧 Guru Debug: {isGuruUser: true, localStorage_isGuruUser: 'true', currentPlayer: 'ظبياني', playerHand: 7}
+GameFixed.tsx:367 🔧 Guru Debug: {isGuruUser: true, localStorage_isGuruUser: 'true', currentPlayer: 'ظبياني', playerHand: 7}
