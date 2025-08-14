@@ -250,15 +250,16 @@ export function useSocket(autoConnect: boolean = true) {
             break;
           case 'card_replaced':
             console.log(`Card replaced by ${message.playerId}:`, message.message);
-            // Force immediate game state refresh for card replacement
+            // Force immediate game state refresh for card replacement - ULTRA FAST
             if (typeof refreshGameState === 'function') {
               refreshGameState();
+              setTimeout(() => refreshGameState(), 8);
+              setTimeout(() => refreshGameState(), 16);
+              setTimeout(() => refreshGameState(), 32);
               setTimeout(() => refreshGameState(), 50);
-              setTimeout(() => refreshGameState(), 150);
-              setTimeout(() => refreshGameState(), 300);
-              setTimeout(() => refreshGameState(), 500);
+              setTimeout(() => refreshGameState(), 75);
             }
-            // Force component re-render with multiple triggers for visual update
+            // Force component re-render with multiple triggers for ULTRA FAST visual update
             setGameState((prev: any) => ({
               ...prev,
               lastCardReplacedAt: Date.now(),

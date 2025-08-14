@@ -322,21 +322,21 @@ export default function Game() {
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
         
-        // Force immediate visual update - target instant update (3x faster)
+        // Force immediate visual update - ULTRA FAST (3x faster than before)
         if (refreshGameState) {
           refreshGameState(); // Immediate refresh
-          setTimeout(() => refreshGameState(), 25);
+          setTimeout(() => refreshGameState(), 8);
+          setTimeout(() => refreshGameState(), 16);
+          setTimeout(() => refreshGameState(), 32);
           setTimeout(() => refreshGameState(), 50);
-          setTimeout(() => refreshGameState(), 100);
-          setTimeout(() => refreshGameState(), 150);
-          setTimeout(() => refreshGameState(), 200);
+          setTimeout(() => refreshGameState(), 75);
         }
         
-        // Force hand re-render by updating key - multiple times for instant visual update (3x faster)
+        // Force hand re-render by updating key - ULTRA FAST visual update
         setHandRefreshKey(prev => prev + 1);
-        setTimeout(() => setHandRefreshKey(prev => prev + 1), 25);
-        setTimeout(() => setHandRefreshKey(prev => prev + 1), 50);
-        setTimeout(() => setHandRefreshKey(prev => prev + 1), 100);
+        setTimeout(() => setHandRefreshKey(prev => prev + 1), 8);
+        setTimeout(() => setHandRefreshKey(prev => prev + 1), 16);
+        setTimeout(() => setHandRefreshKey(prev => prev + 1), 32);
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
