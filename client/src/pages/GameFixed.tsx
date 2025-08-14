@@ -542,13 +542,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - Attached outside circle edge without overlap
+          // Get position class for avatar placement - Precisely at 12, 3, 6, 9 o'clock attached to circle edge
           const getPositionClass = (pos: number) => {
             const positions = [
-              'top-0 left-1/2 -translate-x-1/2 -translate-y-full', // 12 o'clock - attached outside top
-              'right-0 top-1/2 -translate-y-1/2 translate-x-full', // 3 o'clock - attached outside right  
-              'bottom-0 left-1/2 -translate-x-1/2 translate-y-full', // 6 o'clock - attached outside bottom
-              'left-0 top-1/2 -translate-y-1/2 -translate-x-full' // 9 o'clock - attached outside left
+              'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - centered on circle edge
+              'right-0 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - centered on circle edge  
+              'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - centered on circle edge
+              'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - centered on circle edge
             ];
             return positions[pos] || positions[0];
           };
@@ -556,12 +556,12 @@ export default function Game() {
           return (
             <div
               key={position}
-              className={`absolute ${getPositionClass(position)} w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 pointer-events-auto`}
+              className={`absolute ${getPositionClass(position)} pointer-events-auto`}
             >
                 <div className="relative">
                   {player ? (
-                    // Player Avatar - Simplified like lobby but with essential game features
-                    <div className={`w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 cursor-pointer hover:scale-105 transition-all ${
+                    // Player Avatar - Sized to attach to circle edge without overlap
+                    <div className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-3 cursor-pointer hover:scale-105 transition-all ${
                       isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
                     }`}
                     onClick={() => {
@@ -608,9 +608,9 @@ export default function Game() {
                       )}
                     </div>
                   ) : (
-                    // Empty Slot or Joinable Slot for Spectators - Smaller size to reduce overlap
+                    // Empty Slot or Joinable Slot for Spectators - Match avatar size
                     <div 
-                      className={`w-16 h-16 sm:w-20 sm:h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-4 border-white/20 ${
+                      className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-3 border-white/20 ${
                         currentPlayer?.isSpectator && isPaused && activePositions.includes(position) ? 'cursor-pointer hover:bg-gray-500/50 transition-colors' : ''
                       }`}
                       onClick={() => {
