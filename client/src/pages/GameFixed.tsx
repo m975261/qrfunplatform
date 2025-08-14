@@ -480,133 +480,50 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - CSS Grid Layout */}
-      <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-1 p-4" style={{
-        paddingBottom: 'max(30vh, 240px)',
-        paddingTop: 'max(8vh, 64px)'
-      }}>
-        {/* Draw Pile - Grid positioned to avoid overlap */}
-        <div className="col-start-10 col-end-12 row-start-10 row-end-12 flex items-center justify-center z-10">
-          <div className="relative cursor-pointer group" onClick={drawCard}>
-            <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
-                 style={{
-                   width: 'max(2rem, 6vw)',
-                   height: 'max(3rem, 8vh)',
-                   minWidth: '32px',
-                   minHeight: '48px'
-                 }}></div>
-            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"
-                 style={{
-                   width: 'max(2rem, 6vw)',
-                   height: 'max(3rem, 8vh)',
-                   minWidth: '32px',
-                   minHeight: '48px'
-                 }}></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-white font-bold" style={{fontSize: 'min(0.75rem, 2.5vw)'}}>Cards</div>
-            </div>
-          </div>
-          <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-center text-blue-300 font-bold whitespace-nowrap" style={{fontSize: 'min(0.75rem, 2vw)'}}>DRAW</div>
-        </div>
 
-        {/* Central Game Circle - Grid positioned in center */}
-        <div className="col-start-5 col-end-9 row-start-5 row-end-9 flex items-center justify-center">
-          {/* Game Circle - Fully viewport responsive */}
-          <div className="rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50" 
-               style={{
-                 width: 'max(9rem, min(20vw, 20vh))',
-                 height: 'max(9rem, min(20vw, 20vh))',
-                 minWidth: '144px',
-                 minHeight: '144px'
-               }}>
-            
-            {/* Inner Circle - Viewport responsive sizing */}
-            <div className="rounded-full bg-gradient-to-br from-slate-600 to-slate-700 shadow-inner flex items-center justify-center relative border-2 border-slate-400/30"
-                 style={{
-                   width: 'max(6rem, min(14vw, 14vh))',
-                   height: 'max(6rem, min(14vw, 14vh))',
-                   minWidth: '96px',
-                   minHeight: '96px'
-                 }}>
-              
-              {/* Current Card */}
-              <div className="flex flex-col items-center">
-                {topCard ? (
-                  <div className="flex flex-col items-center">
-                    <GameCard 
-                      card={topCard} 
-                      size="small"
-                      interactive={false}
-                      onClick={() => {}}
-                    />
-                    {/* Current Color Indicator for Wild Cards - Responsive */}
-                    {room.currentColor && (topCard?.type === 'wild' || topCard?.type === 'wild4') && (
-                      <div className="mt-1 sm:mt-2 px-2 sm:px-3 py-1 bg-slate-800/90 rounded-full border border-slate-600">
-                        <div className="flex items-center space-x-1 sm:space-x-2">
-                          <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full border border-white shadow-lg ${
-                            room.currentColor === 'red' ? 'bg-red-500' :
-                            room.currentColor === 'blue' ? 'bg-blue-500' :
-                            room.currentColor === 'green' ? 'bg-green-500' :
-                            'bg-yellow-500'
-                          }`}></div>
-                          <span className="text-xs sm:text-xs text-white font-bold">Play {room.currentColor}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-white shadow-xl flex items-center justify-center">
-                    <div className="text-white font-bold text-xs">?</div>
-                  </div>
-                )}
-              </div>
-            </div>
+
+
+
+      {/* Draw Pile - Positioned to the right */}
+      <div className="fixed bottom-8 right-8 z-20">
+        <div className="relative cursor-pointer group" onClick={drawCard}>
+          <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-16 h-24"></div>
+          <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-16 h-24"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-white font-bold text-sm">DRAW</div>
           </div>
         </div>
       </div>
 
-
-
-      {/* Player Avatars - Optimized Layout (Lobby Style + Game Functionality) */}
-      <div className="relative w-96 h-96 mx-auto mb-8 bg-white/10 backdrop-blur-sm rounded-full border-2 border-white/20">
-        {/* Card Play Area in Center (replacing UNO logo) */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          {/* Current Card Display - Same as before */}
+      {/* Player Avatars - Clean Layout (No Duplicate Background) */}
+      <div className="relative w-96 h-96 mx-auto mb-8">
+        {/* Center Card Play Area */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
           <div className="flex flex-col items-center space-y-2">
-            {room?.currentCard ? (
+            {topCard ? (
               <div className="flex flex-col items-center">
-                <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-white to-gray-100 rounded-lg border-2 border-gray-300 shadow-xl flex items-center justify-center">
-                  <div className={`font-bold text-lg ${
-                    room.currentCard.color === 'red' ? 'text-red-500' :
-                    room.currentCard.color === 'yellow' ? 'text-yellow-500' :
-                    room.currentCard.color === 'blue' ? 'text-blue-500' :
-                    room.currentCard.color === 'green' ? 'text-green-500' :
-                    'text-gray-800'
-                  }`}>
-                    {room.currentCard.type === 'wild' ? 'W' :
-                     room.currentCard.type === 'draw_four' ? '+4' :
-                     room.currentCard.type === 'skip' ? '⊘' :
-                     room.currentCard.type === 'reverse' ? '↔' :
-                     room.currentCard.type === 'draw_two' ? '+2' :
-                     room.currentCard.value}
-                  </div>
-                </div>
-                {room.currentColor && (
-                  <div className="flex flex-col items-center">
-                    <div className={`w-6 h-6 rounded-full ${
+                <GameCard 
+                  card={topCard} 
+                  size="medium"
+                  interactive={false}
+                  onClick={() => {}}
+                />
+                {room?.currentColor && (topCard.type === 'wild' || topCard.type === 'draw_four') && (
+                  <div className="flex flex-col items-center mt-2">
+                    <div className={`w-6 h-6 rounded-full border-2 border-white ${
                       room.currentColor === 'red' ? 'bg-red-500' :
                       room.currentColor === 'yellow' ? 'bg-yellow-500' :
                       room.currentColor === 'blue' ? 'bg-blue-500' :
                       room.currentColor === 'green' ? 'bg-green-500' :
-                      'bg-yellow-500'
+                      'bg-gray-500'
                     }`}></div>
-                    <span className="text-xs sm:text-xs text-white font-bold">Play {room.currentColor}</span>
+                    <span className="text-xs text-white font-bold mt-1">Active: {room.currentColor}</span>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-white shadow-xl flex items-center justify-center">
-                <div className="text-white font-bold text-xs">?</div>
+              <div className="w-16 h-24 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-red-300 shadow-xl flex items-center justify-center">
+                <div className="text-white font-bold text-lg">UNO</div>
               </div>
             )}
           </div>
