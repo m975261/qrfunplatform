@@ -808,21 +808,21 @@ export default function Game() {
         </div>
       )}
 
-      {/* Spectators Area - Dynamic positioning to prevent overlap - Better mobile positioning */}
+      {/* Viewers Area - Compact table extending from top to 6 o'clock avatar position */}
       {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-        <div className="absolute top-12 sm:top-16 md:top-20 z-20" style={{
+        <div className="absolute top-12 sm:top-16 md:top-20 bottom-12 sm:bottom-16 md:bottom-20 z-20" style={{
           right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
-          maxWidth: 'min(18rem, 20vw)' // Smaller max width on mobile
+          width: 'min(9rem, 10vw)' // Half the previous width
         }}>
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 sm:p-3 shadow-lg">
-            <div className="text-xs font-semibold text-gray-700 mb-2">
-              Spectators ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 shadow-lg h-full flex flex-col">
+            <div className="text-xs font-semibold text-gray-700 mb-2 text-center">
+              Viewers ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
             </div>
-            <div className="space-y-1 max-h-32 overflow-y-auto">
+            <div className="space-y-1 overflow-y-auto flex-1">
               {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index: number, arr: any[]) => (
                 <div key={spectator.id}>
                   <div 
-                    className={`flex items-center space-x-2 p-1.5 rounded transition-colors ${
+                    className={`flex items-center space-x-1 p-1 rounded transition-colors ${
                       isHost 
                         ? 'hover:bg-blue-50 cursor-pointer' 
                         : ''
@@ -838,7 +838,7 @@ export default function Game() {
                         : ""
                     }
                   >
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                    <div className="w-3 h-3 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                       {spectator.nickname?.[0]?.toUpperCase()}
                     </div>
                     <span className="text-xs text-gray-600 truncate flex-1">{spectator.nickname}</span>
@@ -849,22 +849,22 @@ export default function Game() {
                   </div>
                   {/* Separator line between spectators */}
                   {index < arr.length - 1 && (
-                    <hr className="border-gray-200 mx-1 my-1" />
+                    <hr className="border-gray-200 mx-1" />
                   )}
                 </div>
               ))}
             </div>
-            {/* Instructions for host */}
+            {/* Instructions for host - Compact */}
             {isHost && players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
               <div className="mt-2 pt-2 border-t border-gray-200">
                 <div className="text-xs text-blue-600 text-center font-medium">
                   Host Controls
                 </div>
                 <div className="text-xs text-gray-500 text-center mt-1">
-                  Click spectators to assign to empty slots
+                  Click to assign
                 </div>
                 <div className="text-xs text-gray-400 text-center">
-                  Available slots: {4 - players.filter((p: any) => !p.isSpectator && !p.hasLeft).length}
+                  Slots: {4 - players.filter((p: any) => !p.isSpectator && !p.hasLeft).length}
                 </div>
               </div>
             )}
