@@ -59,6 +59,7 @@ export default function Game() {
   const [selectedAvatarPlayerId, setSelectedAvatarPlayerId] = useState<string | null>(null);
   const [unoPenaltyAnimation, setUnoPenaltyAnimation] = useState<{ playerName: string; show: boolean } | null>(null);
   const [handRefreshKey, setHandRefreshKey] = useState(0);
+  const [showConnectionError, setShowConnectionError] = useState(false);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -367,10 +368,46 @@ export default function Game() {
     }
   };
 
+  // Connection error timeout effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!isConnected && (!gameState || !gameState.room)) {
+        setShowConnectionError(true);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [isConnected, gameState]);
+
+  // Enhanced loading state with connection debugging
   if (!gameState || !gameState.room) {
+    console.log("🚨 WHITE PAGE DEBUG:", {
+      gameState: !!gameState,
+      room: !!gameState?.room,
+      isConnected,
+      roomId,
+      playerId,
+      timestamp: new Date().toISOString()
+    });
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center">
-        <div className="text-white text-xl">Loading game...</div>
+        <div className="text-center">
+          <div className="text-white text-xl mb-4">Loading game...</div>
+          {!isConnected && (
+            <div className="text-white/80 text-sm mb-2">Connecting to server...</div>
+          )}
+          {showConnectionError && (
+            <div className="text-white bg-red-600/80 px-4 py-2 rounded-lg">
+              <div className="text-sm mb-2">Connection issue detected</div>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="bg-white text-red-600 px-3 py-1 rounded text-sm hover:bg-gray-100"
+              >
+                Refresh Page
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -411,7 +448,7 @@ export default function Game() {
     totalPlayers: players.length,
     spectators: spectators.length,
     onlineSpectators: onlineSpectators.length,
-    spectatorList: spectators.map(p => ({
+    spectatorList: spectators.map((p: any) => ({
       nickname: p.nickname,
       isSpectator: p.isSpectator,
       isOnline: isPlayerOnline(p),
