@@ -542,16 +542,17 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - Attached to circle edge with proper spacing
+          // Get position class for avatar placement - Attached to circle edge
           const getPositionClass = (pos: number) => {
-            // Calculate exact circle edge positions to prevent overlap
-            // Circle center is at 50%, avatars positioned at edge with safe spacing
-            // Using top-20/right-20/bottom-20/left-20 for better spacing without overlap
+            // Calculate exact circle edge positions based on circle radius + avatar radius
+            // Circle: w-32 h-32 (128px) to w-40 h-40 (160px) = radius 64px to 80px  
+            // Avatar: w-16 h-16 (64px) = radius 32px
+            // Distance from center: circle radius + avatar radius = ~96px to 112px
             const positions = [
-              'top-20 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - attached with spacing
-              'right-20 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - attached with spacing
-              'bottom-20 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - attached with spacing
-              'left-20 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - attached with spacing
+              'top-16 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - circle edge
+              'right-16 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - circle edge  
+              'bottom-16 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - circle edge
+              'left-16 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - circle edge
             ];
             return positions[pos] || positions[0];
           };
@@ -575,8 +576,8 @@ export default function Game() {
                       }
                     }}
                     >
-                      {/* Avatar Content - Show emoji or first letter */}
-                      <div className="text-lg">
+                      {/* Avatar Content - Show avatar picture */}
+                      <div className="text-2xl">
                         {getPlayerAvatar(player.id, player.nickname)}
                       </div>
                       <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
@@ -650,25 +651,35 @@ export default function Game() {
                   
 
                   
-                  {/* Control Buttons Attached to Avatar */}
+                  {/* Control Buttons Position Based on Avatar Slot */}
                   {player && (
                     <>
-                      {/* Edit Button for Current Player - 4:30 o'clock position */}
+                      {/* Edit Button for Current Player - Position based on slot */}
                       {player.id === playerId && (
                         <button
                           onClick={() => setShowNicknameEditor(true)}
-                          className="absolute bottom-0 right-0 transform translate-x-1/2 translate-y-1/2 w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
+                          className={`absolute w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white ${
+                            position === 0 ? '-top-6 left-1/2 -translate-x-1/2' : // 12 o'clock - top
+                            position === 1 ? 'top-1/2 -right-6 -translate-y-1/2' : // 3 o'clock - right
+                            position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2' : // 6 o'clock - bottom
+                            '-left-6 top-1/2 -translate-y-1/2' // 9 o'clock - left
+                          }`}
                           title="Edit nickname"
                         >
                           E
                         </button>
                       )}
                       
-                      {/* Kick Button for Host - Bottom Left of Avatar */}
+                      {/* Kick Button for Host - Position based on slot, next to edit button */}
                       {isHost && player.id !== playerId && (
                         <button
                           onClick={() => kickPlayer(player.id)}
-                          className="absolute bottom-1 left-1 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
+                          className={`absolute w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white ${
+                            position === 0 ? '-top-6 left-1/2 -translate-x-1/2 translate-x-5' : // 12 o'clock - top, next to edit
+                            position === 1 ? 'top-1/2 -right-6 -translate-y-1/2 translate-y-5' : // 3 o'clock - right, below edit
+                            position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2 translate-x-5' : // 6 o'clock - bottom, next to edit
+                            '-left-6 top-1/2 -translate-y-1/2 translate-y-5' // 9 o'clock - left, below edit
+                          }`}
                           title={isOnline ? "Remove player" : "Remove offline player"}
                         >
                           K
