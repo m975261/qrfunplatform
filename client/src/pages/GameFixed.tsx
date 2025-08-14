@@ -494,10 +494,10 @@ export default function Game() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
           {/* Curved Direction Arrow around center card */}
           {room?.direction && room?.status === 'playing' && (
-            <div className="absolute inset-0 w-48 h-48 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 z-10">
+            <div className="absolute inset-0 w-64 h-64 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 z-5">
               <svg 
                 className="w-full h-full animate-pulse" 
-                viewBox="0 0 192 192" 
+                viewBox="0 0 256 256" 
                 fill="none" 
                 xmlns="http://www.w3.org/2000/svg"
               >
@@ -511,33 +511,33 @@ export default function Game() {
                 
                 {room.direction === 'clockwise' ? (
                   <>
-                    {/* Clockwise curved arrow - larger radius */}
+                    {/* Clockwise curved arrow - much larger radius */}
                     <path
-                      d="M 96 30 A 50 50 0 1 1 142 96"
+                      d="M 128 40 A 70 70 0 1 1 188 128"
                       stroke="url(#arrowGradient)"
-                      strokeWidth="4"
+                      strokeWidth="6"
                       fill="none"
                       strokeLinecap="round"
                     />
                     {/* Arrow head for clockwise - larger */}
                     <polygon
-                      points="142,96 132,88 132,94 124,94 124,98 132,98 132,104"
+                      points="188,128 175,118 175,126 165,126 165,130 175,130 175,138"
                       fill="url(#arrowGradient)"
                     />
                   </>
                 ) : (
                   <>
-                    {/* Counterclockwise curved arrow - larger radius */}
+                    {/* Counterclockwise curved arrow - much larger radius */}
                     <path
-                      d="M 96 30 A 50 50 0 1 0 50 96"
+                      d="M 128 40 A 70 70 0 1 0 68 128"
                       stroke="url(#arrowGradient)"
-                      strokeWidth="4"
+                      strokeWidth="6"
                       fill="none"
                       strokeLinecap="round"
                     />
                     {/* Arrow head for counterclockwise - larger */}
                     <polygon
-                      points="50,96 60,88 60,94 68,94 68,98 60,98 60,104"
+                      points="68,128 81,118 81,126 91,126 91,130 81,130 81,138"
                       fill="url(#arrowGradient)"
                     />
                   </>
