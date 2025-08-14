@@ -20,10 +20,16 @@ export function useSocket(autoConnect: boolean = true) {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     let host = window.location.host;
     
-    // Fix for undefined host issue
-    if (!host || host === 'undefined') {
-      host = 'localhost:5000';
-      console.warn("⚠️ Host was undefined, falling back to localhost:5000");
+    // Fix for undefined host issue - handle all variations
+    if (!host || host === 'undefined' || host.includes('undefined')) {
+      // In development environment
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        host = 'localhost:5000';
+      } else {
+        // In production environment, use current hostname
+        host = window.location.hostname + ':5000';
+      }
+      console.warn("⚠️ Host was undefined/invalid, falling back to:", host);
     }
     
     const wsUrl = `${protocol}//${host}/ws`;

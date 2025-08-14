@@ -1825,11 +1825,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'clear_penalty_animation'
         });
         
+        // Store game end data in room for retrieval
+        await storage.updateRoom(connection.roomId, { 
+          winner: player.nickname,
+          rankings: finalRankings.map(p => ({
+            nickname: p.nickname,
+            position: p.finishPosition || (p.hasLeft ? 'Left' : 'Last'),
+            hasLeft: p.hasLeft || false
+          }))
+        });
+        
         // Add delay before game end broadcast to ensure all players receive it
         setTimeout(() => {
           // Broadcast game end message to all players in the room
           console.log('🏆 Broadcasting game_end message to all players:', finalGameEndMessage);
           broadcastToRoom(connection.roomId, finalGameEndMessage);
+          
+          // Also broadcast delayed for disconnected players who might reconnect
+          setTimeout(() => {
+            console.log('🔄 Re-broadcasting game_end message for any reconnected players');
+            broadcastToRoom(connection.roomId, finalGameEndMessage);
+          }, 2000);
         }, 100); // Short delay to prevent race condition with disconnections
       } else {
         // Continue game with remaining players - notify of player finished
