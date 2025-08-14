@@ -22,14 +22,15 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: Draw button positioned in `col-start-10 col-end-12 row-start-10 row-end-12` grid cells
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
-**CRITICAL - RECENTLY FIXED**: Guru Authentication & Card Replacement (Fixed Aug 14, 2025)
-- **Guru Auth Issue**: Username `unom975261` returned 404 instead of prompting for password
-- **Guru Auth Solution**: Added `.trim()` to handle whitespace variations in username lookup
-- **Card Replacement Issue**: R button caused page reload and potential offline status
-- **Card Replacement Solution**: Enhanced WebSocket updates and removed page reload
-- **Avatar Enhancement**: Added male/female avatar pictures (👨👩) with click-to-toggle functionality
-- **Avatar Positioning**: Repositioned avatars closer to game circle using 12x12 grid system
-- **Status**: All guru functionality working perfectly without disconnections
+**CRITICAL - RECENTLY FIXED**: Avatar System & Guru Card Replacement (Fixed Aug 14, 2025)
+- **Avatar Positioning Issue**: Game avatars positioned differently from lobby layout
+- **Avatar Positioning Solution**: Implemented exact lobby positioning with relative container and proper clock positions
+- **Avatar Gender System**: Added male/female avatar pictures (👨👩) with permission-based toggle
+- **Avatar Permission**: Only players can change their own avatar, hosts can change any avatar
+- **Card Selection Issue**: Guru card replacement dropdowns not functioning properly
+- **Card Selection Solution**: Enhanced dropdown logic with fallback options and proper state management
+- **Available Cards Logic**: Modal shows only cards available in current deck with debug information
+- **Status**: Complete avatar system and guru card replacement working seamlessly
 
 ## System Architecture
 

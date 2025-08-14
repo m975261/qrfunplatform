@@ -550,25 +550,20 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Match Lobby Positioning Exactly */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
-        paddingBottom: 'max(30vh, 240px)',
-        paddingTop: 'max(8vh, 64px)'
-      }}>
-        <div className="relative" style={{
-          width: 'max(20rem, min(40vw, 40vh))',
-          height: 'max(25rem, min(50vw, 50vh))',
-          minWidth: '320px',
-          minHeight: '400px'
-        }}>
+      {/* Player Avatars - Exact Lobby Layout */}
+      <div className="relative mx-auto mb-8" style={{ maxWidth: '400px', height: '500px' }}>
+        {/* Game Circle Background */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
+        </div>
 
-        {/* 4 Fixed Avatar Positions - Same as Lobby */}
+        {/* 4 Fixed Avatar Positions - Exact Lobby Positioning */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Use exact same positioning as lobby
+          // Exact same positioning as lobby
           const getPositionClass = (pos: number) => {
             const positions = [
               'top-4 left-1/2 -translate-x-1/2', // 12 o'clock
@@ -597,12 +592,16 @@ export default function Game() {
                       minHeight: '64px'
                     }}
                     onClick={() => {
-                      // Toggle avatar gender on click
-                      const currentGender = localStorage.getItem(`avatar_${player.id}`) || 'male';
-                      const newGender = currentGender === 'male' ? 'female' : 'male';
-                      localStorage.setItem(`avatar_${player.id}`, newGender);
-                      // Trigger re-render by updating state
-                      setGameState((prev: any) => ({ ...prev, avatarUpdate: Date.now() }));
+                      // Only allow player to change their own avatar or host to change any
+                      if (player.id === playerId || isHost) {
+                        const currentGender = localStorage.getItem(`avatar_${player.id}`) || 'male';
+                        const newGender = currentGender === 'male' ? 'female' : 'male';
+                        localStorage.setItem(`avatar_${player.id}`, newGender);
+                        // Trigger re-render by refreshing game state
+                        if (typeof refreshGameState === 'function') {
+                          refreshGameState();
+                        }
+                      }
                     }}
                     >
                       {/* Avatar Picture */}
@@ -707,7 +706,6 @@ export default function Game() {
               </div>
             );
         })}
-        </div>
       </div>
 
       {/* Legacy player rendering - keeping for compatibility but hiding */}
@@ -1103,7 +1101,7 @@ export default function Game() {
       {showGuruReplaceModal && (
         <GuruCardReplaceModal
           isOpen={showGuruReplaceModal}
-          currentCard={selectedCardIndex !== null ? currentPlayer?.hand?.[selectedCardIndex] : undefined}
+          currentCard={selectedCardIndex !== null && selectedCardIndex >= 0 ? currentPlayer?.hand?.[selectedCardIndex] : undefined}
           availableCards={room?.drawPile || []}
           onClose={() => {
             setShowGuruReplaceModal(false);
