@@ -563,13 +563,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Grid positions for clock positions: 12, 3, 6, 10
+          // Grid positions for clock positions: 12, 3, 6, 10 - closer to circle
           const getGridPosition = (pos: number) => {
             const positions = [
-              "col-start-6 col-end-8 row-start-1 row-end-3", // 12 o'clock (top)
-              "col-start-10 col-end-12 row-start-5 row-end-7", // 3 o'clock (right)
-              "col-start-6 col-end-8 row-start-10 row-end-12", // 6 o'clock (bottom) 
-              "col-start-2 col-end-4 row-start-6 row-end-8" // 10 o'clock (left-ish)
+              "col-start-6 col-end-8 row-start-2 row-end-4", // 12 o'clock (top, closer)
+              "col-start-9 col-end-11 row-start-5 row-end-7", // 3 o'clock (right, closer)
+              "col-start-6 col-end-8 row-start-9 row-end-11", // 6 o'clock (bottom, closer) 
+              "col-start-3 col-end-5 row-start-6 row-end-8" // 10 o'clock (left, closer)
             ];
             return positions[pos] || positions[0];
           };
@@ -581,8 +581,8 @@ export default function Game() {
             >
                 <div className="relative">
                   {player ? (
-                    // Player Avatar - Viewport responsive sizing
-                    <div className={`bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 ${
+                    // Player Avatar - With picture and clickable gender toggle
+                    <div className={`bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 cursor-pointer hover:scale-105 transition-all ${
                       isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
                     }`}
                     style={{
@@ -590,8 +590,21 @@ export default function Game() {
                       height: 'max(4rem, min(8vw, 8vh))',
                       minWidth: '64px',
                       minHeight: '64px'
-                    }}>
-                      <div className="text-sm sm:text-lg">{player.nickname[0].toUpperCase()}</div>
+                    }}
+                    onClick={() => {
+                      // Toggle avatar gender on click
+                      const currentGender = localStorage.getItem(`avatar_${player.id}`) || 'male';
+                      const newGender = currentGender === 'male' ? 'female' : 'male';
+                      localStorage.setItem(`avatar_${player.id}`, newGender);
+                      // Trigger re-render by updating state
+                      setGameState((prev: any) => ({ ...prev, avatarUpdate: Date.now() }));
+                    }}
+                    >
+                      {/* Avatar Picture */}
+                      <div className="text-2xl mb-1">
+                        {localStorage.getItem(`avatar_${player.id}`) === 'female' ? '👩' : '👨'}
+                      </div>
+                      {/* Player Name */}
                       <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
                       {/* Online/Offline indicator - Responsive */}
                       <div className={`absolute -top-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 rounded-full border-1 sm:border-2 border-white ${

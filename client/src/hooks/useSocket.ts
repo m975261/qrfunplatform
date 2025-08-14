@@ -255,6 +255,13 @@ export function useSocket(autoConnect: boolean = true) {
           case 'heartbeat_ack':
             // Server acknowledged our heartbeat - connection is stable
             break;
+          case 'card_replaced':
+            console.log(`Card replaced by ${message.playerId}:`, message.message);
+            // Refresh game state to show the replaced card
+            if (typeof refreshGameState === 'function') {
+              refreshGameState();
+            }
+            break;
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);

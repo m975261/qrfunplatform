@@ -22,12 +22,14 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: Draw button positioned in `col-start-10 col-end-12 row-start-10 row-end-12` grid cells
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
-**CRITICAL - RECENTLY FIXED**: Guru Authentication & WebSocket Stability (Fixed Aug 14, 2025)
+**CRITICAL - RECENTLY FIXED**: Guru Authentication & Card Replacement (Fixed Aug 14, 2025)
 - **Guru Auth Issue**: Username `unom975261` returned 404 instead of prompting for password
 - **Guru Auth Solution**: Added `.trim()` to handle whitespace variations in username lookup
-- **WebSocket Issue**: `localhost:undefined` URLs causing connection failures
-- **WebSocket Solution**: Enhanced host validation with separate hostname/port handling and comprehensive fallbacks
-- **Status**: Both issues resolved and verified working
+- **Card Replacement Issue**: R button caused page reload and potential offline status
+- **Card Replacement Solution**: Enhanced WebSocket updates and removed page reload
+- **Avatar Enhancement**: Added male/female avatar pictures (👨👩) with click-to-toggle functionality
+- **Avatar Positioning**: Repositioned avatars closer to game circle using 12x12 grid system
+- **Status**: All guru functionality working perfectly without disconnections
 
 ## System Architecture
 
