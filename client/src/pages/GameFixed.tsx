@@ -490,61 +490,62 @@ export default function Game() {
 
       {/* Player Avatars - Clean Layout (No Duplicate Background) */}
       <div className="relative w-96 h-96 mx-auto mb-8">
-        {/* Center Card Play Area with Direction Arrow */}
+        {/* Curved Direction Arrow around entire game area */}
+        {room?.direction && room?.status === 'playing' && (
+          <div className="absolute inset-0 w-full h-full z-0">
+            <svg 
+              className="w-full h-full animate-pulse" 
+              viewBox="0 0 384 384" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Curved arrow path */}
+              <defs>
+                <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: '#fbbf24', stopOpacity: 0.9 }} />
+                  <stop offset="100%" style={{ stopColor: '#f59e0b', stopOpacity: 1 }} />
+                </linearGradient>
+              </defs>
+              
+              {room.direction === 'clockwise' ? (
+                <>
+                  {/* Clockwise curved arrow around entire game area */}
+                  <path
+                    d="M 192 30 A 150 150 0 1 1 330 192"
+                    stroke="url(#arrowGradient)"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  {/* Arrow head for clockwise */}
+                  <polygon
+                    points="330,192 315,180 315,189 303,189 303,195 315,195 315,204"
+                    fill="url(#arrowGradient)"
+                  />
+                </>
+              ) : (
+                <>
+                  {/* Counterclockwise curved arrow around entire game area */}
+                  <path
+                    d="M 192 30 A 150 150 0 1 0 54 192"
+                    stroke="url(#arrowGradient)"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  {/* Arrow head for counterclockwise */}
+                  <polygon
+                    points="54,192 69,180 69,189 81,189 81,195 69,195 69,204"
+                    fill="url(#arrowGradient)"
+                  />
+                </>
+              )}
+            </svg>
+          </div>
+        )}
+
+        {/* Center Card Play Area */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          {/* Curved Direction Arrow around center card */}
-          {room?.direction && room?.status === 'playing' && (
-            <div className="absolute inset-0 w-80 h-80 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 z-5">
-              <svg 
-                className="w-full h-full animate-pulse" 
-                viewBox="0 0 320 320" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {/* Curved arrow path */}
-                <defs>
-                  <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#fbbf24', stopOpacity: 0.9 }} />
-                    <stop offset="100%" style={{ stopColor: '#f59e0b', stopOpacity: 1 }} />
-                  </linearGradient>
-                </defs>
-                
-                {room.direction === 'clockwise' ? (
-                  <>
-                    {/* Clockwise curved arrow - extra large radius for no overlap */}
-                    <path
-                      d="M 160 50 A 90 90 0 1 1 230 160"
-                      stroke="url(#arrowGradient)"
-                      strokeWidth="8"
-                      fill="none"
-                      strokeLinecap="round"
-                    />
-                    {/* Arrow head for clockwise - proportionally larger */}
-                    <polygon
-                      points="230,160 215,148 215,157 203,157 203,163 215,163 215,172"
-                      fill="url(#arrowGradient)"
-                    />
-                  </>
-                ) : (
-                  <>
-                    {/* Counterclockwise curved arrow - extra large radius for no overlap */}
-                    <path
-                      d="M 160 50 A 90 90 0 1 0 90 160"
-                      stroke="url(#arrowGradient)"
-                      strokeWidth="8"
-                      fill="none"
-                      strokeLinecap="round"
-                    />
-                    {/* Arrow head for counterclockwise - proportionally larger */}
-                    <polygon
-                      points="90,160 105,148 105,157 117,157 117,163 105,163 105,172"
-                      fill="url(#arrowGradient)"
-                    />
-                  </>
-                )}
-              </svg>
-            </div>
-          )}
 
           <div className="flex flex-col items-center space-y-2 relative z-20">
             {topCard ? (
