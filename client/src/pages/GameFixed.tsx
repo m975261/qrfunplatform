@@ -497,8 +497,8 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Clean Layout (No Duplicate Background) */}
-      <div className="relative w-96 h-96 mx-auto mb-8">
+      {/* Player Avatars - Clean Layout (No Duplicate Background) - Smaller for mobile */}
+      <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 mx-auto mb-8">
 
 
         {/* Center Card Play Area */}
@@ -509,7 +509,7 @@ export default function Game() {
               <div className="flex flex-col items-center">
                 <GameCard 
                   card={topCard} 
-                  size="medium"
+                  size="small"
                   interactive={false}
                   onClick={() => {}}
                 />
@@ -540,13 +540,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - Optimized spacing for larger container
+          // Get position class for avatar placement - Closer to center for mobile compatibility
           const getPositionClass = (pos: number) => {
             const positions = [
-              'top-6 left-1/2 -translate-x-1/2', // 12 o'clock - more spacing
-              'right-6 top-1/2 -translate-y-1/2', // 3 o'clock - more spacing  
-              'bottom-6 left-1/2 -translate-x-1/2', // 6 o'clock - more spacing
-              'left-6 top-1/2 -translate-y-1/2' // 9 o'clock - more spacing
+              'top-3 sm:top-4 md:top-6 left-1/2 -translate-x-1/2', // 12 o'clock - closer on mobile
+              'right-3 sm:right-4 md:right-6 top-1/2 -translate-y-1/2', // 3 o'clock - closer on mobile  
+              'bottom-3 sm:bottom-4 md:bottom-6 left-1/2 -translate-x-1/2', // 6 o'clock - closer on mobile
+              'left-3 sm:left-4 md:left-6 top-1/2 -translate-y-1/2' // 9 o'clock - closer on mobile
             ];
             return positions[pos] || positions[0];
           };
@@ -554,7 +554,7 @@ export default function Game() {
           return (
             <div
               key={position}
-              className={`absolute ${getPositionClass(position)} w-20 h-20 pointer-events-auto`}
+              className={`absolute ${getPositionClass(position)} w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 pointer-events-auto`}
             >
                 <div className="relative">
                   {player ? (
@@ -676,10 +676,10 @@ export default function Game() {
           );
         })}
 
-        {/* Direction Indicator Button - Positioned between 12 and 9 o'clock */}
+        {/* Direction Indicator Button - Positioned between 12 and 9 o'clock - Responsive */}
         {room?.direction && room?.status === 'playing' && (
-          <div className="absolute top-12 left-12 z-10">
-            <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full w-16 h-16 flex items-center justify-center shadow-lg border-2 border-yellow-300 animate-pulse">
+          <div className="absolute top-8 left-8 sm:top-10 sm:left-10 md:top-12 md:left-12 z-10">
+            <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center shadow-lg border-2 border-yellow-300 animate-pulse">
               <div className="text-white text-xs font-bold text-center leading-tight">
                 {room.direction === 'clockwise' ? (
                   <div className="flex flex-col items-center">
@@ -699,11 +699,11 @@ export default function Game() {
           </div>
         )}
 
-        {/* Draw Pile - Positioned outside circle but attached to it */}
-        <div className="absolute bottom-4 right-4 z-20">
+        {/* Draw Pile - Positioned outside circle but attached to it - Responsive */}
+        <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 md:bottom-4 md:right-4 z-20">
           <div className="relative cursor-pointer group" onClick={drawCard}>
-            <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-12 h-16"></div>
-            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-12 h-16"></div>
+            <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
+            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <div className="text-white font-bold text-xs">CARDS</div>
             </div>
@@ -773,7 +773,7 @@ export default function Game() {
             {/* Player Cards - Centered under YOUR TURN indicator */}
             <div className="col-start-1 col-end-13 row-start-4 row-end-13 overflow-x-auto overflow-y-visible px-2 py-4">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-3 min-w-max h-full items-start pt-2 justify-center">
+                <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-1 sm:space-x-2 md:space-x-3 min-w-max h-full items-start pt-2 justify-center">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
@@ -787,7 +787,7 @@ export default function Game() {
                     >
                       <GameCard
                         card={card}
-                        size="medium"
+                        size="small"
                         selected={false}
                         disabled={!isMyTurn}
                         isGuruUser={isGuruUser}
@@ -810,11 +810,11 @@ export default function Game() {
         </div>
       )}
 
-      {/* Spectators Area - Dynamic positioning to prevent overlap */}
+      {/* Spectators Area - Dynamic positioning to prevent overlap - Better mobile positioning */}
       {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-        <div className="absolute top-16 sm:top-20 z-20" style={{
-          right: 'max(0.5rem, min(20vw, 1rem))', // Dynamic right positioning
-          maxWidth: 'min(20rem, 25vw)' // Dynamic max width
+        <div className="absolute top-12 sm:top-16 md:top-20 z-20" style={{
+          right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
+          maxWidth: 'min(18rem, 20vw)' // Smaller max width on mobile
         }}>
           <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 sm:p-3 shadow-lg">
             <div className="text-xs font-semibold text-gray-700 mb-2">
