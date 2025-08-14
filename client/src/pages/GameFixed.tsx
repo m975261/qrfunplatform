@@ -574,7 +574,7 @@ export default function Game() {
           <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
         </div>
 
-        {/* 4 Fixed Avatar Positions using Polar Coordinates - Clock positions 12, 3, 6, 9 */}
+        {/* 4 Fixed Avatar Positions using Polar Coordinates - Clock positions 12, 3, 6, 10 */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
@@ -592,7 +592,7 @@ export default function Game() {
               0,   // 12 o'clock - 0 degrees (top)
               90,  // 3 o'clock - 90 degrees (right) 
               180, // 6 o'clock - 180 degrees (bottom)
-              270  // 9 o'clock - 270 degrees (left) - changed from 300° for better symmetry
+              300  // 10 o'clock - 300 degrees (upper left)
             ];
             
             const angle = angles[pos] || 0;
