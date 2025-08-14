@@ -1,76 +1,69 @@
-// Test avatar positioning around the circle
+// Test avatar positioning calculations
 import fetch from 'node-fetch';
 
-const BASE_URL = 'http://localhost:5000';
+console.log('📍 AVATAR POSITIONING TEST');
 
-console.log('🧪 Testing Avatar Positioning System...');
+// Calculate the exact positions
+const circleRadius = 140;
+const avatarRadius = 32;
+const totalDistance = circleRadius + avatarRadius;
 
-async function createTestRoom() {
+console.log('=== POSITIONING CALCULATIONS ===');
+console.log(`Circle radius: ${circleRadius}px`);
+console.log(`Avatar radius: ${avatarRadius}px`);
+console.log(`Total distance from center: ${totalDistance}px`);
+
+console.log('\n=== CLOCK POSITIONS ===');
+
+// 12 o'clock
+console.log('Position 0 (12 o\'clock):');
+console.log(`  top: calc(50% - ${totalDistance}px)`);
+console.log(`  left: 50%`);
+
+// 3 o'clock  
+console.log('Position 1 (3 o\'clock):');
+console.log(`  top: 50%`);
+console.log(`  left: calc(50% + ${totalDistance}px)`);
+
+// 6 o'clock
+console.log('Position 2 (6 o\'clock):');
+console.log(`  top: calc(50% + ${totalDistance}px)`);
+console.log(`  left: 50%`);
+
+// 10 o'clock (240 degrees)
+const angle240 = 240 * Math.PI / 180;
+const x10 = Math.round(totalDistance * Math.cos(angle240));
+const y10 = Math.round(totalDistance * Math.sin(angle240));
+
+console.log('Position 3 (10 o\'clock):');
+console.log(`  top: calc(50% + ${y10}px)`);
+console.log(`  left: calc(50% + ${x10}px)`);
+console.log(`  (x: ${x10}, y: ${y10})`);
+
+// Create test room
+async function testAvatarPositioning() {
   try {
-    // Create room with host
-    const createResponse = await fetch(`${BASE_URL}/api/rooms`, {
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hostNickname: 'Host', gameType: 'uno' })
-    });
-    
-    const roomData = await createResponse.json();
-    console.log('✅ Test room created:', roomData.room.code);
-    
-    // Add 3 more players to fill all 4 positions
-    const players = ['Player2', 'Player3', 'Player4'];
-    for (let i = 0; i < players.length; i++) {
-      const joinResponse = await fetch(`${BASE_URL}/api/rooms/${roomData.room.id}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          nickname: players[i], 
-          playerId: `player${i+2}-test-${Date.now()}` 
-        })
-      });
-      
-      if (joinResponse.ok) {
-        console.log(`✅ ${players[i]} joined`);
-      } else {
-        console.log(`❌ Failed to add ${players[i]}`);
-      }
-    }
-    
-    // Start game to activate avatar positioning
-    const startResponse = await fetch(`${BASE_URL}/api/rooms/${roomData.room.id}/start`, {
+    const response = await fetch('http://localhost:5000/api/rooms', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${roomData.playerId}`
-      }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hostNickname: 'AvatarTest', gameType: 'uno' })
     });
     
-    if (startResponse.ok) {
-      console.log('✅ Game started');
-      
-      console.log('\n=== AVATAR POSITIONING VERIFICATION ===');
-      console.log('✅ CSS Grid System Configured:');
-      console.log('  Position 0 (Host): 12 o\'clock - col-start-6 col-end-8 row-start-1 row-end-3');
-      console.log('  Position 1: 3 o\'clock - col-start-11 col-end-13 row-start-6 row-end-8');
-      console.log('  Position 2: 6 o\'clock - col-start-6 col-end-8 row-start-11 row-end-13');
-      console.log('  Position 3: 9 o\'clock - col-start-1 col-end-3 row-start-6 row-end-8');
-      
-      console.log('\n✅ All 4 avatar slots should be visible around the circle');
-      console.log('✅ Empty slots show as gray circles with "+" join buttons');
-      console.log('✅ Filled slots show player avatars with names and card counts');
-      
-      console.log(`\n🔗 Test URL: http://localhost:5000/game/${roomData.room.id}`);
-      console.log('🎯 All 4 avatar positions should be arranged in perfect circle');
-      
-      return { success: true, gameUrl: `http://localhost:5000/game/${roomData.room.id}` };
-    } else {
-      console.log('❌ Failed to start game');
-      return { success: false };
-    }
+    const data = await response.json();
+    console.log('\n✅ Test room created:', data.room.code);
+    console.log(`🔗 URL: http://localhost:5000/room/${data.room.code}`);
+    
+    console.log('\n🧪 TO VERIFY:');
+    console.log('1. Load the room URL');
+    console.log('2. Add players and start game');
+    console.log('3. Check that avatars are attached to circle edge');
+    console.log('4. Verify no overlapping with game elements');
+    console.log('5. Confirm exact clock positions');
+    
+    return data.room.code;
   } catch (error) {
-    console.error('❌ Test setup error:', error);
-    return { success: false };
+    console.error('❌ Test failed:', error);
   }
 }
 
-createTestRoom();
+testAvatarPositioning();

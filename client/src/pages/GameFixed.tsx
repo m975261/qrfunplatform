@@ -577,29 +577,37 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Calculate proper 12, 3, 6, 10 o'clock positions
+          // Calculate positions attached to circle edge at exact clock positions
           const getPositionStyle = (pos: number) => {
-            const radius = 180; // Distance from center
+            // Center of the screen is the circle center
+            // Circle radius is approximately 140px from center
+            // Avatar size is 64px, so we need to position avatar center at circle edge + avatar radius
+            const circleRadius = 140; // Distance from screen center to circle edge
+            const avatarRadius = 32; // Half of avatar size (64px)
+            const totalDistance = circleRadius + avatarRadius; // Distance from center to avatar center
+            
             const positions = [
               { // 12 o'clock - top center
-                top: '15%',
+                top: `calc(50% - ${totalDistance}px)`,
                 left: '50%',
                 transform: 'translate(-50%, -50%)'
               },
-              { // 3 o'clock - right side
+              { // 3 o'clock - right side  
                 top: '50%',
-                right: '8%',
-                transform: 'translate(0, -50%)'
+                left: `calc(50% + ${totalDistance}px)`,
+                transform: 'translate(-50%, -50%)'
               },
               { // 6 o'clock - bottom center
-                bottom: '25%',
+                top: `calc(50% + ${totalDistance}px)`,
                 left: '50%',
-                transform: 'translate(-50%, 50%)'
+                transform: 'translate(-50%, -50%)'
               },
-              { // 10 o'clock - bottom left
-                bottom: '35%',
-                left: '15%',
-                transform: 'translate(-50%, 50%)'
+              { // 10 o'clock - calculate using trigonometry
+                // 10 o'clock is 240 degrees (or -120 degrees from 12 o'clock)
+                // x = cos(240°) * distance, y = sin(240°) * distance
+                top: `calc(50% + ${Math.round(totalDistance * Math.sin(240 * Math.PI / 180))}px)`,
+                left: `calc(50% + ${Math.round(totalDistance * Math.cos(240 * Math.PI / 180))}px)`,
+                transform: 'translate(-50%, -50%)'
               }
             ];
             return positions[pos] || positions[0];
