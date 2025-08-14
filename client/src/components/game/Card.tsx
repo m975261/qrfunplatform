@@ -6,6 +6,7 @@ interface GameCardProps {
   disabled?: boolean;
   interactive?: boolean;
   size?: "extra-small" | "small" | "medium" | "large";
+  selected?: boolean;
   isGuruUser?: boolean;
   onGuruReplace?: () => void;
   cardIndex?: number;
@@ -17,6 +18,7 @@ export default function GameCard({
   disabled = false, 
   interactive = false, 
   size = "medium",
+  selected = false,
   isGuruUser = false,
   onGuruReplace,
   cardIndex
@@ -265,6 +267,7 @@ export default function GameCard({
       ${colors.bg} ${getSizeClasses()} ${colors.border} ${colors.shadow}
       rounded-xl border-4 shadow-lg relative
       ${disabled ? "opacity-50" : ""}
+      ${selected ? 'ring-4 ring-yellow-400 ring-opacity-70 scale-105' : ''}
     `}>
       {/* Card Content */}
       {getCardContent()}
@@ -325,12 +328,7 @@ export default function GameCard({
         </button>
       )}
       
-      {/* Debug guru button conditions */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-0 right-0 text-xs text-red-500 bg-black/50 p-1" style={{fontSize: '8px'}}>
-          G:{isGuruUser?'1':'0'} D:{disabled?'1':'0'} R:{onGuruReplace?'1':'0'} I:{cardIndex}
-        </div>
-      )}
+
     </div>
   );
 }

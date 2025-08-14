@@ -1158,8 +1158,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🧙‍♂️ Guru ${player.nickname} replacing card ${cardIndex} in room ${roomId}`);
       
       // Replace the card in player's hand
+      const currentPlayer = await storage.getPlayer(playerId);
+      if (!currentPlayer || !currentPlayer.hand || cardIndex >= currentPlayer.hand.length) {
+        return res.status(400).json({ error: 'Invalid card index' });
+      }
+      
+      // Update the specific card in the hand array
+      const updatedHand = [...currentPlayer.hand];
+      updatedHand[cardIndex] = newCard;
+      
       const updatedPlayer = await storage.updatePlayer(playerId, {
-        [`hand.${cardIndex}`]: newCard
+        hand: updatedHand
       });
       
       // Broadcast the update to room

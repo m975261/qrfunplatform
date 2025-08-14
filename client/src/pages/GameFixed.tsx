@@ -266,6 +266,13 @@ export default function Game() {
     if (selectedCardIndex === null || !currentPlayer) return;
     
     try {
+      console.log("🔧 Guru replacing card:", {
+        cardIndex: selectedCardIndex,
+        newCard,
+        roomId,
+        playerId
+      });
+      
       const response = await fetch(`/api/rooms/${roomId}/guru-replace-card`, {
         method: 'POST',
         headers: {
@@ -278,18 +285,27 @@ export default function Game() {
         })
       });
       
+      const result = await response.json();
+      
       if (response.ok) {
-        console.log("Card replaced successfully");
+        console.log("✅ Card replaced successfully");
+        toast({
+          title: "Success",
+          description: "Card replaced successfully",
+        });
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
+        // Refresh game state to see the new card
+        window.location.reload();
       } else {
-        throw new Error('Failed to replace card');
+        console.error("❌ Server error:", result.error);
+        throw new Error(result.error || 'Failed to replace card');
       }
     } catch (error) {
-      console.error("Error replacing card:", error);
+      console.error("❌ Error replacing card:", error);
       toast({
         title: "Error",
-        description: "Failed to replace card",
+        description: error instanceof Error ? error.message : "Failed to replace card",
         variant: "destructive",
       });
     }
@@ -450,7 +466,7 @@ export default function Game() {
 
       {/* Central Game Area - CSS Grid Layout */}
       <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-1 p-4" style={{
-        paddingBottom: 'max(25vh, 200px)',
+        paddingBottom: 'max(30vh, 240px)',
         paddingTop: 'max(8vh, 64px)'
       }}>
         {/* Draw Pile - Grid positioned to avoid overlap */}
@@ -735,7 +751,7 @@ export default function Game() {
         <div className="absolute bottom-0 left-0 right-0 z-30">
           {/* Use same 12x12 grid system as main game area */}
           <div className="grid grid-cols-12 grid-rows-12 gap-1 p-4 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md" style={{
-            height: 'max(25vh, 200px)'
+            height: 'max(30vh, 240px)'
           }}>
             
             {/* Player Avatar - Grid positioned */}
@@ -781,9 +797,9 @@ export default function Game() {
             </div>
 
             {/* Player Cards - Grid positioned with full height for cards */}
-            <div className="col-start-1 col-end-13 row-start-4 row-end-13 overflow-x-auto overflow-y-visible p-2">
+            <div className="col-start-1 col-end-13 row-start-4 row-end-13 overflow-x-auto overflow-y-visible px-2 py-4">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div className="flex space-x-3 min-w-max h-full items-end pb-4">
+                <div className="flex space-x-3 min-w-max h-full items-start pt-2">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
@@ -793,7 +809,7 @@ export default function Game() {
                       onClick={() => {
                         if (!isMyTurn) return;
                         if (selectedCardIndex === index) {
-                          playCard(card, index);
+                          playCard(index);
                         } else {
                           setSelectedCardIndex(index);
                         }
