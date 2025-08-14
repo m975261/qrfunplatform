@@ -540,13 +540,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - Attached to circle edge for iPhone
+          // Get position class for avatar placement - Attached outside circle edge without overlap
           const getPositionClass = (pos: number) => {
             const positions = [
-              'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - attached to circle
-              'right-0 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - attached to circle  
-              'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - attached to circle
-              'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - attached to circle
+              'top-0 left-1/2 -translate-x-1/2 -translate-y-full', // 12 o'clock - attached outside top
+              'right-0 top-1/2 -translate-y-1/2 translate-x-full', // 3 o'clock - attached outside right  
+              'bottom-0 left-1/2 -translate-x-1/2 translate-y-full', // 6 o'clock - attached outside bottom
+              'left-0 top-1/2 -translate-y-1/2 -translate-x-full' // 9 o'clock - attached outside left
             ];
             return positions[pos] || positions[0];
           };

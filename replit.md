@@ -42,14 +42,14 @@ Preferred communication style: Simple, everyday language.
 - **Status**: Complete ultra-fast card replacement, single-click playing, wild card color selection, and UNO penalties working seamlessly
 
 **CRITICAL - AVATAR LAYOUT SYSTEM FINALIZED** (Aug 14, 2025)
-- **Layout Architecture**: Single 384px (w-96 h-96) container with lobby-style Tailwind positioning
-- **Avatar Positions**: Exact 12, 3, 6, 9 o'clock using `top-6/right-6/bottom-6/left-6` classes (NOT polar coordinates)
-- **Container Sizing**: Optimized 384px vs lobby's 320px to accommodate game functionality without overlap
-- **Center Card Display**: Uses GameCard component showing actual card data with proper colors and wild indicators
-- **Draw Pile**: Fixed position bottom-right corner (bottom-4 right-4) to avoid layout conflicts
-- **Background**: Single clean container without duplicate CSS grid systems or background circles
-- **Compilation**: All sendMessage errors resolved using fetch API for avatar updates
-- **Status**: FROZEN - Layout working perfectly, do not modify positioning system
+- **Layout Architecture**: Single responsive container (w-72 h-72 to w-96 h-96) with iPhone-optimized positioning
+- **Avatar Positions**: Exact 12, 3, 6, 9 o'clock using `-translate-y-full/translate-x-full/translate-y-full/-translate-x-full` classes
+- **Non-Overlapping Design**: Avatars positioned outside circle edge to prevent center card overlap
+- **iPhone Optimization**: Horizontal card layout at page bottom with extra-small cards for space efficiency
+- **Draw Pile**: Repositioned to left side (bottom-8 left-8) between 3 and 6 o'clock for better accessibility
+- **Player Hand**: Compact horizontal scrolling layout with minimal height (max 20vh, 120px) and reserved R button space
+- **Mobile Layout**: Avatar slots attached to circle edge without overlap, optimal for portrait orientation
+- **Status**: FROZEN - iPhone-optimized layout working perfectly, do not modify positioning system
 
 **CRITICAL - DIRECTION INDICATOR DESIGN FINALIZED** (Aug 14, 2025)
 - **Position**: Fixed at `top-12 left-12` between 12 and 9 o'clock avatar slots
