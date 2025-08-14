@@ -8,6 +8,8 @@ This is a full-stack multiplayer gaming platform featuring multiple games with i
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+**Critical Player State Management Rule**: Always design player-related features with full awareness that users can be joined, kicked, rejoined, kicked again, and join as different players in complex sequences. All player functionality must handle these dynamic state changes robustly without conflicts or data inconsistencies.
+
 ## System Architecture
 
 ### Frontend Architecture

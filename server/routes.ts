@@ -1207,12 +1207,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Invalid spectator' });
       }
       
-      // Check if position is available
+      // CRITICAL: Handle complex player state scenarios (kick/rejoin/duplicate handling)
       const roomPlayers = await storage.getPlayersByRoom(roomId);
-      const positionTaken = roomPlayers.some(p => p.position === position && !p.isSpectator && !p.hasLeft);
+      
+      // Clean up any duplicate spectator entries for the same nickname
+      const duplicateSpectators = roomPlayers.filter(p => 
+        p.nickname.toLowerCase() === spectator.nickname.toLowerCase() && 
+        p.id !== spectator.id && 
+        p.isSpectator
+      );
+      
+      for (const duplicate of duplicateSpectators) {
+        console.log(`Cleaning up duplicate spectator entry: ${duplicate.id} (${duplicate.nickname})`);
+        await storage.deletePlayer(duplicate.id);
+      }
+      
+      // Re-fetch players after cleanup
+      const cleanedPlayers = await storage.getPlayersByRoom(roomId);
+      
+      // Check if position is available (exclude left players and spectators)
+      const positionTaken = cleanedPlayers.some(p => 
+        p.position === position && 
+        !p.isSpectator && 
+        !p.hasLeft
+      );
       
       if (positionTaken) {
         return res.status(400).json({ error: 'Position already taken' });
+      }
+      
+      // Additional safety check: Ensure spectator is still valid after cleanup
+      const currentSpectator = await storage.getPlayer(spectatorId);
+      if (!currentSpectator || currentSpectator.roomId !== roomId || !currentSpectator.isSpectator) {
+        return res.status(400).json({ error: 'Spectator no longer valid after cleanup' });
       }
       
       // Get cards for this position from positionHands or deal new ones

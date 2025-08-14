@@ -174,16 +174,31 @@ export default function Game() {
     setShowGuruReplaceModal(true);
   };
 
-  // Host spectator assignment for active games
+  // Host spectator assignment for active games - with robust player state handling
   const handleHostAssignSpectatorToGame = async (spectatorId: string) => {
     if (!isHost || !roomId) return;
     
     try {
-      console.log(`Host assigning spectator ${spectatorId} to active game`);
+      const spectator = players.find((p: any) => p.id === spectatorId);
+      if (!spectator) {
+        toast({
+          title: "Error",
+          description: "Spectator not found",
+          variant: "destructive",
+        });
+        return;
+      }
       
-      // Find the first available position (0-3)
-      const gamePlayers = players.filter((p: any) => !p.isSpectator);
-      const takenPositions = gamePlayers.map((p: any) => p.position).sort();
+      console.log(`Host assigning spectator ${spectator.nickname} (${spectatorId}) to active game`);
+      
+      // Find available positions excluding left players and spectators
+      const activeGamePlayers = players.filter((p: any) => 
+        !p.isSpectator && 
+        !p.hasLeft && 
+        p.position !== null && 
+        p.position !== undefined
+      );
+      const takenPositions = activeGamePlayers.map((p: any) => p.position).sort();
       
       let availablePosition = null;
       for (let i = 0; i < 4; i++) {
@@ -202,6 +217,12 @@ export default function Game() {
         return;
       }
       
+      // Show assignment intent before API call
+      toast({
+        title: "Assigning Player",
+        description: `Adding ${spectator.nickname} to position ${availablePosition + 1}...`,
+      });
+      
       const response = await fetch(`/api/rooms/${roomId}/assign-spectator-to-game`, {
         method: 'POST',
         headers: {
@@ -214,20 +235,23 @@ export default function Game() {
         })
       });
       
+      const result = await response.json();
+      
       if (response.ok) {
-        console.log(`Successfully assigned spectator to position ${availablePosition}`);
+        console.log(`Successfully assigned spectator ${spectator.nickname} to position ${availablePosition}`);
         toast({
           title: "Success",
-          description: "Player assigned to game",
+          description: `${spectator.nickname} joined the game at position ${availablePosition + 1}`,
         });
       } else {
-        throw new Error('Failed to assign player');
+        console.error("Server error:", result.error);
+        throw new Error(result.error || 'Failed to assign player');
       }
     } catch (error) {
       console.error("Error assigning spectator:", error);
       toast({
-        title: "Error", 
-        description: "Failed to assign player to game",
+        title: "Assignment Failed", 
+        description: error instanceof Error ? error.message : "Failed to assign player to game",
         variant: "destructive",
       });
     }
@@ -817,9 +841,17 @@ export default function Game() {
               ))}
             </div>
             {/* Instructions for host during active game */}
-            {isHost && room.status === "playing" && (
-              <div className="mt-2 text-xs text-gray-500 text-center">
-                Click spectators to assign to empty slots
+            {isHost && room.status === "playing" && players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <div className="text-xs text-blue-600 text-center font-medium">
+                  Host Controls
+                </div>
+                <div className="text-xs text-gray-500 text-center mt-1">
+                  Click spectators to assign to empty slots
+                </div>
+                <div className="text-xs text-gray-400 text-center">
+                  Available slots: {4 - players.filter((p: any) => !p.isSpectator && !p.hasLeft).length}
+                </div>
               </div>
             )}
           </div>
