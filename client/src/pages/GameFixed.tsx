@@ -586,13 +586,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Position avatars using CSS Grid to match reference image exactly
+          // Position avatars at requested clock positions: 12, 3, 6, 10 o'clock
           const getPositionClass = (pos: number) => {
             const positions = [
-              'col-start-6 col-end-8 row-start-2 row-end-4', // 12 o'clock - top center, moved down from edge
-              'col-start-9 col-end-11 row-start-6 row-end-8', // 3 o'clock - right center, moved in from edge
-              'col-start-6 col-end-8 row-start-10 row-end-12', // 6 o'clock - bottom center, moved up from edge
-              'col-start-3 col-end-5 row-start-6 row-end-8'  // 9 o'clock - left center (not 10), moved in from edge
+              'top-0 left-1/2 -translate-x-1/2', // 12 o'clock - top of circle
+              'right-0 top-1/2 -translate-y-1/2', // 3 o'clock - right of circle
+              'bottom-0 left-1/2 -translate-x-1/2', // 6 o'clock - bottom of circle
+              'left-6 top-1/4 -translate-y-1/2' // 10 o'clock - upper left diagonal
             ];
             return positions[pos] || positions[0];
           };
@@ -600,7 +600,7 @@ export default function Game() {
           return (
             <div
               key={position}
-              className={`${getPositionClass(position)} pointer-events-auto flex items-center justify-center`}
+              className={`absolute pointer-events-auto ${getPositionClass(position)}`}
             >
                 <div className="relative">
                   {player ? (
@@ -1123,7 +1123,6 @@ export default function Game() {
             setSelectedCardIndex(null);
           }}
           onReplaceCard={handleGuruReplaceCard}
-          refreshGameState={refreshGameState}
         />
       )}
 

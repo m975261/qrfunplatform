@@ -21,7 +21,6 @@ interface GuruCardReplaceModalProps {
   availableCards?: Card[]; // Available cards in current deck
   onClose: () => void;
   onReplaceCard: (newCard: Card) => void;
-  refreshGameState?: () => void;
 }
 
 export default function GuruCardReplaceModal({
@@ -29,8 +28,7 @@ export default function GuruCardReplaceModal({
   currentCard,
   availableCards,
   onClose,
-  onReplaceCard,
-  refreshGameState
+  onReplaceCard
 }: GuruCardReplaceModalProps) {
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
@@ -99,21 +97,7 @@ export default function GuruCardReplaceModal({
     // Close modal immediately but don't reset form until after successful replacement
     onClose();
     
-    // Trigger multiple rapid refreshes for sub-1-second updates
-    let refreshCount = 0;
-    const refreshIntervals = [100, 300, 600, 1000]; // Staggered refresh attempts
-    
-    refreshIntervals.forEach((delay, index) => {
-      setTimeout(() => {
-        refreshCount++;
-        console.log(`🔄 Rapid refresh ${refreshCount}/4 for card replacement`);
-        if (typeof refreshGameState === 'function') {
-          refreshGameState();
-        }
-      }, delay);
-    });
-    
-    // Reset form after processing
+    // Reset form after a brief delay to allow for server processing
     setTimeout(() => {
       resetForm();
     }, 500);
