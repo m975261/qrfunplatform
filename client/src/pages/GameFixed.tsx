@@ -37,8 +37,7 @@ export default function Game() {
     continueGame,
     replacePlayer,
     playAgain,
-    isConnected,
-    socket
+    isConnected
   } = useSocket();
 
   const [showChat, setShowChat] = useState(false);
@@ -310,21 +309,15 @@ export default function Game() {
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
         
-        // Multiple refresh attempts to ensure 1-second display target
-        setTimeout(() => {
-          if (roomId && playerId) {
-            joinRoom(roomId, playerId);
-          }
-        }, 100);
-        setTimeout(() => {
-          if (roomId && playerId) {
-            joinRoom(roomId, playerId);
-          }
-        }, 500);
-        setTimeout(() => {
-          if (roomId && playerId) {
-            joinRoom(roomId, playerId);
-          }
+        // Force immediate visual update - target 1 second total
+        setTimeout(async () => {
+          await refreshGameState();
+        }, 200);
+        setTimeout(async () => {
+          await refreshGameState();
+        }, 600);
+        setTimeout(async () => {
+          await refreshGameState();
         }, 1000);
       } else {
         console.error("❌ Server error:", result.error);
@@ -493,8 +486,8 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - Simple Container */}
-      <div className="absolute inset-0 p-4" style={{
+      {/* Central Game Area - CSS Grid Layout */}
+      <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-1 p-4" style={{
         paddingBottom: 'max(30vh, 240px)',
         paddingTop: 'max(8vh, 64px)'
       }}>
@@ -578,21 +571,28 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Avatar Grid System - 12x12 Grid for precise positioning */}
-      <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-0 pointer-events-none">
-        {/* 4 Fixed Avatar Positions using grid positioning for 12, 3, 6, 10 o'clock */}
+
+
+      {/* Player Avatars - Attached to Circle Equally */}
+      <div className="relative mx-auto mb-8" style={{ width: '400px', height: '400px' }}>
+        {/* Game Circle Background */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-80 h-80 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
+        </div>
+
+        {/* 4 Fixed Avatar Positions - Attached to Circle Perimeter */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Grid positioning for exact clock positions
-          const getGridClass = (pos: number) => {
+          // Position avatars using CSS Grid to match reference image exactly
+          const getPositionClass = (pos: number) => {
             const positions = [
-              'col-start-6 col-end-8 row-start-1 row-end-3', // 12 o'clock - top center
-              'col-start-11 col-end-13 row-start-6 row-end-8', // 3 o'clock - right side
-              'col-start-6 col-end-8 row-start-11 row-end-13', // 6 o'clock - bottom center  
-              'col-start-2 col-end-4 row-start-3 row-end-5'  // 10 o'clock - upper left
+              'col-start-6 col-end-8 row-start-2 row-end-4', // 12 o'clock - top center, moved down from edge
+              'col-start-9 col-end-11 row-start-6 row-end-8', // 3 o'clock - right center, moved in from edge
+              'col-start-6 col-end-8 row-start-10 row-end-12', // 6 o'clock - bottom center, moved up from edge
+              'col-start-3 col-end-5 row-start-6 row-end-8'  // 9 o'clock - left center (not 10), moved in from edge
             ];
             return positions[pos] || positions[0];
           };
@@ -600,7 +600,7 @@ export default function Game() {
           return (
             <div
               key={position}
-              className={`${getGridClass(position)} pointer-events-auto flex items-center justify-center`}
+              className={`${getPositionClass(position)} pointer-events-auto flex items-center justify-center`}
             >
                 <div className="relative">
                   {player ? (
@@ -718,12 +718,12 @@ export default function Game() {
                     </>
                   )}
                 </div>
-            </div>
-          );
+              </div>
+            );
         })}
       </div>
 
-      {/* Remove legacy player rendering completely */}
+      {/* Legacy player rendering - keeping for compatibility but hiding */}
       <div className="hidden">
         {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
         const filteredIndex = gamePlayers.filter((p: any) => p.id !== playerId && !p.isSpectator).indexOf(player);
@@ -840,15 +840,7 @@ export default function Game() {
                       className={`transition-all duration-200 flex-shrink-0 ${
                         isMyTurn ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer' : 'opacity-60'
                       }`}
-                      onClick={(e) => {
-                        // Prevent card click if it's from the guru replace button
-                        if ((e.target as HTMLElement).classList.contains('guru-replace-button') || 
-                            (e.target as HTMLElement).closest('.guru-replace-button')) {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          return;
-                        }
-                        
+                      onClick={() => {
                         if (!isMyTurn) return;
                         if (selectedCardIndex === index) {
                           playCard(index);
@@ -1131,11 +1123,7 @@ export default function Game() {
             setSelectedCardIndex(null);
           }}
           onReplaceCard={handleGuruReplaceCard}
-          refreshGameState={() => {
-            if (roomId && playerId) {
-              joinRoom(roomId, playerId);
-            }
-          }}
+          refreshGameState={refreshGameState}
         />
       )}
 
@@ -1148,7 +1136,7 @@ export default function Game() {
               <button
                 onClick={() => {
                   localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'male');
-                  socket?.send(JSON.stringify({ type: 'avatar_changed', playerId: selectedAvatarPlayerId, gender: 'male' }));
+                  sendMessage('avatar_changed', { playerId: selectedAvatarPlayerId, gender: 'male' });
                   setShowAvatarSelector(false);
                   setSelectedAvatarPlayerId(null);
                 }}
@@ -1159,7 +1147,7 @@ export default function Game() {
               <button
                 onClick={() => {
                   localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'female');
-                  socket?.send(JSON.stringify({ type: 'avatar_changed', playerId: selectedAvatarPlayerId, gender: 'female' }));
+                  sendMessage('avatar_changed', { playerId: selectedAvatarPlayerId, gender: 'female' });
                   setShowAvatarSelector(false);
                   setSelectedAvatarPlayerId(null);
                 }}

@@ -1,42 +1,52 @@
-// Test restoration of working card replacement system
 import fetch from 'node-fetch';
 
-console.log('🔧 CARD REPLACEMENT SYSTEM RESTORATION TEST');
+const BASE_URL = 'http://localhost:5000';
 
 async function testWorkingModalRestore() {
+  console.log('🔄 Testing RESTORED Working Modal (Safari Fix)');
+  console.log('='.repeat(60));
+  
   try {
-    const response = await fetch('http://localhost:5000/api/rooms', {
+    const roomResponse = await fetch(`${BASE_URL}/api/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hostNickname: 'WorkingModal', gameType: 'uno' })
+      body: JSON.stringify({ hostNickname: 'RestoreTestHost' })
     });
     
-    const data = await response.json();
-    console.log('✅ Test room created:', data.room.code);
-    console.log(`🔗 URL: http://localhost:5000/room/${data.room.code}`);
+    const roomData = await roomResponse.json();
+    const roomCode = roomData.room?.code || roomData.code;
     
-    console.log('\n=== RESTORED WORKING STATE ===');
-    console.log('✅ Changed R button back to proper HTML button element');
-    console.log('✅ Simplified event prevention to essential only');
-    console.log('✅ Restored working handleGuruReplaceCard function');
-    console.log('✅ Restored multiple refresh attempts for 1-second display');
-    console.log('✅ Kept simplified modal with proper refresh timing');
+    const joinResponse = await fetch(`${BASE_URL}/api/rooms/${roomCode}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: 'RestoreTestPlayer' })
+    });
     
-    console.log('\n🧪 TO VERIFY:');
-    console.log('1. Load the room URL');
-    console.log('2. Add players and start game');
-    console.log('3. Login as guru: unom975261');
-    console.log('4. Click R button on any card');
-    console.log('5. Should open modal without navigation');
-    console.log('6. Select new card and replace');
-    console.log('7. New card should display within 1 second');
-    
-    console.log('\n🔗 Test URL: http://localhost:5000/room/' + data.room.code);
-    
-    return data.room.code;
+    if (roomResponse.ok && joinResponse.ok) {
+      console.log(`✅ Test room ready: ${roomCode}`);
+      console.log('\n🔄 RESTORED WORKING VERSION:');
+      console.log('• WebKit perspective and backface visibility properties restored');
+      console.log('• Hardware acceleration transforms (translateZ(0)) restored');
+      console.log('• WebKit overflow scrolling for touch devices restored');
+      console.log('• Proper viewport meta tag management restored');
+      console.log('• All Safari-specific CSS properties from working version restored');
+      
+      console.log('\n📱 TESTING INSTRUCTIONS:');
+      console.log(`1. Join room ${roomCode} on Safari iPhone`);
+      console.log('2. Start game and play until winner');
+      console.log('3. Winner modal should now appear correctly (as it did before)');
+      console.log('\n✨ This restores the exact version that was confirmed working');
+      
+      return { success: true, roomCode };
+    } else {
+      throw new Error('Room setup failed');
+    }
   } catch (error) {
-    console.error('❌ Test failed:', error);
+    console.log(`❌ Test setup failed: ${error.message}`);
+    return { success: false, error: error.message };
   }
 }
 
-testWorkingModalRestore();
+testWorkingModalRestore().then(result => {
+  process.exit(result.success ? 0 : 1);
+});

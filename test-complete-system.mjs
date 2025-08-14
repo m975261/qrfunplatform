@@ -1,72 +1,76 @@
-// Comprehensive test of avatar positioning and R button functionality
+#!/usr/bin/env node
+
+/**
+ * Complete test of the guru authentication flow
+ * to understand why the password dialog didn't appear
+ */
+
 import fetch from 'node-fetch';
 
 const BASE_URL = 'http://localhost:5000';
 
-console.log('🧪 COMPREHENSIVE SYSTEM TEST');
-console.log('Testing: Avatar Positioning (12, 3, 6, 10 o\'clock) + R Button Fix');
+console.log('🔧 COMPLETE GURU AUTHENTICATION FLOW TEST');
+console.log('=' .repeat(60));
 
-async function runCompleteTest() {
+async function testCompleteFlow() {
+  console.log('Testing the exact scenario:');
+  console.log('1. User enters "unom975261" as nickname');
+  console.log('2. System should detect guru user');
+  console.log('3. System should show password dialog');
+  console.log('4. But user went directly to room creation');
+  
+  console.log('\n🔍 STEP 1: Test guru user detection');
   try {
-    // Create test room
-    const createResponse = await fetch(`${BASE_URL}/api/rooms`, {
+    const response = await fetch(`${BASE_URL}/api/guru-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hostNickname: 'TestHost', gameType: 'uno' })
+      body: JSON.stringify({ playerName: 'unom975261', password: 'check' })
     });
     
-    const roomData = await createResponse.json();
-    console.log('✅ Test room created:', roomData.room.code);
+    console.log(`Response status: ${response.status}`);
+    const data = await response.json();
+    console.log('Response data:', data);
     
-    // Add second player
-    const joinResponse = await fetch(`${BASE_URL}/api/rooms/${roomData.room.id}/join`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        nickname: 'TestPlayer2', 
-        playerId: `player2-${Date.now()}`
-      })
-    });
-    
-    if (joinResponse.ok) {
-      console.log('✅ Second player added');
-      
-      console.log('\n=== AVATAR POSITIONING VERIFICATION ===');
-      console.log('✅ Position 0: 12 o\'clock (top center)');
-      console.log('✅ Position 1: 3 o\'clock (right side)');
-      console.log('✅ Position 2: 6 o\'clock (bottom center)');
-      console.log('✅ Position 3: 10 o\'clock (bottom left) - UPDATED');
-      console.log('✅ CSS Grid system: col-start-2 col-end-4 row-start-9 row-end-11 for 10 o\'clock');
-      
-      console.log('\n=== R BUTTON FIX VERIFICATION ===');
-      console.log('✅ Changed from button to div element');
-      console.log('✅ Added guru-replace-button class identifier');
-      console.log('✅ Parent container ignores clicks from R button');
-      console.log('✅ Multiple event prevention layers implemented');
-      console.log('✅ Should open modal instead of navigating to new page');
-      
-      console.log('\n=== TEST INSTRUCTIONS ===');
-      console.log(`🔗 Room URL: http://localhost:5000/room/${roomData.room.code}`);
-      console.log('🎮 Start the game manually');
-      console.log('🔐 Login as guru: username "unom975261"');
-      console.log('🎯 Test R button on cards - should open modal');
-      console.log('👥 Verify all 4 avatar slots positioned correctly around circle');
-      
-      console.log('\n🎉 BOTH SYSTEMS READY FOR TESTING');
-      
-      return { 
-        success: true, 
-        roomCode: roomData.room.code,
-        testUrl: `http://localhost:5000/room/${roomData.room.code}`
-      };
+    if (response.status === 200 && data.requiresPassword) {
+      console.log('✅ Guru detection works - should trigger password dialog');
     } else {
-      console.log('❌ Failed to add second player');
-      return { success: false };
+      console.log('❌ Guru detection failed - explains why no dialog appeared');
     }
+    
+    console.log('\n🔍 STEP 2: Test what client checkGuruUser should return');
+    const isGuruUser = (response.status === 200) && (data.requiresPassword || data.userExists);
+    console.log(`checkGuruUser should return: ${isGuruUser}`);
+    
+    if (isGuruUser) {
+      console.log('✅ This should have triggered the guru login dialog');
+      console.log('📋 The dialog should appear with:');
+      console.log('   - setShowHostPopup(false)');
+      console.log('   - setShowGuruLogin(true)');
+      console.log('   - setPendingAction("create")');
+    } else {
+      console.log('❌ This would have bypassed guru authentication');
+      console.log('📋 Instead it would call:');
+      console.log('   - createRoomMutation.mutate(popupNickname)');
+    }
+    
+    console.log('\n🔍 STEP 3: Analyze what likely happened');
+    console.log('From the user logs, we only see:');
+    console.log('   "🔧 Checking if user is guru: unom975261"');
+    console.log('But we don\'t see:');
+    console.log('   "🔧 Guru check response: 200"');
+    console.log('   "🔧 Guru check data: {...}"');
+    console.log('   "🔧 Guru user found, needs password: {...}"');
+    
+    console.log('\n💡 LIKELY CAUSE:');
+    console.log('The fetch request in the browser may have failed silently,');
+    console.log('causing checkGuruUser to return false and skip guru auth.');
+    
   } catch (error) {
-    console.error('❌ Test error:', error);
-    return { success: false };
+    console.error('Error during test:', error.message);
+    console.log('\n❌ NETWORK ERROR - This could be the issue!');
+    console.log('If the client can\'t reach /api/guru-login, it would fail silently');
+    console.log('and proceed with normal room creation.');
   }
 }
 
-runCompleteTest();
+testCompleteFlow();
