@@ -11,9 +11,10 @@ Preferred communication style: Simple, everyday language.
 **Critical Player State Management Rule**: Always design player-related features with full awareness that users can be joined, kicked, rejoined, kicked again, and join as different players in complex sequences. All player functionality must handle these dynamic state changes robustly without conflicts or data inconsistencies.
 
 **CRITICAL - AVATAR ATTACHMENT CODE** (Aug 14, 2025)
-- **Working Avatar Positioning**: `top-16/right-16/bottom-16/left-16` with `-translate-x-1/2 -translate-y-1/2` etc
-- **Key Fix**: Position at circle edge (64px) not container edge (288-384px) for true attachment
-- **Never Change**: This positioning calculation ensures perfect circle edge attachment without gaps
+- **Working Avatar Positioning**: `top-20/right-20/bottom-20/left-20` with `-translate-x-1/2 -translate-y-1/2` etc
+- **Key Fix**: Position at circle edge (80px) not container edge (288-384px) for true attachment with spacing
+- **No Overlap**: Increased spacing from 16 to 20 (64px to 80px) prevents avatar overlap while maintaining attachment
+- **Never Change**: This positioning calculation ensures perfect circle edge attachment without gaps or overlaps
 - **Return Point**: If avatar positioning breaks, restore this exact positioning logic
 
 **CRITICAL - DO NOT MODIFY**: Real-time Lobby Synchronization System (Fixed Aug 14, 2025)

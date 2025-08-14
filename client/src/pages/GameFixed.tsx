@@ -542,17 +542,16 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - Attached to circle edge, not container edge
+          // Get position class for avatar placement - Attached to circle edge with proper spacing
           const getPositionClass = (pos: number) => {
-            // Calculate exact circle edge positions based on circle radius + avatar radius
-            // Circle: w-32 h-32 (128px) to w-40 h-40 (160px) = radius 64px to 80px  
-            // Avatar: w-16 h-16 (64px) = radius 32px
-            // Distance from center: circle radius + avatar radius = ~96px to 112px
+            // Calculate exact circle edge positions to prevent overlap
+            // Circle center is at 50%, avatars positioned at edge with safe spacing
+            // Using top-20/right-20/bottom-20/left-20 for better spacing without overlap
             const positions = [
-              'top-16 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - circle edge
-              'right-16 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - circle edge  
-              'bottom-16 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - circle edge
-              'left-16 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - circle edge
+              'top-20 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - attached with spacing
+              'right-20 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - attached with spacing
+              'bottom-20 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - attached with spacing
+              'left-20 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - attached with spacing
             ];
             return positions[pos] || positions[0];
           };
