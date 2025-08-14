@@ -400,31 +400,31 @@ export default function Game() {
   };
 
   const getPositionStyle = (position: number) => {
-    // Calculate circular positions attached to main circle edge
+    // Calculate circular positions attached to main circle edge at clock positions
     // Main circle radius + avatar radius for perfect attachment
     const mainCircleRadius = 'max(4.5rem, min(10vw, 10vh))'; // Half of main circle size
     const avatarRadius = 'max(2rem, min(4vw, 4vh))'; // Half of avatar size
     const totalRadius = `calc(${mainCircleRadius} + ${avatarRadius})`; // Distance from center to avatar center
     
     const positions = [
-      { // 12 o'clock - top
+      { // Position 0: 12 o'clock - top
         top: `calc(50% - ${totalRadius})`,
         left: '50%',
         transform: 'translate(-50%, -50%)'
       },
-      { // 3 o'clock - right
+      { // Position 1: 3 o'clock - right
         top: '50%',
         left: `calc(50% + ${totalRadius})`,
         transform: 'translate(-50%, -50%)'
       },
-      { // 6 o'clock - bottom
+      { // Position 2: 6 o'clock - bottom
         top: `calc(50% + ${totalRadius})`,
         left: '50%',
         transform: 'translate(-50%, -50%)'
       },
-      { // 9 o'clock - left
-        top: '50%',
-        left: `calc(50% - ${totalRadius})`,
+      { // Position 3: 10 o'clock - upper left
+        top: `calc(50% - ${totalRadius} * 0.342)`, // sin(60°) ≈ 0.866, cos(60°) ≈ 0.5 for 10 o'clock
+        left: `calc(50% - ${totalRadius} * 0.866)`, // Position at 10 o'clock (300° or -60°)
         transform: 'translate(-50%, -50%)'
       }
     ];
