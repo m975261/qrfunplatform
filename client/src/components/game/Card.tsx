@@ -315,6 +315,7 @@ export default function GameCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
+            console.log("🔧 Guru R button clicked for card index:", cardIndex);
             onGuruReplace();
           }}
           className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1 py-0.5 rounded font-bold shadow-lg transition-colors z-10"
@@ -322,6 +323,13 @@ export default function GameCard({
         >
           R
         </button>
+      )}
+      
+      {/* Debug guru button conditions */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-0 right-0 text-xs text-red-500 bg-black/50 p-1" style={{fontSize: '8px'}}>
+          G:{isGuruUser?'1':'0'} D:{disabled?'1':'0'} R:{onGuruReplace?'1':'0'} I:{cardIndex}
+        </div>
       )}
     </div>
   );

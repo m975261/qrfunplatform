@@ -315,6 +315,14 @@ export default function Game() {
   const isHost = currentPlayer?.id === room?.hostId;
   const topCard = room.discardPile?.[0];
   const isGuruUser = localStorage.getItem("isGuruUser") === "true";
+  
+  // Debug guru user status
+  console.log("🔧 Guru Debug:", {
+    isGuruUser,
+    localStorage_isGuruUser: localStorage.getItem("isGuruUser"),
+    currentPlayer: currentPlayer?.nickname,
+    playerHand: currentPlayer?.hand?.length
+  });
   const activePositions = room.activePositions || []; // Positions that were active when game started
 
   // Helper functions for circular avatar layout
@@ -440,39 +448,37 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Central Game Area - Fully responsive with viewport units */}
-      <div className="absolute inset-0 flex items-center justify-center" style={{
-        paddingBottom: 'max(20vh, 160px)',  // Responsive bottom padding
-        paddingTop: 'max(8vh, 64px)'        // Responsive top padding
+      {/* Central Game Area - CSS Grid Layout */}
+      <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-1 p-4" style={{
+        paddingBottom: 'max(20vh, 160px)',
+        paddingTop: 'max(8vh, 64px)'
       }}>
-        <div className="relative">
-          {/* Draw Pile - Fixed safe positioning to avoid overlap */}
-          <div className="absolute z-10" style={{
-            bottom: 'max(2rem, 4vh)',
-            right: 'max(2rem, 4vw)',
-          }}>
-            <div className="relative cursor-pointer group" onClick={drawCard}>
-              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
-                   style={{
-                     width: 'max(2rem, 6vw)',
-                     height: 'max(3rem, 8vh)',
-                     minWidth: '32px',
-                     minHeight: '48px'
-                   }}></div>
-              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"
-                   style={{
-                     width: 'max(2rem, 6vw)',
-                     height: 'max(3rem, 8vh)',
-                     minWidth: '32px',
-                     minHeight: '48px'
-                   }}></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white font-bold" style={{fontSize: 'min(0.75rem, 2.5vw)'}}>Cards</div>
-              </div>
+        {/* Draw Pile - Grid positioned to avoid overlap */}
+        <div className="col-start-10 col-end-12 row-start-10 row-end-12 flex items-center justify-center z-10">
+          <div className="relative cursor-pointer group" onClick={drawCard}>
+            <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
+                 style={{
+                   width: 'max(2rem, 6vw)',
+                   height: 'max(3rem, 8vh)',
+                   minWidth: '32px',
+                   minHeight: '48px'
+                 }}></div>
+            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5"
+                 style={{
+                   width: 'max(2rem, 6vw)',
+                   height: 'max(3rem, 8vh)',
+                   minWidth: '32px',
+                   minHeight: '48px'
+                 }}></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-white font-bold" style={{fontSize: 'min(0.75rem, 2.5vw)'}}>Cards</div>
             </div>
-            <div className="text-center mt-1 text-blue-300 font-bold" style={{fontSize: 'min(0.75rem, 2vw)'}}>DRAW</div>
           </div>
+          <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-center text-blue-300 font-bold whitespace-nowrap" style={{fontSize: 'min(0.75rem, 2vw)'}}>DRAW</div>
+        </div>
 
+        {/* Central Game Circle - Grid positioned in center */}
+        <div className="col-start-5 col-end-9 row-start-5 row-end-9 flex items-center justify-center">
           {/* Game Circle - Fully viewport responsive */}
           <div className="rounded-full bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 shadow-2xl flex items-center justify-center relative border-4 border-slate-500/50" 
                style={{
@@ -491,8 +497,6 @@ export default function Game() {
                    minHeight: '96px'
                  }}>
               
-
-
               {/* Current Card */}
               <div className="flex flex-col items-center">
                 {topCard ? (
@@ -524,8 +528,6 @@ export default function Game() {
                   </div>
                 )}
               </div>
-
-
             </div>
           </div>
         </div>

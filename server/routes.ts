@@ -775,6 +775,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         position: playerPosition,
         hand: playerHand
       });
+      
+      // Mark player as online after creation
+      await storage.updatePlayer(player.id, { isOnline: true });
 
       // Set this player as host if room had no host
       if (!room.hostId || room.hostId === "") {
