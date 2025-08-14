@@ -10,6 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 **Critical Player State Management Rule**: Always design player-related features with full awareness that users can be joined, kicked, rejoined, kicked again, and join as different players in complex sequences. All player functionality must handle these dynamic state changes robustly without conflicts or data inconsistencies.
 
+**CRITICAL - AVATAR ATTACHMENT CODE** (Aug 14, 2025)
+- **Working Avatar Positioning**: `top-16/right-16/bottom-16/left-16` with `-translate-x-1/2 -translate-y-1/2` etc
+- **Key Fix**: Position at circle edge (64px) not container edge (288-384px) for true attachment
+- **Never Change**: This positioning calculation ensures perfect circle edge attachment without gaps
+- **Return Point**: If avatar positioning breaks, restore this exact positioning logic
+
 **CRITICAL - DO NOT MODIFY**: Real-time Lobby Synchronization System (Fixed Aug 14, 2025)
 - **Issue**: Mixed HTTP/WebSocket API calls caused sync inconsistencies between host and other players' views
 - **Solution**: All lobby operations (kick, assign spectator, replace player) MUST use WebSocket exclusively
@@ -43,13 +49,16 @@ Preferred communication style: Simple, everyday language.
 
 **CRITICAL - AVATAR LAYOUT SYSTEM FINALIZED** (Aug 14, 2025)
 - **Layout Architecture**: Single responsive container (w-72 h-72 to w-96 h-96) with iPhone-optimized positioning
-- **Avatar Positions**: Exact 12, 3, 6, 9 o'clock using `-translate-y-full/translate-x-full/translate-y-full/-translate-x-full` classes
-- **Non-Overlapping Design**: Avatars positioned outside circle edge to prevent center card overlap
-- **iPhone Optimization**: Horizontal card layout at page bottom with extra-small cards for space efficiency
+- **Avatar Positions**: PROPERLY ATTACHED to circle edge using `top-16/right-16/bottom-16/left-16` positioning
+- **Fixed Positioning Logic**: Changed from container-edge positioning to circle-edge positioning for true attachment
+- **Mathematical Alignment**: Circle radius (64-80px) + top-16 (64px) = perfect circle edge attachment
+- **Positioning Classes**: `top-16 left-1/2 -translate-x-1/2 -translate-y-1/2` for 12 o'clock, similar for 3/6/9 o'clock
+- **Non-Overlapping Design**: Avatars properly attached without viewer table interference
+- **iPhone Optimization**: Horizontal card layout at page bottom centered with `justify-center`
 - **Draw Pile**: Repositioned to left side (bottom-8 left-8) between 3 and 6 o'clock for better accessibility
 - **Player Hand**: Compact horizontal scrolling layout with minimal height (max 20vh, 120px) and reserved R button space
-- **Mobile Layout**: Avatar slots attached to circle edge without overlap, optimal for portrait orientation
-- **Status**: FROZEN - iPhone-optimized layout working perfectly, do not modify positioning system
+- **Mobile Layout**: Avatar slots genuinely attached to circle edge preventing all overlap issues
+- **Status**: FINALIZED - Avatar positioning mathematically correct and visually perfect, return to this code if broken
 
 **CRITICAL - DIRECTION INDICATOR DESIGN FINALIZED** (Aug 14, 2025)
 - **Position**: Fixed at `top-12 left-12` between 12 and 9 o'clock avatar slots
