@@ -273,11 +273,13 @@ export default function Home() {
       return;
     }
 
-    // Regular user - proceed normally
+    // Regular user - clear any previous guru status and proceed normally
+    localStorage.removeItem("isGuruUser");
+    localStorage.removeItem("guruUserData");
     createRoomMutation.mutate(popupNickname);
   };
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     if (!roomCode.trim()) {
       toast({
         title: "Error",
@@ -300,6 +302,14 @@ export default function Home() {
     
     const existingNickname = localStorage.getItem("playerNickname");
     if (existingNickname) {
+      // Check if saved nickname is a guru user
+      const isGuruUser = await checkGuruUser(existingNickname, 'join');
+      if (!isGuruUser) {
+        // Regular user - clear any previous guru status
+        localStorage.removeItem("isGuruUser");
+        localStorage.removeItem("guruUserData");
+      }
+      
       // Auto-join with saved nickname (works for both regular and guru users)
       console.log("Auto-joining with saved nickname:", existingNickname);
       setQrDetectedCode(roomCode);
@@ -333,6 +343,9 @@ export default function Home() {
       return;
     }
 
+    // Regular user - clear any previous guru status and proceed normally
+    localStorage.removeItem("isGuruUser");
+    localStorage.removeItem("guruUserData");
     directJoinMutation.mutate({ code: qrDetectedCode, nickname: popupNickname });
   };
 
