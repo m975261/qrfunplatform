@@ -567,67 +567,79 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Polar Coordinate Positioning System */}
-      <div className="relative mx-auto mb-8" style={{ width: '400px', height: '400px' }}>
-        {/* Game Circle Background - Centered */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
+      {/* Player Avatars - Exact Lobby Layout Replication */}
+      <div className="relative w-80 h-80 mx-auto mb-8 bg-white/10 backdrop-blur-sm rounded-full border-2 border-white/20">
+        {/* Card Play Area in Center (replacing UNO logo) */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          {/* Current Card Display - Same as before */}
+          <div className="flex flex-col items-center space-y-2">
+            {room?.currentCard ? (
+              <div className="flex flex-col items-center">
+                <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-white to-gray-100 rounded-lg border-2 border-gray-300 shadow-xl flex items-center justify-center">
+                  <div className={`font-bold text-lg ${
+                    room.currentCard.color === 'red' ? 'text-red-500' :
+                    room.currentCard.color === 'yellow' ? 'text-yellow-500' :
+                    room.currentCard.color === 'blue' ? 'text-blue-500' :
+                    room.currentCard.color === 'green' ? 'text-green-500' :
+                    'text-gray-800'
+                  }`}>
+                    {room.currentCard.type === 'wild' ? 'W' :
+                     room.currentCard.type === 'draw_four' ? '+4' :
+                     room.currentCard.type === 'skip' ? '⊘' :
+                     room.currentCard.type === 'reverse' ? '↔' :
+                     room.currentCard.type === 'draw_two' ? '+2' :
+                     room.currentCard.value}
+                  </div>
+                </div>
+                {room.currentColor && (
+                  <div className="flex flex-col items-center">
+                    <div className={`w-6 h-6 rounded-full ${
+                      room.currentColor === 'red' ? 'bg-red-500' :
+                      room.currentColor === 'yellow' ? 'bg-yellow-500' :
+                      room.currentColor === 'blue' ? 'bg-blue-500' :
+                      room.currentColor === 'green' ? 'bg-green-500' :
+                      'bg-yellow-500'
+                    }`}></div>
+                    <span className="text-xs sm:text-xs text-white font-bold">Play {room.currentColor}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="w-10 h-14 md:w-12 md:h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-white shadow-xl flex items-center justify-center">
+                <div className="text-white font-bold text-xs">?</div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* 4 Fixed Avatar Positions using Polar Coordinates - Clock positions 12, 3, 6, 10 */}
+        {/* 4 Fixed Avatar Positions - Exact Lobby Layout */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Polar coordinate positioning for exact clock placement
-          const getPolarPosition = (pos: number) => {
-            // Fixed calculations:
-            // Circle radius: 128px (w-64 = 16rem = 256px diameter / 2)
-            // Avatar size: 32px radius (64px minimum width / 2) 
-            // Positioning radius: circle edge + small gap = 128px + 16px = 144px
-            const radius = 144;
-            
-            const angles = [
-              0,   // 12 o'clock - 0 degrees (top)
-              90,  // 3 o'clock - 90 degrees (right) 
-              180, // 6 o'clock - 180 degrees (bottom)
-              300  // 10 o'clock - 300 degrees (upper left)
+          // Get position class for avatar placement - EXACT copy from lobby
+          const getPositionClass = (pos: number) => {
+            const positions = [
+              'top-4 left-1/2 -translate-x-1/2', // 12 o'clock
+              'right-4 top-1/2 -translate-y-1/2', // 3 o'clock  
+              'bottom-4 left-1/2 -translate-x-1/2', // 6 o'clock
+              'left-4 top-1/2 -translate-y-1/2' // 9 o'clock (NOT 10 o'clock!)
             ];
-            
-            const angle = angles[pos] || 0;
-            const radians = (angle * Math.PI) / 180;
-            
-            // Calculate x,y using polar to cartesian conversion
-            const x = radius * Math.sin(radians);
-            const y = -radius * Math.cos(radians); // Negative because CSS y increases downward
-            
-            return {
-              position: 'absolute' as const,
-              top: `calc(50% + ${y}px)`,
-              left: `calc(50% + ${x}px)`,
-              transform: 'translate(-50%, -50%)'
-            };
+            return positions[pos] || positions[0];
           };
           
           return (
             <div
               key={position}
-              style={getPolarPosition(position)}
-              className="pointer-events-auto"
+              className={`absolute ${getPositionClass(position)} w-20 h-20 pointer-events-auto`}
             >
                 <div className="relative">
                   {player ? (
-                    // Player Avatar - With picture and clickable gender toggle
-                    <div className={`bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 cursor-pointer hover:scale-105 transition-all ${
+                    // Player Avatar - Same style as lobby but with game features
+                    <div className={`w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 cursor-pointer hover:scale-105 transition-all ${
                       isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
                     }`}
-                    style={{
-                      width: 'max(4rem, min(8vw, 8vh))',
-                      height: 'max(4rem, min(8vw, 8vh))',
-                      minWidth: '64px',
-                      minHeight: '64px'
-                    }}
                     onClick={() => {
                       setSelectedAvatarPlayerId(player.id);
                       setShowAvatarSelector(true);
