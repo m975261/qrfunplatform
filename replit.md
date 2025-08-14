@@ -1,7 +1,7 @@
 # QRFun Games Platform
 
 ## Overview
-This is a full-stack multiplayer gaming platform featuring multiple games with instant QR code sharing. Currently includes a complete UNO card game supporting up to 4 players per room with classic UNO rules and all action cards. Players can create rooms, join via codes or QR, and play in real-time. The platform features a main home page for game selection, with individual games accessible via dedicated routes (/uno, /xo). Key features include complete ranking systems, spectator-centric lobby systems, and streamlined multiplayer interactions across all games.
+This is a full-stack multiplayer gaming platform featuring multiple games with instant QR code sharing. Currently includes a complete UNO card game supporting up to 4 players per room with classic UNO rules and all action cards. Players can create rooms, join via codes or QR, and play in real-time. The platform features a main home page for game selection, with individual games accessible via dedicated routes (/uno, /xo). Key features include complete ranking systems, spectator-centric lobby systems, streamlined multiplayer interactions across all games, and a perfected avatar positioning system matching the lobby layout exactly.
 
 **Admin System**: Includes a secure hidden admin system at `/man` route with Google Authenticator 2FA, Gmail-based email functionality, and a complete guru user management system where special authenticated users can be created per game with email/username/playername credentials.
 
@@ -31,7 +31,7 @@ Preferred communication style: Simple, everyday language.
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
 **CRITICAL - RECENTLY FIXED**: Card Replacement & Single-Click System (Fixed Aug 14, 2025)
-- **Avatar Positioning**: Positioned at exact clock positions (12, 3, 6, 10) attached to circle without overlapping
+- **Avatar Positioning**: Positioned at exact clock positions (12, 3, 6, 9) attached to circle without overlapping
 - **Avatar Selection System**: Click-to-open popup with male/female selection, instant broadcast to all players
 - **Card Replacement Speed**: Ultra-fast updates within 30ms using double immediate calls + 1ms, 5ms, 10ms, 20ms, 30ms intervals
 - **Single-Click Card Playing**: Fixed double-click requirement - cards now play immediately on first click
@@ -40,6 +40,16 @@ Preferred communication style: Simple, everyday language.
 - **UNO Penalty Animation**: Added full-screen penalty animation when players forget to call UNO
 - **UNO Penalty Broadcast**: All players see animated notification with violator's name and reason
 - **Status**: Complete ultra-fast card replacement, single-click playing, wild card color selection, and UNO penalties working seamlessly
+
+**CRITICAL - AVATAR LAYOUT SYSTEM FINALIZED** (Aug 14, 2025)
+- **Layout Architecture**: Single 384px (w-96 h-96) container with lobby-style Tailwind positioning
+- **Avatar Positions**: Exact 12, 3, 6, 9 o'clock using `top-6/right-6/bottom-6/left-6` classes (NOT polar coordinates)
+- **Container Sizing**: Optimized 384px vs lobby's 320px to accommodate game functionality without overlap
+- **Center Card Display**: Uses GameCard component showing actual card data with proper colors and wild indicators
+- **Draw Pile**: Fixed position bottom-right corner (bottom-8 right-8) to avoid layout conflicts
+- **Background**: Single clean container without duplicate CSS grid systems or background circles
+- **Compilation**: All sendMessage errors resolved using fetch API for avatar updates
+- **Status**: FROZEN - Layout working perfectly, do not modify positioning system
 
 ## System Architecture
 
