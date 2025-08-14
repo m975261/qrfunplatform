@@ -497,8 +497,8 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Clean Layout (No Duplicate Background) - Smaller for mobile, moved down */}
-      <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 mx-auto mb-4 mt-8 sm:mt-12 md:mt-16">
+      {/* Player Avatars - Clean Layout (No Duplicate Background) - Smaller for mobile */}
+      <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 mx-auto mb-8">
 
 
         {/* Center Card Play Area */}
@@ -540,13 +540,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - Attached to circle edge for iPhone
+          // Get position class for avatar placement - Closer to center for mobile compatibility
           const getPositionClass = (pos: number) => {
             const positions = [
-              'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - attached to circle
-              'right-0 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - attached to circle  
-              'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - attached to circle
-              'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - attached to circle
+              'top-3 sm:top-4 md:top-6 left-1/2 -translate-x-1/2', // 12 o'clock - closer on mobile
+              'right-3 sm:right-4 md:right-6 top-1/2 -translate-y-1/2', // 3 o'clock - closer on mobile  
+              'bottom-3 sm:bottom-4 md:bottom-6 left-1/2 -translate-x-1/2', // 6 o'clock - closer on mobile
+              'left-3 sm:left-4 md:left-6 top-1/2 -translate-y-1/2' // 9 o'clock - closer on mobile
             ];
             return positions[pos] || positions[0];
           };
@@ -678,7 +678,7 @@ export default function Game() {
 
         {/* Direction Indicator Button - Positioned between 12 and 9 o'clock - Responsive */}
         {room?.direction && room?.status === 'playing' && (
-          <div className="absolute top-4 left-4 sm:top-6 sm:left-6 md:top-8 md:left-8 z-10">
+          <div className="absolute top-8 left-8 sm:top-10 sm:left-10 md:top-12 md:left-12 z-10">
             <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center shadow-lg border-2 border-yellow-300 animate-pulse">
               <div className="text-white text-xs font-bold text-center leading-tight">
                 {room.direction === 'clockwise' ? (
@@ -699,8 +699,8 @@ export default function Game() {
           </div>
         )}
 
-        {/* Draw Pile - Positioned outside circle but attached to it - Responsive, moved left */}
-        <div className="absolute bottom-2 right-8 sm:bottom-3 sm:right-10 md:bottom-4 md:right-12 z-20">
+        {/* Draw Pile - Positioned outside circle but attached to it - Responsive */}
+        <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 md:bottom-4 md:right-4 z-20">
           <div className="relative cursor-pointer group" onClick={drawCard}>
             <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
             <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
@@ -714,12 +714,12 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Player Hand Area - Centered for all window sizes - Reduced height for iPhone */}
+      {/* Player Hand Area - Centered for all window sizes */}
       {currentPlayer && !currentPlayer.isSpectator && (
         <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-7xl">
           {/* Use same 12x12 grid system as main game area */}
-          <div className="grid grid-cols-12 grid-rows-12 gap-1 p-2 sm:p-3 md:p-4 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md mx-2 sm:mx-4" style={{
-            height: 'max(25vh, 180px)'
+          <div className="grid grid-cols-12 grid-rows-12 gap-1 p-4 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md mx-4" style={{
+            height: 'max(30vh, 240px)'
           }}>
             
             {/* Player Avatar - Grid positioned */}
@@ -758,8 +758,8 @@ export default function Game() {
               </div>
             )}
 
-            {/* UNO Button - Grid positioned, moved left to avoid draw pile overlap */}
-            <div className="col-start-7 col-end-10 row-start-1 row-end-3 flex items-center justify-center">
+            {/* UNO Button - Grid positioned */}
+            <div className="col-start-10 col-end-13 row-start-1 row-end-4 flex items-center justify-center">
               <Button
                 variant="outline"
                 size="lg"
@@ -770,8 +770,8 @@ export default function Game() {
               </Button>
             </div>
 
-            {/* Player Cards - Centered under YOUR TURN indicator - Reduced padding for iPhone */}
-            <div className="col-start-1 col-end-13 row-start-3 row-end-13 overflow-x-auto overflow-y-visible px-1 py-2">
+            {/* Player Cards - Centered under YOUR TURN indicator */}
+            <div className="col-start-1 col-end-13 row-start-4 row-end-13 overflow-x-auto overflow-y-visible px-2 py-4">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
                 <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-1 sm:space-x-2 md:space-x-3 min-w-max h-full items-start pt-2 justify-center">
                   {currentPlayer.hand.map((card: any, index: number) => (
@@ -810,11 +810,11 @@ export default function Game() {
         </div>
       )}
 
-      {/* Spectators Area - Dynamic positioning to prevent overlap - Left side for iPhone */}
+      {/* Spectators Area - Dynamic positioning to prevent overlap - Better mobile positioning */}
       {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-        <div className="absolute top-20 sm:top-24 md:top-28 z-20" style={{
-          left: 'max(0.25rem, min(15vw, 0.75rem))', // Left side to avoid 3 o'clock avatar
-          maxWidth: 'min(16rem, 18vw)' // Smaller max width on mobile
+        <div className="absolute top-12 sm:top-16 md:top-20 z-20" style={{
+          right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
+          maxWidth: 'min(18rem, 20vw)' // Smaller max width on mobile
         }}>
           <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 sm:p-3 shadow-lg">
             <div className="text-xs font-semibold text-gray-700 mb-2">
