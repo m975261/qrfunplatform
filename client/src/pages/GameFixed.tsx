@@ -542,13 +542,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - Closer to circle edge (half distance)
+          // Get position class for avatar placement - Properly attached to circle edge
           const getPositionClass = (pos: number) => {
             const positions = [
-              'top-2 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - closer to circle
-              'right-2 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - closer to circle  
-              'bottom-2 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - closer to circle
-              'left-2 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - closer to circle
+              'top-0 left-1/2 -translate-x-1/2 -translate-y-full', // 12 o'clock - attached outside top
+              'right-0 top-1/2 -translate-y-1/2 translate-x-full', // 3 o'clock - attached outside right  
+              'bottom-0 left-1/2 -translate-x-1/2 translate-y-full', // 6 o'clock - attached outside bottom
+              'left-0 top-1/2 -translate-y-1/2 -translate-x-full' // 9 o'clock - attached outside left
             ];
             return positions[pos] || positions[0];
           };
@@ -768,10 +768,10 @@ export default function Game() {
               </Button>
             </div>
 
-            {/* Player Cards - Horizontal layout at bottom for iPhone */}
+            {/* Player Cards - Horizontal layout centered at bottom */}
             <div className="overflow-x-auto overflow-y-visible px-1">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-1 min-w-max h-full items-center py-1 justify-start">
+                <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-1 min-w-max h-full items-center py-1 justify-center">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
