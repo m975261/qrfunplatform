@@ -156,7 +156,16 @@ export default function Game() {
   const handleColorChoice = (color: string) => {
     chooseColor(color);
     setShowColorPicker(false);
-    setPendingWildCard(null);
+    
+    // Force immediate visual refresh after color choice (especially important after UNO penalties)
+    setHandRefreshKey(prev => prev + 1);
+    
+    // Multiple refresh intervals to ensure visual update (similar to card replacement system)
+    setTimeout(() => setHandRefreshKey(prev => prev + 1), 1);
+    setTimeout(() => setHandRefreshKey(prev => prev + 1), 5);
+    setTimeout(() => setHandRefreshKey(prev => prev + 1), 10);
+    setTimeout(() => setHandRefreshKey(prev => prev + 1), 20);
+    setTimeout(() => setHandRefreshKey(prev => prev + 1), 30);
   };
 
   const handleUnoCall = () => {

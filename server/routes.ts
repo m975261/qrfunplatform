@@ -2158,11 +2158,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!connection.roomId) return;
     
     const { color } = message;
+    console.log(`🎨 COLOR CHOICE: Player choosing ${color} for wild card`);
+    
     await storage.updateRoom(connection.roomId, { 
       currentColor: color,
       waitingForColorChoice: null // Clear the waiting state
     });
+    
+    // Broadcast immediate update for color choice (especially after UNO penalties)
     await broadcastRoomState(connection.roomId);
+    
+    // Additional broadcast after short delay to ensure visual update
+    setTimeout(async () => {
+      console.log(`🎨 COLOR CHOICE REFRESH: Re-broadcasting color ${color}`);
+      await broadcastRoomState(connection.roomId);
+    }, 50);
   }
 
   async function handleSendMessage(connection: SocketConnection, message: any) {
