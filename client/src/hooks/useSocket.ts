@@ -20,21 +20,22 @@ export function useSocket(autoConnect: boolean = true) {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     let host = window.location.host;
     
-    // Fix for undefined host issue - handle all variations
-    if (!host || host === 'undefined' || host.includes('undefined') || !window.location.host) {
-      // Get the current page's hostname and port separately
+    // Enhanced host validation and fixing
+    if (!host || host === 'undefined' || host.includes('undefined') || host === 'localhost:undefined') {
       const hostname = window.location.hostname || 'localhost';
-      const port = window.location.port || '5000';
+      const port = window.location.port;
       
-      // Construct proper host
+      // More robust host construction
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         host = 'localhost:5000';
+      } else if (hostname.includes('replit.dev')) {
+        // For Replit environment, use the hostname without explicit port
+        host = hostname;
       } else {
-        // For production, use the actual hostname with port 5000
-        host = `${hostname}:5000`;
+        // For other environments, try to use proper port
+        host = port ? `${hostname}:${port}` : `${hostname}:5000`;
       }
-      console.warn("⚠️ Host was undefined/invalid, falling back to:", host);
-      console.warn("⚠️ Original values - hostname:", window.location.hostname, "port:", window.location.port, "host:", window.location.host);
+      console.warn("⚠️ Host was invalid, corrected to:", host);
     }
     
     const wsUrl = `${protocol}//${host}/ws`;

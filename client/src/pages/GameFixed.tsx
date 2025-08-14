@@ -849,12 +849,17 @@ export default function Game() {
                         isMyTurn ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer' : 'opacity-60'
                       }`}
                       onClick={(e) => {
-                        // Prevent card click if it's from the guru replace button
-                        if ((e.target as HTMLElement).classList.contains('guru-replace-button') || 
-                            (e.target as HTMLElement).closest('.guru-replace-button')) {
+                        // Enhanced prevention for guru replace button clicks
+                        const target = e.target as HTMLElement;
+                        
+                        if (target.classList.contains('guru-replace-button') || 
+                            target.closest('.guru-replace-button') ||
+                            target.getAttribute('data-prevent-navigation') === 'true' ||
+                            target.textContent === 'R') {
                           e.preventDefault();
                           e.stopPropagation();
-                          return;
+                          console.log("🚫 Card click prevented - originated from R button");
+                          return false;
                         }
                         
                         if (!isMyTurn) return;

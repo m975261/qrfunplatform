@@ -315,21 +315,42 @@ export default function GameCard({
 
       {/* Guru Replace Button - only show for guru users */}
       {isGuruUser && !disabled && onGuruReplace && cardIndex !== undefined && (
-        <div
+        <span
           className="guru-replace-button absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1 py-0.5 rounded font-bold shadow-lg transition-colors z-50 cursor-pointer select-none"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            e.nativeEvent.stopImmediatePropagation();
+            e.nativeEvent?.stopImmediatePropagation();
+            
+            // Additional prevention measures
+            if (e.target) {
+              (e.target as HTMLElement).setAttribute('data-prevent-navigation', 'true');
+            }
+            
             console.log("🔧 Guru R button clicked for card index:", cardIndex);
+            
+            // Call the function directly without any delays
             onGuruReplace();
+            
             return false;
           }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           title="Replace card (Guru)"
-          style={{ userSelect: 'none', pointerEvents: 'auto' }}
+          style={{ 
+            userSelect: 'none', 
+            pointerEvents: 'auto',
+            WebkitUserSelect: 'none',
+            MozUserSelect: 'none',
+            msUserSelect: 'none'
+          }}
+          role="button"
+          tabIndex={0}
         >
           R
-        </div>
+        </span>
       )}
       
 
