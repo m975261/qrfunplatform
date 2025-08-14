@@ -554,6 +554,15 @@ export function useSocket(autoConnect: boolean = true) {
     }
   };
 
+  const refreshGameState = useCallback(() => {
+    // Force refresh the game state by triggering a re-render
+    setGameState((prev: any) => ({
+      ...prev,
+      forceRefresh: Math.random(),
+      lastRefreshed: Date.now()
+    }));
+  }, []);
+
   return {
     isConnected,
     gameState,
