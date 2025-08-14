@@ -574,7 +574,7 @@ export default function Game() {
           <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
         </div>
 
-        {/* 4 Fixed Avatar Positions using Polar Coordinates - Clock positions 12, 3, 6, 10 */}
+        {/* 4 Fixed Avatar Positions using Polar Coordinates - Clock positions 12, 3, 6, 9 */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
@@ -582,12 +582,17 @@ export default function Game() {
           
           // Polar coordinate positioning for exact clock placement
           const getPolarPosition = (pos: number) => {
-            const radius = 160; // Distance from center (32px avatar + 128px circle radius)
+            // Fixed calculations:
+            // Circle radius: 128px (w-64 = 16rem = 256px diameter / 2)
+            // Avatar size: 32px radius (64px minimum width / 2) 
+            // Positioning radius: circle edge + small gap = 128px + 16px = 144px
+            const radius = 144;
+            
             const angles = [
               0,   // 12 o'clock - 0 degrees (top)
               90,  // 3 o'clock - 90 degrees (right) 
               180, // 6 o'clock - 180 degrees (bottom)
-              300  // 10 o'clock - 300 degrees (upper left)
+              270  // 9 o'clock - 270 degrees (left) - changed from 300° for better symmetry
             ];
             
             const angle = angles[pos] || 0;
