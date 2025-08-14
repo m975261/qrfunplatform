@@ -18,30 +18,23 @@ export function useSocket(autoConnect: boolean = true) {
 
   const connect = () => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    let host = window.location.host;
+    const hostname = window.location.hostname;
+    const port = window.location.port;
     
-    // Fix for undefined host issue - handle all variations
-    if (!host || host === 'undefined' || host.includes('undefined') || !window.location.host) {
-      // Get the current page's hostname and port separately
-      const hostname = window.location.hostname || 'localhost';
-      const port = window.location.port || '5000';
-      
-      // Construct proper host
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        host = 'localhost:5000';
-      } else {
-        // For production, use the actual hostname with port 5000
-        host = `${hostname}:5000`;
-      }
-      console.warn("⚠️ Host was undefined/invalid, falling back to:", host);
-      console.warn("⚠️ Original values - hostname:", window.location.hostname, "port:", window.location.port, "host:", window.location.host);
+    // Build proper WebSocket URL - always use current hostname
+    let wsHost;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      wsHost = 'localhost:5000';
+    } else {
+      // For production/Replit, use the current hostname without port (defaults to 443/80)
+      wsHost = hostname;
     }
     
-    const wsUrl = `${protocol}//${host}/ws`;
+    const wsUrl = `${protocol}//${wsHost}/ws`;
     
     console.log("Attempting WebSocket connection to:", wsUrl);
     console.log("Current location:", window.location.href);
-    console.log("Protocol:", protocol, "Host:", host);
+    console.log("Protocol:", protocol, "Host:", wsHost);
     socketRef.current = new WebSocket(wsUrl);
     
     socketRef.current.onopen = () => {
