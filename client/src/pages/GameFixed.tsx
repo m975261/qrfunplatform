@@ -490,57 +490,24 @@ export default function Game() {
 
       {/* Player Avatars - Clean Layout (No Duplicate Background) */}
       <div className="relative w-96 h-96 mx-auto mb-8">
-        {/* Curved Direction Arrow around entire game area including draw button */}
+        {/* Direction Indicator Button - Positioned between 12 and 9 o'clock */}
         {room?.direction && room?.status === 'playing' && (
-          <div className="absolute inset-0 w-full h-full z-0">
-            <svg 
-              className="w-full h-full animate-pulse" 
-              viewBox="0 0 384 384" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Curved arrow path */}
-              <defs>
-                <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style={{ stopColor: '#fbbf24', stopOpacity: 0.9 }} />
-                  <stop offset="100%" style={{ stopColor: '#f59e0b', stopOpacity: 1 }} />
-                </linearGradient>
-              </defs>
-              
-              {room.direction === 'clockwise' ? (
-                <>
-                  {/* Clockwise circle with proper positioning within viewBox */}
-                  <path
-                    d="M 382 192 A 190 190 0 0 1 192 382 A 190 190 0 0 1 382 192"
-                    stroke="url(#arrowGradient)"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                  {/* Arrow head for clockwise - detached from circle */}
-                  <polygon
-                    points="385,192 372,185 372,188 372,192 372,196 372,199 385,192"
-                    fill="url(#arrowGradient)"
-                  />
-                </>
-              ) : (
-                <>
-                  {/* Counterclockwise circle with proper positioning within viewBox */}
-                  <path
-                    d="M 382 192 A 190 190 0 0 0 192 382 A 190 190 0 0 0 382 192"
-                    stroke="url(#arrowGradient)"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                  {/* Arrow head for counterclockwise - detached from circle */}
-                  <polygon
-                    points="385,192 372,199 372,196 372,192 372,188 372,185 385,192"
-                    fill="url(#arrowGradient)"
-                  />
-                </>
-              )}
-            </svg>
+          <div className="absolute top-12 left-12 z-10">
+            <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full w-16 h-16 flex items-center justify-center shadow-lg border-2 border-yellow-300 animate-pulse">
+              <div className="text-white text-xs font-bold text-center leading-tight">
+                {room.direction === 'clockwise' ? (
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg">↻</span>
+                    <span>CW</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg">↺</span>
+                    <span>CCW</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
