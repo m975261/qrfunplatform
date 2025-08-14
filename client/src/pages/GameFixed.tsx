@@ -495,7 +495,7 @@ export default function Game() {
           <div className="absolute inset-0 w-full h-full z-0">
             <svg 
               className="w-full h-full animate-pulse" 
-              viewBox="0 0 384 384" 
+              viewBox="-50 -50 484 484" 
               fill="none" 
               xmlns="http://www.w3.org/2000/svg"
             >
@@ -511,7 +511,7 @@ export default function Game() {
                 <>
                   {/* Clockwise circle with proper positioning within viewBox */}
                   <path
-                    d="M 192 35 A 180 180 0 1 1 185 30"
+                    d="M 192 -30 A 220 220 0 1 1 185 -35"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -519,7 +519,7 @@ export default function Game() {
                   />
                   {/* Arrow head for clockwise - detached from circle */}
                   <polygon
-                    points="185,30 170,18 170,27 158,27 158,33 170,33 170,42"
+                    points="185,-35 170,-47 170,-38 158,-38 158,-32 170,-32 170,-23"
                     fill="url(#arrowGradient)"
                   />
                 </>
@@ -527,7 +527,7 @@ export default function Game() {
                 <>
                   {/* Counterclockwise circle with proper positioning within viewBox */}
                   <path
-                    d="M 192 35 A 180 180 0 1 0 199 30"
+                    d="M 192 -30 A 220 220 0 1 0 199 -35"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -535,7 +535,7 @@ export default function Game() {
                   />
                   {/* Arrow head for counterclockwise - detached from circle */}
                   <polygon
-                    points="199,30 214,18 214,27 226,27 226,33 214,33 214,42"
+                    points="199,-35 214,-47 214,-38 226,-38 226,-32 214,-32 214,-23"
                     fill="url(#arrowGradient)"
                   />
                 </>
