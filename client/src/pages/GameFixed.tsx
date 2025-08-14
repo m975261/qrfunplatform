@@ -479,19 +479,7 @@ export default function Game() {
           </div>
         </div>
 
-        {/* Draw Pile - Positioned between 6 o'clock and 3 o'clock avatars */}
-        <div className="absolute bottom-2 right-8 z-20">
-          <div className="relative cursor-pointer group" onClick={drawCard}>
-            <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-12 h-16"></div>
-            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-12 h-16"></div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-white font-bold text-xs">CARDS</div>
-            </div>
-          </div>
-          <div className="text-center mt-1">
-            <div className="text-blue-300 font-bold text-xs">DRAW</div>
-          </div>
-        </div>
+
       </div>
 
 
@@ -670,6 +658,20 @@ export default function Game() {
             </div>
           );
         })}
+
+        {/* Draw Pile - Positioned between 6 o'clock (bottom) and 3 o'clock (right) avatar slots */}
+        <div className="absolute bottom-8 right-12 z-20">
+          <div className="relative cursor-pointer group" onClick={drawCard}>
+            <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-12 h-16"></div>
+            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-12 h-16"></div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-white font-bold text-xs">CARDS</div>
+            </div>
+          </div>
+          <div className="text-center mt-1">
+            <div className="text-blue-300 font-bold text-xs">DRAW</div>
+          </div>
+        </div>
       </div>
 
       {/* Player Hand Area - Using same 12x12 CSS Grid Layout System */}
