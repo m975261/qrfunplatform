@@ -509,33 +509,33 @@ export default function Game() {
               
               {room.direction === 'clockwise' ? (
                 <>
-                  {/* Clockwise full circle with larger radius to include draw button */}
+                  {/* Clockwise circle with gap for arrow head - larger radius */}
                   <path
-                    d="M 192 15 A 175 175 0 1 1 190 15"
+                    d="M 192 12 A 180 180 0 1 1 185 8"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
                     strokeLinecap="round"
                   />
-                  {/* Arrow head for clockwise */}
+                  {/* Arrow head for clockwise - detached from circle */}
                   <polygon
-                    points="190,15 175,3 175,12 163,12 163,18 175,18 175,27"
+                    points="185,8 170,-4 170,5 158,5 158,11 170,11 170,20"
                     fill="url(#arrowGradient)"
                   />
                 </>
               ) : (
                 <>
-                  {/* Counterclockwise full circle with larger radius to include draw button */}
+                  {/* Counterclockwise circle with gap for arrow head - larger radius */}
                   <path
-                    d="M 192 15 A 175 175 0 1 0 194 15"
+                    d="M 192 12 A 180 180 0 1 0 199 8"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
                     strokeLinecap="round"
                   />
-                  {/* Arrow head for counterclockwise */}
+                  {/* Arrow head for counterclockwise - detached from circle */}
                   <polygon
-                    points="194,15 209,3 209,12 221,12 221,18 209,18 209,27"
+                    points="199,8 214,-4 214,5 226,5 226,11 214,11 214,20"
                     fill="url(#arrowGradient)"
                   />
                 </>
@@ -714,8 +714,8 @@ export default function Game() {
           );
         })}
 
-        {/* Draw Pile - Positioned between 6 o'clock (bottom) and 3 o'clock (right) avatar slots */}
-        <div className="absolute bottom-8 right-12 z-20">
+        {/* Draw Pile - Positioned outside circle but attached to it */}
+        <div className="absolute bottom-4 right-4 z-20">
           <div className="relative cursor-pointer group" onClick={drawCard}>
             <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-12 h-16"></div>
             <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-12 h-16"></div>
@@ -779,10 +779,10 @@ export default function Game() {
               </Button>
             </div>
 
-            {/* Player Cards - Grid positioned with full height for cards */}
+            {/* Player Cards - Centered under YOUR TURN indicator */}
             <div className="col-start-1 col-end-13 row-start-4 row-end-13 overflow-x-auto overflow-y-visible px-2 py-4">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-3 min-w-max h-full items-start pt-2">
+                <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-3 min-w-max h-full items-start pt-2 justify-center">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
