@@ -730,71 +730,94 @@ export default function Game() {
         })}
       </div>
 
-      {/* Player Hand Bar - Compact design at bottom */}
+      {/* Player Hand Area - CSS Grid Layout System */}
       {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
-          <div className="container mx-auto px-2 sm:px-4 py-1.5 sm:py-2">
-            {/* Compact Player Info and UNO Button */}
-            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <div className="flex items-center space-x-2">
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 ring-1 ring-green-400' : 'bg-gradient-to-br from-blue-400 to-blue-600'
-                }`}>
-                  {currentPlayer.nickname[0].toUpperCase()}
-                </div>
-                <div>
-                  <div className={`font-semibold text-white text-sm ${isMyTurn ? 'text-green-400' : ''}`}>
-                    {currentPlayer.nickname} {isMyTurn && '⭐'}
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    {currentPlayer.hand?.length || 0} cards
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                {isMyTurn && (
-                  <div className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full text-xs font-bold border border-green-500/30">
-                    YOUR TURN
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs px-2 py-1"
-                  onClick={handleUnoCall}
-                >
-                  🔥 UNO! 🔥
-                </Button>
+        <div className="fixed bottom-0 left-0 right-0 z-30">
+          {/* Grid Container - 12x4 grid for bottom player interface */}
+          <div className="grid grid-cols-12 grid-rows-4 gap-1 p-2 h-32 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
+            
+            {/* Player Avatar - Grid positioned */}
+            <div className="col-start-1 col-end-2 row-start-1 row-end-3 flex items-center justify-center">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 ${
+                isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' : 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
+              }`}>
+                {currentPlayer.nickname[0].toUpperCase()}
               </div>
             </div>
-            
-            {/* Compact Card Display */}
-            <div className="overflow-x-auto">
+
+            {/* Player Name - Grid positioned */}
+            <div className="col-start-2 col-end-4 row-start-1 row-end-2 flex items-center">
+              <div className={`font-semibold text-white text-sm truncate ${isMyTurn ? 'text-green-400' : ''}`}>
+                {currentPlayer.nickname}
+              </div>
+            </div>
+
+            {/* Card Count - Grid positioned */}
+            <div className="col-start-2 col-end-4 row-start-2 row-end-3 flex items-center">
+              <div className="text-xs text-slate-400">
+                {currentPlayer.hand?.length || 0} cards
+              </div>
+            </div>
+
+            {/* YOUR TURN Indicator - Grid positioned */}
+            {isMyTurn && (
+              <div className="col-start-5 col-end-7 row-start-1 row-end-2 flex items-center">
+                <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 whitespace-nowrap">
+                  YOUR TURN ⭐
+                </div>
+              </div>
+            )}
+
+            {/* UNO Button - Grid positioned */}
+            <div className="col-start-11 col-end-13 row-start-1 row-end-3 flex items-center justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs px-3 py-2 w-full"
+                onClick={handleUnoCall}
+              >
+                🔥 UNO! 🔥
+              </Button>
+            </div>
+
+            {/* Player Cards - Grid positioned with horizontal scroll */}
+            <div className="col-start-1 col-end-13 row-start-3 row-end-5 overflow-x-auto overflow-y-hidden">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div className="flex space-x-1 pb-1 min-w-max">
+                <div className="flex space-x-2 pb-2 pt-1 min-w-max h-full">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 
                       className={`transition-all duration-200 flex-shrink-0 ${
                         isMyTurn ? 'hover:scale-105 hover:-translate-y-1 cursor-pointer' : 'opacity-60'
                       }`}
+                      onClick={() => {
+                        if (!isMyTurn) return;
+                        if (selectedCardIndex === index) {
+                          playCard(card, index);
+                        } else {
+                          setSelectedCardIndex(index);
+                        }
+                      }}
                     >
-                      <GameCard 
+                      <GameCard
                         card={card}
-                        size="extra-small"
-                        interactive={isMyTurn}
+                        size="compact"
+                        selected={selectedCardIndex === index}
                         disabled={!isMyTurn}
-                        onClick={() => isMyTurn && handlePlayCard(index)}
                         isGuruUser={isGuruUser}
-                        onGuruReplace={isGuruUser ? () => handleGuruCardReplace(index) : undefined}
                         cardIndex={index}
+                        onGuruReplace={isGuruUser ? () => {
+                          setSelectedCardIndex(index);
+                          setShowGuruReplaceModal(true);
+                        } : undefined}
                       />
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-slate-400 text-sm py-2">No cards in hand</div>
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-slate-400 text-sm">No cards in hand</div>
+                </div>
               )}
             </div>
           </div>
