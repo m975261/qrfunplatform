@@ -46,10 +46,19 @@ Preferred communication style: Simple, everyday language.
 - **Avatar Positions**: Exact 12, 3, 6, 9 o'clock using `top-6/right-6/bottom-6/left-6` classes (NOT polar coordinates)
 - **Container Sizing**: Optimized 384px vs lobby's 320px to accommodate game functionality without overlap
 - **Center Card Display**: Uses GameCard component showing actual card data with proper colors and wild indicators
-- **Draw Pile**: Fixed position bottom-right corner (bottom-8 right-8) to avoid layout conflicts
+- **Draw Pile**: Fixed position bottom-right corner (bottom-4 right-4) to avoid layout conflicts
 - **Background**: Single clean container without duplicate CSS grid systems or background circles
 - **Compilation**: All sendMessage errors resolved using fetch API for avatar updates
 - **Status**: FROZEN - Layout working perfectly, do not modify positioning system
+
+**CRITICAL - DIRECTION INDICATOR DESIGN FINALIZED** (Aug 14, 2025)
+- **Position**: Fixed at `top-12 left-12` between 12 and 9 o'clock avatar slots
+- **Design**: Circular yellow gradient button (w-16 h-16) with "GAME DIRECTION" label
+- **Visual**: Directional arrows (↻ clockwise, ↺ counterclockwise) with border, shadow, and pulse animation
+- **Behavior**: Only shows during active gameplay (`room?.status === 'playing'`)
+- **Layout**: Separate positioning from draw button - NO container wrapping
+- **Implementation**: Simple UI button approach after SVG circle positioning failed
+- **Status**: FROZEN - Working design saved as fallback, do not modify positioning or container approach
 
 ## System Architecture
 
