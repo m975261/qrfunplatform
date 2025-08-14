@@ -415,17 +415,14 @@ export default function RoomLobby() {
           })}
         </div>
 
-        {/* Spectators Section - Dynamic positioning to prevent overlap on maximized windows */}
+        {/* Spectators Section - Centered under avatar slots */}
         {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-          <div className="w-full flex justify-end" style={{
-            paddingRight: 'max(1rem, min(15vw, 4rem))' // Dynamic right padding
-          }}>
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6" style={{
-              width: 'min(18rem, 25vw)', // Dynamic width that adapts to viewport
-              marginRight: 'max(0.5rem, min(10vw, 2rem))' // Dynamic right margin
+          <div className="w-full flex justify-center mb-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl" style={{
+              width: 'min(20rem, 90vw)', // Responsive width that adapts to screen size
             }}>
               <CardContent className="p-3">
-                <div className="text-xs font-semibold text-gray-700 mb-2">
+                <div className="text-xs font-semibold text-gray-700 mb-2 text-center">
                   Spectators ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
                 </div>
                 <div className="max-h-32 overflow-y-auto space-y-1">
