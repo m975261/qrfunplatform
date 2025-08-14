@@ -478,22 +478,27 @@ export default function Game() {
             </Button>
           </div>
         </div>
-      </div>
 
-
-
-
-
-      {/* Draw Pile - Positioned relative to avatar container */}
-      <div className="absolute bottom-4 right-4 z-20">
-        <div className="relative cursor-pointer group" onClick={drawCard}>
-          <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-12 h-16"></div>
-          <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-12 h-16"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-white font-bold text-xs">DRAW</div>
+        {/* Draw Pile - Positioned between 6 o'clock and 3 o'clock avatars */}
+        <div className="absolute bottom-2 right-8 z-20">
+          <div className="relative cursor-pointer group" onClick={drawCard}>
+            <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-12 h-16"></div>
+            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-12 h-16"></div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-white font-bold text-xs">CARDS</div>
+            </div>
+          </div>
+          <div className="text-center mt-1">
+            <div className="text-blue-300 font-bold text-xs">DRAW</div>
           </div>
         </div>
       </div>
+
+
+
+
+
+
 
       {/* Player Avatars - Clean Layout (No Duplicate Background) */}
       <div className="relative w-96 h-96 mx-auto mb-8">
