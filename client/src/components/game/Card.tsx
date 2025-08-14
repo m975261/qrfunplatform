@@ -316,14 +316,22 @@ export default function GameCard({
       {/* Guru Replace Button - only show for guru users */}
       {isGuruUser && !disabled && onGuruReplace && cardIndex !== undefined && (
         <button
+          type="button"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
             console.log("🔧 Guru R button clicked for card index:", cardIndex);
             onGuruReplace();
+            return false;
           }}
-          className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1 py-0.5 rounded font-bold shadow-lg transition-colors z-10"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1 py-0.5 rounded font-bold shadow-lg transition-colors z-50"
           title="Replace card (Guru)"
+          style={{ userSelect: 'none' }}
         >
           R
         </button>
