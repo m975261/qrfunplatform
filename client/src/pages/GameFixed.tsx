@@ -808,18 +808,18 @@ export default function Game() {
         </div>
       )}
 
-      {/* Viewers Area - Extended table with original width, long height and scrolling */}
-      {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-        <div className="absolute top-12 sm:top-16 md:top-20 bottom-12 sm:bottom-16 md:bottom-20 z-20" style={{
-          right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
-          width: 'min(18rem, 20vw)' // Original width restored
-        }}>
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 shadow-lg h-full flex flex-col">
-            <div className="text-xs font-semibold text-gray-700 mb-2">
-              Viewers ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
-            </div>
-            <div className="space-y-1 overflow-y-auto flex-1">
-              {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index: number, arr: any[]) => (
+      {/* Viewers Area - Always visible, never disappears */}
+      <div className="absolute top-12 sm:top-16 md:top-20 bottom-12 sm:bottom-16 md:bottom-20 z-20" style={{
+        right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
+        width: 'min(18rem, 20vw)' // Original width restored
+      }}>
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 shadow-lg h-full flex flex-col">
+          <div className="text-xs font-semibold text-gray-700 mb-2">
+            Viewers ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
+          </div>
+          <div className="space-y-1 overflow-y-auto flex-1">
+            {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 ? (
+              players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index: number, arr: any[]) => (
                 <div key={spectator.id}>
                   <div 
                     className={`flex items-center space-x-2 p-1.5 rounded transition-colors ${
@@ -852,25 +852,32 @@ export default function Game() {
                     <hr className="border-gray-200 mx-1 my-1" />
                   )}
                 </div>
-              ))}
-            </div>
-            {/* Instructions for host - Compact */}
-            {isHost && players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-              <div className="mt-2 pt-2 border-t border-gray-200">
-                <div className="text-xs text-blue-600 text-center font-medium">
-                  Host Controls
-                </div>
-                <div className="text-xs text-gray-500 text-center mt-1">
-                  Click viewers to assign to empty slots
-                </div>
-                <div className="text-xs text-gray-400 text-center">
-                  Available slots: {4 - players.filter((p: any) => !p.isSpectator && !p.hasLeft).length}
-                </div>
+              ))
+            ) : (
+              <div className="flex items-center justify-center h-16 text-gray-400 text-xs">
+                No viewers watching
               </div>
             )}
           </div>
+          {/* Instructions for host - Always show if host */}
+          {isHost && (
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <div className="text-xs text-blue-600 text-center font-medium">
+                Host Controls
+              </div>
+              <div className="text-xs text-gray-500 text-center mt-1">
+                {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 
+                  ? "Click viewers to assign to empty slots"
+                  : "Viewers will appear here when they join"
+                }
+              </div>
+              <div className="text-xs text-gray-400 text-center">
+                Available slots: {4 - players.filter((p: any) => !p.isSpectator && !p.hasLeft).length}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Chat Panel */}
       {showChat && (
