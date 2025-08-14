@@ -310,13 +310,22 @@ export default function Game() {
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
         
-        // Force immediate visual update - target 1 second total  
+        // Multiple refresh attempts to ensure 1-second display target
         setTimeout(() => {
-          // Force re-fetch by calling joinRoom again
           if (roomId && playerId) {
             joinRoom(roomId, playerId);
           }
-        }, 200);
+        }, 100);
+        setTimeout(() => {
+          if (roomId && playerId) {
+            joinRoom(roomId, playerId);
+          }
+        }, 500);
+        setTimeout(() => {
+          if (roomId && playerId) {
+            joinRoom(roomId, playerId);
+          }
+        }, 1000);
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
@@ -832,17 +841,12 @@ export default function Game() {
                         isMyTurn ? 'hover:scale-105 hover:-translate-y-2 cursor-pointer' : 'opacity-60'
                       }`}
                       onClick={(e) => {
-                        // Enhanced prevention for guru replace button clicks
-                        const target = e.target as HTMLElement;
-                        
-                        if (target.classList.contains('guru-replace-button') || 
-                            target.closest('.guru-replace-button') ||
-                            target.getAttribute('data-prevent-navigation') === 'true' ||
-                            target.textContent === 'R') {
+                        // Prevent card click if it's from the guru replace button
+                        if ((e.target as HTMLElement).classList.contains('guru-replace-button') || 
+                            (e.target as HTMLElement).closest('.guru-replace-button')) {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log("🚫 Card click prevented - originated from R button");
-                          return false;
+                          return;
                         }
                         
                         if (!isMyTurn) return;
