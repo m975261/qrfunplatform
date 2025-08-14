@@ -509,9 +509,9 @@ export default function Game() {
               
               {room.direction === 'clockwise' ? (
                 <>
-                  {/* Clockwise curved arrow around entire game area */}
+                  {/* Clockwise full circle with gap for arrow head */}
                   <path
-                    d="M 192 30 A 150 150 0 1 1 330 192"
+                    d="M 192 30 A 150 150 0 1 1 190 30"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -519,15 +519,15 @@ export default function Game() {
                   />
                   {/* Arrow head for clockwise */}
                   <polygon
-                    points="330,192 315,180 315,189 303,189 303,195 315,195 315,204"
+                    points="190,30 175,18 175,27 163,27 163,33 175,33 175,42"
                     fill="url(#arrowGradient)"
                   />
                 </>
               ) : (
                 <>
-                  {/* Counterclockwise curved arrow around entire game area */}
+                  {/* Counterclockwise full circle with gap for arrow head */}
                   <path
-                    d="M 192 30 A 150 150 0 1 0 54 192"
+                    d="M 192 30 A 150 150 0 1 0 194 30"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -535,7 +535,7 @@ export default function Game() {
                   />
                   {/* Arrow head for counterclockwise */}
                   <polygon
-                    points="54,192 69,180 69,189 81,189 81,195 69,195 69,204"
+                    points="194,30 209,18 209,27 221,27 221,33 209,33 209,42"
                     fill="url(#arrowGradient)"
                   />
                 </>
