@@ -18,9 +18,10 @@ Preferred communication style: Simple, everyday language.
 
 **CRITICAL - DO NOT MODIFY**: Card Replacement & Wild Card System (Fixed Aug 14, 2025)
 - **Issue**: Card replacement was slow (1+ second) and wild cards after replacement didn't show color picker
-- **Solution**: Implemented 6-stage refresh system (25-200ms intervals) + proper server-client color choice flow
+- **Solution**: Implemented ultra-fast refresh system (1-30ms intervals) + proper server-client color choice flow
 - **Implementation**: Server sends `choose_color_request` message, client handles `colorChoiceRequested` state
 - **Wild Card Flow**: Play card → server requests color → client shows picker → player chooses → server updates
+- **Speed**: Double immediate calls + 1ms, 5ms, 10ms, 20ms, 30ms intervals for instant visual updates
 - **Requirement**: Never modify the refresh timing intervals or wild card message handling logic
 
 **CRITICAL - DO NOT MODIFY**: CSS Grid Layout System (Fixed Aug 14, 2025)
@@ -29,16 +30,16 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: Draw button positioned in `col-start-10 col-end-12 row-start-10 row-end-12` grid cells
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
-**CRITICAL - RECENTLY FIXED**: Card Replacement & Wild Card Systems (Fixed Aug 14, 2025)
+**CRITICAL - RECENTLY FIXED**: Card Replacement & Single-Click System (Fixed Aug 14, 2025)
 - **Avatar Positioning**: Positioned at exact clock positions (12, 3, 6, 10) attached to circle without overlapping
 - **Avatar Selection System**: Click-to-open popup with male/female selection, instant broadcast to all players
-- **Card Replacement Speed**: Optimized to update within 200ms using 6 refresh intervals (25ms, 50ms, 100ms, 150ms, 200ms)
-- **Card Replacement UI**: Removed success notifications and enhanced dropdown logic with fallbacks
+- **Card Replacement Speed**: Ultra-fast updates within 30ms using double immediate calls + 1ms, 5ms, 10ms, 20ms, 30ms intervals
+- **Single-Click Card Playing**: Fixed double-click requirement - cards now play immediately on first click
 - **Wild Card Color Selection**: Fixed post-replacement wild cards to properly show color picker
 - **Wild Card Server Logic**: Server sends choose_color_request message, sets currentColor to null until chosen
 - **UNO Penalty Animation**: Added full-screen penalty animation when players forget to call UNO
 - **UNO Penalty Broadcast**: All players see animated notification with violator's name and reason
-- **Status**: Complete card replacement (3x faster), wild card color selection, avatar system, and UNO penalties working seamlessly
+- **Status**: Complete ultra-fast card replacement, single-click playing, wild card color selection, and UNO penalties working seamlessly
 
 ## System Architecture
 
