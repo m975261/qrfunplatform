@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle } from "lucide-react";
@@ -17,6 +17,7 @@ import GuruCardReplaceModal from "@/components/game/GuruCardReplaceModal";
 
 export default function Game() {
   const [, params] = useRoute("/game/:roomId");
+  const [, setLocation] = useLocation();
   const roomId = params?.roomId;
   const playerId = localStorage.getItem("playerId");
   const { toast } = useToast();
@@ -171,6 +172,65 @@ export default function Game() {
   const handleGuruCardReplace = (cardIndex: number) => {
     setSelectedCardIndex(cardIndex);
     setShowGuruReplaceModal(true);
+  };
+
+  // Host spectator assignment for active games
+  const handleHostAssignSpectatorToGame = async (spectatorId: string) => {
+    if (!isHost || !roomId) return;
+    
+    try {
+      console.log(`Host assigning spectator ${spectatorId} to active game`);
+      
+      // Find the first available position (0-3)
+      const gamePlayers = players.filter((p: any) => !p.isSpectator);
+      const takenPositions = gamePlayers.map((p: any) => p.position).sort();
+      
+      let availablePosition = null;
+      for (let i = 0; i < 4; i++) {
+        if (!takenPositions.includes(i)) {
+          availablePosition = i;
+          break;
+        }
+      }
+      
+      if (availablePosition === null) {
+        toast({
+          title: "Error",
+          description: "All player slots are taken",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const response = await fetch(`/api/rooms/${roomId}/assign-spectator-to-game`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${playerId}`
+        },
+        body: JSON.stringify({
+          spectatorId,
+          position: availablePosition
+        })
+      });
+      
+      if (response.ok) {
+        console.log(`Successfully assigned spectator to position ${availablePosition}`);
+        toast({
+          title: "Success",
+          description: "Player assigned to game",
+        });
+      } else {
+        throw new Error('Failed to assign player');
+      }
+    } catch (error) {
+      console.error("Error assigning spectator:", error);
+      toast({
+        title: "Error", 
+        description: "Failed to assign player to game",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleGuruReplaceCard = async (newCard: any) => {
@@ -717,17 +777,51 @@ export default function Game() {
           maxWidth: 'min(20rem, 25vw)' // Dynamic max width
         }}>
           <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 sm:p-3 shadow-lg">
-            <div className="text-xs font-semibold text-gray-700 mb-2">Spectators:</div>
+            <div className="text-xs font-semibold text-gray-700 mb-2">
+              Spectators ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
+            </div>
             <div className="space-y-1 max-h-32 overflow-y-auto">
-              {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any) => (
-                <div key={spectator.id} className="flex items-center space-x-2">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                    {spectator.nickname?.[0]?.toUpperCase()}
+              {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index: number, arr: any[]) => (
+                <div key={spectator.id}>
+                  <div 
+                    className={`flex items-center space-x-2 p-1.5 rounded transition-colors ${
+                      isHost && room.status === "playing" 
+                        ? 'hover:bg-blue-50 cursor-pointer' 
+                        : ''
+                    }`}
+                    onClick={
+                      isHost && room.status === "playing" 
+                        ? () => handleHostAssignSpectatorToGame(spectator.id)
+                        : undefined
+                    }
+                    title={
+                      isHost && room.status === "playing"
+                        ? "Click to assign to next available slot"
+                        : ""
+                    }
+                  >
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                      {spectator.nickname?.[0]?.toUpperCase()}
+                    </div>
+                    <span className="text-xs text-gray-600 truncate flex-1">{spectator.nickname}</span>
+                    {/* Show assignment indicator for host during active game */}
+                    {isHost && room.status === "playing" && (
+                      <div className="text-blue-600 text-xs font-medium">+</div>
+                    )}
                   </div>
-                  <span className="text-xs text-gray-600 truncate">{spectator.nickname}</span>
+                  {/* Separator line between spectators */}
+                  {index < arr.length - 1 && (
+                    <hr className="border-gray-200 mx-1 my-1" />
+                  )}
                 </div>
               ))}
             </div>
+            {/* Instructions for host during active game */}
+            {isHost && room.status === "playing" && (
+              <div className="mt-2 text-xs text-gray-500 text-center">
+                Click spectators to assign to empty slots
+              </div>
+            )}
           </div>
         </div>
       )}

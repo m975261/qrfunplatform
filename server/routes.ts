@@ -1173,6 +1173,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Host assign spectator to active game endpoint
+  app.post("/api/rooms/:roomId/assign-spectator-to-game", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const hostId = req.headers.authorization?.replace('Bearer ', '');
+      const { spectatorId, position } = z.object({
+        spectatorId: z.string(),
+        position: z.number().min(0).max(3)
+      }).parse(req.body);
+      
+      if (!hostId) {
+        return res.status(401).json({ error: 'Host ID required' });
+      }
+      
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: 'Room not found' });
+      }
+      
+      // Verify the requester is the host
+      if (room.hostId !== hostId) {
+        return res.status(403).json({ error: 'Only host can assign spectators' });
+      }
+      
+      // Verify room is in playing state
+      if (room.status !== 'playing') {
+        return res.status(400).json({ error: 'Can only assign spectators during active game' });
+      }
+      
+      const spectator = await storage.getPlayer(spectatorId);
+      if (!spectator || spectator.roomId !== roomId || !spectator.isSpectator) {
+        return res.status(400).json({ error: 'Invalid spectator' });
+      }
+      
+      // Check if position is available
+      const roomPlayers = await storage.getPlayersByRoom(roomId);
+      const positionTaken = roomPlayers.some(p => p.position === position && !p.isSpectator && !p.hasLeft);
+      
+      if (positionTaken) {
+        return res.status(400).json({ error: 'Position already taken' });
+      }
+      
+      // Get cards for this position from positionHands or deal new ones
+      let newHand: Card[] = [];
+      if (room.positionHands && room.positionHands[position.toString()]) {
+        newHand = room.positionHands[position.toString()];
+        console.log(`Host assigning position ${position} cards to spectator ${spectator.nickname}`);
+      } else if (room.deck && room.deck.length > 0) {
+        // Deal 7 cards for new position in active game
+        const cardsNeeded = Math.min(7, room.deck.length);
+        newHand = room.deck.slice(0, cardsNeeded);
+        const updatedDeck = room.deck.slice(cardsNeeded);
+        
+        // Update room deck and save cards for this position
+        const updatedPositionHands = { ...room.positionHands, [position.toString()]: newHand };
+        await storage.updateRoom(roomId, { 
+          deck: updatedDeck,
+          positionHands: updatedPositionHands
+        });
+        
+        console.log(`Host dealing ${cardsNeeded} new cards to spectator ${spectator.nickname} for position ${position}`);
+      }
+      
+      // Update spectator to become an active player
+      await storage.updatePlayer(spectatorId, {
+        position,
+        isSpectator: false,
+        hasLeft: false,
+        leftAt: null,
+        hand: newHand,
+        hasCalledUno: false,
+        finishPosition: null
+      });
+      
+      console.log(`Host successfully assigned spectator ${spectator.nickname} to position ${position} during active game`);
+      
+      // Broadcast updated room state
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: 'Spectator assigned to game successfully' });
+    } catch (error) {
+      console.error("Error assigning spectator to game:", error);
+      res.status(500).json({ error: 'Failed to assign spectator to game' });
+    }
+  });
+
   // iOS-friendly redirect endpoints for QR codes
   app.get("/join/:code", (req, res) => {
     const { code } = req.params;
