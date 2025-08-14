@@ -497,8 +497,8 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Clean Layout (No Duplicate Background) - Smaller for mobile */}
-      <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 mx-auto mb-8">
+      {/* Player Avatars - Clean Layout (No Duplicate Background) - Shifted left for viewer table space */}
+      <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 ml-4 sm:ml-8 md:ml-12 mb-8">
 
 
         {/* Center Card Play Area with Circular Background */}
@@ -682,9 +682,9 @@ export default function Game() {
           );
         })}
 
-        {/* Direction Indicator Button - Positioned between 12 and 9 o'clock - Responsive */}
+        {/* Direction Indicator Button - Adjusted for shifted layout */}
         {room?.direction && room?.status === 'playing' && (
-          <div className="absolute top-8 left-8 sm:top-10 sm:left-10 md:top-12 md:left-12 z-10">
+          <div className="absolute top-8 left-0 sm:top-10 sm:left-2 md:top-12 md:left-4 z-10">
             <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center shadow-lg border-2 border-yellow-300 animate-pulse">
               <div className="text-white text-xs font-bold text-center leading-tight">
                 {room.direction === 'clockwise' ? (
@@ -705,8 +705,8 @@ export default function Game() {
           </div>
         )}
 
-        {/* Draw Pile - Positioned on left side between 3 and 6 o'clock for iPhone */}
-        <div className="absolute bottom-8 left-8 sm:bottom-10 sm:left-10 md:bottom-12 md:left-12 z-20">
+        {/* Draw Pile - Adjusted for shifted layout */}
+        <div className="absolute bottom-8 left-0 sm:bottom-10 sm:left-2 md:bottom-12 md:left-4 z-20">
           <div className="relative cursor-pointer group" onClick={drawCard}>
             <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
             <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
