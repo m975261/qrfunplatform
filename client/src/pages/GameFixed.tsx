@@ -446,10 +446,10 @@ export default function Game() {
         paddingTop: 'max(8vh, 64px)'        // Responsive top padding
       }}>
         <div className="relative">
-          {/* Draw Pile - Viewport responsive positioning */}
+          {/* Draw Pile - Fixed safe positioning to avoid overlap */}
           <div className="absolute z-10" style={{
-            bottom: 'max(-3rem, -8vh)',
-            right: 'max(-5rem, -12vw)',
+            bottom: 'max(2rem, 4vh)',
+            right: 'max(2rem, 4vw)',
           }}>
             <div className="relative cursor-pointer group" onClick={drawCard}>
               <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all" 
