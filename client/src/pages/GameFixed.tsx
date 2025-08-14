@@ -542,13 +542,17 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - Actually attached to circle edge
+          // Get position class for avatar placement - Attached to circle edge, not container edge
           const getPositionClass = (pos: number) => {
+            // Calculate exact circle edge positions based on circle radius + avatar radius
+            // Circle: w-32 h-32 (128px) to w-40 h-40 (160px) = radius 64px to 80px  
+            // Avatar: w-16 h-16 (64px) = radius 32px
+            // Distance from center: circle radius + avatar radius = ~96px to 112px
             const positions = [
-              'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - center on circle edge
-              'right-0 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - center on circle edge  
-              'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - center on circle edge
-              'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - center on circle edge
+              'top-16 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - circle edge
+              'right-16 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - circle edge  
+              'bottom-16 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - circle edge
+              'left-16 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - circle edge
             ];
             return positions[pos] || positions[0];
           };
