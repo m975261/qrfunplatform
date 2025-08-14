@@ -1803,8 +1803,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       discardPile: newDiscardPile,
       currentPlayerIndex: nextPlayerIndex,
       direction: newDirection,
-      currentColor: effect.chooseColor ? room.currentColor : card.color,
-      pendingDraw: newPendingDraw
+      currentColor: effect.chooseColor ? null : card.color, // Set to null if color choice needed
+      pendingDraw: newPendingDraw,
+      waitingForColorChoice: effect.chooseColor ? connection.playerId : null // Track who needs to choose color
     });
     
     // Check for win condition
@@ -1882,6 +1883,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           position: finishedCount + 1
         });
       }
+    }
+    
+    // If wild card was played, send color choice request to the player
+    if (effect.chooseColor) {
+      connection.ws.send(JSON.stringify({
+        type: 'choose_color_request',
+        message: 'Choose a color for the wild card'
+      }));
     }
     
     await broadcastRoomState(connection.roomId);
@@ -2123,7 +2132,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!connection.roomId) return;
     
     const { color } = message;
-    await storage.updateRoom(connection.roomId, { currentColor: color });
+    await storage.updateRoom(connection.roomId, { 
+      currentColor: color,
+      waitingForColorChoice: null // Clear the waiting state
+    });
     await broadcastRoomState(connection.roomId);
   }
 

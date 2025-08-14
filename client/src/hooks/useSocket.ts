@@ -278,6 +278,15 @@ export function useSocket(autoConnect: boolean = true) {
               forceRefresh: Math.random()
             }));
             break;
+          case 'choose_color_request':
+            console.log('Color choice request received for wild card');
+            // Set flag to show color picker
+            setGameState((prev: any) => ({
+              ...prev,
+              showColorPicker: true,
+              colorChoiceRequested: true
+            }));
+            break;
           case 'uno_penalty':
             console.log(`UNO penalty for player: ${message.playerName}`);
             // Show penalty animation to all players

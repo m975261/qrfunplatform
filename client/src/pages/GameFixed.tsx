@@ -133,13 +133,20 @@ export default function Game() {
     }
   }, [gameState?.cardReplacementTrigger]);
 
+  // Handle server color choice request
+  useEffect(() => {
+    if (gameState?.colorChoiceRequested) {
+      setShowColorPicker(true);
+    }
+  }, [gameState?.colorChoiceRequested]);
+
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
     const card = player?.hand?.[cardIndex];
     
     if (card?.type === "wild" || card?.type === "wild4") {
-      setPendingWildCard(cardIndex);
-      setShowColorPicker(true);
+      // Play the wild card first, server will request color choice
+      playCard(cardIndex);
     } else {
       playCard(cardIndex);
     }
@@ -147,11 +154,8 @@ export default function Game() {
 
   const handleColorChoice = (color: string) => {
     chooseColor(color);
-    if (pendingWildCard !== null) {
-      playCard(pendingWildCard);
-      setPendingWildCard(null);
-    }
     setShowColorPicker(false);
+    setPendingWildCard(null);
   };
 
   const handleUnoCall = () => {
@@ -318,19 +322,21 @@ export default function Game() {
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
         
-        // Force immediate visual update - target half second total
+        // Force immediate visual update - target instant update (3x faster)
         if (refreshGameState) {
           refreshGameState(); // Immediate refresh
+          setTimeout(() => refreshGameState(), 25);
           setTimeout(() => refreshGameState(), 50);
+          setTimeout(() => refreshGameState(), 100);
           setTimeout(() => refreshGameState(), 150);
-          setTimeout(() => refreshGameState(), 300);
-          setTimeout(() => refreshGameState(), 500);
+          setTimeout(() => refreshGameState(), 200);
         }
         
-        // Force hand re-render by updating key - multiple times for faster visual update
+        // Force hand re-render by updating key - multiple times for instant visual update (3x faster)
         setHandRefreshKey(prev => prev + 1);
+        setTimeout(() => setHandRefreshKey(prev => prev + 1), 25);
         setTimeout(() => setHandRefreshKey(prev => prev + 1), 50);
-        setTimeout(() => setHandRefreshKey(prev => prev + 1), 150);
+        setTimeout(() => setHandRefreshKey(prev => prev + 1), 100);
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
