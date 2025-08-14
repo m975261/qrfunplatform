@@ -852,9 +852,6 @@ export default function Game() {
                         : ""
                     }
                   >
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                      {spectator.nickname?.[0]?.toUpperCase()}
-                    </div>
                     <span className="text-xs text-gray-600 truncate flex-1">{spectator.nickname}</span>
                     {/* Show assignment indicator for host */}
                     {isHost && (
