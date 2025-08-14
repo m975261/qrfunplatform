@@ -341,15 +341,8 @@ export default function Game() {
         setTimeout(() => setHandRefreshKey(prev => prev + 1), 10);
         setTimeout(() => setHandRefreshKey(prev => prev + 1), 20);
         
-        // Force immediate state update for all triggers
-        setGameState?.((prev: any) => ({
-          ...prev,
-          lastCardReplacedAt: Date.now(),
-          forceRefresh: Math.random(),
-          cardReplacementTrigger: Date.now(),
-          handUpdateForce: Math.random(),
-          instantUpdate: Math.random()
-        }));
+        // Force immediate component re-render triggers
+        setHandRefreshKey(prev => prev + Math.random()); // Additional random trigger
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
