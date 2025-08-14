@@ -416,6 +416,13 @@ export default function Game() {
   const players = gameState.players || [];
   const gamePlayers = players.filter((p: any) => !p.isSpectator);
   
+  // Helper function for checking online status - MUST BE DEFINED BEFORE USAGE
+  const isPlayerOnline = (player: any) => {
+    if (!gameState?.players || !player) return false;
+    // Find the player in gameState.players and check their isOnline property
+    const playerData = gameState.players.find((p: any) => p.id === player.id);
+    return playerData?.isOnline || false;
+  };
 
   const currentPlayer = players.find((p: any) => p.id === playerId);
   const currentGamePlayer = gamePlayers[room.currentPlayerIndex || 0];
@@ -460,13 +467,6 @@ export default function Game() {
   // Helper functions for circular avatar layout
   const getPlayerAtPosition = (position: number) => {
     return gamePlayers.find((player: any) => player.position === position) || null;
-  };
-
-  const isPlayerOnline = (player: any) => {
-    if (!gameState?.players || !player) return false;
-    // Find the player in gameState.players and check their isOnline property
-    const playerData = gameState.players.find((p: any) => p.id === player.id);
-    return playerData?.isOnline || false;
   };
 
 
