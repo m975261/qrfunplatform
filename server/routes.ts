@@ -2658,11 +2658,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Spectator no longer valid after cleanup' });
       }
       
-      // Get cards for this position from positionHands or clear hand for lobby
+      // Get cards for this position from positionHands or deal fresh cards for new players
       let newHand: Card[] = [];
       if (room.positionHands && room.positionHands[position.toString()]) {
+        // Restore existing cards for players returning to their position
         newHand = room.positionHands[position.toString()];
-        console.log(`Host assigning position ${position} cards to spectator ${spectator.nickname}`);
+        console.log(`Host restoring position ${position} cards to spectator ${spectator.nickname}`);
+      } else if (room.status === 'playing' && room.deck) {
+        // Deal fresh 7 cards for new players joining active game
+        const cardsToMove = room.deck.splice(0, 7);
+        newHand = cardsToMove;
+        console.log(`Host dealing 7 fresh cards to new player ${spectator.nickname} at position ${position}`);
+        
+        // Update room with modified deck
+        await storage.updateRoom(room.id, { deck: room.deck });
       } 
       
       // Assign spectator to position with comprehensive update

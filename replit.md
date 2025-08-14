@@ -16,6 +16,12 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: `kickPlayer`, `assignSpectator`, `replacePlayer` functions in useSocket.ts with corresponding server handlers
 - **Requirement**: Any future lobby-related changes must maintain WebSocket-only communication for real-time sync
 
+**CRITICAL - DO NOT MODIFY**: CSS Grid Layout System (Fixed Aug 14, 2025)
+- **Issue**: Draw button and other UI elements overlapped on maximized windows causing unusable interface
+- **Solution**: Implemented 12x12 CSS Grid layout replacing absolute positioning for game elements
+- **Implementation**: Draw button positioned in `col-start-10 col-end-12 row-start-10 row-end-12` grid cells
+- **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
+
 ## System Architecture
 
 ### Frontend Architecture
