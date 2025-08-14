@@ -498,12 +498,14 @@ export default function Game() {
                 {room.direction === 'clockwise' ? (
                   <div className="flex flex-col items-center">
                     <span className="text-lg">↻</span>
-                    <span>CW</span>
+                    <span>GAME</span>
+                    <span>DIRECTION</span>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center">
                     <span className="text-lg">↺</span>
-                    <span>CCW</span>
+                    <span>GAME</span>
+                    <span>DIRECTION</span>
                   </div>
                 )}
               </div>
