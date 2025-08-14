@@ -495,7 +495,7 @@ export default function Game() {
           <div className="absolute inset-0 w-full h-full z-0">
             <svg 
               className="w-full h-full animate-pulse" 
-              viewBox="0 0 500 500" 
+              viewBox="0 0 384 384" 
               fill="none" 
               xmlns="http://www.w3.org/2000/svg"
             >
@@ -509,33 +509,33 @@ export default function Game() {
               
               {room.direction === 'clockwise' ? (
                 <>
-                  {/* Clockwise circle with proper radius to encompass all avatar positions */}
+                  {/* Clockwise circle with guaranteed radius to encompass all avatar positions */}
                   <path
-                    d="M 250 20 A 220 220 0 1 1 240 15"
+                    d="M 192 -53 A 245 245 0 1 1 185 -58"
                     stroke="url(#arrowGradient)"
-                    strokeWidth="10"
+                    strokeWidth="8"
                     fill="none"
                     strokeLinecap="round"
                   />
                   {/* Arrow head for clockwise - detached from circle */}
                   <polygon
-                    points="240,15 225,3 225,12 213,12 213,18 225,18 225,27"
+                    points="185,-58 170,-70 170,-61 158,-61 158,-55 170,-55 170,-46"
                     fill="url(#arrowGradient)"
                   />
                 </>
               ) : (
                 <>
-                  {/* Counterclockwise circle with proper radius to encompass all avatar positions */}
+                  {/* Counterclockwise circle with guaranteed radius to encompass all avatar positions */}
                   <path
-                    d="M 250 20 A 220 220 0 1 0 260 15"
+                    d="M 192 -53 A 245 245 0 1 0 199 -58"
                     stroke="url(#arrowGradient)"
-                    strokeWidth="10"
+                    strokeWidth="8"
                     fill="none"
                     strokeLinecap="round"
                   />
                   {/* Arrow head for counterclockwise - detached from circle */}
                   <polygon
-                    points="260,15 275,3 275,12 287,12 287,18 275,18 275,27"
+                    points="199,-58 214,-70 214,-61 226,-61 226,-55 214,-55 214,-46"
                     fill="url(#arrowGradient)"
                   />
                 </>
