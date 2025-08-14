@@ -567,8 +567,8 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Exact Lobby Layout Replication */}
-      <div className="relative w-80 h-80 mx-auto mb-8 bg-white/10 backdrop-blur-sm rounded-full border-2 border-white/20">
+      {/* Player Avatars - Optimized Layout (Lobby Style + Game Functionality) */}
+      <div className="relative w-96 h-96 mx-auto mb-8 bg-white/10 backdrop-blur-sm rounded-full border-2 border-white/20">
         {/* Card Play Area in Center (replacing UNO logo) */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           {/* Current Card Display - Same as before */}
@@ -618,13 +618,13 @@ export default function Game() {
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Get position class for avatar placement - EXACT copy from lobby
+          // Get position class for avatar placement - Optimized spacing for larger container
           const getPositionClass = (pos: number) => {
             const positions = [
-              'top-4 left-1/2 -translate-x-1/2', // 12 o'clock
-              'right-4 top-1/2 -translate-y-1/2', // 3 o'clock  
-              'bottom-4 left-1/2 -translate-x-1/2', // 6 o'clock
-              'left-4 top-1/2 -translate-y-1/2' // 9 o'clock (NOT 10 o'clock!)
+              'top-6 left-1/2 -translate-x-1/2', // 12 o'clock - more spacing
+              'right-6 top-1/2 -translate-y-1/2', // 3 o'clock - more spacing  
+              'bottom-6 left-1/2 -translate-x-1/2', // 6 o'clock - more spacing
+              'left-6 top-1/2 -translate-y-1/2' // 9 o'clock - more spacing
             ];
             return positions[pos] || positions[0];
           };
@@ -636,7 +636,7 @@ export default function Game() {
             >
                 <div className="relative">
                   {player ? (
-                    // Player Avatar - Same style as lobby but with game features
+                    // Player Avatar - Simplified like lobby but with essential game features
                     <div className={`w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 cursor-pointer hover:scale-105 transition-all ${
                       isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
                     }`}
@@ -645,34 +645,35 @@ export default function Game() {
                       setShowAvatarSelector(true);
                     }}
                     >
-                      {/* Avatar Picture */}
-                      <div className="text-2xl mb-1">
-                        {localStorage.getItem(`avatar_${player.id}`) === 'female' ? '👩' : '👨'}
-                      </div>
-                      {/* Player Name */}
+                      {/* Simplified Avatar Content - Like Lobby */}
+                      <div className="text-lg">{player.nickname[0].toUpperCase()}</div>
                       <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
-                      {/* Online/Offline indicator - Responsive */}
-                      <div className={`absolute -top-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 rounded-full border-1 sm:border-2 border-white ${
+                      
+                      {/* Essential Indicators Only */}
+                      <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
                         isOnline ? 'bg-green-500' : 'bg-red-500'
                       }`} />
-                      {/* Host crown - Responsive */}
+                      
+                      {/* Host crown */}
                       {player.id === room?.hostId && (
-                        <div className="absolute -top-2 sm:-top-3 left-1/2 -translate-x-1/2">
-                          <div className="text-lg sm:text-xl text-yellow-400">👑</div>
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          <div className="w-6 h-6 text-yellow-400 fill-yellow-400">👑</div>
                         </div>
                       )}
-                      {/* Ranking badge for finished players */}
+                      
+                      {/* Ranking badge for finished players - Simplified */}
                       {player.finishPosition && (
-                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black text-xs px-2 py-1 rounded-full font-bold border-2 border-yellow-400 shadow-lg">
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-full font-bold shadow-lg">
                           {player.finishPosition === 1 ? '1ST' : 
                            player.finishPosition === 2 ? '2ND' : 
                            player.finishPosition === 3 ? '3RD' : 
                            `${player.finishPosition}TH`}
                         </div>
                       )}
-                      {/* Card count - Positioned on left side to avoid name overlap, only show if player hasn't finished */}
+                      
+                      {/* Card count - Only if not finished */}
                       {!player.finishPosition && (
-                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded-full font-bold border border-slate-600 shadow-lg">
+                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
                           {player.hand?.length || 0}
                         </div>
                       )}
@@ -1100,7 +1101,14 @@ export default function Game() {
               <button
                 onClick={() => {
                   localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'male');
-                  sendMessage('avatar_changed', { playerId: selectedAvatarPlayerId, gender: 'male' });
+                  // Broadcast avatar change to all players via WebSocket
+                  if (gameState?.room?.id) {
+                    fetch(`/api/rooms/${gameState.room.id}/avatar`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ playerId: selectedAvatarPlayerId, gender: 'male' })
+                    });
+                  }
                   setShowAvatarSelector(false);
                   setSelectedAvatarPlayerId(null);
                 }}
@@ -1111,7 +1119,14 @@ export default function Game() {
               <button
                 onClick={() => {
                   localStorage.setItem(`avatar_${selectedAvatarPlayerId}`, 'female');
-                  sendMessage('avatar_changed', { playerId: selectedAvatarPlayerId, gender: 'female' });
+                  // Broadcast avatar change to all players via WebSocket  
+                  if (gameState?.room?.id) {
+                    fetch(`/api/rooms/${gameState.room.id}/avatar`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ playerId: selectedAvatarPlayerId, gender: 'female' })
+                    });
+                  }
                   setShowAvatarSelector(false);
                   setSelectedAvatarPlayerId(null);
                 }}
