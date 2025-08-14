@@ -495,7 +495,7 @@ export default function Game() {
           <div className="absolute inset-0 w-full h-full z-0">
             <svg 
               className="w-full h-full animate-pulse" 
-              viewBox="-90 -90 564 564" 
+              viewBox="0 0 384 384" 
               fill="none" 
               xmlns="http://www.w3.org/2000/svg"
             >
@@ -511,7 +511,7 @@ export default function Game() {
                 <>
                   {/* Clockwise circle with proper positioning within viewBox */}
                   <path
-                    d="M 192 -70 A 260 260 0 1 1 185 -75"
+                    d="M 282 192 A 200 200 0 1 1 282 188"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -519,7 +519,7 @@ export default function Game() {
                   />
                   {/* Arrow head for clockwise - detached from circle */}
                   <polygon
-                    points="185,-75 170,-87 170,-78 158,-78 158,-72 170,-72 170,-63"
+                    points="282,188 275,175 282,175 290,175 290,181 282,181 289,181"
                     fill="url(#arrowGradient)"
                   />
                 </>
@@ -527,7 +527,7 @@ export default function Game() {
                 <>
                   {/* Counterclockwise circle with proper positioning within viewBox */}
                   <path
-                    d="M 192 -70 A 260 260 0 1 0 199 -75"
+                    d="M 282 192 A 200 200 0 1 0 282 196"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -535,7 +535,7 @@ export default function Game() {
                   />
                   {/* Arrow head for counterclockwise - detached from circle */}
                   <polygon
-                    points="199,-75 214,-87 214,-78 226,-78 226,-72 214,-72 214,-63"
+                    points="282,196 275,209 282,209 290,209 290,203 282,203 289,203"
                     fill="url(#arrowGradient)"
                   />
                 </>
