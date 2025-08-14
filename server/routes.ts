@@ -469,7 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If password is "check", just return that user exists (for checking purposes)
       if (password === "check") {
-        return res.status(401).json({ error: "Password required", userExists: true });
+        return res.status(200).json({ error: "Password required", userExists: true, requiresPassword: true });
       }
 
       // Validate password
@@ -1825,9 +1825,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'clear_penalty_animation'
         });
         
-        // Broadcast game end message to all players in the room
-        console.log('🏆 Broadcasting game_end message to all players:', finalGameEndMessage);
-        broadcastToRoom(connection.roomId, finalGameEndMessage);
+        // Add delay before game end broadcast to ensure all players receive it
+        setTimeout(() => {
+          // Broadcast game end message to all players in the room
+          console.log('🏆 Broadcasting game_end message to all players:', finalGameEndMessage);
+          broadcastToRoom(connection.roomId, finalGameEndMessage);
+        }, 100); // Short delay to prevent race condition with disconnections
       } else {
         // Continue game with remaining players - notify of player finished
         broadcastToRoom(connection.roomId, {

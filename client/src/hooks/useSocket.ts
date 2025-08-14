@@ -18,11 +18,19 @@ export function useSocket(autoConnect: boolean = true) {
 
   const connect = () => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    let host = window.location.host;
+    
+    // Fix for undefined host issue
+    if (!host || host === 'undefined') {
+      host = 'localhost:5000';
+      console.warn("⚠️ Host was undefined, falling back to localhost:5000");
+    }
+    
+    const wsUrl = `${protocol}//${host}/ws`;
     
     console.log("Attempting WebSocket connection to:", wsUrl);
     console.log("Current location:", window.location.href);
-    console.log("Protocol:", protocol, "Host:", window.location.host);
+    console.log("Protocol:", protocol, "Host:", host);
     socketRef.current = new WebSocket(wsUrl);
     
     socketRef.current.onopen = () => {
