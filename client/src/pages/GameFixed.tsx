@@ -662,45 +662,40 @@ export default function Game() {
           );
         })}
 
-        {/* Game Controls Container - Draw button and Direction indicator */}
-        <div className="absolute bottom-4 right-4 z-20">
-          <div className="bg-slate-800/90 rounded-xl p-3 border border-slate-600 shadow-xl backdrop-blur-sm">
-            <div className="flex items-center space-x-3">
-              {/* Direction Indicator */}
-              {room?.direction && room?.status === 'playing' && (
-                <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full w-16 h-16 flex items-center justify-center shadow-lg border-2 border-yellow-300 animate-pulse">
-                  <div className="text-white text-xs font-bold text-center leading-tight">
-                    {room.direction === 'clockwise' ? (
-                      <div className="flex flex-col items-center">
-                        <span className="text-lg">↻</span>
-                        <span>GAME</span>
-                        <span>DIRECTION</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center">
-                        <span className="text-lg">↺</span>
-                        <span>GAME</span>
-                        <span>DIRECTION</span>
-                      </div>
-                    )}
+        {/* Direction Indicator Button - Positioned between 12 and 9 o'clock */}
+        {room?.direction && room?.status === 'playing' && (
+          <div className="absolute top-12 left-12 z-10">
+            <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full w-16 h-16 flex items-center justify-center shadow-lg border-2 border-yellow-300 animate-pulse">
+              <div className="text-white text-xs font-bold text-center leading-tight">
+                {room.direction === 'clockwise' ? (
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg">↻</span>
+                    <span>GAME</span>
+                    <span>DIRECTION</span>
                   </div>
-                </div>
-              )}
-              
-              {/* Draw Pile */}
-              <div className="flex flex-col items-center">
-                <div className="relative cursor-pointer group" onClick={drawCard}>
-                  <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-12 h-16"></div>
-                  <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-12 h-16"></div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="text-white font-bold text-xs">CARDS</div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg">↺</span>
+                    <span>GAME</span>
+                    <span>DIRECTION</span>
                   </div>
-                </div>
-                <div className="text-center mt-1">
-                  <div className="text-blue-300 font-bold text-xs">DRAW</div>
-                </div>
+                )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Draw Pile - Positioned outside circle but attached to it */}
+        <div className="absolute bottom-4 right-4 z-20">
+          <div className="relative cursor-pointer group" onClick={drawCard}>
+            <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-12 h-16"></div>
+            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-12 h-16"></div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-white font-bold text-xs">CARDS</div>
+            </div>
+          </div>
+          <div className="text-center mt-1">
+            <div className="text-blue-300 font-bold text-xs">DRAW</div>
           </div>
         </div>
       </div>
