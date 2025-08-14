@@ -490,7 +490,7 @@ export default function Game() {
 
       {/* Player Avatars - Clean Layout (No Duplicate Background) */}
       <div className="relative w-96 h-96 mx-auto mb-8">
-        {/* Curved Direction Arrow around entire game area */}
+        {/* Curved Direction Arrow around entire game area including draw button */}
         {room?.direction && room?.status === 'playing' && (
           <div className="absolute inset-0 w-full h-full z-0">
             <svg 
@@ -509,9 +509,9 @@ export default function Game() {
               
               {room.direction === 'clockwise' ? (
                 <>
-                  {/* Clockwise full circle with gap for arrow head */}
+                  {/* Clockwise full circle with larger radius to include draw button */}
                   <path
-                    d="M 192 30 A 150 150 0 1 1 190 30"
+                    d="M 192 15 A 175 175 0 1 1 190 15"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -519,15 +519,15 @@ export default function Game() {
                   />
                   {/* Arrow head for clockwise */}
                   <polygon
-                    points="190,30 175,18 175,27 163,27 163,33 175,33 175,42"
+                    points="190,15 175,3 175,12 163,12 163,18 175,18 175,27"
                     fill="url(#arrowGradient)"
                   />
                 </>
               ) : (
                 <>
-                  {/* Counterclockwise full circle with gap for arrow head */}
+                  {/* Counterclockwise full circle with larger radius to include draw button */}
                   <path
-                    d="M 192 30 A 150 150 0 1 0 194 30"
+                    d="M 192 15 A 175 175 0 1 0 194 15"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -535,7 +535,7 @@ export default function Game() {
                   />
                   {/* Arrow head for counterclockwise */}
                   <polygon
-                    points="194,30 209,18 209,27 221,27 221,33 209,33 209,42"
+                    points="194,15 209,3 209,12 221,12 221,18 209,18 209,27"
                     fill="url(#arrowGradient)"
                   />
                 </>
@@ -729,11 +729,11 @@ export default function Game() {
         </div>
       </div>
 
-      {/* Player Hand Area - Using same 12x12 CSS Grid Layout System */}
+      {/* Player Hand Area - Centered for all window sizes */}
       {currentPlayer && !currentPlayer.isSpectator && (
-        <div className="absolute bottom-0 left-0 right-0 z-30">
+        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-7xl">
           {/* Use same 12x12 grid system as main game area */}
-          <div className="grid grid-cols-12 grid-rows-12 gap-1 p-4 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md" style={{
+          <div className="grid grid-cols-12 grid-rows-12 gap-1 p-4 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md mx-4" style={{
             height: 'max(30vh, 240px)'
           }}>
             
