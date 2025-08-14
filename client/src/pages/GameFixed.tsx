@@ -57,6 +57,7 @@ export default function Game() {
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [selectedAvatarPlayerId, setSelectedAvatarPlayerId] = useState<string | null>(null);
   const [unoPenaltyAnimation, setUnoPenaltyAnimation] = useState<{ playerName: string; show: boolean } | null>(null);
+  const [handRefreshKey, setHandRefreshKey] = useState(0);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -124,6 +125,13 @@ export default function Game() {
       }, 4000);
     }
   }, [gameState?.gameEndData, gameState?.needsContinue, gameState?.room?.status, showWinnerModal, roomId, playerId, gameState?.unoPenaltyAnimation]);
+
+  // Handle card replacement visual updates
+  useEffect(() => {
+    if (gameState?.cardReplacementTrigger) {
+      setHandRefreshKey(prev => prev + 1);
+    }
+  }, [gameState?.cardReplacementTrigger]);
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -318,8 +326,8 @@ export default function Game() {
           setTimeout(() => refreshGameState(), 700);
         }
         
-        // Force component re-render for immediate visual feedback
-        window.location.reload();
+        // Force hand re-render by updating key
+        setHandRefreshKey(prev => prev + 1);
       } else {
         console.error("❌ Server error:", result.error);
         throw new Error(result.error || 'Failed to replace card');
@@ -834,7 +842,7 @@ export default function Game() {
             {/* Player Cards - Grid positioned with full height for cards */}
             <div className="col-start-1 col-end-13 row-start-4 row-end-13 overflow-x-auto overflow-y-visible px-2 py-4">
               {currentPlayer.hand && currentPlayer.hand.length > 0 ? (
-                <div className="flex space-x-3 min-w-max h-full items-start pt-2">
+                <div key={`hand-${handRefreshKey}-${gameState?.cardReplacementTrigger || 0}`} className="flex space-x-3 min-w-max h-full items-start pt-2">
                   {currentPlayer.hand.map((card: any, index: number) => (
                     <div 
                       key={index} 

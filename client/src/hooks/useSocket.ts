@@ -260,16 +260,18 @@ export function useSocket(autoConnect: boolean = true) {
             // Force immediate game state refresh for card replacement
             if (typeof refreshGameState === 'function') {
               refreshGameState();
-              setTimeout(() => refreshGameState(), 100);
+              setTimeout(() => refreshGameState(), 50);
+              setTimeout(() => refreshGameState(), 150);
               setTimeout(() => refreshGameState(), 300);
-              setTimeout(() => refreshGameState(), 600);
+              setTimeout(() => refreshGameState(), 500);
             }
-            // Force component re-render with timestamp
+            // Force component re-render with multiple triggers for visual update
             setGameState((prev: any) => ({
               ...prev,
               lastCardReplacedAt: Date.now(),
               forceRefresh: Math.random(),
-              cardReplacementTrigger: Date.now()
+              cardReplacementTrigger: Date.now(),
+              handUpdateForce: Math.random()
             }));
             break;
           case 'avatar_changed':
