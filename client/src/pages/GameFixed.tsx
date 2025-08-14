@@ -509,9 +509,9 @@ export default function Game() {
               
               {room.direction === 'clockwise' ? (
                 <>
-                  {/* Clockwise circle with gap for arrow head - larger radius */}
+                  {/* Clockwise circle with gap for arrow head - much larger radius to include all avatars */}
                   <path
-                    d="M 192 12 A 180 180 0 1 1 185 8"
+                    d="M 192 8 A 185 185 0 1 1 182 4"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -519,15 +519,15 @@ export default function Game() {
                   />
                   {/* Arrow head for clockwise - detached from circle */}
                   <polygon
-                    points="185,8 170,-4 170,5 158,5 158,11 170,11 170,20"
+                    points="182,4 167,-8 167,1 155,1 155,7 167,7 167,16"
                     fill="url(#arrowGradient)"
                   />
                 </>
               ) : (
                 <>
-                  {/* Counterclockwise circle with gap for arrow head - larger radius */}
+                  {/* Counterclockwise circle with gap for arrow head - much larger radius to include all avatars */}
                   <path
-                    d="M 192 12 A 180 180 0 1 0 199 8"
+                    d="M 192 8 A 185 185 0 1 0 202 4"
                     stroke="url(#arrowGradient)"
                     strokeWidth="8"
                     fill="none"
@@ -535,7 +535,7 @@ export default function Game() {
                   />
                   {/* Arrow head for counterclockwise - detached from circle */}
                   <polygon
-                    points="199,8 214,-4 214,5 226,5 226,11 214,11 214,20"
+                    points="202,4 217,-8 217,1 229,1 229,7 217,7 217,16"
                     fill="url(#arrowGradient)"
                   />
                 </>
