@@ -6,9 +6,21 @@ interface GameCardProps {
   disabled?: boolean;
   interactive?: boolean;
   size?: "extra-small" | "small" | "medium" | "large";
+  isGuruUser?: boolean;
+  onGuruReplace?: () => void;
+  cardIndex?: number;
 }
 
-export default function GameCard({ card, onClick, disabled = false, interactive = false, size = "medium" }: GameCardProps) {
+export default function GameCard({ 
+  card, 
+  onClick, 
+  disabled = false, 
+  interactive = false, 
+  size = "medium",
+  isGuruUser = false,
+  onGuruReplace,
+  cardIndex
+}: GameCardProps) {
   const getCardColors = () => {
     switch (card.color) {
       case "red":
@@ -296,6 +308,20 @@ export default function GameCard({ card, onClick, disabled = false, interactive 
           <div className="absolute top-1 left-1 text-white text-xs font-bold">↻</div>
           <div className="absolute bottom-1 right-1 text-white text-xs font-bold rotate-180">↻</div>
         </>
+      )}
+
+      {/* Guru Replace Button - only show for guru users */}
+      {isGuruUser && !disabled && onGuruReplace && cardIndex !== undefined && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onGuruReplace();
+          }}
+          className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1 py-0.5 rounded font-bold shadow-lg transition-colors z-10"
+          title="Replace card (Guru)"
+        >
+          R
+        </button>
       )}
     </div>
   );

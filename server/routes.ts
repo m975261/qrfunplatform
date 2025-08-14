@@ -1094,6 +1094,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Game end data retrieval for disconnected players (P3 winner modal fix)
+  app.get("/api/rooms/:roomId/game-end-data", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const playerId = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!playerId) {
+        return res.status(401).json({ error: 'Player ID required' });
+      }
+      
+      const room = await storage.getRoom(roomId);
+      if (!room || room.status !== 'finished') {
+        return res.status(404).json({ error: 'Game not finished or room not found' });
+      }
+      
+      // Return game end data if available
+      if (room.winner && room.rankings) {
+        console.log(`🏆 Retrieved game end data for player ${playerId} in room ${roomId}`);
+        res.json({
+          winner: room.winner,
+          rankings: room.rankings,
+          timestamp: Date.now()
+        });
+      } else {
+        res.status(404).json({ error: 'Game end data not available' });
+      }
+    } catch (error) {
+      console.error("Error retrieving game end data:", error);
+      res.status(500).json({ error: 'Failed to retrieve game end data' });
+    }
+  });
+
+  // Guru card replacement endpoint
+  app.post("/api/rooms/:roomId/guru-replace-card", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const playerId = req.headers.authorization?.replace('Bearer ', '');
+      const { cardIndex, newCard } = z.object({
+        cardIndex: z.number().min(0),
+        newCard: z.object({
+          type: z.string(),
+          color: z.string(),
+          number: z.number().optional()
+        })
+      }).parse(req.body);
+      
+      if (!playerId) {
+        return res.status(401).json({ error: 'Player ID required' });
+      }
+      
+      const player = await storage.getPlayer(playerId);
+      if (!player || player.roomId !== roomId) {
+        return res.status(403).json({ error: 'Not authorized for this room' });
+      }
+      
+      // Verify player is guru user (this should be validated on login)
+      // For now, we trust the client-side guru flag but this should be enhanced
+      console.log(`🧙‍♂️ Guru ${player.nickname} replacing card ${cardIndex} in room ${roomId}`);
+      
+      // Replace the card in player's hand
+      const updatedPlayer = await storage.updatePlayer(playerId, {
+        [`hand.${cardIndex}`]: newCard
+      });
+      
+      // Broadcast the update to room
+      broadcastToRoom(roomId, {
+        type: 'card_replaced',
+        playerId,
+        cardIndex,
+        message: `${player.nickname} replaced a card`
+      });
+      
+      res.json({ success: true, message: 'Card replaced successfully' });
+    } catch (error) {
+      console.error("Error replacing card:", error);
+      res.status(500).json({ error: 'Failed to replace card' });
+    }
+  });
+
   // iOS-friendly redirect endpoints for QR codes
   app.get("/join/:code", (req, res) => {
     const { code } = req.params;

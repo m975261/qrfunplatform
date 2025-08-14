@@ -13,6 +13,7 @@ import ColorPickerModal from "@/components/game/ColorPickerModal";
 import NicknameEditor from "@/components/NicknameEditor";
 import { GameDirectionIndicator } from "@/components/game/GameDirectionIndicator";
 import { WinnerModal } from "@/components/game/WinnerModal";
+import GuruCardReplaceModal from "@/components/game/GuruCardReplaceModal";
 
 export default function Game() {
   const [, params] = useRoute("/game/:roomId");
@@ -49,6 +50,8 @@ export default function Game() {
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
   const [winnerData, setWinnerData] = useState<any>(null);
+  const [showGuruReplaceModal, setShowGuruReplaceModal] = useState(false);
+  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -65,12 +68,44 @@ export default function Game() {
       };
       setWinnerData(mappedData);
       setShowWinnerModal(true);
+      
+      // Additional fix for disconnected players - force modal show after delay
+      setTimeout(() => {
+        if (mappedData && !showWinnerModal) {
+          console.log("🏆 Force showing winner modal for potentially disconnected player");
+          setShowWinnerModal(true);
+        }
+      }, 1000);
+    }
+    
+    // CRITICAL FIX: Check if room is finished but no gameEndData (disconnected player case)
+    if (gameState?.room?.status === 'finished' && !gameState?.gameEndData && !showWinnerModal) {
+      console.log("🏆 Detected finished game without gameEndData - requesting game end data");
+      // Request game end data from server for this specific case
+      if (roomId) {
+        fetch(`/api/rooms/${roomId}/game-end-data`, {
+          headers: { 'Authorization': `Bearer ${playerId}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.winner && data.rankings) {
+            console.log("🏆 Retrieved game end data for disconnected player:", data);
+            setWinnerData({
+              winner: data.winner,
+              finalRankings: data.rankings,
+              timestamp: Date.now()
+            });
+            setShowWinnerModal(true);
+          }
+        })
+        .catch(err => console.error("Failed to fetch game end data:", err));
+      }
     }
     
     if (gameState?.needsContinue) {
       setShowContinuePrompt(true);
     }
-  }, [gameState?.gameEndData, gameState?.needsContinue, playerId]);
+  }, [gameState?.gameEndData, gameState?.needsContinue, gameState?.room?.status, showWinnerModal, roomId, playerId]);
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -132,6 +167,45 @@ export default function Game() {
     }
   };
 
+  // Guru card replacement handlers
+  const handleGuruCardReplace = (cardIndex: number) => {
+    setSelectedCardIndex(cardIndex);
+    setShowGuruReplaceModal(true);
+  };
+
+  const handleGuruReplaceCard = async (newCard: any) => {
+    if (selectedCardIndex === null || !currentPlayer) return;
+    
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/guru-replace-card`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${playerId}`
+        },
+        body: JSON.stringify({
+          cardIndex: selectedCardIndex,
+          newCard: newCard
+        })
+      });
+      
+      if (response.ok) {
+        console.log("Card replaced successfully");
+        setShowGuruReplaceModal(false);
+        setSelectedCardIndex(null);
+      } else {
+        throw new Error('Failed to replace card');
+      }
+    } catch (error) {
+      console.error("Error replacing card:", error);
+      toast({
+        title: "Error",
+        description: "Failed to replace card",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!gameState || !gameState.room) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center">
@@ -151,6 +225,7 @@ export default function Game() {
   const isPaused = room.status === "paused";
   const isHost = currentPlayer?.id === room?.hostId;
   const topCard = room.discardPile?.[0];
+  const isGuruUser = localStorage.getItem("isGuruUser") === "true";
   const activePositions = room.activePositions || []; // Positions that were active when game started
 
   // Helper functions for circular avatar layout
@@ -620,6 +695,9 @@ export default function Game() {
                         interactive={isMyTurn}
                         disabled={!isMyTurn}
                         onClick={() => isMyTurn && handlePlayCard(index)}
+                        isGuruUser={isGuruUser}
+                        onGuruReplace={isGuruUser ? () => handleGuruCardReplace(index) : undefined}
+                        cardIndex={index}
                       />
                     </div>
                   ))}
@@ -632,12 +710,15 @@ export default function Game() {
         </div>
       )}
 
-      {/* Spectators Area - Responsive positioning */}
+      {/* Spectators Area - Dynamic positioning to prevent overlap */}
       {players.filter((p: any) => p.isSpectator && p.isOnline).length > 0 && (
-        <div className="absolute top-16 sm:top-20 right-2 sm:right-4 z-20">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 sm:p-3 shadow-lg max-w-xs">
+        <div className="absolute top-16 sm:top-20 z-20" style={{
+          right: 'max(0.5rem, min(20vw, 1rem))', // Dynamic right positioning
+          maxWidth: 'min(20rem, 25vw)' // Dynamic max width
+        }}>
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 sm:p-3 shadow-lg">
             <div className="text-xs font-semibold text-gray-700 mb-2">Spectators:</div>
-            <div className="space-y-1">
+            <div className="space-y-1 max-h-32 overflow-y-auto">
               {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any) => (
                 <div key={spectator.id} className="flex items-center space-x-2">
                   <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
@@ -822,6 +903,19 @@ export default function Game() {
           onNicknameChanged={(newNickname) => {
             console.log("Nickname updated to:", newNickname);
           }}
+        />
+      )}
+
+      {/* Guru Card Replace Modal */}
+      {showGuruReplaceModal && (
+        <GuruCardReplaceModal
+          isOpen={showGuruReplaceModal}
+          currentCard={selectedCardIndex !== null ? currentPlayer?.hand?.[selectedCardIndex] : undefined}
+          onClose={() => {
+            setShowGuruReplaceModal(false);
+            setSelectedCardIndex(null);
+          }}
+          onReplaceCard={handleGuruReplaceCard}
         />
       )}
     </div>
