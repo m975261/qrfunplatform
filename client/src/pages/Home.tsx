@@ -181,32 +181,25 @@ export default function Home() {
   // Check if nickname is a guru user
   const checkGuruUser = async (nickname: string, action: 'create' | 'join') => {
     try {
-      console.log('🔧 Checking if user is guru:', nickname);
       const response = await fetch('/api/guru-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerName: nickname, password: 'check' })
       });
       
-      console.log('🔧 Guru check response:', response.status);
-      const data = await response.json();
-      console.log('🔧 Guru check data:', data);
-      
       if (response.status === 404) {
         // Not a guru user, proceed normally
-        console.log('🔧 Not a guru user');
         return false;
       } else if (response.status === 200) {
-        // Is a guru user but needs password (fixed response from server)
-        console.log('🔧 Guru user found, needs password:', data);
+        // Is a guru user but needs password
+        const data = await response.json();
         return data.requiresPassword || data.userExists;
       } else {
         // Unexpected response
-        console.log('🔧 Unexpected guru check response:', response.status);
         return false;
       }
     } catch (error) {
-      console.error('🔧 Error checking guru user:', error);
+      console.error('Error checking guru user:', error);
       return false;
     }
   };
