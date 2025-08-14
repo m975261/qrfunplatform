@@ -564,23 +564,35 @@ export default function Game() {
             >
                 <div className="relative">
                   {player ? (
-                    // Player Avatar - Sized to attach to circle edge without overlap
-                    <div className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-3 cursor-pointer hover:scale-105 transition-all ${
-                      isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
-                    }`}
-                    onClick={() => {
-                      // Players can only change their own avatar, hosts can change any avatar
-                      if (player.id === playerId || isHost) {
-                        setSelectedAvatarPlayerId(player.id);
-                        setShowAvatarSelector(true);
-                      }
-                    }}
-                    >
-                      {/* Avatar Content - Show avatar picture */}
-                      <div className="text-2xl">
-                        {getPlayerAvatar(player.id, player.nickname)}
+                    // Player Avatar Container with positioned nickname
+                    <div className="relative">
+                      {/* Avatar Circle */}
+                      <div className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex items-center justify-center text-white font-bold shadow-lg border-3 cursor-pointer hover:scale-105 transition-all ${
+                        isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
+                      }`}
+                      onClick={() => {
+                        // Players can only change their own avatar, hosts can change any avatar
+                        if (player.id === playerId || isHost) {
+                          setSelectedAvatarPlayerId(player.id);
+                          setShowAvatarSelector(true);
+                        }
+                      }}
+                      >
+                        {/* Avatar Content - Show avatar picture */}
+                        <div className="text-2xl">
+                          {getPlayerAvatar(player.id, player.nickname)}
+                        </div>
                       </div>
-                      <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
+                      
+                      {/* Position-specific nickname placement around avatar circle */}
+                      <div className={`absolute text-xs font-semibold text-white bg-black/70 px-2 py-1 rounded-full whitespace-nowrap ${
+                        position === 0 ? 'left-full top-1/2 -translate-y-1/2 ml-2' : // 12 o'clock avatar -> nickname at 3 o'clock
+                        position === 1 ? 'top-full left-1/2 -translate-x-1/2 mt-2' : // 3 o'clock avatar -> nickname at 6 o'clock  
+                        position === 2 ? 'right-3/4 top-full mt-2' : // 6 o'clock avatar -> nickname at 7 o'clock
+                        'left-full top-1/2 -translate-y-1/2 ml-2' // 9 o'clock avatar -> nickname at 9 o'clock (right side)
+                      }`}>
+                        {player.nickname}
+                      </div>
                       
                       {/* Essential Indicators Only */}
                       <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${

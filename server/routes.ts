@@ -1052,7 +1052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (room.positionHands && room.positionHands[position.toString()]) {
         // Use cards assigned to this position when game started or when last player left
         newHand = room.positionHands[position.toString()];
-        console.log(`Restoring ${newHand.length} position cards to player ${playerId} taking position ${position}`);
+        console.log(`🃏 RESTORING CARDS: Player ${player.nickname} taking position ${position} gets ${newHand.length} saved cards`);
       } else if (room.status === "playing" && room.deck && room.deck.length > 0) {
         // Deal 7 cards for new position in active game
         const cardsNeeded = Math.min(7, room.deck.length);
@@ -1066,7 +1066,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           positionHands: updatedPositionHands
         });
         
-        console.log(`Dealing ${cardsNeeded} new cards to player ${playerId} for new position ${position}`);
+        console.log(`🃏 CARD DEALING: Player ${player.nickname} joining position ${position}`);
+        console.log(`🃏 Deck size before: ${room.deck.length}, Cards needed: ${cardsNeeded}, Cards dealt: ${newHand.length}`);
+        console.log(`🃏 Deck size after: ${updatedDeck.length}`);
+        console.log(`🃏 Player hand now: ${newHand.length} cards`);
+      } else {
+        console.log(`🃏 NO CARDS DEALT: Player ${player.nickname} joining position ${position}`);
+        console.log(`🃏 Room status: ${room.status}, Deck exists: ${!!room.deck}, Deck length: ${room.deck?.length || 0}`);
+        console.log(`🃏 Position hands exist: ${!!room.positionHands}, Has position cards: ${!!(room.positionHands && room.positionHands[position.toString()])}`);
       }
 
       // Update player to take the position with position-specific cards
@@ -1079,6 +1086,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasCalledUno: false,
         finishPosition: null
       });
+      
+      console.log(`🎮 FINAL: Player ${player.nickname} assigned to position ${position} with ${newHand.length} cards`);
 
       // Broadcast updated room state
       await broadcastRoomState(roomId);
