@@ -18,6 +18,7 @@ import {
 interface GuruCardReplaceModalProps {
   isOpen: boolean;
   currentCard?: Card;
+  availableCards?: Card[]; // Available cards in current deck
   onClose: () => void;
   onReplaceCard: (newCard: Card) => void;
 }
@@ -25,6 +26,7 @@ interface GuruCardReplaceModalProps {
 export default function GuruCardReplaceModal({
   isOpen,
   currentCard,
+  availableCards,
   onClose,
   onReplaceCard
 }: GuruCardReplaceModalProps) {
@@ -32,9 +34,43 @@ export default function GuruCardReplaceModal({
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedNumber, setSelectedNumber] = useState<string>("");
 
-  const cardTypes = ["number", "skip", "reverse", "draw2", "wild", "wild4"];
-  const cardColors = ["red", "blue", "green", "yellow"];
-  const cardNumbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+  // Get available options from deck if provided
+  const getAvailableTypes = () => {
+    if (!availableCards) {
+      return ["number", "skip", "reverse", "draw2", "wild", "wild4"];
+    }
+    const types = new Set(availableCards.map(card => card.type));
+    return Array.from(types);
+  };
+
+  const getAvailableColors = () => {
+    if (!availableCards || selectedType === "wild" || selectedType === "wild4") {
+      return ["red", "blue", "green", "yellow"];
+    }
+    const colors = new Set(
+      availableCards
+        .filter(card => card.type === selectedType && card.color !== "wild")
+        .map(card => card.color)
+    );
+    return Array.from(colors);
+  };
+
+  const getAvailableNumbers = () => {
+    if (!availableCards || selectedType !== "number") {
+      return ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    }
+    const numbers = new Set(
+      availableCards
+        .filter(card => card.type === "number" && card.color === selectedColor)
+        .map(card => (card as any).number?.toString())
+        .filter(Boolean)
+    );
+    return Array.from(numbers).sort();
+  };
+
+  const cardTypes = getAvailableTypes();
+  const cardColors = getAvailableColors(); 
+  const cardNumbers = getAvailableNumbers();
 
   const handleReplaceCard = () => {
     if (!selectedType) return;
@@ -50,6 +86,8 @@ export default function GuruCardReplaceModal({
     }
 
     onReplaceCard(newCard);
+    resetForm();
+    onClose();
   };
 
   const resetForm = () => {
@@ -129,6 +167,14 @@ export default function GuruCardReplaceModal({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {/* Debug Info */}
+          {availableCards && (
+            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+              Available in deck: {availableCards.length} cards
+              {selectedType && ` | ${selectedType} available: ${availableCards.filter(c => c.type === selectedType).length}`}
             </div>
           )}
 

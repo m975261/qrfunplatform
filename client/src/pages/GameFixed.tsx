@@ -550,26 +550,31 @@ export default function Game() {
 
 
 
-      {/* Player Avatars using 12x12 Grid System - Clock positions (12, 3, 6, 10) */}
-      <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 gap-1 p-4 pointer-events-none" style={{
+      {/* Player Avatars - Match Lobby Positioning Exactly */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
         paddingBottom: 'max(30vh, 240px)',
         paddingTop: 'max(8vh, 64px)'
       }}>
-          
+        <div className="relative" style={{
+          width: 'max(20rem, min(40vw, 40vh))',
+          height: 'max(25rem, min(50vw, 50vh))',
+          minWidth: '320px',
+          minHeight: '400px'
+        }}>
 
-        {/* 4 Fixed Avatar Positions - Grid positioned at clock positions */}
+        {/* 4 Fixed Avatar Positions - Same as Lobby */}
         {[0, 1, 2, 3].map((position) => {
           const player = getPlayerAtPosition(position);
           const isOnline = player ? isPlayerOnline(player) : false;
           const isPlayerTurn = currentGamePlayer?.id === player?.id;
           
-          // Grid positions for clock positions: 12, 3, 6, 10 - closer to circle
-          const getGridPosition = (pos: number) => {
+          // Use exact same positioning as lobby
+          const getPositionClass = (pos: number) => {
             const positions = [
-              "col-start-6 col-end-8 row-start-2 row-end-4", // 12 o'clock (top, closer)
-              "col-start-9 col-end-11 row-start-5 row-end-7", // 3 o'clock (right, closer)
-              "col-start-6 col-end-8 row-start-9 row-end-11", // 6 o'clock (bottom, closer) 
-              "col-start-3 col-end-5 row-start-6 row-end-8" // 10 o'clock (left, closer)
+              'top-4 left-1/2 -translate-x-1/2', // 12 o'clock
+              'right-4 top-1/2 -translate-y-1/2', // 3 o'clock  
+              'bottom-4 left-1/2 -translate-x-1/2', // 6 o'clock
+              'left-4 top-1/2 -translate-y-1/2' // 9 o'clock
             ];
             return positions[pos] || positions[0];
           };
@@ -577,7 +582,7 @@ export default function Game() {
           return (
             <div
               key={position}
-              className={`${getGridPosition(position)} flex items-center justify-center pointer-events-auto z-20`}
+              className={`absolute pointer-events-auto ${getPositionClass(position)}`}
             >
                 <div className="relative">
                   {player ? (
@@ -702,6 +707,7 @@ export default function Game() {
               </div>
             );
         })}
+        </div>
       </div>
 
       {/* Legacy player rendering - keeping for compatibility but hiding */}
@@ -1098,6 +1104,7 @@ export default function Game() {
         <GuruCardReplaceModal
           isOpen={showGuruReplaceModal}
           currentCard={selectedCardIndex !== null ? currentPlayer?.hand?.[selectedCardIndex] : undefined}
+          availableCards={room?.drawPile || []}
           onClose={() => {
             setShowGuruReplaceModal(false);
             setSelectedCardIndex(null);
