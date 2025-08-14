@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Guru Auth Flow Test</title>
+</head>
+<body>
+    <h1>Test Guru Authentication Flow</h1>
+    
+    <div>
+        <label>Enter username: </label>
+        <input type="text" id="username" placeholder="unom975261">
+        <button onclick="checkGuru()">Check Guru</button>
+    </div>
+    
+    <div id="result"></div>
+
+    <script>
+        async function checkGuru() {
+            const username = document.getElementById('username').value;
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                console.log('🔧 Checking if user is guru:', username);
+                const response = await fetch('/api/guru-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ playerName: username, password: 'check' })
+                });
+                
+                console.log('🔧 Guru check response:', response.status);
+                const data = await response.json();
+                console.log('🔧 Response data:', data);
+                
+                if (response.status === 404) {
+                    resultDiv.innerHTML = '<p>❌ Not a guru user</p>';
+                } else if (response.status === 200 && (data.requiresPassword || data.userExists)) {
+                    resultDiv.innerHTML = '<p>✅ IS GURU USER - Should ask for password!</p>';
+                } else {
+                    resultDiv.innerHTML = '<p>⚠️ Unexpected response</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = '<p>❌ Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
