@@ -1399,6 +1399,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'replace_player':
             await handleReplacePlayer(connection, message);
             break;
+          case 'assign_spectator':
+            await handleAssignSpectator(connection, message);
+            break;
           case 'send_emoji':
             await handleSendEmoji(connection, message);
             break;
@@ -2251,10 +2254,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await broadcastRoomState(connection.roomId);
   }
 
+  async function handleAssignSpectator(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const { spectatorId, position } = message;
+    const room = await storage.getRoom(connection.roomId);
+    const hostPlayer = await storage.getPlayer(connection.playerId);
+    const spectator = await storage.getPlayer(spectatorId);
+    
+    if (!room || !hostPlayer || !spectator) return;
+    
+    // Only host can assign spectators
+    if (room.hostId !== connection.playerId) return;
+    
+    console.log(`WebSocket assign spectator: ${spectator.nickname} to position ${position}`);
+    
+    // CRITICAL: Handle complex player state scenarios (kick/rejoin/duplicate handling)
+    const roomPlayers = await storage.getPlayersByRoom(connection.roomId);
+    
+    // Clean up any duplicate spectator entries for the same nickname
+    const duplicateSpectators = roomPlayers.filter(p => 
+      p.nickname.toLowerCase() === spectator.nickname.toLowerCase() && 
+      p.id !== spectator.id && 
+      p.isSpectator
+    );
+    
+    for (const duplicate of duplicateSpectators) {
+      console.log(`Cleaning up duplicate spectator entry: ${duplicate.id} (${duplicate.nickname})`);
+      await storage.deletePlayer(duplicate.id);
+    }
+    
+    // Re-fetch players after cleanup
+    const cleanedPlayers = await storage.getPlayersByRoom(connection.roomId);
+    
+    // Check if position is available (exclude left players and spectators)
+    const positionTaken = cleanedPlayers.some(p => 
+      p.position === position && 
+      !p.isSpectator && 
+      !p.hasLeft
+    );
+    
+    if (positionTaken) {
+      console.log(`Position ${position} already taken`);
+      return;
+    }
+    
+    // Convert spectator to player at specified position
+    await storage.updatePlayer(spectatorId, {
+      isSpectator: false,
+      position: position,
+      hasLeft: false,
+      leftAt: null,
+      finishPosition: null
+    });
+    
+    console.log(`✅ WebSocket assigned spectator ${spectator.nickname} to position ${position}`);
+    await broadcastRoomState(connection.roomId);
+  }
+
   async function handleReplacePlayer(connection: SocketConnection, message: any) {
     if (!connection.roomId || !connection.playerId) return;
     
-    const { targetPosition } = message;
+    const { position } = message;
     const room = await storage.getRoom(connection.roomId);
     const playerToReplace = await storage.getPlayer(connection.playerId);
     const players = await storage.getPlayersByRoom(connection.roomId);
@@ -2265,28 +2326,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!playerToReplace.isSpectator && !playerToReplace.hasLeft) return;
     
     // Check if position is already taken by an active player
-    const activePlayerAtPosition = players.find(p => p.position === targetPosition && !p.isSpectator && !p.hasLeft);
+    const activePlayerAtPosition = players.find(p => p.position === position && !p.isSpectator && !p.hasLeft);
     
     if (activePlayerAtPosition) {
-      console.log(`Position ${targetPosition} is already taken by active player ${activePlayerAtPosition.nickname}`);
+      console.log(`Position ${position} is already taken by active player ${activePlayerAtPosition.nickname}`);
       return; // Position is occupied by an active player
     }
     
     // During active games, only allow rejoining originally active positions
     if (room.status === "playing" || room.status === "paused") {
       const originalActivePositions = room.activePositions || [];
-      if (!originalActivePositions.includes(targetPosition)) {
-        console.log(`Position ${targetPosition} was not active when game started. Originally active: [${originalActivePositions.join(', ')}]`);
+      if (!originalActivePositions.includes(position)) {
+        console.log(`Position ${position} was not active when game started. Originally active: [${originalActivePositions.join(', ')}]`);
         return; // Position was not active when game started, cannot join
       }
     }
     
     // Get cards for this position - either from positionHands or deal new ones
     let newHand: Card[] = [];
-    if (room.positionHands && room.positionHands[targetPosition.toString()]) {
+    if (room.positionHands && room.positionHands[position.toString()]) {
       // Use cards assigned to this position when game started or when last player left
-      newHand = room.positionHands[targetPosition.toString()];
-      console.log(`Restoring ${newHand.length} position cards to ${playerToReplace.nickname} joining position ${targetPosition}`);
+      newHand = room.positionHands[position.toString()];
+      console.log(`Restoring ${newHand.length} position cards to ${playerToReplace.nickname} joining position ${position}`);
     } else if (room.status === "playing" && room.deck && room.deck.length > 0) {
       // Deal 7 cards for new position in active game
       const cardsNeeded = Math.min(7, room.deck.length);
@@ -2294,19 +2355,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedDeck = room.deck.slice(cardsNeeded);
       
       // Update room deck and save cards for this position
-      const updatedPositionHands = { ...room.positionHands, [targetPosition.toString()]: newHand };
+      const updatedPositionHands = { ...room.positionHands, [position.toString()]: newHand };
       await storage.updateRoom(connection.roomId, { 
         deck: updatedDeck,
         positionHands: updatedPositionHands
       });
       
-      console.log(`Dealing ${cardsNeeded} new cards to ${playerToReplace.nickname} for new position ${targetPosition}`);
+      console.log(`Dealing ${cardsNeeded} new cards to ${playerToReplace.nickname} for new position ${position}`);
     }
     
     // Join position with position-specific cards
     await storage.updatePlayer(connection.playerId, {
       isSpectator: false,
-      position: targetPosition,
+      position: position,
       hand: newHand, // Use position-specific cards
       hasLeft: false,
       leftAt: null,
@@ -2314,14 +2375,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       finishPosition: null
     });
     
-    console.log(`${playerToReplace.nickname} joined position ${targetPosition} with ${newHand.length} cards`);
+    console.log(`${playerToReplace.nickname} joined position ${position} with ${newHand.length} cards`);
     
     // Removed system message as requested by user
     
     broadcastToRoom(connection.roomId, {
       type: 'spectator_joined',
       player: playerToReplace.nickname,
-      position: targetPosition
+      position: position
     });
     
     await broadcastRoomState(connection.roomId);

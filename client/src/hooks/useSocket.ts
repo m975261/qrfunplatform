@@ -425,7 +425,15 @@ export function useSocket(autoConnect: boolean = true) {
   const replacePlayer = (targetPosition: number) => {
     sendMessage({
       type: 'replace_player',
-      targetPosition
+      position: targetPosition
+    });
+  };
+
+  const assignSpectator = (spectatorId: string, position: number) => {
+    sendMessage({
+      type: 'assign_spectator',
+      spectatorId,
+      position
     });
   };
 
@@ -499,6 +507,7 @@ export function useSocket(autoConnect: boolean = true) {
     kickPlayer,
     continueGame,
     replacePlayer,
+    assignSpectator,
     playAgain,
     connect: manualConnect
   };

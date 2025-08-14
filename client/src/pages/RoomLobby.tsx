@@ -15,7 +15,15 @@ export default function RoomLobby() {
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
   const { toast } = useToast();
-  const { gameState, joinRoom, startGame, replacePlayer, isConnected } = useSocket();
+  const { 
+    gameState, 
+    joinRoom, 
+    startGame, 
+    replacePlayer, 
+    kickPlayer: kickPlayerWS,
+    assignSpectator,
+    isConnected 
+  } = useSocket();
   const roomId = params?.roomId;
   const playerId = localStorage.getItem("playerId");
 
@@ -95,27 +103,11 @@ export default function RoomLobby() {
     setLocation("/");
   };
 
-  const kickPlayer = async (playerIdToKick: string) => {
+  const kickPlayerLocal = async (playerIdToKick: string) => {
     if (!playerId || !gameState?.room?.id) return;
     
-    try {
-      const response = await fetch(`/api/rooms/${gameState.room.id}/kick`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${playerId}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ playerIdToKick })
-      });
-
-      if (!response.ok) {
-        console.error("Failed to kick player:", response.status);
-      }
-      // No notification messages - silent operation
-    } catch (error) {
-      console.error("Error kicking player:", error);
-      // No notification - silent operation
-    }
+    // Use WebSocket for real-time sync instead of HTTP API
+    kickPlayerWS(playerIdToKick);
   };
 
   const takePlayerSlot = async (position: number) => {
@@ -125,7 +117,7 @@ export default function RoomLobby() {
     replacePlayer(position);
   };
 
-  const handleHostAssignSpectator = async (spectatorId: string) => {
+  const handleHostAssignSpectator = (spectatorId: string) => {
     if (!isHost) return;
     
     // Find the next available position (0-3)
@@ -146,30 +138,9 @@ export default function RoomLobby() {
       return;
     }
     
-    try {
-      const response = await fetch(`/api/rooms/${roomId}/assign-spectator`, {
-        method: "POST", 
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${playerId}`
-        },
-        body: JSON.stringify({ 
-          spectatorId,
-          position: nextPosition
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Failed to assign spectator:", errorData);
-        return;
-      }
-      
-      const result = await response.json();
-      console.log(`✅ Assigned spectator to position ${nextPosition}:`, result);
-    } catch (error) {
-      console.error("Failed to assign spectator:", error);
-    }
+    // Use WebSocket for real-time sync instead of HTTP API
+    assignSpectator(spectatorId, nextPosition);
+    console.log(`✅ Assigning spectator to position ${nextPosition} via WebSocket`);
   };
 
   // Handle case where room/player data is stale (server restart)
@@ -400,7 +371,7 @@ export default function RoomLobby() {
                       {/* Kick Button for Host - Bottom Left of Avatar */}
                       {isHost && player.id !== playerId && (
                         <button
-                          onClick={() => kickPlayer(player.id)}
+                          onClick={() => kickPlayerLocal(player.id)}
                           className="absolute bottom-1 left-1 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
                           title={isOnline ? "Remove player" : "Remove offline player"}
                         >
