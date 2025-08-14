@@ -399,37 +399,7 @@ export default function Game() {
     return playerData?.isOnline || false;
   };
 
-  const getPositionStyle = (position: number) => {
-    // Calculate circular positions attached to main circle edge at clock positions
-    // Main circle radius + avatar radius for perfect attachment
-    const mainCircleRadius = 'max(4.5rem, min(10vw, 10vh))'; // Half of main circle size
-    const avatarRadius = 'max(2rem, min(4vw, 4vh))'; // Half of avatar size
-    const totalRadius = `calc(${mainCircleRadius} + ${avatarRadius})`; // Distance from center to avatar center
-    
-    const positions = [
-      { // Position 0: 12 o'clock - top
-        top: `calc(50% - ${totalRadius})`,
-        left: '50%',
-        transform: 'translate(-50%, -50%)'
-      },
-      { // Position 1: 3 o'clock - right
-        top: '50%',
-        left: `calc(50% + ${totalRadius})`,
-        transform: 'translate(-50%, -50%)'
-      },
-      { // Position 2: 6 o'clock - bottom
-        top: `calc(50% + ${totalRadius})`,
-        left: '50%',
-        transform: 'translate(-50%, -50%)'
-      },
-      { // Position 3: 10 o'clock - upper left
-        top: `calc(50% - ${totalRadius} * 0.342)`, // sin(60°) ≈ 0.866, cos(60°) ≈ 0.5 for 10 o'clock
-        left: `calc(50% - ${totalRadius} * 0.866)`, // Position at 10 o'clock (300° or -60°)
-        transform: 'translate(-50%, -50%)'
-      }
-    ];
-    return positions[position] || positions[0];
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
@@ -597,35 +567,37 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Attached to Circle Equally */}
+      {/* Player Avatars - 12x12 Grid System */}
       <div className="relative mx-auto mb-8" style={{ width: '400px', height: '400px' }}>
-        {/* Game Circle Background */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-80 h-80 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
-        </div>
+        {/* 12x12 CSS Grid Container for Perfect Positioning */}
+        <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 w-full h-full">
+          {/* Game Circle Background positioned in center */}
+          <div className="col-start-3 col-end-11 row-start-3 row-end-11 flex items-center justify-center">
+            <div className="w-full h-full rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl opacity-20" />
+          </div>
 
-        {/* 4 Fixed Avatar Positions - Attached to Circle Perimeter */}
-        {[0, 1, 2, 3].map((position) => {
-          const player = getPlayerAtPosition(position);
-          const isOnline = player ? isPlayerOnline(player) : false;
-          const isPlayerTurn = currentGamePlayer?.id === player?.id;
+          {/* 4 Fixed Avatar Positions using CSS Grid - Clock positions 12, 3, 6, 10 */}
+          {[0, 1, 2, 3].map((position) => {
+            const player = getPlayerAtPosition(position);
+            const isOnline = player ? isPlayerOnline(player) : false;
+            const isPlayerTurn = currentGamePlayer?.id === player?.id;
+            
+            // Grid positions for exact clock placement attached to circle
+            const getGridPosition = (pos: number) => {
+              const positions = [
+                'col-start-6 col-end-8 row-start-1 row-end-3', // 12 o'clock - top
+                'col-start-10 col-end-12 row-start-6 row-end-8', // 3 o'clock - right
+                'col-start-6 col-end-8 row-start-10 row-end-12', // 6 o'clock - bottom
+                'col-start-1 col-end-3 row-start-3 row-end-5' // 10 o'clock - upper left
+              ];
+              return positions[pos] || positions[0];
+            };
           
-          // Position avatars at requested clock positions: 12, 3, 6, 10 o'clock
-          const getPositionClass = (pos: number) => {
-            const positions = [
-              'top-0 left-1/2 -translate-x-1/2', // 12 o'clock - top of circle
-              'right-0 top-1/2 -translate-y-1/2', // 3 o'clock - right of circle
-              'bottom-0 left-1/2 -translate-x-1/2', // 6 o'clock - bottom of circle
-              'left-6 top-1/4 -translate-y-1/2' // 10 o'clock - upper left diagonal
-            ];
-            return positions[pos] || positions[0];
-          };
-          
-          return (
-            <div
-              key={position}
-              className={`absolute pointer-events-auto ${getPositionClass(position)}`}
-            >
+            return (
+              <div
+                key={position}
+                className={`${getGridPosition(position)} flex items-center justify-center pointer-events-auto`}
+              >
                 <div className="relative">
                   {player ? (
                     // Player Avatar - With picture and clickable gender toggle
@@ -744,64 +716,8 @@ export default function Game() {
                 </div>
               </div>
             );
-        })}
-      </div>
-
-      {/* Legacy player rendering - keeping for compatibility but hiding */}
-      <div className="hidden">
-        {gamePlayers.filter((player: any) => player.id !== playerId && !player.isSpectator).map((player: any, index: number) => {
-        const filteredIndex = gamePlayers.filter((p: any) => p.id !== playerId && !p.isSpectator).indexOf(player);
-        
-        // Position players at clock positions: 12, 3, 6, 9 o'clock
-        const positions = [
-          "top-4 left-1/2 transform -translate-x-1/2",     // 12 o'clock
-          "top-1/2 right-4 transform -translate-y-1/2",    // 3 o'clock  
-          "bottom-20 left-1/2 transform -translate-x-1/2"  // 6 o'clock (above player hand)
-        ];
-        
-        const positionClass = positions[filteredIndex] || "top-1/2 left-4 transform -translate-y-1/2"; // 9 o'clock fallback
-        const isPlayerTurn = currentGamePlayer?.id === player.id;
-
-        return (
-          <div key={player.id} className={`absolute z-20 ${positionClass}`}>
-            <div className={`bg-slate-800/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border min-w-[120px] ${
-              isPlayerTurn ? 'border-green-400 ring-1 ring-green-400/50' : 'border-slate-600'
-            }`}>
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${
-                    isPlayerTurn ? 'bg-gradient-to-br from-green-400 to-green-600' : 'bg-gradient-to-br from-blue-400 to-blue-600'
-                  }`}>
-                    {player.nickname?.[0]?.toUpperCase()}
-                  </div>
-                  {/* Online/Offline status indicator */}
-                  <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-slate-800 ${
-                    player.isOnline !== false ? 'bg-green-500' : 'bg-red-500'
-                  }`}></div>
-                  {isPlayerTurn && (
-                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className={`font-medium text-xs truncate ${
-                    isPlayerTurn ? 'text-green-400' : 'text-white'
-                  }`}>
-                    {player.nickname}
-                  </div>
-                  <div className="text-xs text-slate-400">{player.hand?.length || 0} cards</div>
-                  <div className="text-xs">
-                    <span className={`${
-                      player.isOnline !== false ? 'text-green-400' : 'text-red-400'
-                    }`}>
-                      {player.isOnline !== false ? 'Online' : 'Offline'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        })}
+          })}
+        </div>
       </div>
 
       {/* Player Hand Area - Using same 12x12 CSS Grid Layout System */}
