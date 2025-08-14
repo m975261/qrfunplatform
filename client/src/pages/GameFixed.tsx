@@ -860,17 +860,13 @@ export default function Game() {
                       }`}
                       onClick={() => {
                         if (!isMyTurn) return;
-                        if (selectedCardIndex === index) {
-                          playCard(index);
-                        } else {
-                          setSelectedCardIndex(index);
-                        }
+                        handlePlayCard(index);
                       }}
                     >
                       <GameCard
                         card={card}
                         size="medium"
-                        selected={selectedCardIndex === index}
+                        selected={false}
                         disabled={!isMyTurn}
                         isGuruUser={isGuruUser}
                         cardIndex={index}
