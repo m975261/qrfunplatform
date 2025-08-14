@@ -10,6 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 **Critical Player State Management Rule**: Always design player-related features with full awareness that users can be joined, kicked, rejoined, kicked again, and join as different players in complex sequences. All player functionality must handle these dynamic state changes robustly without conflicts or data inconsistencies.
 
+**CRITICAL - DO NOT MODIFY**: Real-time Lobby Synchronization System (Fixed Aug 14, 2025)
+- **Issue**: Mixed HTTP/WebSocket API calls caused sync inconsistencies between host and other players' views
+- **Solution**: All lobby operations (kick, assign spectator, replace player) MUST use WebSocket exclusively
+- **Implementation**: `kickPlayer`, `assignSpectator`, `replacePlayer` functions in useSocket.ts with corresponding server handlers
+- **Requirement**: Any future lobby-related changes must maintain WebSocket-only communication for real-time sync
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -73,6 +79,7 @@ Preferred communication style: Simple, everyday language.
 - Enhanced UNO call system with visual and auditory feedback (voice synthesis).
 - **Improved spectator table** - Prevents 3 o'clock avatar overlap, includes separator lines, scroll container
 - **Duplicate player protection** - Prevents kick/rejoin issues that caused offline/online conflicts
+- **Real-time Lobby Sync** - WebSocket-only communication ensures perfect host/player view synchronization (Aug 2025)
 
 #### XO Game Features (Planned)
 - Real-time multiplayer Tic Tac Toe
