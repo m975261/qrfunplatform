@@ -1942,6 +1942,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (effect.chooseColor) {
       console.log(`🎨 SENDING COLOR CHOICE REQUEST to player ${connection.playerId} for card ${card.type}`);
       console.log(`🔗 WebSocket connection state: ${connection.ws.readyState}`);
+      console.log(`🔗 Connection ID: ${connection.connectionId}`);
+      console.log(`🔗 Active connections for player: ${Array.from(activeConnections.values()).filter(c => c.playerId === connection.playerId).map(c => c.connectionId).join(', ')}`);
+      
       try {
         const colorRequest = {
           type: 'choose_color_request',
@@ -1950,8 +1953,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           playerId: connection.playerId
         };
         
-        connection.ws.send(JSON.stringify(colorRequest));
-        console.log(`✅ COLOR CHOICE REQUEST SENT:`, colorRequest);
+        // EMERGENCY FIX: Send to ALL connections for this player
+        const playerConnections = Array.from(activeConnections.values()).filter(c => c.playerId === connection.playerId);
+        console.log(`🎯 Found ${playerConnections.length} connections for player ${connection.playerId}`);
+        
+        for (const playerConn of playerConnections) {
+          if (playerConn.ws.readyState === WebSocket.OPEN) {
+            playerConn.ws.send(JSON.stringify(colorRequest));
+            console.log(`✅ COLOR CHOICE REQUEST SENT to connection ${playerConn.connectionId}:`, colorRequest);
+          }
+        }
         
         // Also broadcast to all connections to ensure it's received
         broadcastToRoom(connection.roomId, {
