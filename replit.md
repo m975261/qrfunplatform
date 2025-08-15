@@ -1,16 +1,14 @@
 # QRFun Games Platform
 
 ## Overview
-This is a full-stack multiplayer gaming platform featuring multiple games with instant QR code sharing. Currently includes a complete UNO card game supporting up to 4 players per room with classic UNO rules and all action cards. Players can create rooms, join via codes or QR, and play in real-time. The platform features a main home page for game selection, with individual games accessible via dedicated routes (/uno, /xo). Key features include complete ranking systems, spectator-centric lobby systems, streamlined multiplayer interactions across all games, and a perfected avatar positioning system matching the lobby layout exactly.
-
-**Admin System**: Includes a secure hidden admin system at `/man` route with Google Authenticator 2FA, Gmail-based email functionality, and a complete guru user management system where special authenticated users can be created per game with email/username/playername credentials.
+QRFun is a full-stack multiplayer gaming platform that currently features a complete UNO card game for up to 4 players, with plans to expand to other games like Tic-Tac-Toe. The platform enables real-time play with instant QR code room sharing, comprehensive ranking systems, and spectator-centric lobby systems. It includes a secure hidden admin panel for managing games and guru users. The vision is to create a seamless, engaging multiplayer experience with robust real-time synchronization and intuitive user interactions.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
 **Critical Player State Management Rule**: Always design player-related features with full awareness that users can be joined, kicked, rejoined, kicked again, and join as different players in complex sequences. All player functionality must handle these dynamic state changes robustly without conflicts or data inconsistencies.
 
-**CRITICAL - AVATAR ATTACHMENT CODE** (Aug 14, 2025)
+**CRITICAL - AVATAR ATTACHMENT CODE**
 - **Working Avatar Positioning**: `top-16/right-16/bottom-16/left-16` with `-translate-x-1/2 -translate-y-1/2` etc
 - **Key Fix**: Position at circle edge (64px) not container edge (288-384px) for true attachment
 - **Button Positioning**: Position-specific buttons - 12 o'clock (top), 3 o'clock (right), 6 o'clock (bottom), 9 o'clock (left)
@@ -18,72 +16,24 @@ Preferred communication style: Simple, everyday language.
 - **Never Change**: This positioning calculation ensures perfect circle edge attachment without gaps
 - **Return Point**: If avatar positioning breaks, restore this exact positioning logic
 
-**CRITICAL - DO NOT MODIFY**: Real-time Lobby Synchronization System (Fixed Aug 14, 2025)
-- **Issue**: Mixed HTTP/WebSocket API calls caused sync inconsistencies between host and other players' views
+**CRITICAL - DO NOT MODIFY**: Real-time Lobby Synchronization System
 - **Solution**: All lobby operations (kick, assign spectator, replace player) MUST use WebSocket exclusively
 - **Implementation**: `kickPlayer`, `assignSpectator`, `replacePlayer` functions in useSocket.ts with corresponding server handlers
 - **Requirement**: Any future lobby-related changes must maintain WebSocket-only communication for real-time sync
 
-**CRITICAL - DO NOT MODIFY**: Card Replacement & Wild Card System (Fixed Aug 14, 2025)
-- **Issue**: Card replacement was slow (1+ second) and wild cards after replacement didn't show color picker
+**CRITICAL - DO NOT MODIFY**: Card Replacement & Wild Card System
 - **Solution**: Implemented ultra-fast refresh system (1-30ms intervals) + proper server-client color choice flow
 - **Implementation**: Server sends `choose_color_request` message, client handles `colorChoiceRequested` state
 - **Wild Card Flow**: Play card → server requests color → client shows picker → player chooses → server updates
 - **Speed**: Double immediate calls + 1ms, 5ms, 10ms, 20ms, 30ms intervals for instant visual updates
 - **Requirement**: Never modify the refresh timing intervals or wild card message handling logic
 
-**CRITICAL - DO NOT MODIFY**: CSS Grid Layout System (Fixed Aug 14, 2025)
-- **Issue**: Draw button and other UI elements overlapped on maximized windows causing unusable interface
+**CRITICAL - DO NOT MODIFY**: CSS Grid Layout System
 - **Solution**: Implemented 12x12 CSS Grid layout replacing absolute positioning for game elements
 - **Implementation**: Draw button positioned in `col-start-10 col-end-12 row-start-10 row-end-12` grid cells
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
-**CRITICAL - RECENTLY FIXED**: Avatar Layout Centering & Responsiveness (Fixed Aug 15, 2025)
-- **Centering Issue**: Fixed avatar layout that was left-aligned and not responsive to window resizing
-- **3 O'Clock Avatar**: Fixed missing 3 o'clock avatar slot due to incorrect translate-x positioning  
-- **6 O'Clock Positioning**: Corrected 6 o'clock avatar positioning with proper translate-y-1/2
-- **Viewport Sizing**: Reduced board size to 80vmin max 450px to prevent overflow and scrolling
-- **Draw Pile Visibility**: Simplified positioning with fixed top-2/bottom-2 left-2 for consistent visibility
-- **Responsive Scaling**: Implemented CSS variables with clamp() functions for true mobile-to-desktop scaling
-- **Avatar Attachment**: Fixed avatar positioning using calc(center radius + avatar radius + 8px gap) for proper circle edge attachment
-- **Mobile Centering**: Added responsive left margin (-ml-16 on mobile, -ml-8 on desktop) to center layout and prevent viewer table overlap
-- **Status**: Avatar layout now centers perfectly on all screen sizes with proper circle attachment and no overlapping
-
-**CRITICAL - RECENTLY FIXED**: White Page Issue & Function Hoisting (Fixed Aug 14, 2025)
-- **White Page Fix**: Resolved critical React component crash caused by function hoisting issue
-- **Function Scope**: Moved `isPlayerOnline` function definition before its usage to prevent "Cannot access before initialization" error
-- **Error Handling**: Added enhanced loading state with connection debugging and 3-second timeout detection
-- **Connection Recovery**: Implemented refresh button for stuck loading states with proper WebSocket error detection
-- **Debug Logging**: Added comprehensive debug logs to track gameState and connection status during loading
-- **Status**: White page issue completely resolved - game now loads properly without React crashes
-
-**CRITICAL - RECENTLY FIXED**: Card Replacement & Single-Click System (Fixed Aug 14, 2025)
-- **Avatar Positioning**: Positioned at exact clock positions (12, 3, 6, 9) attached to circle without overlapping
-- **Avatar Selection System**: First-time nickname entry includes male/female avatar selection, remembered in localStorage
-- **Position-Specific Nicknames**: Nicknames positioned around avatar circles at 3, 6, 7, 9 o'clock positions
-- **4th Player Card Fix**: Fixed critical bug where 4th player joining mid-game got 0 cards - now pre-reserves 7 cards for all positions
-- **Card Replacement Speed**: Ultra-fast updates within 30ms using double immediate calls + 1ms, 5ms, 10ms, 20ms, 30ms intervals
-- **Single-Click Card Playing**: Fixed double-click requirement - cards now play immediately on first click
-- **Wild Card Color Selection**: Fixed post-replacement wild cards to properly show color picker
-- **Wild Card Server Logic**: Server sends choose_color_request message, sets currentColor to null until chosen
-- **UNO Penalty Animation**: Added full-screen penalty animation when players forget to call UNO
-- **UNO Penalty Broadcast**: All players see animated notification with violator's name and reason
-- **Status**: Complete ultra-fast card replacement, single-click playing, wild card color selection, UNO penalties, and 4th player card dealing working seamlessly
-
-**CRITICAL - AVATAR LAYOUT SYSTEM FINALIZED** (Aug 14, 2025)
-- **Layout Architecture**: Single responsive container (w-72 h-72 to w-96 h-96) with iPhone-optimized positioning
-- **Avatar Positions**: PROPERLY ATTACHED to circle edge using `top-16/right-16/bottom-16/left-16` positioning
-- **Fixed Positioning Logic**: Changed from container-edge positioning to circle-edge positioning for true attachment
-- **Mathematical Alignment**: Circle radius (64-80px) + top-16 (64px) = perfect circle edge attachment
-- **Positioning Classes**: `top-16 left-1/2 -translate-x-1/2 -translate-y-1/2` for 12 o'clock, similar for 3/6/9 o'clock
-- **Non-Overlapping Design**: Avatars properly attached without viewer table interference
-- **iPhone Optimization**: Horizontal card layout at page bottom centered with `justify-center`
-- **Draw Pile**: Repositioned to left side (bottom-8 left-8) between 3 and 6 o'clock for better accessibility
-- **Player Hand**: Compact horizontal scrolling layout with minimal height (max 20vh, 120px) and reserved R button space
-- **Mobile Layout**: Avatar slots genuinely attached to circle edge preventing all overlap issues
-- **Status**: FINALIZED - Avatar positioning mathematically correct and visually perfect, return to this code if broken
-
-**CRITICAL - DIRECTION INDICATOR DESIGN FINALIZED** (Aug 14, 2025)
+**CRITICAL - DO NOT MODIFY**: Direction Indicator Design
 - **Position**: Fixed at `top-12 left-12` between 12 and 9 o'clock avatar slots
 - **Design**: Circular yellow gradient button (w-16 h-16) with "GAME DIRECTION" label
 - **Visual**: Directional arrows (↻ clockwise, ↺ counterclockwise) with border, shadow, and pulse animation
@@ -94,88 +44,50 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Core Design Principles
+The platform is designed as a full-stack, real-time multiplayer gaming system with a focus on modularity, responsiveness, and a consistent user experience. It leverages a modern web stack for both frontend and backend, with a strong emphasis on WebSocket communication for seamless real-time interactions.
+
+### Frontend
 - **Framework**: React with TypeScript (Vite).
-- **UI Components**: Radix UI primitives and shadcn/ui with custom Badge component.
-- **Styling**: Tailwind CSS with custom UNO-themed colors, gradient backgrounds, and Fredoka One font.
+- **UI/UX**: Radix UI primitives and shadcn/ui for consistent components, styled with Tailwind CSS for UNO-themed colors and responsive layouts. Fredoka One is the primary font.
 - **State Management**: React Query for server state and custom hooks for game logic.
-- **Routing**: Wouter with multi-game routing structure:
-  - `/` - Main home page with game selection
-  - `/uno` - UNO game home and lobby
-  - `/xo` - XO (Tic Tac Toe) game placeholder
-  - `/room/:roomId` - Game lobbies
-  - `/game/:roomId` - Active game sessions
-- **Real-time Communication**: Custom `useSocket` hook for WebSocket.
+- **Routing**: Wouter, supporting multi-game navigation (`/`, `/uno`, `/xo`, `/room/:roomId`, `/game/:roomId`).
+- **Real-time**: Custom `useSocket` hook for WebSocket communication.
+- **Responsiveness**: Responsive design for various screen sizes, utilizing CSS variables with `clamp()` for scaling, and specific optimizations for mobile (e.g., iPhone horizontal card layout).
+- **Avatar System**: Mathematically precise avatar positioning ensuring circular attachment without overlap, supporting male/female emoji avatars and persistence via local storage.
+- **Game UI**: 12x12 CSS Grid layout for game elements to prevent overlaps, with features like animated penalties, single-click card playing, and a streamlined wild card color selection flow.
 
-### Backend Architecture
+### Backend
 - **Server**: Express.js with TypeScript (Node.js).
-- **Real-time Communication**: WebSocket Server (`ws`) for multiplayer synchronization.
-- **Game Logic**: Custom UNO game engine for deck management, turn handling, and rule validation.
-- **Storage**: In-memory storage with an abstract interface for future database migration.
-- **API Design**: RESTful endpoints for room management, complemented by WebSocket for game actions.
+- **Real-time**: Native WebSocket Server (`ws`) for high-performance multiplayer synchronization.
+- **Game Logic**: Custom UNO game engine handling rules, deck management, and turn validation.
+- **Storage**: In-memory storage for active game data, with an abstract interface for future database integration.
 
-### Data Storage Solutions
-- **Current**: In-memory storage for game data.
-- **Database**: PostgreSQL with Drizzle ORM for admin system, guru users, and game sessions.
-- **Schema**: Normalized tables for admins, guru_users, game_sessions, rooms, players, and game messages.
-- **Management**: Drizzle Kit for schema migrations and management.
+### Data Storage
+- **Primary Database**: PostgreSQL via Neon Database.
+- **ORM**: Drizzle ORM for schema definition and migrations.
+- **Schema**: Normalized tables for `admins`, `guru_users`, `game_sessions`, `rooms`, `players`, and `game messages`.
 
 ### Authentication and Authorization
-- **Player Access**: Nickname-based, no user registration for regular players.
-- **Guru User System**: Special authenticated players created via admin dashboard with hidden username/password authentication.
-- **Admin System**: Secure 2FA authentication system at hidden `/man` route with Gmail integration.
+- **Regular Players**: Nickname-based access without registration.
+- **Guru Users**: Special authenticated players created and managed via the admin dashboard, with hidden username/password authentication.
+- **Admin System**: Secure, hidden `/man` route with 2FA (Google Authenticator) and Gmail-based email functionality for password resets.
 - **Room Security**: JWT tokens for secure room access and player identification.
 - **Session Management**: Socket-based session tracking with player validation and browser fingerprinting.
 - **Host Privileges**: Room creators have administrative controls (kick, start games).
 
-### UI/UX Decisions
-- Consistent design using Radix UI and shadcn/ui.
-- UNO-themed color palette and Fredoka One font.
-- Responsive design for various screen sizes (mobile-first approach).
-- Clear visual indicators for game direction, player status, and turn management.
-- Animated elements for user feedback (e.g., UNO messages, penalties).
-
-### Feature Specifications
-
-#### Platform Features
-- **Multi-Game Architecture**: Main home page with game selection and navigation
-- **Consistent UI/UX**: Shared design system across all games with gradient backgrounds
-- **Game Status Indicators**: Visual badges showing game availability (Available/Coming Soon)
-- **Navigation System**: Back links and breadcrumb navigation between games and main page
-
-#### UNO Game Features
-- Support for classic UNO rules, including Skip, Reverse, Draw Two, Wild, and Draw Four cards.
-- Room creation with 5-digit codes, join via code, QR scan, or QR photo upload.
-- Real-time game state synchronization.
-- Ranking system (1st, 2nd, 3rd, 4th) for finished players, who are excluded from turn rotation.
-- **Spectator-centric lobby system** - All new joiners start as spectators and can click avatar slots to join
-- **Streamlined end-game flow** - Single "Close" button returns all to lobby as spectators (host keeps position 0)
-- Seamless QR code integration for direct room joining.
-- Position-based card memory system for persistent card storage across reconnections or kicks.
-- Enhanced UNO call system with visual and auditory feedback (voice synthesis).
-- **Improved spectator table** - Prevents 3 o'clock avatar overlap, includes separator lines, scroll container
-- **Duplicate player protection** - Prevents kick/rejoin issues that caused offline/online conflicts
-- **Real-time Lobby Sync** - WebSocket-only communication ensures perfect host/player view synchronization (Aug 2025)
-
-#### XO Game Features (Planned)
-- Real-time multiplayer Tic Tac Toe
-- Room sharing via QR codes
-- Smart AI opponent mode
-- Tournament functionality
-- Statistics tracking
-
-#### Admin System Features
-- **Hidden Admin Access**: Secure login at `/man` route with username/password + 2FA
-- **Google Authenticator**: Time-based 2FA for enhanced security
-- **Gmail Integration**: Password reset emails via Gmail SMTP
-- **Game Management**: View active games, restart specific rooms, monitor player counts
-- **Guru User System**: Create special authenticated players per game type
-- **User Management**: Create/deactivate guru users with email, hidden username, and visible player name
-- **Guru Authentication**: Players entering guru usernames are prompted for password authentication
+### Key Features
+- **Multi-Game Architecture**: Centralized home page for game selection.
+- **Real-time Multiplayer**: Synchronized game state, spectator-centric lobbies, and seamless player transitions.
+- **QR Code Integration**: Instant room joining via QR code scan or photo upload.
+- **Ranking System**: Tracks player performance (1st, 2nd, 3rd, 4th).
+- **Admin System**: Secure access for game and user management, including "guru user" creation.
+- **UNO Specifics**: Classic UNO rules, action cards, position-based card memory, enhanced UNO call system with visual/auditory feedback, and penalty animations.
 
 ## External Dependencies
-- **Database**: Neon Database (PostgreSQL).
-- **UI Framework**: Radix UI.
-- **Real-time**: Native WebSocket.
-- **QR Code Generation**: QRCode library.
-- **Build Tools**: Vite.
+- **Database**: Neon Database (PostgreSQL)
+- **UI Framework**: Radix UI
+- **Real-time**: Native WebSocket
+- **QR Code Generation**: QRCode library
+- **Build Tools**: Vite
+- **ORM**: Drizzle ORM
