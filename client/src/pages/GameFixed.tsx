@@ -1260,17 +1260,32 @@ export default function Game() {
       )}
 
       {/* Color Picker Modal for Wild Cards */}
-      {(showColorPicker || gameState?.showColorPicker || gameState?.colorChoiceRequested) && (
+      {(showColorPicker || gameState?.showColorPicker || gameState?.colorChoiceRequested || gameState?.pendingColorChoice) && (
         <ColorPickerModal
           onChooseColor={(color) => {
-            console.log(`Color chosen: ${color}`);
+            console.log(`🎨 COLOR CHOSEN: ${color} - sending to server`);
             chooseColor(color);
             setShowColorPicker(false);
             setPendingWildCard(null);
+            // Clear all color choice states
+            setGameState((prev: any) => ({
+              ...prev,
+              showColorPicker: false,
+              colorChoiceRequested: false,
+              pendingColorChoice: false
+            }));
           }}
           onClose={() => {
+            console.log(`🎨 COLOR PICKER CLOSED without selection`);
             setShowColorPicker(false);
             setPendingWildCard(null);
+            // Clear all color choice states
+            setGameState((prev: any) => ({
+              ...prev,
+              showColorPicker: false,
+              colorChoiceRequested: false,
+              pendingColorChoice: false
+            }));
           }}
         />
       )}

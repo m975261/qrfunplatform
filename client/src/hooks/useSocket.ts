@@ -283,13 +283,15 @@ export function useSocket(autoConnect: boolean = true) {
             }));
             break;
           case 'choose_color_request':
-            console.log('Color choice request received for wild card');
+            console.log('🎨 COLOR CHOICE REQUEST RECEIVED for wild card:', message);
             // Set flag to show color picker
             setGameState((prev: any) => ({
               ...prev,
               showColorPicker: true,
-              colorChoiceRequested: true
+              colorChoiceRequested: true,
+              pendingColorChoice: true
             }));
+            console.log('🎨 COLOR PICKER STATE SET - should trigger modal');
             break;
           case 'uno_penalty':
             console.log(`UNO penalty for player: ${message.playerName}`);

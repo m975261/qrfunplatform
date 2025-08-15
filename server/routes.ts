@@ -1913,10 +1913,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // If wild card was played, send color choice request to the player
     if (effect.chooseColor) {
-      connection.ws.send(JSON.stringify({
-        type: 'choose_color_request',
-        message: 'Choose a color for the wild card'
-      }));
+      console.log(`🎨 SENDING COLOR CHOICE REQUEST to player ${connection.playerId} for card ${card.type}`);
+      try {
+        connection.ws.send(JSON.stringify({
+          type: 'choose_color_request',
+          message: 'Choose a color for the wild card',
+          cardType: card.type
+        }));
+        console.log(`✅ COLOR CHOICE REQUEST SENT successfully`);
+      } catch (error) {
+        console.error(`❌ ERROR SENDING COLOR CHOICE REQUEST:`, error);
+      }
     }
     
     await broadcastRoomState(connection.roomId);
