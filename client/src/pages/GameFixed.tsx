@@ -663,7 +663,7 @@ export default function Game() {
                 : 'left-[calc(50%-var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2';
 
             return (
-              <div key={position} className={`absolute ${posClass} pointer-events-auto`}>
+              <div key={position} className={`absolute ${posClass} pointer-events-auto z-20`}>
                 <div className="relative">
                   {player ? (
                     <div className="relative">
@@ -732,15 +732,17 @@ export default function Game() {
                       {/* Controls */}
                       {player.id === playerId && (
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             console.log('Edit button clicked for player:', player.id);
                             setShowNicknameEditor(true);
                           }}
-                          className={`absolute w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto ${
-                            position === 0 ? '-top-6 left-1/2 -translate-x-1/2'
-                            : position === 1 ? 'top-1/2 -right-6 -translate-y-1/2'
-                            : position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2'
-                            : '-left-6 top-1/2 -translate-y-1/2'
+                          className={`absolute w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto z-30 cursor-pointer ${
+                            position === 0 ? '-top-7 left-1/2 -translate-x-1/2'
+                            : position === 1 ? 'top-1/2 -right-7 -translate-y-1/2'
+                            : position === 2 ? '-bottom-7 left-1/2 -translate-x-1/2'
+                            : '-left-7 top-1/2 -translate-y-1/2'
                           }`}
                           title="Edit nickname"
                         >
@@ -750,15 +752,17 @@ export default function Game() {
 
                       {isHost && player.id !== playerId && (
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             console.log('Kick button clicked for player:', player.id);
                             kickPlayer(player.id);
                           }}
-                          className={`absolute w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto ${
-                            position === 0 ? '-top-6 left-1/2 -translate-x-1/2 translate-x-5'
-                            : position === 1 ? 'top-1/2 -right-6 -translate-y-1/2 translate-y-5'
-                            : position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2 translate-x-5'
-                            : '-left-6 top-1/2 -translate-y-1/2 translate-y-5'
+                          className={`absolute w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto z-30 cursor-pointer ${
+                            position === 0 ? '-top-7 left-1/2 -translate-x-1/2 translate-x-6'
+                            : position === 1 ? 'top-1/2 -right-7 -translate-y-1/2 translate-y-6'
+                            : position === 2 ? '-bottom-7 left-1/2 -translate-x-1/2 translate-x-6'
+                            : '-left-7 top-1/2 -translate-y-1/2 translate-y-6'
                           }`}
                           title={isOnline ? 'Remove player' : 'Remove offline player'}
                         >
