@@ -160,8 +160,10 @@ export class UnoGameLogic {
     }
     
     // Must match color
-    if (card.color === topCard.color || card.color === currentColor) {
-      console.log(`✅ COLOR MATCH: ${card.color} matches ${topCard.color} or current ${currentColor}`);
+    // For wild cards on top, use currentColor; for regular cards, use topCard.color
+    const targetColor = (topCard.type === "wild" || topCard.type === "wild4") ? currentColor : topCard.color;
+    if (card.color === targetColor) {
+      console.log(`✅ COLOR MATCH: ${card.color} matches target color ${targetColor}`);
       return true;
     }
     
