@@ -758,16 +758,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let playerHand: any[] = [];
       let isSpectator = true; // NEW SPECTATOR SYSTEM: All new joiners start as spectators
 
-      // ONLY exception: If room is empty, first joiner becomes host at position 0
-      if (existingPlayers.length === 0) {
-        isSpectator = false;
-        playerPosition = 0;
+      // DEBUG: Check room status and existing players
+      console.log(`PLAYER JOIN DEBUG: ${nickname} joining room with status: ${room.status}`);
+      console.log(`PLAYER JOIN DEBUG: Existing players: ${existingPlayers.length}, Non-spectators: ${nonSpectatorPlayers.length}`);
+      
+      // Allow up to 4 active players in waiting rooms
+      if (room.status === "waiting") {
+        const activePlayerCount = nonSpectatorPlayers.length;
+        console.log(`PLAYER JOIN DEBUG: Active player count: ${activePlayerCount}`);
+        if (activePlayerCount < 4) {
+          isSpectator = false;
+          playerPosition = activePlayerCount; // 0, 1, 2, or 3
+          console.log(`✅ Player ${nickname} joining waiting room as active player at position ${playerPosition}`);
+        } else {
+          console.log(`⚠️ Player ${nickname} joining waiting room as spectator (room full)`);
+        }
       } else if (room.status === "playing" || room.status === "paused") {
         // For active games, new joiners always start as spectators
-        // They can take positions using the take-slot endpoint if they want
-        console.log(`New player ${nickname} joining active/paused game as spectator`);
+        console.log(`⚠️ New player ${nickname} joining active/paused game as spectator`);
         isSpectator = true;
       }
+      
+      console.log(`PLAYER JOIN FINAL: ${nickname} - isSpectator: ${isSpectator}, position: ${playerPosition}`);
 
       const player = await storage.createPlayer({
         nickname,
@@ -1391,6 +1403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await handleJoinRoom(connection, message, connectionId);
             break;
           case 'start_game':
+            console.log(`🎯 Routing start_game message to handleStartGame`);
             await handleStartGame(connection, message);
             break;
           case 'play_card':
@@ -1564,15 +1577,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   async function handleStartGame(connection: SocketConnection, message: any) {
+    console.log(`🎯 START GAME: Connection ${connection.playerId} in room ${connection.roomId}`);
     if (!connection.roomId) return;
     
     const room = await storage.getRoom(connection.roomId);
     const players = await storage.getPlayersByRoom(connection.roomId);
     const gamePlayers = players.filter(p => !p.isSpectator);
     
+    console.log(`START GAME DEBUG: Room exists: ${!!room}`);
+    console.log(`START GAME DEBUG: Room hostId: ${room?.hostId}`);
+    console.log(`START GAME DEBUG: Connection playerId: ${connection.playerId}`);
+    console.log(`START GAME DEBUG: Is host? ${room?.hostId === connection.playerId}`);
+    console.log(`START GAME DEBUG: Game players count: ${gamePlayers.length}`);
+    console.log(`START GAME DEBUG: Players: ${gamePlayers.map(p => `${p.nickname}(${p.id})`).join(', ')}`);
+    
     if (!room || room.hostId !== connection.playerId || gamePlayers.length < 2) {
+      console.log(`❌ START GAME: Validation failed - room: ${!!room}, isHost: ${room?.hostId === connection.playerId}, playerCount: ${gamePlayers.length}`);
       return;
     }
+    
+    console.log(`✅ START GAME: All validations passed, starting game...`);
     
     // Initialize game with verified deck
     const deck = UnoGameLogic.createDeck();

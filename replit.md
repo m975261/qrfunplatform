@@ -21,12 +21,14 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: `kickPlayer`, `assignSpectator`, `replacePlayer` functions in useSocket.ts with corresponding server handlers
 - **Requirement**: Any future lobby-related changes must maintain WebSocket-only communication for real-time sync
 
-**CRITICAL - DO NOT MODIFY**: Card Replacement & Wild Card System
-- **Solution**: Implemented ultra-fast refresh system (1-30ms intervals) + proper server-client color choice flow
-- **Implementation**: Server sends `choose_color_request` message, client handles `colorChoiceRequested` state
-- **Wild Card Flow**: Play card → server requests color → client shows picker → player chooses → server updates
-- **Speed**: Double immediate calls + 1ms, 5ms, 10ms, 20ms, 30ms intervals for instant visual updates
-- **Requirement**: Never modify the refresh timing intervals or wild card message handling logic
+**CRITICAL - VERIFIED WORKING**: Wild Card Color Selection System
+- **Status**: FULLY FUNCTIONAL as of August 15, 2025
+- **Solution**: Complete server-client wild card color choice flow with proper player validation
+- **Implementation**: Server sends `choose_color_request` message, client handles via `colorChoiceRequested` state in ColorPickerModal
+- **Wild Card Flow**: Play card → server validates turn → server requests color → client shows picker → player chooses → server updates game state
+- **Key Fix**: Proper host player identification prevents duplicate players and ensures game start validation passes
+- **Test Results**: E2E test confirms choose_color_request and wild_card_played messages work correctly
+- **Requirement**: Do not modify the wild card message handling logic - system is working as designed
 
 **CRITICAL - DO NOT MODIFY**: CSS Grid Layout System
 - **Solution**: Implemented 12x12 CSS Grid layout replacing absolute positioning for game elements
