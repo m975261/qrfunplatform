@@ -1766,6 +1766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Apply card effects
     const effect = UnoGameLogic.getCardEffect(card);
+    console.log(`🃏 CARD EFFECT DEBUG: Card type: ${card.type}, Effect:`, effect);
     let nextPlayerIndex = currentPlayerIndex;
     let newDirection = room.direction;
     let newPendingDraw = room.pendingDraw || 0;
@@ -1913,10 +1914,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // If wild card was played, send color choice request to the player
     if (effect.chooseColor) {
+      console.log(`🎨 SENDING COLOR CHOICE REQUEST: Card type: ${card.type}, Effect chooseColor: ${effect.chooseColor}`);
       connection.ws.send(JSON.stringify({
         type: 'choose_color_request',
         message: 'Choose a color for the wild card'
       }));
+      console.log(`✅ COLOR CHOICE REQUEST SENT to player ${player.nickname}`);
+    } else {
+      console.log(`🚫 NO COLOR CHOICE NEEDED: Card type: ${card.type}, Effect chooseColor: ${effect.chooseColor}`);
     }
     
     await broadcastRoomState(connection.roomId);
