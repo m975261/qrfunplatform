@@ -156,7 +156,14 @@ export default function Game() {
 
   // Handle server color choice request
   useEffect(() => {
+    console.log('🎨 Color choice effect triggered:', { 
+      colorChoiceRequested: gameState?.colorChoiceRequested,
+      showColorPicker,
+      gameStateKeys: Object.keys(gameState || {}),
+      timestamp: new Date().toISOString()
+    });
     if (gameState?.colorChoiceRequested) {
+      console.log('🎨 Setting showColorPicker to true');
       setShowColorPicker(true);
     }
   }, [gameState?.colorChoiceRequested]);
