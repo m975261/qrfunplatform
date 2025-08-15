@@ -944,23 +944,23 @@ export default function Game() {
         </div>
       )}
 
-      {/* Viewers Area - Positioned under home/exit buttons and ends at 6 o'clock avatar line */}
+      {/* Viewers Area - Extended height from home/exit buttons to 6 o'clock avatar line */}
       <div className="absolute z-20" style={{
         top: '4rem', // Start under home/exit buttons
-        bottom: 'calc(50% - var(--r) - var(--avatar) / 2 - 8px)', // End at top edge of 6 o'clock avatar
+        bottom: 'calc(50% - var(--r) + var(--avatar) / 2 + 8px)', // End at bottom edge of 6 o'clock avatar
         right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
         width: 'min(18rem, 20vw)' // Original width restored
       }}>
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 shadow-lg h-full flex flex-col">
-          <div className="text-xs font-semibold text-gray-700 mb-2">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg h-full flex flex-col">
+          <div className="text-xs font-semibold text-gray-700 mb-3 flex-shrink-0">
             Viewers ({players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length})
           </div>
-          <div className="space-y-1 overflow-y-auto flex-1">
+          <div className="space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length > 0 ? (
               players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).map((spectator: any, index: number, arr: any[]) => (
                 <div key={spectator.id}>
                   <div 
-                    className={`flex items-center space-x-2 p-1.5 rounded transition-colors ${
+                    className={`flex items-center space-x-2 p-2 rounded-lg transition-colors ${
                       isHost 
                         ? 'hover:bg-blue-50 cursor-pointer' 
                         : ''
@@ -976,10 +976,10 @@ export default function Game() {
                         : ""
                     }
                   >
-                    <span className="text-xs text-gray-600 truncate flex-1">{spectator.nickname}</span>
+                    <span className="text-sm text-gray-700 truncate flex-1 font-medium">{spectator.nickname}</span>
                     {/* Show assignment indicator for host */}
                     {isHost && (
-                      <div className="text-blue-600 text-xs font-medium">+</div>
+                      <div className="text-blue-600 text-sm font-bold bg-blue-100 rounded-full w-6 h-6 flex items-center justify-center">+</div>
                     )}
                   </div>
                   {/* Separator line between spectators */}
