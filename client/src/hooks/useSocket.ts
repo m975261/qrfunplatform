@@ -293,6 +293,20 @@ export function useSocket(autoConnect: boolean = true) {
             }));
             console.log('🎨 COLOR PICKER STATE SET - should trigger modal');
             break;
+            
+          case 'wild_card_played':
+            console.log('🃏 WILD CARD PLAYED MESSAGE RECEIVED:', message);
+            if (message.requiresColorChoice && message.playerId === playerId) {
+              console.log('🎨 THIS PLAYER MUST CHOOSE COLOR');
+              setGameState((prev: any) => ({
+                ...prev,
+                showColorPicker: true,
+                colorChoiceRequested: true,
+                pendingColorChoice: true,
+                wildCardType: message.cardType
+              }));
+            }
+            break;
           case 'uno_penalty':
             console.log(`UNO penalty for player: ${message.playerName}`);
             // Show penalty animation to all players

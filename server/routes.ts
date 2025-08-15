@@ -1695,15 +1695,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0)) {
       console.log(`❌ PLAY CARD: Cannot play card - card exists: ${!!card}, canPlay: ${card ? UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0) : false}`);
       if (card) {
-        console.log(`🃏 Card details - Type: ${card.type}, Color: ${card.color}, Value: ${card.value}, Number: ${card.number}`);
-        console.log(`🃏 Top card - Type: ${topCard?.type}, Color: ${topCard?.color}, Value: ${topCard?.value}, Number: ${topCard?.number}`);
+        console.log(`🃏 Card details - Type: ${card.type}, Color: ${card.color}, Number: ${card.number}`);
+        console.log(`🃏 Top card - Type: ${topCard?.type}, Color: ${topCard?.color}, Number: ${topCard?.number}`);
         console.log(`🎨 Room current color: ${room.currentColor}`);
         console.log(`⚡ Pending draw: ${room.pendingDraw}`);
       }
       return;
     }
     
-    console.log(`✅ PLAY CARD: Playing card ${card.color} ${card.value} for ${player.nickname}`);
+    console.log(`✅ PLAY CARD: Playing card ${card.color} ${card.number || card.type} for ${player.nickname}`);
     
     // Remove card from player's hand first
     let newHand = playerHand.filter((_, index) => index !== cardIndex);
@@ -1917,13 +1917,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // If wild card was played, send color choice request to the player
     if (effect.chooseColor) {
       console.log(`🎨 SENDING COLOR CHOICE REQUEST to player ${connection.playerId} for card ${card.type}`);
+      console.log(`🔗 WebSocket connection state: ${connection.ws.readyState}`);
       try {
-        connection.ws.send(JSON.stringify({
+        const colorRequest = {
           type: 'choose_color_request',
           message: 'Choose a color for the wild card',
-          cardType: card.type
-        }));
-        console.log(`✅ COLOR CHOICE REQUEST SENT successfully`);
+          cardType: card.type,
+          playerId: connection.playerId
+        };
+        
+        connection.ws.send(JSON.stringify(colorRequest));
+        console.log(`✅ COLOR CHOICE REQUEST SENT:`, colorRequest);
+        
+        // Also broadcast to all connections to ensure it's received
+        broadcastToRoom(connection.roomId, {
+          type: 'wild_card_played',
+          playerId: connection.playerId,
+          cardType: card.type,
+          requiresColorChoice: true
+        });
+        
       } catch (error) {
         console.error(`❌ ERROR SENDING COLOR CHOICE REQUEST:`, error);
       }

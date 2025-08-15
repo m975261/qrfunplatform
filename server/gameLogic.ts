@@ -126,7 +126,7 @@ export class UnoGameLogic {
   }
   
   static canPlayCard(card: Card, topCard: Card, currentColor?: string, pendingDraw?: number): boolean {
-    console.log(`🎯 CARD VALIDATION: Checking if ${card.color} ${card.value || card.type} can be played on ${topCard?.color} ${topCard?.value || topCard?.type}`);
+    console.log(`🎯 CARD VALIDATION: Checking if ${card.color} ${card.number || card.type} can be played on ${topCard?.color} ${topCard?.number || topCard?.type}`);
     console.log(`🎨 Current color: ${currentColor}, Pending draw: ${pendingDraw}`);
     
     // If there's a pending draw effect, only allow stacking cards
