@@ -161,6 +161,15 @@ export default function Game() {
     }
   }, [gameState?.colorChoiceRequested, gameState?.room?.waitingForColorChoice, playerId]);
 
+  // Handle active color updates for visual refresh
+  useEffect(() => {
+    if (gameState?.colorUpdate || gameState?.activeColorUpdate || gameState?.colorUpdateTimestamp) {
+      console.log(`🎨 ACTIVE COLOR UPDATE DETECTED: ${gameState?.room?.currentColor}`);
+      // Force component refresh when color changes
+      setHandRefreshKey(prev => prev + 1);
+    }
+  }, [gameState?.colorUpdate, gameState?.activeColorUpdate, gameState?.colorUpdateTimestamp, gameState?.room?.currentColor]);
+
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
     const card = player?.hand?.[cardIndex];
@@ -184,10 +193,12 @@ export default function Game() {
       selectedColor: color,
       room: {
         ...prev?.room,
-        currentColor: color // Update the current color immediately for all players
+        currentColor: color, // Update the current color immediately for all players
+        waitingForColorChoice: null // Clear waiting state
       },
       forceRefresh: Math.random(),
-      colorUpdate: Date.now() // Add color update trigger
+      colorUpdate: Date.now(), // Add color update trigger
+      activeColorUpdate: Date.now() // Specific trigger for active color display
     }));
     
     // Force immediate visual refresh after color choice (especially important after UNO penalties)
@@ -629,7 +640,7 @@ export default function Game() {
                 {topCard ? (
                   <div className="flex flex-col items-center">
                     <GameCard card={topCard} size="small" interactive={false} onClick={() => {}} />
-                    {room?.currentColor && (topCard.type === 'wild' || topCard.type === 'draw_four') && (
+                    {room?.currentColor && (topCard.type === 'wild' || topCard.type === 'wild4') && (
                       <div className="flex flex-col items-center mt-2">
                         <div
                           className={`w-6 h-6 rounded-full border-2 border-white ${

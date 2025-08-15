@@ -293,17 +293,41 @@ export function useSocket(autoConnect: boolean = true) {
             break;
           case 'color_chosen':
             console.log(`🎨 COLOR RECEIVED: ${message.color} - updating all players`);
-            // Update the current color for all players immediately
-            setGameState((prev: any) => ({
-              ...prev,
-              room: {
-                ...prev?.room,
-                currentColor: message.color,
-                waitingForColorChoice: null // Clear waiting state
-              },
-              colorUpdate: Date.now(),
-              forceRefresh: Math.random()
-            }));
+            // Update the current color for all players immediately with error handling
+            try {
+              setGameState((prev: any) => ({
+                ...prev,
+                room: {
+                  ...prev?.room,
+                  currentColor: message.color,
+                  waitingForColorChoice: null // Clear waiting state
+                },
+                colorUpdate: Date.now(),
+                forceRefresh: Math.random(),
+                colorUpdateTimestamp: Date.now() // Additional trigger for color display
+              }));
+              console.log(`🎨 COLOR STATE UPDATED: ${message.color} applied successfully`);
+            } catch (error) {
+              console.error(`🚨 COLOR UPDATE ERROR:`, error);
+              // Fallback: Try to update after a brief delay
+              setTimeout(() => {
+                try {
+                  setGameState((prev: any) => ({
+                    ...prev,
+                    room: {
+                      ...prev?.room,
+                      currentColor: message.color,
+                      waitingForColorChoice: null
+                    },
+                    colorUpdate: Date.now(),
+                    forceRefresh: Math.random()
+                  }));
+                  console.log(`🎨 COLOR FALLBACK SUCCESS: ${message.color}`);
+                } catch (fallbackError) {
+                  console.error(`🚨 COLOR FALLBACK FAILED:`, fallbackError);
+                }
+              }, 10);
+            }
             break;
           case 'uno_penalty':
             console.log(`UNO penalty for player: ${message.playerName}`);
