@@ -559,13 +559,13 @@ export default function Game() {
 
 
       {/* === UNO TABLE (Centered + Responsive) === */}
-      <section className="relative w-full h-full flex items-center justify-center bg-transparent p-2 pb-40">
+      <section className="relative w-full h-full flex items-center justify-center bg-transparent p-4 pb-32">
         {/* Responsive square board centered in viewport - Extra bottom padding for mobile */}
         <div
           className="relative aspect-square w-[min(80vmin,450px)] mx-auto"
           style={{
-            // Board ring radius - Attached to circle edge with 1% spacing
-            ['--r' as any]: 'calc(var(--center) / 2 + 1%)',
+            // Board ring radius - Attached to circle edge with proper spacing (center radius + avatar radius + gap)
+            ['--r' as any]: 'calc(var(--center) / 2 + var(--avatar) / 2 + 8px)',
             // Avatar diameter (clamped for phone → desktop)
             ['--avatar' as any]: 'clamp(60px, 11vmin, 76px)',
             // Center play area size (the round table behind top card)
