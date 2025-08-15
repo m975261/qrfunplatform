@@ -559,19 +559,19 @@ export default function Game() {
 
 
       {/* === UNO TABLE (Centered + Responsive) === */}
-      <section className="relative w-full h-full flex items-center justify-center bg-transparent p-4">
-        {/* Responsive square board centered in viewport */}
+      <section className="relative w-full h-full flex items-center justify-center bg-transparent p-2 pb-32">
+        {/* Responsive square board centered in viewport - Extra bottom padding for mobile */}
         <div
-          className="relative aspect-square w-[min(85vmin,500px)] mx-auto"
+          className="relative aspect-square w-[min(80vmin,450px)] mx-auto"
           style={{
-            // Board ring radius (distance from center to avatar centers) - Reduced by 70%  
-            ['--r' as any]: '30%',
+            // Board ring radius (distance from center to avatar centers) - Equal for all  
+            ['--r' as any]: '32%',
             // Avatar diameter (clamped for phone → desktop)
-            ['--avatar' as any]: 'clamp(64px, 12vmin, 80px)',
+            ['--avatar' as any]: 'clamp(60px, 11vmin, 76px)',
             // Center play area size (the round table behind top card)
-            ['--center' as any]: 'clamp(100px, 18vmin, 140px)',
+            ['--center' as any]: 'clamp(90px, 16vmin, 130px)',
             // Corner padding for draw pile / direction
-            ['--gap' as any]: 'clamp(12px, 3vmin, 24px)',
+            ['--gap' as any]: 'clamp(8px, 2vmin, 16px)',
           }}
         >
           {/* === CENTER AREA === */}
@@ -622,14 +622,14 @@ export default function Game() {
             const isOnline = player ? isPlayerOnline(player) : false;
             const isPlayerTurn = currentGamePlayer?.id === player?.id;
 
-            // Absolute positions using a single radius var --r - Fixed positioning
+            // Absolute positions using a single radius var --r - Equal distance for all avatars
             const posClass =
               position === 0
                 ? 'top-[calc(50%-var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
                 : position === 1
-                ? 'left-[calc(50%+var(--r))] top-1/2 translate-x-1/2 -translate-y-1/2'
+                ? 'left-[calc(50%+var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2'
                 : position === 2
-                ? 'top-[calc(50%+var(--r))] left-1/2 -translate-x-1/2 translate-y-1/2'
+                ? 'top-[calc(50%+var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
                 : 'left-[calc(50%-var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2';
 
             return (
