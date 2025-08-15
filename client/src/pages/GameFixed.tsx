@@ -156,17 +156,10 @@ export default function Game() {
 
   // Handle server color choice request
   useEffect(() => {
-    console.log('🎨 Color choice effect triggered:', { 
-      colorChoiceRequested: gameState?.colorChoiceRequested,
-      showColorPicker,
-      gameStateKeys: Object.keys(gameState || {}),
-      timestamp: new Date().toISOString()
-    });
-    if (gameState?.colorChoiceRequested) {
-      console.log('🎨 Setting showColorPicker to true');
+    if (gameState?.colorChoiceRequested || (gameState?.room?.waitingForColorChoice === playerId)) {
       setShowColorPicker(true);
     }
-  }, [gameState?.colorChoiceRequested]);
+  }, [gameState?.colorChoiceRequested, gameState?.room?.waitingForColorChoice, playerId]);
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -183,6 +176,13 @@ export default function Game() {
   const handleColorChoice = (color: string) => {
     chooseColor(color);
     setShowColorPicker(false);
+    
+    // Clear the colorChoiceRequested flag immediately
+    setGameState((prev: any) => ({
+      ...prev,
+      colorChoiceRequested: false,
+      selectedColor: color
+    }));
     
     // Force immediate visual refresh after color choice (especially important after UNO penalties)
     setHandRefreshKey(prev => prev + 1);
