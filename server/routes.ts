@@ -1941,9 +1941,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // If wild card was played, send color choice request to the player
     if (effect.chooseColor) {
       console.log(`🎨 SENDING COLOR CHOICE REQUEST to player ${connection.playerId} for card ${card.type}`);
-      console.log(`🔗 WebSocket connection state: ${connection.ws.readyState}`);
-      console.log(`🔗 Connection ID: ${connection.connectionId}`);
-      console.log(`🔗 Active connections for player: ${Array.from(activeConnections.values()).filter(c => c.playerId === connection.playerId).map(c => c.connectionId).join(', ')}`);
       
       try {
         const colorRequest = {
@@ -1953,18 +1950,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           playerId: connection.playerId
         };
         
-        // EMERGENCY FIX: Send to ALL connections for this player
-        const playerConnections = Array.from(activeConnections.values()).filter(c => c.playerId === connection.playerId);
-        console.log(`🎯 Found ${playerConnections.length} connections for player ${connection.playerId}`);
+        // ULTRA-RELIABLE FIX: Send to ALL possible channels
         
-        for (const playerConn of playerConnections) {
-          if (playerConn.ws.readyState === WebSocket.OPEN) {
-            playerConn.ws.send(JSON.stringify(colorRequest));
-            console.log(`✅ COLOR CHOICE REQUEST SENT to connection ${playerConn.connectionId}:`, colorRequest);
-          }
+        // 1. Send to the current connection
+        if (connection.ws && connection.ws.readyState === WebSocket.OPEN) {
+          connection.ws.send(JSON.stringify(colorRequest));
+          console.log(`✅ COLOR CHOICE REQUEST SENT to current connection`);
         }
         
-        // Also broadcast to all connections to ensure it's received
+        // 2. Send to ALL connections for this player
+        const playerConnections = Array.from(activeConnections.values()).filter(c => c.playerId === connection.playerId);
+        playerConnections.forEach(playerConn => {
+          if (playerConn.ws && playerConn.ws.readyState === WebSocket.OPEN) {
+            playerConn.ws.send(JSON.stringify(colorRequest));
+            console.log(`✅ COLOR CHOICE REQUEST SENT to player connection ${playerConn.connectionId}`);
+          }
+        });
+        
+        // 3. Broadcast to entire room (fallback)
+        broadcastToRoom(connection.roomId, colorRequest);
+        console.log(`✅ COLOR CHOICE REQUEST BROADCAST to entire room`);
+        
+        // 4. Also send wild_card_played message
         broadcastToRoom(connection.roomId, {
           type: 'wild_card_played',
           playerId: connection.playerId,
