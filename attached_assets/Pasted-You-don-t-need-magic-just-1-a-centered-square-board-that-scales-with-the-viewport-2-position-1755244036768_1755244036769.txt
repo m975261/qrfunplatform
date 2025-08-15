@@ -1,0 +1,325 @@
+You don’t need magic—just (1) a centered, square “board” that scales with the viewport, (2) positions expressed relative to that board (percent + CSS vars), and (3) drop the fixed margins/sizes. Here’s a drop-in rewrite that keeps all your relative placements but makes the whole thing truly responsive and centered.
+
+What changed (quick):
+	•	Centered board: grid place-items-center + mx-auto, no ml-*.
+	•	Responsive sizing: CSS vars + clamp() for board, avatars, and center area.
+	•	Relative offsets: Avatar ring uses a single radius var --r so 12/3/6/9 o’clock snap to the circle regardless of size.
+	•	Corner UI (draw pile, direction): anchored to board corners via --gap.
+
+Code:
+
+{/* === UNO TABLE (Centered + Responsive) === */}
+<section
+  className="
+    relative w-full min-h-[100svh]
+    grid place-items-center
+    bg-transparent
+  "
+>
+  {/* Responsive square board centered in viewport */}
+  <div
+    className="
+      relative aspect-square
+      w-[min(92vmin,900px)]  /* scales up/down with window */
+      mx-auto
+    "
+    style={{
+      // Tweak these three vars to adjust feel
+      // Board ring radius (distance from center to avatar centers)
+      // Use % of board size so it scales naturally
+      // 38% looks good with 16–20px avatar radius
+      // Increase to push avatars outward
+      ['--r' as any]: '38%',
+      // Avatar diameter (clamped for phone → desktop)
+      ['--avatar' as any]: 'clamp(56px, 9vmin, 84px)',
+      // Center play area size (the round table behind top card)
+      ['--center' as any]: 'clamp(112px, 20vmin, 180px)',
+      // Corner padding for draw pile / direction
+      ['--gap' as any]: 'clamp(8px, 2.2vmin, 20px)',
+    }}
+  >
+    {/* === CENTER AREA === */}
+    <div className="absolute inset-0 grid place-items-center z-10">
+      <div className="relative">
+        {/* Circular background for center area */}
+        <div
+          className="
+            absolute -z-10
+            left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+            rounded-full border-4 border-slate-600 shadow-2xl
+            bg-gradient-to-br from-slate-700 to-slate-800
+          "
+          style={{ width: 'var(--center)', height: 'var(--center)' }}
+        />
+        <div className="flex flex-col items-center space-y-2">
+          {topCard ? (
+            <div className="flex flex-col items-center">
+              <GameCard card={topCard} size="small" interactive={false} onClick={() => {}} />
+              {room?.currentColor && (topCard.type === 'wild' || topCard.type === 'draw_four') && (
+                <div className="flex flex-col items-center mt-2">
+                  <div
+                    className={`w-6 h-6 rounded-full border-2 border-white ${
+                      room.currentColor === 'red'
+                        ? 'bg-red-500'
+                        : room.currentColor === 'yellow'
+                        ? 'bg-yellow-500'
+                        : room.currentColor === 'blue'
+                        ? 'bg-blue-500'
+                        : room.currentColor === 'green'
+                        ? 'bg-green-500'
+                        : 'bg-gray-500'
+                    }`}
+                  />
+                  <span className="text-xs text-white font-bold mt-1">
+                    Active: {room.currentColor}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="w-16 h-24 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-red-300 shadow-xl flex items-center justify-center">
+              <div className="text-white font-bold text-lg">UNO</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* === 4 AVATAR POSITIONS AROUND THE CIRCLE === */}
+    {[0, 1, 2, 3].map((position) => {
+      const player = getPlayerAtPosition(position);
+      const isOnline = player ? isPlayerOnline(player) : false;
+      const isPlayerTurn = currentGamePlayer?.id === player?.id;
+
+      // Absolute positions using a single radius var --r
+      // 12:  top   = 50% - r, left = 50%
+      // 3 :  left  = 50% + r, top  = 50%
+      // 6 :  top   = 50% + r, left = 50%
+      // 9 :  left  = 50% - r, top  = 50%
+      const posClass =
+        position === 0
+          ? 'top-[calc(50%-var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
+          : position === 1
+          ? 'left-[calc(50%+var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2'
+          : position === 2
+          ? 'top-[calc(50%+var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
+          : 'left-[calc(50%-var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2';
+
+      return (
+        <div key={position} className={`absolute ${posClass} pointer-events-auto`}>
+          <div className="relative">
+            {player ? (
+              <div className="relative">
+                {/* Avatar Circle */}
+                <button
+                  className={`
+                    rounded-full flex items-center justify-center text-white font-bold shadow-lg border-4
+                    bg-gradient-to-br from-uno-blue to-uno-purple
+                    hover:scale-[1.04] transition-transform
+                    ${isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'}
+                  `}
+                  style={{ width: 'var(--avatar)', height: 'var(--avatar)' }}
+                  onClick={() => {
+                    if (player.id === playerId || isHost) {
+                      setSelectedAvatarPlayerId(player.id);
+                      setShowAvatarSelector(true);
+                    }
+                  }}
+                  aria-label={`${player.nickname} avatar`}
+                  title={player.nickname}
+                >
+                  <div className="text-2xl">{getPlayerAvatar(player.id, player.nickname)}</div>
+                </button>
+
+                {/* Nickname pill – position varies per slot */}
+                <div
+                  className={`
+                    absolute text-xs font-semibold text-white bg-black/70 px-2 py-1 rounded-full whitespace-nowrap
+                    ${position === 0 ? 'left-full top-1/2 -translate-y-1/2 ml-2'
+                      : position === 1 ? 'top-full left-1/2 -translate-x-1/2 mt-2'
+                      : position === 2 ? 'right-3/4 top-full mt-2'
+                      : 'right-1/4 bottom-full -translate-x-1/2 mb-2'}
+                  `}
+                >
+                  {player.nickname}
+                </div>
+
+                {/* Online badge */}
+                <div
+                  className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
+                    isOnline ? 'bg-green-500' : 'bg-red-500'
+                  }`}
+                />
+
+                {/* Host crown */}
+                {player.id === room?.hostId && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">👑</div>
+                )}
+
+                {/* Finish badge */}
+                {player.finishPosition && (
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-full font-bold shadow-lg">
+                    {player.finishPosition === 1
+                      ? '1ST'
+                      : player.finishPosition === 2
+                      ? '2ND'
+                      : player.finishPosition === 3
+                      ? '3RD'
+                      : `${player.finishPosition}TH`}
+                  </div>
+                )}
+
+                {/* Card count */}
+                {!player.finishPosition && (
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
+                    {player.hand?.length || 0}
+                  </div>
+                )}
+
+                {/* Controls */}
+                {player.id === playerId && (
+                  <button
+                    onClick={() => setShowNicknameEditor(true)}
+                    className={`
+                      absolute w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full
+                      flex items-center justify-center text-[10px] font-bold shadow-lg border border-white
+                      ${position === 0 ? '-top-6 left-1/2 -translate-x-1/2'
+                        : position === 1 ? 'top-1/2 -right-6 -translate-y-1/2'
+                        : position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2'
+                        : '-left-6 top-1/2 -translate-y-1/2'}
+                    `}
+                    title="Edit nickname"
+                  >
+                    E
+                  </button>
+                )}
+
+                {isHost && player.id !== playerId && (
+                  <button
+                    onClick={() => kickPlayer(player.id)}
+                    className={`
+                      absolute w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full
+                      flex items-center justify-center text-[10px] font-bold shadow-lg border border-white
+                      ${position === 0 ? '-top-6 left-1/2 -translate-x-1/2 translate-x-5'
+                        : position === 1 ? 'top-1/2 -right-6 -translate-y-1/2 translate-y-5'
+                        : position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2 translate-x-5'
+                        : '-left-6 top-1/2 -translate-y-1/2 translate-y-5'}
+                    `}
+                    title={isOnline ? 'Remove player' : 'Remove offline player'}
+                  >
+                    K
+                  </button>
+                )}
+              </div>
+            ) : (
+              // Empty / joinable slot
+              <div
+                className={`
+                  rounded-full flex items-center justify-center border-4 border-white/20
+                  ${currentPlayer?.isSpectator && isPaused && activePositions.includes(position)
+                    ? 'cursor-pointer hover:bg-gray-500/40 transition-colors'
+                    : ''}
+                  bg-gray-500/30
+                `}
+                style={{ width: 'var(--avatar)', height: 'var(--avatar)' }}
+                onClick={() => {
+                  if (currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) {
+                    replacePlayer(position);
+                  } else if (!currentPlayer) {
+                    const roomCode = room?.code;
+                    if (roomCode) window.location.href = `/?room=${roomCode}&position=${position}`;
+                  }
+                }}
+              >
+                <div className="text-center">
+                  {(currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) ||
+                  (!currentPlayer && activePositions.includes(position)) ? (
+                    <>
+                      <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
+                        <span className="text-white text-sm font-bold">+</span>
+                      </div>
+                      <div className="text-xs text-blue-400 mt-1">
+                        {currentPlayer?.isSpectator ? 'Join' : 'Click to Join'}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
+                      <div className="text-xs text-gray-400 mt-1">Closed</div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    })}
+
+    {/* === DIRECTION INDICATOR (top-left of board) === */}
+    {room?.direction && room?.status === 'playing' && (
+      <div className="absolute z-20" style={{ top: 'var(--gap)', left: 'var(--gap)' }}>
+        <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 flex items-center justify-center animate-pulse">
+          <div className="text-white text-[10px] font-bold text-center leading-tight">
+            {room.direction === 'clockwise' ? (
+              <div className="flex flex-col items-center">
+                <span className="text-lg">↻</span>
+                <span>GAME</span>
+                <span>DIRECTION</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <span className="text-lg">↺</span>
+                <span>GAME</span>
+                <span>DIRECTION</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* === DRAW PILE (bottom-left of board) === */}
+    <div className="absolute z-20" style={{ left: 'var(--gap)', bottom: 'var(--gap)' }}>
+      <div className="relative cursor-pointer group" onClick={drawCard}>
+        <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-12 h-16" />
+        <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-12 h-16" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="text-white font-bold text-xs">CARDS</div>
+        </div>
+      </div>
+      <div className="text-center mt-1">
+        <div className="text-blue-300 font-bold text-xs">DRAW</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+Why this fixes your three asks
+	1.	Centered: The outer <section> uses grid place-items-center, and the board has mx-auto aspect-square. No ml-* left shift; the table is always centered in the viewport.
+	2.	Responsive: Sizes are driven by CSS variables and clamp():
+
+	•	Board width: w-[min(92vmin,900px)] scales smoothly from phones to desktops.
+	•	Avatars: --avatar: clamp(56px, 9vmin, 84px)
+	•	Center area: --center: clamp(112px, 20vmin, 180px)
+	•	Spacing: --gap: clamp(8px, 2.2vmin, 20px)
+
+	3.	Relative positioning preserved:
+
+	•	Avatar ring uses a single radius --r (percentage of board size). The 12/3/6/9 positions use calc(50% ± var(--r)), so everything scales but stays aligned.
+	•	Nicknames, host crown, online badge, edit/kick buttons remain absolute inside each avatar container, so they travel with their avatar.
+	•	Direction indicator and draw pile are anchored to the board’s own corners using --gap, not the page.
+
+⸻
+
+Tuning tips
+	•	Want a looser/tighter circle? Adjust --r (e.g., 36% → closer; 42% → further).
+	•	Want bigger avatars on desktop? Raise the top bound in --avatar.
+	•	If you introduce spectators or extra HUD, keep them outside the board <div> so the centered square remains clean.
+
+This approach should work nicely on Replit too—no special setup required beyond Tailwind’s arbitrary values enabled (default in recent versions).
+
+
+Can you assess this and tell me if you agree with it and if you can do it or not? Without fixing anything.

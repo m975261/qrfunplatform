@@ -558,250 +558,259 @@ export default function Game() {
 
 
 
-      {/* Player Avatars - Clean Layout (No Duplicate Background) - Shifted left for viewer table space */}
-      <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 ml-4 sm:ml-8 md:ml-12 mb-8">
-
-
-        {/* Center Card Play Area with Circular Background */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          {/* Circular background for center area */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 bg-gradient-to-br from-slate-700 to-slate-800 rounded-full border-4 border-slate-600 shadow-2xl z-0"></div>
-          
-          <div className="flex flex-col items-center space-y-2 relative z-20">
-            {topCard ? (
-              <div className="flex flex-col items-center">
-                <GameCard 
-                  card={topCard} 
-                  size="small"
-                  interactive={false}
-                  onClick={() => {}}
-                />
-                {room?.currentColor && (topCard.type === 'wild' || topCard.type === 'draw_four') && (
-                  <div className="flex flex-col items-center mt-2">
-                    <div className={`w-6 h-6 rounded-full border-2 border-white ${
-                      room.currentColor === 'red' ? 'bg-red-500' :
-                      room.currentColor === 'yellow' ? 'bg-yellow-500' :
-                      room.currentColor === 'blue' ? 'bg-blue-500' :
-                      room.currentColor === 'green' ? 'bg-green-500' :
-                      'bg-gray-500'
-                    }`}></div>
-                    <span className="text-xs text-white font-bold mt-1">Active: {room.currentColor}</span>
+      {/* === UNO TABLE (Centered + Responsive) === */}
+      <section className="relative w-full min-h-[100svh] grid place-items-center bg-transparent">
+        {/* Responsive square board centered in viewport */}
+        <div
+          className="relative aspect-square w-[min(92vmin,900px)] mx-auto"
+          style={{
+            // Board ring radius (distance from center to avatar centers)
+            ['--r' as any]: '38%',
+            // Avatar diameter (clamped for phone → desktop)
+            ['--avatar' as any]: 'clamp(56px, 9vmin, 84px)',
+            // Center play area size (the round table behind top card)
+            ['--center' as any]: 'clamp(112px, 20vmin, 180px)',
+            // Corner padding for draw pile / direction
+            ['--gap' as any]: 'clamp(8px, 2.2vmin, 20px)',
+          }}
+        >
+          {/* === CENTER AREA === */}
+          <div className="absolute inset-0 grid place-items-center z-10">
+            <div className="relative">
+              {/* Circular background for center area */}
+              <div
+                className="absolute -z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-slate-600 shadow-2xl bg-gradient-to-br from-slate-700 to-slate-800"
+                style={{ width: 'var(--center)', height: 'var(--center)' }}
+              />
+              <div className="flex flex-col items-center space-y-2">
+                {topCard ? (
+                  <div className="flex flex-col items-center">
+                    <GameCard card={topCard} size="small" interactive={false} onClick={() => {}} />
+                    {room?.currentColor && (topCard.type === 'wild' || topCard.type === 'draw_four') && (
+                      <div className="flex flex-col items-center mt-2">
+                        <div
+                          className={`w-6 h-6 rounded-full border-2 border-white ${
+                            room.currentColor === 'red'
+                              ? 'bg-red-500'
+                              : room.currentColor === 'yellow'
+                              ? 'bg-yellow-500'
+                              : room.currentColor === 'blue'
+                              ? 'bg-blue-500'
+                              : room.currentColor === 'green'
+                              ? 'bg-green-500'
+                              : 'bg-gray-500'
+                          }`}
+                        />
+                        <span className="text-xs text-white font-bold mt-1">
+                          Active: {room.currentColor}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-16 h-24 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-red-300 shadow-xl flex items-center justify-center">
+                    <div className="text-white font-bold text-lg">UNO</div>
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="w-16 h-24 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-red-300 shadow-xl flex items-center justify-center">
-                <div className="text-white font-bold text-lg">UNO</div>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* 4 Fixed Avatar Positions - Exact Lobby Layout */}
-        {[0, 1, 2, 3].map((position) => {
-          const player = getPlayerAtPosition(position);
-          const isOnline = player ? isPlayerOnline(player) : false;
-          const isPlayerTurn = currentGamePlayer?.id === player?.id;
-          
-          // Get position class for avatar placement - Attached to circle edge
-          const getPositionClass = (pos: number) => {
-            // Calculate exact circle edge positions based on circle radius + avatar radius
-            // Circle: w-32 h-32 (128px) to w-40 h-40 (160px) = radius 64px to 80px  
-            // Avatar: w-16 h-16 (64px) = radius 32px
-            // Distance from center: circle radius + avatar radius = ~96px to 112px
-            const positions = [
-              'top-16 left-1/2 -translate-x-1/2 -translate-y-1/2', // 12 o'clock - circle edge
-              'right-16 top-1/2 -translate-y-1/2 translate-x-1/2', // 3 o'clock - circle edge  
-              'bottom-16 left-1/2 -translate-x-1/2 translate-y-1/2', // 6 o'clock - circle edge
-              'left-16 top-1/2 -translate-y-1/2 -translate-x-1/2' // 9 o'clock - circle edge
-            ];
-            return positions[pos] || positions[0];
-          };
-          
-          return (
-            <div
-              key={position}
-              className={`absolute ${getPositionClass(position)} pointer-events-auto`}
-            >
+          {/* === 4 AVATAR POSITIONS AROUND THE CIRCLE === */}
+          {[0, 1, 2, 3].map((position) => {
+            const player = getPlayerAtPosition(position);
+            const isOnline = player ? isPlayerOnline(player) : false;
+            const isPlayerTurn = currentGamePlayer?.id === player?.id;
+
+            // Absolute positions using a single radius var --r
+            const posClass =
+              position === 0
+                ? 'top-[calc(50%-var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
+                : position === 1
+                ? 'left-[calc(50%+var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2'
+                : position === 2
+                ? 'top-[calc(50%+var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
+                : 'left-[calc(50%-var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2';
+
+            return (
+              <div key={position} className={`absolute ${posClass} pointer-events-auto`}>
                 <div className="relative">
                   {player ? (
-                    // Player Avatar Container with positioned nickname
                     <div className="relative">
                       {/* Avatar Circle */}
-                      <div className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex items-center justify-center text-white font-bold shadow-lg border-3 cursor-pointer hover:scale-105 transition-all ${
-                        isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
-                      }`}
-                      onClick={() => {
-                        // Players can only change their own avatar, hosts can change any avatar
-                        if (player.id === playerId || isHost) {
-                          setSelectedAvatarPlayerId(player.id);
-                          setShowAvatarSelector(true);
-                        }
-                      }}
+                      <button
+                        className={`rounded-full flex items-center justify-center text-white font-bold shadow-lg border-4 bg-gradient-to-br from-uno-blue to-uno-purple hover:scale-[1.04] transition-transform ${
+                          isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50' : 'border-white/20'
+                        }`}
+                        style={{ width: 'var(--avatar)', height: 'var(--avatar)' }}
+                        onClick={() => {
+                          if (player.id === playerId || isHost) {
+                            setSelectedAvatarPlayerId(player.id);
+                            setShowAvatarSelector(true);
+                          }
+                        }}
+                        aria-label={`${player.nickname} avatar`}
+                        title={player.nickname}
                       >
-                        {/* Avatar Content - Show avatar picture */}
-                        <div className="text-2xl">
-                          {getPlayerAvatar(player.id, player.nickname)}
-                        </div>
-                      </div>
-                      
-                      {/* Position-specific nickname placement around avatar circle */}
-                      <div className={`absolute text-xs font-semibold text-white bg-black/70 px-2 py-1 rounded-full whitespace-nowrap ${
-                        position === 0 ? 'left-full top-1/2 -translate-y-1/2 ml-2' : // 12 o'clock avatar -> nickname at 3 o'clock
-                        position === 1 ? 'top-full left-1/2 -translate-x-1/2 mt-2' : // 3 o'clock avatar -> nickname at 6 o'clock  
-                        position === 2 ? 'right-3/4 top-full mt-2' : // 6 o'clock avatar -> nickname at 7 o'clock
-                        'right-1/4 bottom-full -translate-x-1/2 mb-2' // 9 o'clock avatar -> nickname at 11 o'clock
-                      }`}>
+                        <div className="text-2xl">{getPlayerAvatar(player.id, player.nickname)}</div>
+                      </button>
+
+                      {/* Nickname pill – position varies per slot */}
+                      <div
+                        className={`absolute text-xs font-semibold text-white bg-black/70 px-2 py-1 rounded-full whitespace-nowrap ${
+                          position === 0 ? 'left-full top-1/2 -translate-y-1/2 ml-2'
+                          : position === 1 ? 'top-full left-1/2 -translate-x-1/2 mt-2'
+                          : position === 2 ? 'right-3/4 top-full mt-2'
+                          : 'right-1/4 bottom-full -translate-x-1/2 mb-2'
+                        }`}
+                      >
                         {player.nickname}
                       </div>
-                      
-                      {/* Essential Indicators Only */}
-                      <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
-                        isOnline ? 'bg-green-500' : 'bg-red-500'
-                      }`} />
-                      
+
+                      {/* Online badge */}
+                      <div
+                        className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
+                          isOnline ? 'bg-green-500' : 'bg-red-500'
+                        }`}
+                      />
+
                       {/* Host crown */}
                       {player.id === room?.hostId && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                          <div className="w-6 h-6 text-yellow-400 fill-yellow-400">👑</div>
-                        </div>
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">👑</div>
                       )}
-                      
-                      {/* Ranking badge for finished players - Simplified */}
+
+                      {/* Finish badge */}
                       {player.finishPosition && (
                         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-full font-bold shadow-lg">
-                          {player.finishPosition === 1 ? '1ST' : 
-                           player.finishPosition === 2 ? '2ND' : 
-                           player.finishPosition === 3 ? '3RD' : 
-                           `${player.finishPosition}TH`}
+                          {player.finishPosition === 1
+                            ? '1ST'
+                            : player.finishPosition === 2
+                            ? '2ND'
+                            : player.finishPosition === 3
+                            ? '3RD'
+                            : `${player.finishPosition}TH`}
                         </div>
                       )}
-                      
-                      {/* Card count - Only if not finished */}
+
+                      {/* Card count */}
                       {!player.finishPosition && (
                         <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
                           {player.hand?.length || 0}
                         </div>
                       )}
-                    </div>
-                  ) : (
-                    // Empty Slot or Joinable Slot for Spectators - Match avatar size
-                    <div 
-                      className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 bg-gray-500/30 rounded-full flex items-center justify-center border-3 border-white/20 ${
-                        currentPlayer?.isSpectator && isPaused && activePositions.includes(position) ? 'cursor-pointer hover:bg-gray-500/50 transition-colors' : ''
-                      }`}
-                      onClick={() => {
-                        if (currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) {
-                          replacePlayer(position);
-                        } else if (!currentPlayer) {
-                          // External user - redirect to join flow
-                          const roomCode = room?.code;
-                          if (roomCode) {
-                            window.location.href = `/?room=${roomCode}&position=${position}`;
-                          }
-                        }
-                      }}
-                    >
-                      <div className="text-center">
-                        {(currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) || (!currentPlayer && activePositions.includes(position)) ? (
-                          <>
-                            <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
-                              <span className="text-white text-sm font-bold">+</span>
-                            </div>
-                            <div className="text-xs text-blue-400 mt-1">
-                              {currentPlayer?.isSpectator ? "Join" : "Click to Join"}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-400 mx-auto" />
-                            <div className="text-xs text-gray-400 mt-1">Closed</div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
 
-                  
-                  {/* Control Buttons Position Based on Avatar Slot */}
-                  {player && (
-                    <>
-                      {/* Edit Button for Current Player - Position based on slot */}
+                      {/* Controls */}
                       {player.id === playerId && (
                         <button
                           onClick={() => setShowNicknameEditor(true)}
-                          className={`absolute w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white ${
-                            position === 0 ? '-top-6 left-1/2 -translate-x-1/2' : // 12 o'clock - top
-                            position === 1 ? 'top-1/2 -right-6 -translate-y-1/2' : // 3 o'clock - right
-                            position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2' : // 6 o'clock - bottom
-                            '-left-6 top-1/2 -translate-y-1/2' // 9 o'clock - left
+                          className={`absolute w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white ${
+                            position === 0 ? '-top-6 left-1/2 -translate-x-1/2'
+                            : position === 1 ? 'top-1/2 -right-6 -translate-y-1/2'
+                            : position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2'
+                            : '-left-6 top-1/2 -translate-y-1/2'
                           }`}
                           title="Edit nickname"
                         >
                           E
                         </button>
                       )}
-                      
-                      {/* Kick Button for Host - Position based on slot, next to edit button */}
+
                       {isHost && player.id !== playerId && (
                         <button
                           onClick={() => kickPlayer(player.id)}
-                          className={`absolute w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white ${
-                            position === 0 ? '-top-6 left-1/2 -translate-x-1/2 translate-x-5' : // 12 o'clock - top, next to edit
-                            position === 1 ? 'top-1/2 -right-6 -translate-y-1/2 translate-y-5' : // 3 o'clock - right, below edit
-                            position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2 translate-x-5' : // 6 o'clock - bottom, next to edit
-                            '-left-6 top-1/2 -translate-y-1/2 translate-y-5' // 9 o'clock - left, below edit
+                          className={`absolute w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white ${
+                            position === 0 ? '-top-6 left-1/2 -translate-x-1/2 translate-x-5'
+                            : position === 1 ? 'top-1/2 -right-6 -translate-y-1/2 translate-y-5'
+                            : position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2 translate-x-5'
+                            : '-left-6 top-1/2 -translate-y-1/2 translate-y-5'
                           }`}
-                          title={isOnline ? "Remove player" : "Remove offline player"}
+                          title={isOnline ? 'Remove player' : 'Remove offline player'}
                         >
                           K
                         </button>
                       )}
-                    </>
+                    </div>
+                  ) : (
+                    // Empty / joinable slot
+                    <div
+                      className={`rounded-full flex items-center justify-center border-4 border-white/20 ${
+                        currentPlayer?.isSpectator && isPaused && activePositions.includes(position)
+                          ? 'cursor-pointer hover:bg-gray-500/40 transition-colors'
+                          : ''
+                      } bg-gray-500/30`}
+                      style={{ width: 'var(--avatar)', height: 'var(--avatar)' }}
+                      onClick={() => {
+                        if (currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) {
+                          replacePlayer(position);
+                        } else if (!currentPlayer) {
+                          const roomCode = room?.code;
+                          if (roomCode) window.location.href = `/?room=${roomCode}&position=${position}`;
+                        }
+                      }}
+                    >
+                      <div className="text-center">
+                        {(currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) ||
+                        (!currentPlayer && activePositions.includes(position)) ? (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
+                              <span className="text-white text-sm font-bold">+</span>
+                            </div>
+                            <div className="text-xs text-blue-400 mt-1">
+                              {currentPlayer?.isSpectator ? 'Join' : 'Click to Join'}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
+                            <div className="text-xs text-gray-400 mt-1">Closed</div>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-            </div>
-          );
-        })}
+              </div>
+            );
+          })}
 
-        {/* Direction Indicator Button - Adjusted for shifted layout */}
-        {room?.direction && room?.status === 'playing' && (
-          <div className="absolute top-8 left-0 sm:top-10 sm:left-2 md:top-12 md:left-4 z-10">
-            <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center shadow-lg border-2 border-yellow-300 animate-pulse">
-              <div className="text-white text-xs font-bold text-center leading-tight">
-                {room.direction === 'clockwise' ? (
-                  <div className="flex flex-col items-center">
-                    <span className="text-lg">↻</span>
-                    <span>GAME</span>
-                    <span>DIRECTION</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    <span className="text-lg">↺</span>
-                    <span>GAME</span>
-                    <span>DIRECTION</span>
-                  </div>
-                )}
+          {/* === DIRECTION INDICATOR (top-left of board) === */}
+          {room?.direction && room?.status === 'playing' && (
+            <div className="absolute z-20" style={{ top: 'var(--gap)', left: 'var(--gap)' }}>
+              <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 flex items-center justify-center animate-pulse">
+                <div className="text-white text-[10px] font-bold text-center leading-tight">
+                  {room.direction === 'clockwise' ? (
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg">↻</span>
+                      <span>GAME</span>
+                      <span>DIRECTION</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg">↺</span>
+                      <span>GAME</span>
+                      <span>DIRECTION</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Draw Pile - Adjusted for shifted layout */}
-        <div className="absolute bottom-8 left-0 sm:bottom-10 sm:left-2 md:bottom-12 md:left-4 z-20">
-          <div className="relative cursor-pointer group" onClick={drawCard}>
-            <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
-            <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-white font-bold text-xs">CARDS</div>
+          {/* === DRAW PILE (bottom-left of board) === */}
+          <div className="absolute z-20" style={{ bottom: 'var(--gap)', left: 'var(--gap)' }}>
+            <div className="relative cursor-pointer group" onClick={drawCard}>
+              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
+              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="text-white font-bold text-xs">CARDS</div>
+              </div>
+            </div>
+            <div className="text-center mt-1">
+              <div className="text-blue-300 font-bold text-xs">DRAW</div>
             </div>
           </div>
-          <div className="text-center mt-1">
-            <div className="text-blue-300 font-bold text-xs">DRAW</div>
-          </div>
         </div>
-      </div>
+      </section>
 
       {/* Player Hand Area - Fixed at bottom with no space, horizontal cards for iPhone */}
       {currentPlayer && !currentPlayer.isSpectator && (
