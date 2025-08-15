@@ -1258,6 +1258,22 @@ export default function Game() {
           </div>
         </div>
       )}
+
+      {/* Color Picker Modal for Wild Cards */}
+      {(showColorPicker || gameState?.showColorPicker || gameState?.colorChoiceRequested) && (
+        <ColorPickerModal
+          onChooseColor={(color) => {
+            console.log(`Color chosen: ${color}`);
+            chooseColor(color);
+            setShowColorPicker(false);
+            setPendingWildCard(null);
+          }}
+          onClose={() => {
+            setShowColorPicker(false);
+            setPendingWildCard(null);
+          }}
+        />
+      )}
     </div>
   );
 }
