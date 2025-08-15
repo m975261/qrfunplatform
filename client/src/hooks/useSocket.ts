@@ -284,14 +284,26 @@ export function useSocket(autoConnect: boolean = true) {
             break;
           case 'choose_color_request':
             console.log('🎨 COLOR CHOICE REQUEST RECEIVED for wild card:', message);
-            // Set flag to show color picker
+            console.log('🎨 CURRENT CONNECTION STATE:', {
+              isConnected: socketRef.current?.readyState === WebSocket.OPEN,
+              readyState: socketRef.current?.readyState,
+              playerId: playerId
+            });
+            // Set flag to show color picker with MULTIPLE triggers
             setGameState((prev: any) => ({
               ...prev,
               showColorPicker: true,
               colorChoiceRequested: true,
-              pendingColorChoice: true
+              pendingColorChoice: true,
+              forceColorPicker: true,
+              colorPickerTrigger: Date.now()
             }));
-            console.log('🎨 COLOR PICKER STATE SET - should trigger modal');
+            console.log('🎨 COLOR PICKER STATE SET - should trigger modal immediately');
+            
+            // EMERGENCY FALLBACK - also trigger a React re-render
+            if (typeof refreshGameState === 'function') {
+              refreshGameState();
+            }
             break;
             
           case 'wild_card_played':

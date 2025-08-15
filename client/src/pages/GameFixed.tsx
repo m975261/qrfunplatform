@@ -156,10 +156,17 @@ export default function Game() {
 
   // Handle server color choice request
   useEffect(() => {
-    if (gameState?.colorChoiceRequested) {
+    console.log('🎨 COLOR CHOICE EFFECT TRIGGERED:', { 
+      colorChoiceRequested: gameState?.colorChoiceRequested,
+      showColorPicker: gameState?.showColorPicker,
+      pendingColorChoice: gameState?.pendingColorChoice,
+      currentShowColorPicker: showColorPicker
+    });
+    if (gameState?.colorChoiceRequested || gameState?.showColorPicker || gameState?.pendingColorChoice || gameState?.forceColorPicker) {
+      console.log('🎨 SETTING showColorPicker to TRUE');
       setShowColorPicker(true);
     }
-  }, [gameState?.colorChoiceRequested]);
+  }, [gameState?.colorChoiceRequested, gameState?.showColorPicker, gameState?.pendingColorChoice, gameState?.forceColorPicker]);
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -1260,7 +1267,14 @@ export default function Game() {
       )}
 
       {/* Color Picker Modal for Wild Cards */}
-      {(showColorPicker || gameState?.showColorPicker || gameState?.colorChoiceRequested || gameState?.pendingColorChoice) && (
+      {(showColorPicker || gameState?.showColorPicker || gameState?.colorChoiceRequested || gameState?.pendingColorChoice || gameState?.forceColorPicker) && (
+        console.log('🎨 RENDERING COLOR PICKER MODAL with states:', { 
+          showColorPicker, 
+          gameStateShowColorPicker: gameState?.showColorPicker, 
+          colorChoiceRequested: gameState?.colorChoiceRequested, 
+          pendingColorChoice: gameState?.pendingColorChoice,
+          forceColorPicker: gameState?.forceColorPicker
+        }) || true) && (
         <ColorPickerModal
           onChooseColor={(color) => {
             console.log(`🎨 COLOR CHOSEN: ${color} - sending to server`);
