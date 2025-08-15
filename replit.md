@@ -38,6 +38,15 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: Draw button positioned in `col-start-10 col-end-12 row-start-10 row-end-12` grid cells
 - **Requirement**: All future game UI positioning must use this grid system to prevent overlap issues
 
+**CRITICAL - RECENTLY FIXED**: Avatar Layout Centering & Responsiveness (Fixed Aug 15, 2025)
+- **Centering Issue**: Fixed avatar layout that was left-aligned and not responsive to window resizing
+- **3 O'Clock Avatar**: Fixed missing 3 o'clock avatar slot due to incorrect translate-x positioning
+- **6 O'Clock Positioning**: Corrected 6 o'clock avatar positioning with proper translate-y-1/2
+- **Viewport Sizing**: Reduced board size to 85vmin max 500px to prevent overflow and scrolling
+- **Draw Pile Visibility**: Simplified positioning with fixed top-2/bottom-2 left-2 for consistent visibility
+- **Responsive Scaling**: Implemented CSS variables with clamp() functions for true mobile-to-desktop scaling
+- **Status**: Avatar layout now centers properly and scales beautifully with window resizing
+
 **CRITICAL - RECENTLY FIXED**: White Page Issue & Function Hoisting (Fixed Aug 14, 2025)
 - **White Page Fix**: Resolved critical React component crash caused by function hoisting issue
 - **Function Scope**: Moved `isPlayerOnline` function definition before its usage to prevent "Cannot access before initialization" error

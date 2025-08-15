@@ -559,19 +559,19 @@ export default function Game() {
 
 
       {/* === UNO TABLE (Centered + Responsive) === */}
-      <section className="relative w-full min-h-[100svh] grid place-items-center bg-transparent">
+      <section className="relative w-full h-full flex items-center justify-center bg-transparent p-4">
         {/* Responsive square board centered in viewport */}
         <div
-          className="relative aspect-square w-[min(92vmin,900px)] mx-auto"
+          className="relative aspect-square w-[min(85vmin,500px)] mx-auto"
           style={{
-            // Board ring radius (distance from center to avatar centers)
-            ['--r' as any]: '38%',
+            // Board ring radius (distance from center to avatar centers)  
+            ['--r' as any]: '42%',
             // Avatar diameter (clamped for phone → desktop)
-            ['--avatar' as any]: 'clamp(56px, 9vmin, 84px)',
+            ['--avatar' as any]: 'clamp(64px, 12vmin, 80px)',
             // Center play area size (the round table behind top card)
-            ['--center' as any]: 'clamp(112px, 20vmin, 180px)',
+            ['--center' as any]: 'clamp(100px, 18vmin, 140px)',
             // Corner padding for draw pile / direction
-            ['--gap' as any]: 'clamp(8px, 2.2vmin, 20px)',
+            ['--gap' as any]: 'clamp(12px, 3vmin, 24px)',
           }}
         >
           {/* === CENTER AREA === */}
@@ -622,14 +622,14 @@ export default function Game() {
             const isOnline = player ? isPlayerOnline(player) : false;
             const isPlayerTurn = currentGamePlayer?.id === player?.id;
 
-            // Absolute positions using a single radius var --r
+            // Absolute positions using a single radius var --r - Fixed positioning
             const posClass =
               position === 0
                 ? 'top-[calc(50%-var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
                 : position === 1
-                ? 'left-[calc(50%+var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2'
+                ? 'left-[calc(50%+var(--r))] top-1/2 translate-x-1/2 -translate-y-1/2'
                 : position === 2
-                ? 'top-[calc(50%+var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
+                ? 'top-[calc(50%+var(--r))] left-1/2 -translate-x-1/2 translate-y-1/2'
                 : 'left-[calc(50%-var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2';
 
             return (
@@ -775,20 +775,20 @@ export default function Game() {
 
           {/* === DIRECTION INDICATOR (top-left of board) === */}
           {room?.direction && room?.status === 'playing' && (
-            <div className="absolute z-20" style={{ top: 'var(--gap)', left: 'var(--gap)' }}>
-              <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 flex items-center justify-center animate-pulse">
-                <div className="text-white text-[10px] font-bold text-center leading-tight">
+            <div className="absolute z-20 top-2 left-2">
+              <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center animate-pulse">
+                <div className="text-white text-[9px] font-bold text-center leading-tight">
                   {room.direction === 'clockwise' ? (
                     <div className="flex flex-col items-center">
-                      <span className="text-lg">↻</span>
+                      <span className="text-sm">↻</span>
                       <span>GAME</span>
-                      <span>DIRECTION</span>
+                      <span>DIR</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <span className="text-lg">↺</span>
+                      <span className="text-sm">↺</span>
                       <span>GAME</span>
-                      <span>DIRECTION</span>
+                      <span>DIR</span>
                     </div>
                   )}
                 </div>
@@ -797,7 +797,7 @@ export default function Game() {
           )}
 
           {/* === DRAW PILE (bottom-left of board) === */}
-          <div className="absolute z-20" style={{ bottom: 'var(--gap)', left: 'var(--gap)' }}>
+          <div className="absolute z-20 bottom-2 left-2">
             <div className="relative cursor-pointer group" onClick={drawCard}>
               <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
               <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
