@@ -562,7 +562,7 @@ export default function Game() {
       <section className="relative w-full h-full flex items-center justify-center bg-transparent p-4 pb-32">
         {/* Responsive square board centered in viewport - Slightly left-shifted to prevent overlap */}
         <div
-          className="relative aspect-square w-[min(80vmin,450px)] -ml-8"
+          className="relative aspect-square w-[min(80vmin,450px)] -ml-16 sm:-ml-8"
           style={{
             // Board ring radius - Attached to circle edge with proper spacing (center radius + avatar radius + gap)
             ['--r' as any]: 'calc(var(--center) / 2 + var(--avatar) / 2 + 8px)',

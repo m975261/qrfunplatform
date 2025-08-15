@@ -40,12 +40,14 @@ Preferred communication style: Simple, everyday language.
 
 **CRITICAL - RECENTLY FIXED**: Avatar Layout Centering & Responsiveness (Fixed Aug 15, 2025)
 - **Centering Issue**: Fixed avatar layout that was left-aligned and not responsive to window resizing
-- **3 O'Clock Avatar**: Fixed missing 3 o'clock avatar slot due to incorrect translate-x positioning
+- **3 O'Clock Avatar**: Fixed missing 3 o'clock avatar slot due to incorrect translate-x positioning  
 - **6 O'Clock Positioning**: Corrected 6 o'clock avatar positioning with proper translate-y-1/2
-- **Viewport Sizing**: Reduced board size to 85vmin max 500px to prevent overflow and scrolling
+- **Viewport Sizing**: Reduced board size to 80vmin max 450px to prevent overflow and scrolling
 - **Draw Pile Visibility**: Simplified positioning with fixed top-2/bottom-2 left-2 for consistent visibility
 - **Responsive Scaling**: Implemented CSS variables with clamp() functions for true mobile-to-desktop scaling
-- **Status**: Avatar layout now centers properly and scales beautifully with window resizing
+- **Avatar Attachment**: Fixed avatar positioning using calc(center radius + avatar radius + 8px gap) for proper circle edge attachment
+- **Mobile Centering**: Added responsive left margin (-ml-16 on mobile, -ml-8 on desktop) to center layout and prevent viewer table overlap
+- **Status**: Avatar layout now centers perfectly on all screen sizes with proper circle attachment and no overlapping
 
 **CRITICAL - RECENTLY FIXED**: White Page Issue & Function Hoisting (Fixed Aug 14, 2025)
 - **White Page Fix**: Resolved critical React component crash caused by function hoisting issue
