@@ -19,8 +19,10 @@ export default function Game() {
   const [, params] = useRoute("/game/:roomId");
   const [, setLocation] = useLocation();
   const roomId = params?.roomId;
-  const playerId = localStorage.getItem("playerId");
+  const playerId = localStorage.getItem("playerId") || localStorage.getItem("userId");
   const { toast } = useToast();
+  
+
   
   const {
     gameState,
@@ -61,11 +63,28 @@ export default function Game() {
   const [handRefreshKey, setHandRefreshKey] = useState(0);
   const [showConnectionError, setShowConnectionError] = useState(false);
 
+  // Debug logs for troubleshooting
+  console.log("🚨 WHITE PAGE DEBUG:", {
+    gameState: !!gameState,
+    room: !!gameState?.room,
+    isConnected,
+    roomId,
+    playerId,
+    timestamp: new Date().toISOString()
+  });
+
   useEffect(() => {
+    // If no playerId exists, redirect to home to join properly
+    if (!playerId && roomId) {
+      console.log("No playerId found, redirecting to home");
+      setLocation(`/?room=${roomId}`);
+      return;
+    }
+    
     if (roomId && playerId && isConnected) {
       joinRoom(playerId, roomId);
     }
-  }, [roomId, playerId, isConnected, joinRoom]);
+  }, [roomId, playerId, isConnected, joinRoom, setLocation]);
 
   useEffect(() => {
     if (gameState?.gameEndData) {
@@ -379,6 +398,17 @@ export default function Game() {
   }, [isConnected, gameState]);
 
   // Enhanced loading state with connection debugging
+  if (!playerId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-white text-xl mb-4">Redirecting...</div>
+          <div className="text-white/80 text-sm mb-2">Please join the game properly</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!gameState || !gameState.room) {
     console.log("🚨 WHITE PAGE DEBUG:", {
       gameState: !!gameState,
@@ -702,8 +732,11 @@ export default function Game() {
                       {/* Controls */}
                       {player.id === playerId && (
                         <button
-                          onClick={() => setShowNicknameEditor(true)}
-                          className={`absolute w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white ${
+                          onClick={() => {
+                            console.log('Edit button clicked for player:', player.id);
+                            setShowNicknameEditor(true);
+                          }}
+                          className={`absolute w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto ${
                             position === 0 ? '-top-6 left-1/2 -translate-x-1/2'
                             : position === 1 ? 'top-1/2 -right-6 -translate-y-1/2'
                             : position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2'
@@ -717,8 +750,11 @@ export default function Game() {
 
                       {isHost && player.id !== playerId && (
                         <button
-                          onClick={() => kickPlayer(player.id)}
-                          className={`absolute w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white ${
+                          onClick={() => {
+                            console.log('Kick button clicked for player:', player.id);
+                            kickPlayer(player.id);
+                          }}
+                          className={`absolute w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto ${
                             position === 0 ? '-top-6 left-1/2 -translate-x-1/2 translate-x-5'
                             : position === 1 ? 'top-1/2 -right-6 -translate-y-1/2 translate-y-5'
                             : position === 2 ? '-bottom-6 left-1/2 -translate-x-1/2 translate-x-5'
@@ -904,8 +940,10 @@ export default function Game() {
         </div>
       )}
 
-      {/* Viewers Area - Always visible, never disappears */}
-      <div className="absolute top-12 sm:top-16 md:top-20 bottom-12 sm:bottom-16 md:bottom-20 z-20" style={{
+      {/* Viewers Area - Positioned under home/exit buttons and ends at 6 o'clock avatar line */}
+      <div className="absolute z-20" style={{
+        top: '4rem', // Start under home/exit buttons
+        bottom: 'calc(50% - var(--r))', // End at 6 o'clock avatar line
         right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
         width: 'min(18rem, 20vw)' // Original width restored
       }}>
