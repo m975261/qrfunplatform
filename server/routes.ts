@@ -1694,8 +1694,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0)) {
       console.log(`❌ PLAY CARD: Cannot play card - card exists: ${!!card}, canPlay: ${card ? UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0) : false}`);
-      if (card?.type === 'wild4') {
-        console.log(`🃏 Wild4 card rejected - Type: ${card.type}, PendingDraw: ${room.pendingDraw}, TopCard: ${topCard?.type}`);
+      if (card) {
+        console.log(`🃏 Card details - Type: ${card.type}, Color: ${card.color}, Value: ${card.value}, Number: ${card.number}`);
+        console.log(`🃏 Top card - Type: ${topCard?.type}, Color: ${topCard?.color}, Value: ${topCard?.value}, Number: ${topCard?.number}`);
+        console.log(`🎨 Room current color: ${room.currentColor}`);
+        console.log(`⚡ Pending draw: ${room.pendingDraw}`);
       }
       return;
     }
