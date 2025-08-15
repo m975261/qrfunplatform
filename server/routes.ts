@@ -1716,8 +1716,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const card = playerHand[cardIndex];
     const topCard = (room.discardPile || [])[0];
     
+    // EMERGENCY FIX: Handle stuck wild card state
     if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0)) {
       console.log(`❌ PLAY CARD: Cannot play card - card exists: ${!!card}, canPlay: ${card ? UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0) : false}`);
+      
+      // Check if this is a stuck wild card situation
+      if (topCard && (topCard.type === 'wild' || topCard.type === 'wild4') && room.currentColor === null) {
+        console.log(`🚨 EMERGENCY FIX: Wild card stuck without color, auto-setting to red`);
+        await storage.updateRoom(connection.roomId, { 
+          currentColor: 'red',
+          waitingForColorChoice: null 
+        });
+        
+        // Broadcast the fix
+        broadcastToRoom(connection.roomId, {
+          type: 'wild_card_played',
+          playerId: room.waitingForColorChoice || connection.playerId,
+          cardType: topCard.type,
+          requiresColorChoice: false,
+          chosenColor: 'red'
+        });
+        
+        await broadcastRoomState(connection.roomId);
+        console.log(`✅ EMERGENCY FIX: Wild card color set to red, game can continue`);
+        
+        connection.ws.send(JSON.stringify({
+          type: 'notification',
+          message: 'Wild card color was automatically set to red. Game can continue!'
+        }));
+        return;
+      }
+      
       if (card) {
         console.log(`🃏 Card details - Type: ${card.type}, Color: ${card.color}, Number: ${card.number}`);
         console.log(`🃏 Top card - Type: ${topCard?.type}, Color: ${topCard?.color}, Number: ${topCard?.number}`);
