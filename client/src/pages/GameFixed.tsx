@@ -564,8 +564,8 @@ export default function Game() {
         <div
           className="relative aspect-square w-[min(85vmin,500px)] mx-auto"
           style={{
-            // Board ring radius (distance from center to avatar centers)  
-            ['--r' as any]: '42%',
+            // Board ring radius (distance from center to avatar centers) - Reduced by 70%  
+            ['--r' as any]: '30%',
             // Avatar diameter (clamped for phone → desktop)
             ['--avatar' as any]: 'clamp(64px, 12vmin, 80px)',
             // Center play area size (the round table behind top card)
