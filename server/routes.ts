@@ -2166,6 +2166,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       waitingForColorChoice: null // Clear the waiting state
     });
     
+    // Broadcast immediate color change notification to ALL players
+    broadcastToRoom(connection.roomId, {
+      type: 'color_chosen',
+      color: color,
+      message: `Active color changed to ${color}`
+    });
+    
     // Broadcast immediate update for color choice (especially after UNO penalties)
     await broadcastRoomState(connection.roomId);
     

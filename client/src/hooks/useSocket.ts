@@ -291,6 +291,19 @@ export function useSocket(autoConnect: boolean = true) {
               colorChoiceRequested: true
             }));
             break;
+          case 'color_chosen':
+            console.log(`Color chosen: ${message.color}`);
+            // Update the current color for all players immediately
+            setGameState((prev: any) => ({
+              ...prev,
+              room: {
+                ...prev?.room,
+                currentColor: message.color
+              },
+              colorUpdate: Date.now(),
+              forceRefresh: Math.random()
+            }));
+            break;
           case 'uno_penalty':
             console.log(`UNO penalty for player: ${message.playerName}`);
             // Show penalty animation to all players

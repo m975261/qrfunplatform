@@ -177,11 +177,17 @@ export default function Game() {
     chooseColor(color);
     setShowColorPicker(false);
     
-    // Clear the colorChoiceRequested flag immediately
+    // Clear the colorChoiceRequested flag immediately and update current color
     setGameState((prev: any) => ({
       ...prev,
       colorChoiceRequested: false,
-      selectedColor: color
+      selectedColor: color,
+      room: {
+        ...prev?.room,
+        currentColor: color // Update the current color immediately for all players
+      },
+      forceRefresh: Math.random(),
+      colorUpdate: Date.now() // Add color update trigger
     }));
     
     // Force immediate visual refresh after color choice (especially important after UNO penalties)
