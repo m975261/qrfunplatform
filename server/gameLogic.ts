@@ -126,60 +126,45 @@ export class UnoGameLogic {
   }
   
   static canPlayCard(card: Card, topCard: Card, currentColor?: string, pendingDraw?: number): boolean {
-    console.log(`🎯 CARD VALIDATION: Checking if ${card.color} ${card.number || card.type} can be played on ${topCard?.color} ${topCard?.number || topCard?.type}`);
-    console.log(`🎨 Current color: ${currentColor}, Pending draw: ${pendingDraw}`);
-    
     // If there's a pending draw effect, only allow stacking cards
     if (pendingDraw && pendingDraw > 0) {
       // Can only play +2 on +2, or +4 on either +2 or +4
       if (topCard.type === "draw2" && card.type === "draw2") {
-        console.log(`✅ STACKING: +2 on +2`);
         return true;
       }
       if (topCard.type === "wild4" && card.type === "wild4") {
-        console.log(`✅ STACKING: +4 on +4`);
         return true;
       }
       if (topCard.type === "draw2" && card.type === "wild4") {
-        console.log(`✅ STACKING: +4 on +2`);
         return true;
       }
       // Cannot play +2 on +4
       if (topCard.type === "wild4" && card.type === "draw2") {
-        console.log(`❌ STACKING: Cannot play +2 on +4`);
         return false;
       }
-      console.log(`❌ STACKING: Card ${card.type} cannot be played when pending draw is ${pendingDraw}`);
       return false;
     }
     
     // Wild cards can always be played
     if (card.type === "wild" || card.type === "wild4") {
-      console.log(`✅ WILD CARD: ${card.type} always playable`);
       return true;
     }
     
     // Must match color
-    // For wild cards on top, use currentColor; for regular cards, use topCard.color
-    const targetColor = (topCard.type === "wild" || topCard.type === "wild4") ? currentColor : topCard.color;
-    if (card.color === targetColor) {
-      console.log(`✅ COLOR MATCH: ${card.color} matches target color ${targetColor}`);
+    if (card.color === topCard.color || card.color === currentColor) {
       return true;
     }
     
     // Number cards must match number
     if (card.type === "number" && topCard.type === "number" && card.number === topCard.number) {
-      console.log(`✅ NUMBER MATCH: ${card.number} matches ${topCard.number}`);
       return true;
     }
     
     // Action cards must match type
     if (card.type === topCard.type && card.type !== "number") {
-      console.log(`✅ ACTION MATCH: ${card.type} matches ${topCard.type}`);
       return true;
     }
     
-    console.log(`❌ NO MATCH: Card cannot be played`);
     return false;
   }
   

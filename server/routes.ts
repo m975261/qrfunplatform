@@ -756,22 +756,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let playerPosition = null;
       let playerHand: any[] = [];
-      let isSpectator = true; // ALL NEW JOINERS START AS SPECTATORS
+      let isSpectator = true; // NEW SPECTATOR SYSTEM: All new joiners start as spectators
 
-      // DEBUG: Check room status and existing players
-      console.log(`PLAYER JOIN DEBUG: ${nickname} joining room with status: ${room.status}`);
-      console.log(`PLAYER JOIN DEBUG: Existing players: ${existingPlayers.length}, Non-spectators: ${nonSpectatorPlayers.length}`);
-      console.log(`✅ Player ${nickname} joining as SPECTATOR (spectator-centric lobby system)`);
-      
-      // SPECTATOR-CENTRIC SYSTEM: All new players join as spectators regardless of room status
-      // Host can later assign them to active slots using the lobby controls
-      if (room.status === "playing" || room.status === "paused") {
+      // ONLY exception: If room is empty, first joiner becomes host at position 0
+      if (existingPlayers.length === 0) {
+        isSpectator = false;
+        playerPosition = 0;
+      } else if (room.status === "playing" || room.status === "paused") {
         // For active games, new joiners always start as spectators
-        console.log(`⚠️ New player ${nickname} joining active/paused game as spectator`);
+        // They can take positions using the take-slot endpoint if they want
+        console.log(`New player ${nickname} joining active/paused game as spectator`);
         isSpectator = true;
       }
-      
-      console.log(`PLAYER JOIN FINAL: ${nickname} - isSpectator: ${isSpectator}, position: ${playerPosition}`);
 
       const player = await storage.createPlayer({
         nickname,
@@ -1395,7 +1391,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await handleJoinRoom(connection, message, connectionId);
             break;
           case 'start_game':
-            console.log(`🎯 Routing start_game message to handleStartGame`);
             await handleStartGame(connection, message);
             break;
           case 'play_card':
@@ -1569,26 +1564,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   async function handleStartGame(connection: SocketConnection, message: any) {
-    console.log(`🎯 START GAME: Connection ${connection.playerId} in room ${connection.roomId}`);
     if (!connection.roomId) return;
     
     const room = await storage.getRoom(connection.roomId);
     const players = await storage.getPlayersByRoom(connection.roomId);
     const gamePlayers = players.filter(p => !p.isSpectator);
     
-    console.log(`START GAME DEBUG: Room exists: ${!!room}`);
-    console.log(`START GAME DEBUG: Room hostId: ${room?.hostId}`);
-    console.log(`START GAME DEBUG: Connection playerId: ${connection.playerId}`);
-    console.log(`START GAME DEBUG: Is host? ${room?.hostId === connection.playerId}`);
-    console.log(`START GAME DEBUG: Game players count: ${gamePlayers.length}`);
-    console.log(`START GAME DEBUG: Players: ${gamePlayers.map(p => `${p.nickname}(${p.id})`).join(', ')}`);
-    
     if (!room || room.hostId !== connection.playerId || gamePlayers.length < 2) {
-      console.log(`❌ START GAME: Validation failed - room: ${!!room}, isHost: ${room?.hostId === connection.playerId}, playerCount: ${gamePlayers.length}`);
       return;
     }
-    
-    console.log(`✅ START GAME: All validations passed, starting game...`);
     
     // Initialize game with verified deck
     const deck = UnoGameLogic.createDeck();
@@ -1708,47 +1692,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const card = playerHand[cardIndex];
     const topCard = (room.discardPile || [])[0];
     
-    // EMERGENCY FIX: Handle stuck wild card state
     if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0)) {
       console.log(`❌ PLAY CARD: Cannot play card - card exists: ${!!card}, canPlay: ${card ? UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0) : false}`);
-      
-      // Check if this is a stuck wild card situation
-      if (topCard && (topCard.type === 'wild' || topCard.type === 'wild4') && room.currentColor === null) {
-        console.log(`🚨 EMERGENCY FIX: Wild card stuck without color, auto-setting to red`);
-        await storage.updateRoom(connection.roomId, { 
-          currentColor: 'red',
-          waitingForColorChoice: null 
-        });
-        
-        // Broadcast the fix
-        broadcastToRoom(connection.roomId, {
-          type: 'wild_card_played',
-          playerId: room.waitingForColorChoice || connection.playerId,
-          cardType: topCard.type,
-          requiresColorChoice: false,
-          chosenColor: 'red'
-        });
-        
-        await broadcastRoomState(connection.roomId);
-        console.log(`✅ EMERGENCY FIX: Wild card color set to red, game can continue`);
-        
-        connection.ws.send(JSON.stringify({
-          type: 'notification',
-          message: 'Wild card color was automatically set to red. Game can continue!'
-        }));
-        return;
-      }
-      
-      if (card) {
-        console.log(`🃏 Card details - Type: ${card.type}, Color: ${card.color}, Number: ${card.number}`);
-        console.log(`🃏 Top card - Type: ${topCard?.type}, Color: ${topCard?.color}, Number: ${topCard?.number}`);
-        console.log(`🎨 Room current color: ${room.currentColor}`);
-        console.log(`⚡ Pending draw: ${room.pendingDraw}`);
+      if (card?.type === 'wild4') {
+        console.log(`🃏 Wild4 card rejected - Type: ${card.type}, PendingDraw: ${room.pendingDraw}, TopCard: ${topCard?.type}`);
       }
       return;
     }
     
-    console.log(`✅ PLAY CARD: Playing card ${card.color} ${card.number || card.type} for ${player.nickname}`);
+    console.log(`✅ PLAY CARD: Playing card ${card.color} ${card.value} for ${player.nickname}`);
     
     // Remove card from player's hand first
     let newHand = playerHand.filter((_, index) => index !== cardIndex);
@@ -1961,48 +1913,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // If wild card was played, send color choice request to the player
     if (effect.chooseColor) {
-      console.log(`🎨 SENDING COLOR CHOICE REQUEST to player ${connection.playerId} for card ${card.type}`);
-      
-      try {
-        const colorRequest = {
-          type: 'choose_color_request',
-          message: 'Choose a color for the wild card',
-          cardType: card.type,
-          playerId: connection.playerId
-        };
-        
-        // ULTRA-RELIABLE FIX: Send to ALL possible channels
-        
-        // 1. Send to the current connection
-        if (connection.ws && connection.ws.readyState === WebSocket.OPEN) {
-          connection.ws.send(JSON.stringify(colorRequest));
-          console.log(`✅ COLOR CHOICE REQUEST SENT to current connection`);
-        }
-        
-        // 2. Send to ALL connections for this player
-        const playerConnections = Array.from(activeConnections.values()).filter(c => c.playerId === connection.playerId);
-        playerConnections.forEach(playerConn => {
-          if (playerConn.ws && playerConn.ws.readyState === WebSocket.OPEN) {
-            playerConn.ws.send(JSON.stringify(colorRequest));
-            console.log(`✅ COLOR CHOICE REQUEST SENT to player connection ${playerConn.connectionId}`);
-          }
-        });
-        
-        // 3. Broadcast to entire room (fallback)
-        broadcastToRoom(connection.roomId, colorRequest);
-        console.log(`✅ COLOR CHOICE REQUEST BROADCAST to entire room`);
-        
-        // 4. Also send wild_card_played message
-        broadcastToRoom(connection.roomId, {
-          type: 'wild_card_played',
-          playerId: connection.playerId,
-          cardType: card.type,
-          requiresColorChoice: true
-        });
-        
-      } catch (error) {
-        console.error(`❌ ERROR SENDING COLOR CHOICE REQUEST:`, error);
-      }
+      connection.ws.send(JSON.stringify({
+        type: 'choose_color_request',
+        message: 'Choose a color for the wild card'
+      }));
     }
     
     await broadcastRoomState(connection.roomId);

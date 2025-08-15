@@ -56,9 +56,7 @@ export function useSocket(autoConnect: boolean = true) {
     
     socketRef.current.onmessage = (event) => {
       try {
-        console.log('📨 RAW WebSocket message received:', event.data);
         const message: SocketMessage = JSON.parse(event.data);
-        console.log('📨 PARSED WebSocket message:', message);
         
         switch (message.type) {
           case 'room_state':
@@ -285,56 +283,13 @@ export function useSocket(autoConnect: boolean = true) {
             }));
             break;
           case 'choose_color_request':
-            console.log('🎨 COLOR CHOICE REQUEST RECEIVED for wild card:', message);
-            console.log('🎨 CURRENT CONNECTION STATE:', {
-              isConnected: socketRef.current?.readyState === WebSocket.OPEN,
-              readyState: socketRef.current?.readyState,
-              playerId: playerId
-            });
-            
-            try {
-              // Set flag to show color picker with MULTIPLE triggers
-              setGameState((prev: any) => {
-                const newState = {
-                  ...prev,
-                  showColorPicker: true,
-                  colorChoiceRequested: true,
-                  pendingColorChoice: true,
-                  forceColorPicker: true,
-                  colorPickerTrigger: Date.now(),
-                  lastColorRequest: message
-                };
-                console.log('🎨 COLOR PICKER STATE UPDATE:', {
-                  showColorPicker: newState.showColorPicker,
-                  colorChoiceRequested: newState.colorChoiceRequested,
-                  trigger: newState.colorPickerTrigger
-                });
-                return newState;
-              });
-              console.log('🎨 COLOR PICKER STATE SET - should trigger modal immediately');
-              
-              // EMERGENCY FALLBACK - also trigger a React re-render
-              if (typeof refreshGameState === 'function') {
-                refreshGameState();
-              }
-            } catch (error) {
-              console.error('❌ ERROR handling choose_color_request:', error);
-              console.error('❌ Message that caused error:', message);
-            }
-            break;
-            
-          case 'wild_card_played':
-            console.log('🃏 WILD CARD PLAYED MESSAGE RECEIVED:', message);
-            if (message.requiresColorChoice && message.playerId === playerId) {
-              console.log('🎨 THIS PLAYER MUST CHOOSE COLOR');
-              setGameState((prev: any) => ({
-                ...prev,
-                showColorPicker: true,
-                colorChoiceRequested: true,
-                pendingColorChoice: true,
-                wildCardType: message.cardType
-              }));
-            }
+            console.log('Color choice request received for wild card');
+            // Set flag to show color picker
+            setGameState((prev: any) => ({
+              ...prev,
+              showColorPicker: true,
+              colorChoiceRequested: true
+            }));
             break;
           case 'uno_penalty':
             console.log(`UNO penalty for player: ${message.playerName}`);
@@ -353,35 +308,6 @@ export function useSocket(autoConnect: boolean = true) {
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
-        console.error("Raw message data:", event.data);
-        console.error("Message type:", typeof event.data);
-        console.error("Message length:", event.data?.length);
-        
-        // Try to parse again with more detailed error handling for wild card messages
-        try {
-          const rawData = event.data;
-          if (typeof rawData === 'string' && rawData.includes('choose_color_request')) {
-            console.log('🎨 MANUAL WILD CARD MESSAGE PARSING ATTEMPT');
-            const parsedMessage = JSON.parse(rawData);
-            console.log('🎨 MANUAL PARSE SUCCESS:', parsedMessage);
-            
-            // Manually trigger color picker if this is the wild card message
-            if (parsedMessage.type === 'choose_color_request') {
-              console.log('🎨 EMERGENCY COLOR PICKER TRIGGER');
-              setGameState((prev: any) => ({
-                ...prev,
-                showColorPicker: true,
-                colorChoiceRequested: true,
-                pendingColorChoice: true,
-                forceColorPicker: true,
-                colorPickerTrigger: Date.now(),
-                emergencyColorRequest: parsedMessage
-              }));
-            }
-          }
-        } catch (retryError) {
-          console.error('❌ MANUAL PARSE ALSO FAILED:', retryError);
-        }
       }
     };
     
