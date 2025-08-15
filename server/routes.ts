@@ -756,24 +756,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let playerPosition = null;
       let playerHand: any[] = [];
-      let isSpectator = true; // NEW SPECTATOR SYSTEM: All new joiners start as spectators
+      let isSpectator = true; // ALL NEW JOINERS START AS SPECTATORS
 
       // DEBUG: Check room status and existing players
       console.log(`PLAYER JOIN DEBUG: ${nickname} joining room with status: ${room.status}`);
       console.log(`PLAYER JOIN DEBUG: Existing players: ${existingPlayers.length}, Non-spectators: ${nonSpectatorPlayers.length}`);
+      console.log(`✅ Player ${nickname} joining as SPECTATOR (spectator-centric lobby system)`);
       
-      // Allow up to 4 active players in waiting rooms
-      if (room.status === "waiting") {
-        const activePlayerCount = nonSpectatorPlayers.length;
-        console.log(`PLAYER JOIN DEBUG: Active player count: ${activePlayerCount}`);
-        if (activePlayerCount < 4) {
-          isSpectator = false;
-          playerPosition = activePlayerCount; // 0, 1, 2, or 3
-          console.log(`✅ Player ${nickname} joining waiting room as active player at position ${playerPosition}`);
-        } else {
-          console.log(`⚠️ Player ${nickname} joining waiting room as spectator (room full)`);
-        }
-      } else if (room.status === "playing" || room.status === "paused") {
+      // SPECTATOR-CENTRIC SYSTEM: All new players join as spectators regardless of room status
+      // Host can later assign them to active slots using the lobby controls
+      if (room.status === "playing" || room.status === "paused") {
         // For active games, new joiners always start as spectators
         console.log(`⚠️ New player ${nickname} joining active/paused game as spectator`);
         isSpectator = true;
