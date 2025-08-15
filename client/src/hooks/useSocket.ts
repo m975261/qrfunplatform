@@ -292,13 +292,14 @@ export function useSocket(autoConnect: boolean = true) {
             }));
             break;
           case 'color_chosen':
-            console.log(`Color chosen: ${message.color}`);
+            console.log(`🎨 COLOR RECEIVED: ${message.color} - updating all players`);
             // Update the current color for all players immediately
             setGameState((prev: any) => ({
               ...prev,
               room: {
                 ...prev?.room,
-                currentColor: message.color
+                currentColor: message.color,
+                waitingForColorChoice: null // Clear waiting state
               },
               colorUpdate: Date.now(),
               forceRefresh: Math.random()
