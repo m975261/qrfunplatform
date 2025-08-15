@@ -947,7 +947,7 @@ export default function Game() {
       {/* Viewers Area - Positioned under home/exit buttons and ends at 6 o'clock avatar line */}
       <div className="absolute z-20" style={{
         top: '4rem', // Start under home/exit buttons
-        bottom: 'calc(50% - var(--r))', // End at 6 o'clock avatar line
+        bottom: 'calc(50% - var(--r) - var(--avatar) / 2 - 8px)', // End at top edge of 6 o'clock avatar
         right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
         width: 'min(18rem, 20vw)' // Original width restored
       }}>
