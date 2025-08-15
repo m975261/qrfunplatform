@@ -56,7 +56,9 @@ export function useSocket(autoConnect: boolean = true) {
     
     socketRef.current.onmessage = (event) => {
       try {
+        console.log('📨 RAW WebSocket message received:', event.data);
         const message: SocketMessage = JSON.parse(event.data);
+        console.log('📨 PARSED WebSocket message:', message);
         
         switch (message.type) {
           case 'room_state':
@@ -336,6 +338,9 @@ export function useSocket(autoConnect: boolean = true) {
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
+        console.error("Raw message data:", event.data);
+        console.error("Message type:", typeof event.data);
+        console.error("Message length:", event.data?.length);
       }
     };
     

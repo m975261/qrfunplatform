@@ -1037,7 +1037,16 @@ export default function Game() {
         />
       )}
 
-      {/* Color Picker Modal */}
+      {/* EMERGENCY TEST: Always show color picker modal for debugging */}
+      <ColorPickerModal
+        onChooseColor={handleColorChoice}
+        onClose={() => {
+          console.log('🎨 COLOR PICKER MODAL CLOSED');
+          setShowColorPicker(false);
+        }}
+      />
+
+      {/* Original Color Picker Modal */}
       {(showColorPicker || gameState?.showColorPicker || gameState?.colorChoiceRequested || gameState?.pendingColorChoice || gameState?.forceColorPicker) && (
         <>
           {console.log('🎨 RENDERING COLOR PICKER MODAL:', {
