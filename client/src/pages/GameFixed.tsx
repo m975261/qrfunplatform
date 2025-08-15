@@ -160,11 +160,16 @@ export default function Game() {
       colorChoiceRequested: gameState?.colorChoiceRequested,
       showColorPicker: gameState?.showColorPicker,
       pendingColorChoice: gameState?.pendingColorChoice,
-      currentShowColorPicker: showColorPicker
+      forceColorPicker: gameState?.forceColorPicker,
+      currentShowColorPicker: showColorPicker,
+      gameStateExists: !!gameState,
+      timestamp: Date.now()
     });
     if (gameState?.colorChoiceRequested || gameState?.showColorPicker || gameState?.pendingColorChoice || gameState?.forceColorPicker) {
-      console.log('🎨 SETTING showColorPicker to TRUE');
+      console.log('🎨 SETTING showColorPicker to TRUE - conditions met');
       setShowColorPicker(true);
+    } else {
+      console.log('🎨 NO COLOR PICKER CONDITIONS MET');
     }
   }, [gameState?.colorChoiceRequested, gameState?.showColorPicker, gameState?.pendingColorChoice, gameState?.forceColorPicker]);
 
@@ -1033,11 +1038,24 @@ export default function Game() {
       )}
 
       {/* Color Picker Modal */}
-      {showColorPicker && (
-        <ColorPickerModal
-          onChooseColor={handleColorChoice}
-          onClose={() => setShowColorPicker(false)}
-        />
+      {(showColorPicker || gameState?.showColorPicker || gameState?.colorChoiceRequested || gameState?.pendingColorChoice || gameState?.forceColorPicker) && (
+        <>
+          {console.log('🎨 RENDERING COLOR PICKER MODAL:', {
+            showColorPicker,
+            'gameState?.showColorPicker': gameState?.showColorPicker,
+            'gameState?.colorChoiceRequested': gameState?.colorChoiceRequested,
+            'gameState?.pendingColorChoice': gameState?.pendingColorChoice,
+            'gameState?.forceColorPicker': gameState?.forceColorPicker,
+            timestamp: Date.now()
+          })}
+          <ColorPickerModal
+            onChooseColor={handleColorChoice}
+            onClose={() => {
+              console.log('🎨 COLOR PICKER MODAL CLOSED');
+              setShowColorPicker(false);
+            }}
+          />
+        </>
       )}
 
 
