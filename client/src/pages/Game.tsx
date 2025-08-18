@@ -44,6 +44,9 @@ export default function Game() {
   const [hasCalledUno, setHasCalledUno] = useState(false);
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
   const [unoMessage, setUnoMessage] = useState<string | null>(null);
+  const [oneCardMessage, setOneCardMessage] = useState<string | null>(null);
+  const [turnFinishedMessage, setTurnFinishedMessage] = useState<string | null>(null);
+  const [playerFinishedMessage, setPlayerFinishedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -61,6 +64,36 @@ export default function Game() {
       }, 3000);
     }
   }, [gameState?.unoMessage]);
+
+  // Handle "1 card left" message
+  useEffect(() => {
+    if (gameState?.oneCardMessage) {
+      setOneCardMessage(gameState.oneCardMessage);
+      setTimeout(() => {
+        setOneCardMessage(null);
+      }, 2500);
+    }
+  }, [gameState?.oneCardMessageTimestamp]);
+
+  // Handle "turn finished" message
+  useEffect(() => {
+    if (gameState?.turnFinishedMessage) {
+      setTurnFinishedMessage(gameState.turnFinishedMessage);
+      setTimeout(() => {
+        setTurnFinishedMessage(null);
+      }, 1500);
+    }
+  }, [gameState?.turnFinishedTimestamp]);
+
+  // Handle "player finished game" message
+  useEffect(() => {
+    if (gameState?.playerFinishedMessage) {
+      setPlayerFinishedMessage(gameState.playerFinishedMessage);
+      setTimeout(() => {
+        setPlayerFinishedMessage(null);
+      }, 3000);
+    }
+  }, [gameState?.playerFinishedTimestamp]);
 
   useEffect(() => {
     console.log("🏆 Game state changed:", {
@@ -209,6 +242,44 @@ export default function Game() {
               <span className="animate-pulse">🔥</span>
               <span className="animate-pulse">{unoMessage || gameState?.unoMessage} says UNO!</span>
               <span className="animate-pulse">🔥</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* One Card Left Message */}
+      {oneCardMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 pointer-events-none z-40">
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xl md:text-2xl font-bold px-6 py-3 rounded-full shadow-xl border-3 border-white animate-pulse">
+            <div className="flex items-center space-x-2">
+              <span>⚠️</span>
+              <span>{oneCardMessage}</span>
+              <span>⚠️</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Turn Finished Message */}
+      {turnFinishedMessage && (
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 pointer-events-none z-30">
+          <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-lg font-medium px-4 py-2 rounded-lg shadow-lg animate-fade-in-out">
+            <div className="flex items-center space-x-2">
+              <span>✅</span>
+              <span>{turnFinishedMessage}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Player Finished Game Message */}
+      {playerFinishedMessage && (
+        <div className="fixed top-32 left-1/2 transform -translate-x-1/2 pointer-events-none z-45">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-2xl md:text-3xl font-bold px-8 py-4 rounded-xl shadow-2xl border-4 border-white animate-bounce">
+            <div className="text-center">
+              <div className="text-lg mb-1">🏁</div>
+              <div>{playerFinishedMessage}</div>
+              <div className="text-lg mt-1">🏆</div>
             </div>
           </div>
         </div>

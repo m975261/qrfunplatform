@@ -1759,6 +1759,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hand: newHand,
       hasCalledUno: newUnoStatus
     });
+
+    // Add "1 card left" notification for all players to see
+    if (newHand.length === 1 && !shouldApplyUnoPenalty) {
+      await storage.createMessage({
+        roomId: connection.roomId,
+        message: `${player.nickname} has 1 card left!`,
+        type: "system"
+      });
+      
+      // Broadcast special notification for 1 card left
+      broadcastToRoom(connection.roomId, {
+        type: 'one_card_left',
+        player: player.nickname,
+        message: `${player.nickname} has 1 card left!`
+      });
+    }
     
     // Update position hands to keep them current
     if (player.position !== null) {
@@ -1908,15 +1924,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }, 2000);
         }, 100); // Short delay to prevent race condition with disconnections
       } else {
-        // Continue game with remaining players - notify of player finished
+        // Continue game with remaining players - notify of player finished (empty hand)
+        await storage.createMessage({
+          roomId: connection.roomId,
+          message: `${player.nickname} finished the game! (Position: ${finishedCount + 1})`,
+          type: "system"
+        });
+        
         broadcastToRoom(connection.roomId, {
           type: 'player_finished',
           player: player.nickname,
-          position: finishedCount + 1
+          position: finishedCount + 1,
+          message: `${player.nickname} finished the game!`
         });
       }
     }
     
+    // Add "player finished their turn" notification (except for game-ending moves)
+    if (newHand.length > 0) {
+      await storage.createMessage({
+        roomId: connection.roomId,
+        message: `${player.nickname} finished their turn`,
+        type: "system"
+      });
+      
+      // Broadcast turn completion notification
+      broadcastToRoom(connection.roomId, {
+        type: 'turn_finished',
+        player: player.nickname,
+        message: `${player.nickname} finished their turn`
+      });
+    }
+
     // Broadcast room state first, then send specific color choice message if needed
     await broadcastRoomState(connection.roomId);
     

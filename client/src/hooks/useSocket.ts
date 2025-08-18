@@ -190,6 +190,40 @@ export function useSocket(autoConnect: boolean = true) {
               }));
             }, 4000); // Extended from 3000 to 4000ms
             break;
+          case 'one_card_left':
+            console.log(`🃏 ${message.player} has 1 card left!`);
+            // Show notification message for 1 card left
+            setGameState((prev: any) => ({
+              ...prev,
+              oneCardMessage: message.message,
+              oneCardMessagePlayer: message.player,
+              oneCardMessageTimestamp: Date.now(),
+              forceRefresh: Math.random()
+            }));
+            break;
+          case 'turn_finished':
+            console.log(`✅ ${message.player} finished their turn`);
+            // Show brief notification for turn completion
+            setGameState((prev: any) => ({
+              ...prev,
+              turnFinishedMessage: message.message,
+              turnFinishedPlayer: message.player,
+              turnFinishedTimestamp: Date.now(),
+              forceRefresh: Math.random()
+            }));
+            break;
+          case 'player_finished':
+            console.log(`🏁 ${message.player} finished the game! Position: ${message.position}`);
+            // Show notification for game completion
+            setGameState((prev: any) => ({
+              ...prev,
+              playerFinishedMessage: message.message,
+              playerFinishedPlayer: message.player,
+              playerFinishedPosition: message.position,
+              playerFinishedTimestamp: Date.now(),
+              forceRefresh: Math.random()
+            }));
+            break;
           case 'kicked':
             // Player was kicked - they become a spectator but stay in the room
             console.log("You have been converted to a spectator");
