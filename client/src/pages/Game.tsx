@@ -46,7 +46,6 @@ export default function Game() {
   const [unoMessage, setUnoMessage] = useState<string | null>(null);
   const [oneCardMessage, setOneCardMessage] = useState<string | null>(null);
   const [turnFinishedMessage, setTurnFinishedMessage] = useState<string | null>(null);
-  const [playerFinishedMessage, setPlayerFinishedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -85,15 +84,7 @@ export default function Game() {
     }
   }, [gameState?.turnFinishedTimestamp]);
 
-  // Handle "player finished game" message
-  useEffect(() => {
-    if (gameState?.playerFinishedMessage) {
-      setPlayerFinishedMessage(gameState.playerFinishedMessage);
-      setTimeout(() => {
-        setPlayerFinishedMessage(null);
-      }, 3000);
-    }
-  }, [gameState?.playerFinishedTimestamp]);
+
 
   useEffect(() => {
     console.log("🏆 Game state changed:", {
@@ -272,18 +263,7 @@ export default function Game() {
         </div>
       )}
 
-      {/* Player Finished Game Message */}
-      {playerFinishedMessage && (
-        <div className="fixed top-32 left-1/2 transform -translate-x-1/2 pointer-events-none z-45">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-2xl md:text-3xl font-bold px-8 py-4 rounded-xl shadow-2xl border-4 border-white animate-bounce">
-            <div className="text-center">
-              <div className="text-lg mb-1">🏁</div>
-              <div>{playerFinishedMessage}</div>
-              <div className="text-lg mt-1">🏆</div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Your Turn Message - Positioned above player hand cards */}
       {isMyTurn && (

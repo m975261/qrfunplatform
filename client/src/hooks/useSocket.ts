@@ -214,13 +214,10 @@ export function useSocket(autoConnect: boolean = true) {
             break;
           case 'player_finished':
             console.log(`🏁 ${message.player} finished the game! Position: ${message.position}`);
-            // Show notification for game completion
+            // No UI notification needed - winner modal will show instead
+            // Just refresh game state to update player positions
             setGameState((prev: any) => ({
               ...prev,
-              playerFinishedMessage: message.message,
-              playerFinishedPlayer: message.player,
-              playerFinishedPosition: message.position,
-              playerFinishedTimestamp: Date.now(),
               forceRefresh: Math.random()
             }));
             break;

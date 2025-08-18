@@ -1924,18 +1924,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }, 2000);
         }, 100); // Short delay to prevent race condition with disconnections
       } else {
-        // Continue game with remaining players - notify of player finished (empty hand)
-        await storage.createMessage({
-          roomId: connection.roomId,
-          message: `${player.nickname} finished the game! (Position: ${finishedCount + 1})`,
-          type: "system"
-        });
-        
+        // Continue game with remaining players - no notification needed
+        // The winner modal will show when game truly ends
         broadcastToRoom(connection.roomId, {
           type: 'player_finished',
           player: player.nickname,
-          position: finishedCount + 1,
-          message: `${player.nickname} finished the game!`
+          position: finishedCount + 1
         });
       }
     }
