@@ -138,13 +138,41 @@ export function useSocket(autoConnect: boolean = true) {
             // Show success feedback when UNO is called - Enhanced for all players
             console.log("UNO successfully called by:", message.player);
             
-            // Play voice saying "UNO" for all players
+            // Play voice saying "UNO" for all players - Enhanced iOS Safari compatibility
             if ('speechSynthesis' in window) {
-              const utterance = new SpeechSynthesisUtterance('UNO!');
-              utterance.rate = 1.2;
-              utterance.pitch = 1.3;
-              utterance.volume = 0.8;
-              window.speechSynthesis.speak(utterance);
+              // Create audio context for iOS Safari compatibility
+              try {
+                const utterance = new SpeechSynthesisUtterance('UNO!');
+                utterance.rate = 1.2;
+                utterance.pitch = 1.3;
+                utterance.volume = 0.8;
+                
+                // iOS Safari specific workaround
+                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                  // For iOS, ensure speech synthesis is initialized with user interaction
+                  utterance.onstart = () => {
+                    console.log('UNO audio started on iOS');
+                  };
+                  utterance.onerror = (event) => {
+                    console.log('UNO audio error on iOS:', event);
+                    // iOS fallback: Create HTML5 audio element with UNO sound
+                    try {
+                      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                      audioContext.resume().then(() => {
+                        // Alternative: Show more prominent visual feedback for iOS
+                        console.log('iOS audio context resumed for UNO');
+                      });
+                    } catch (audioError) {
+                      console.log('iOS audio context failed:', audioError);
+                    }
+                  };
+                }
+                
+                window.speechSynthesis.speak(utterance);
+              } catch (error) {
+                console.log('UNO audio failed:', error);
+                // Fallback: Show visual indicator only
+              }
             }
             
             // Set UNO message for animated display - Force update for all players

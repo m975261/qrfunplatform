@@ -87,13 +87,21 @@ export default function Game() {
     }
   }, [gameState?.room?.status, gameState?.gameEndData, gameState?.needsContinue]);
 
+  // Handle server color choice request to prevent double triggers
+  useEffect(() => {
+    if (gameState?.colorChoiceRequested || gameState?.showColorPicker) {
+      setShowColorPicker(true);
+    }
+  }, [gameState?.colorChoiceRequested, gameState?.showColorPicker]);
+
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
     const card = player?.hand?.[cardIndex];
     
     if (card?.type === "wild" || card?.type === "wild4") {
-      setPendingWildCard(cardIndex);
-      setShowColorPicker(true);
+      // For wild cards, play immediately and let server request color choice
+      // This prevents double color picker trigger
+      playCard(cardIndex);
     } else {
       playCard(cardIndex);
     }
@@ -101,10 +109,7 @@ export default function Game() {
 
   const handleColorChoice = (color: string) => {
     chooseColor(color);
-    if (pendingWildCard !== null) {
-      playCard(pendingWildCard);
-      setPendingWildCard(null);
-    }
+    // Clear local color picker state to prevent double trigger
     setShowColorPicker(false);
   };
 
@@ -209,11 +214,11 @@ export default function Game() {
         </div>
       )}
 
-      {/* Your Turn Message - Centered for PC */}
+      {/* Your Turn Message - Positioned above player hand cards */}
       {isMyTurn && (
-        <div className="hidden md:flex fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-40">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xl lg:text-2xl xl:text-3xl font-bold px-8 py-4 rounded-full shadow-2xl border-4 border-white animate-pulse">
-            <div className="flex items-center space-x-3">
+        <div className="hidden md:flex fixed bottom-32 lg:bottom-36 xl:bottom-40 left-1/2 transform -translate-x-1/2 pointer-events-none z-30">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg lg:text-xl font-bold px-6 py-3 rounded-full shadow-xl border-3 border-white animate-pulse">
+            <div className="flex items-center space-x-2">
               <span>⭐</span>
               <span>YOUR TURN!</span>
               <span>⭐</span>
@@ -358,13 +363,23 @@ export default function Game() {
                 <div className="text-xs text-center mt-1 text-white font-bold">DRAW</div>
               </div>
 
-              {/* Current Card - Center */}
+              {/* Current Card - Center with compact size to prevent overlap */}
               <div className="flex flex-col items-center">
                 {topCard && (
                   <GameCard 
                     card={topCard} 
-                    size="medium" 
+                    size="small" 
                   />
+                )}
+                {/* Active Color Indicator - Compact and positioned to avoid overlap */}
+                {room.currentColor && (topCard?.type === "wild" || topCard?.type === "wild4") && (
+                  <div className="mt-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg shadow-sm">
+                    <div className="text-xs font-bold text-gray-700">
+                      Active: <span className={`${room.currentColor === 'red' ? 'text-red-500' : room.currentColor === 'blue' ? 'text-blue-500' : room.currentColor === 'green' ? 'text-green-500' : 'text-yellow-500'}`}>
+                        {room.currentColor?.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -471,11 +486,13 @@ export default function Game() {
         />
       )}
 
-      {/* Modals */}
-      {showColorPicker && (
+      {/* Modals - Only show when explicitly triggered */}
+      {(showColorPicker || gameState?.colorChoiceRequested) && (
         <ColorPickerModal
           onChooseColor={handleColorChoice}
-          onClose={() => setShowColorPicker(false)}
+          onClose={() => {
+            setShowColorPicker(false);
+          }}
         />
       )}
 
