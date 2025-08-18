@@ -196,14 +196,27 @@ export default function Game() {
         ))}
       </div>
 
-      {/* UNO Call Animation */}
-      {unoMessage && (
+      {/* UNO Call Animation - Enhanced for all players */}
+      {(unoMessage || gameState?.unoMessage) && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
           <div className="bg-gradient-to-r from-uno-red via-red-500 to-orange-500 text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold px-6 py-4 rounded-full shadow-2xl border-4 border-white animate-bounce transform scale-110">
             <div className="flex items-center space-x-3">
               <span className="animate-pulse">🔥</span>
-              <span className="animate-pulse">{unoMessage} says UNO!</span>
+              <span className="animate-pulse">{unoMessage || gameState?.unoMessage} says UNO!</span>
               <span className="animate-pulse">🔥</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Your Turn Message - Centered for PC */}
+      {isMyTurn && (
+        <div className="hidden md:flex fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-40">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xl lg:text-2xl xl:text-3xl font-bold px-8 py-4 rounded-full shadow-2xl border-4 border-white animate-pulse">
+            <div className="flex items-center space-x-3">
+              <span>⭐</span>
+              <span>YOUR TURN!</span>
+              <span>⭐</span>
             </div>
           </div>
         </div>

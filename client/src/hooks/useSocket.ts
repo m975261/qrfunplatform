@@ -135,10 +135,10 @@ export function useSocket(autoConnect: boolean = true) {
             console.log("UNO called by:", message.player);
             break;
           case 'uno_called_success':
-            // Show success feedback when UNO is called
+            // Show success feedback when UNO is called - Enhanced for all players
             console.log("UNO successfully called by:", message.player);
             
-            // Play voice saying "UNO"
+            // Play voice saying "UNO" for all players
             if ('speechSynthesis' in window) {
               const utterance = new SpeechSynthesisUtterance('UNO!');
               utterance.rate = 1.2;
@@ -147,18 +147,20 @@ export function useSocket(autoConnect: boolean = true) {
               window.speechSynthesis.speak(utterance);
             }
             
-            // Set UNO message for animated display
+            // Set UNO message for animated display - Force update for all players
             setGameState((prev: any) => ({
               ...prev,
-              unoMessage: message.player
+              unoMessage: message.player,
+              lastUnoCall: Date.now() // Add timestamp to force re-render
             }));
-            // Clear message after animation
+            
+            // Clear message after animation with extended time
             setTimeout(() => {
               setGameState((prev: any) => ({
                 ...prev,
                 unoMessage: null
               }));
-            }, 3000);
+            }, 4000); // Extended from 3000 to 4000ms
             break;
           case 'kicked':
             // Player was kicked - they become a spectator but stay in the room

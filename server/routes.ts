@@ -1694,6 +1694,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!card || !UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0)) {
       console.log(`❌ PLAY CARD: Cannot play card - card exists: ${!!card}, canPlay: ${card ? UnoGameLogic.canPlayCard(card, topCard, room.currentColor || undefined, room.pendingDraw || 0) : false}`);
+      console.log(`🔍 CARD VALIDATION DEBUG for ${player.nickname}:`);
+      console.log(`  Card: ${card?.color} ${card?.value} (${card?.type})`);
+      console.log(`  Top Card: ${topCard?.color} ${topCard?.value} (${topCard?.type})`);
+      console.log(`  Current Color: ${room.currentColor}`);
+      console.log(`  Pending Draw: ${room.pendingDraw}`);
+      console.log(`  Player Hand: ${playerHand.map(c => `${c.color} ${c.value}`).join(', ')}`);
       if (card?.type === 'wild4') {
         console.log(`🃏 Wild4 card rejected - Type: ${card.type}, PendingDraw: ${room.pendingDraw}, TopCard: ${topCard?.type}`);
       }
@@ -2145,10 +2151,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const verifyPlayer = await storage.getPlayer(connection.playerId);
       console.log(`🔍 UNO CALL VERIFICATION: ${player.nickname} hasCalledUno=${verifyPlayer?.hasCalledUno}`);
       
-      // Broadcast UNO call for visual feedback to all players
+      // Broadcast UNO call for visual feedback to all players - Enhanced
+      console.log(`📢 Broadcasting UNO success to all players in room ${connection.roomId}`);
       broadcastToRoom(connection.roomId!, {
         type: 'uno_called_success',
-        player: player.nickname
+        player: player.nickname,
+        timestamp: Date.now() // Add timestamp for debugging
       });
     } else {
       console.log(`⚠️ UNO ALREADY CALLED: ${player.nickname} has already called UNO`);
