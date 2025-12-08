@@ -151,8 +151,10 @@ class AdminAuthServiceImpl implements AdminAuthService {
         secret: adminData.totpSecret,
         encoding: 'base32',
         token: totpCode,
-        window: 1
+        window: 2
       });
+
+      console.log('TOTP validation:', { totpCode, totpValid, hasSecret: !!adminData.totpSecret });
 
       if (!totpValid) {
         return { success: false };
