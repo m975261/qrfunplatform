@@ -1196,6 +1196,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Guru Wild Draw 4 response - allows guru to instantly play +4 when facing a pending draw
+  app.post("/api/rooms/:roomId/guru-wild4-response", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const playerId = req.headers.authorization?.replace('Bearer ', '');
+      const { color } = z.object({
+        color: z.enum(['red', 'blue', 'green', 'yellow'])
+      }).parse(req.body);
+      
+      if (!playerId) {
+        return res.status(401).json({ error: 'Player ID required' });
+      }
+      
+      const room = await storage.getRoom(roomId);
+      if (!room || room.status !== 'playing') {
+        return res.status(400).json({ error: 'Game not in progress' });
+      }
+      
+      const player = await storage.getPlayer(playerId);
+      if (!player || player.roomId !== roomId) {
+        return res.status(403).json({ error: 'Not authorized for this room' });
+      }
+      
+      // Verify there's a pending draw targeting this player
+      const players = await storage.getPlayersByRoom(roomId);
+      const gamePlayers = players.filter(p => !p.isSpectator).sort((a, b) => (a.position || 0) - (b.position || 0));
+      const currentPlayerIndex = room.currentPlayerIndex || 0;
+      const currentPlayer = gamePlayers[currentPlayerIndex];
+      
+      if (!currentPlayer || currentPlayer.id !== playerId) {
+        return res.status(400).json({ error: 'Not your turn' });
+      }
+      
+      if (!room.pendingDraw || room.pendingDraw === 0) {
+        return res.status(400).json({ error: 'No pending draw to respond to' });
+      }
+      
+      console.log(`🧙‍♂️ GURU WILD4: ${player.nickname} using guru privilege to play Wild Draw 4 response (stacking ${room.pendingDraw + 4} cards)`);
+      
+      // Create a Wild Draw 4 card
+      const wild4Card: Card = {
+        type: 'wild4',
+        color: 'wild',
+        value: '+4'
+      };
+      
+      // Add the card to discard pile
+      const newDiscardPile = [wild4Card, ...(room.discardPile || [])];
+      
+      // Stack the penalty: existing pending + 4 more
+      const newPendingDraw = (room.pendingDraw || 0) + 4;
+      
+      // Get finished player indices for turn calculation
+      const finishedPlayerIndices = gamePlayers
+        .map((p, idx) => ({ player: p, index: idx }))
+        .filter(item => item.player.finishPosition)
+        .map(item => item.index);
+      
+      // Move to next player (they now have the stacked penalty)
+      const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+        currentPlayerIndex, 
+        gamePlayers.length, 
+        room.direction || "clockwise",
+        false, // Don't skip - next player gets the penalty
+        false,
+        finishedPlayerIndices
+      );
+      
+      // Update room state
+      await storage.updateRoom(roomId, {
+        discardPile: newDiscardPile,
+        currentColor: color,
+        pendingDraw: newPendingDraw,
+        currentPlayerIndex: nextPlayerIndex
+      });
+      
+      // Broadcast the guru Wild Draw 4 response
+      broadcastToRoom(roomId, {
+        type: 'guru_wild4_response',
+        player: player.nickname,
+        color: color,
+        newPendingDraw: newPendingDraw,
+        message: `${player.nickname} used GURU POWER to play Wild Draw 4! (Total penalty: ${newPendingDraw} cards)`
+      });
+      
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: 'Guru Wild Draw 4 played successfully', newPendingDraw });
+      
+      // Check if next player can stack - if not, auto-apply penalty (AFTER response is sent)
+      try {
+        const nextPlayer = gamePlayers[nextPlayerIndex];
+        if (nextPlayer) {
+          const nextPlayerData = await storage.getPlayer(nextPlayer.id);
+          if (nextPlayerData) {
+            const canStack = UnoGameLogic.canPlayerStackDraw(nextPlayerData.hand || [], wild4Card, newPendingDraw);
+            if (!canStack) {
+              // Apply penalty with animation
+              await applyPenaltyWithAnimation(roomId, nextPlayerIndex, gamePlayers, newPendingDraw);
+            }
+          }
+        }
+      } catch (penaltyError) {
+        console.error("Error applying penalty after guru Wild4:", penaltyError);
+      }
+    } catch (error) {
+      console.error("Error with guru Wild4 response:", error);
+      res.status(500).json({ error: 'Failed to play guru Wild Draw 4' });
+    }
+  });
+
   // Host assign spectator to active game endpoint
   app.post("/api/rooms/:roomId/assign-spectator-to-game", async (req, res) => {
     try {
@@ -2088,27 +2199,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await broadcastRoomState(roomId);
     }
     
-    // Get finished player indices for turn skipping
-    const finishedPlayerIndices = gamePlayers
-      .map((p, idx) => ({ player: p, index: idx }))
-      .filter(item => item.player.finishPosition)
-      .map(item => item.index);
-    
-    // Move to next player and clear penalty
-    const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
-      playerIndex, 
-      gamePlayers.length, 
-      room.direction || "clockwise",
-      false,
-      false,
-      finishedPlayerIndices
-    );
-    
-    await storage.updateRoom(roomId, { 
-      deck,
-      pendingDraw: 0,
-      currentPlayerIndex: nextPlayerIndex
-    });
+    // Update deck immediately (cards have been drawn)
+    await storage.updateRoom(roomId, { deck });
     
     // Wait 1.5 seconds before ending animation to complete 6 second total
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -2118,6 +2210,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       type: 'penalty_animation_end',
       player: player.nickname,
       totalCards: penaltyAmount
+    });
+    
+    // Get finished player indices for turn skipping
+    const finishedPlayerIndices = gamePlayers
+      .map((p, idx) => ({ player: p, index: idx }))
+      .filter(item => item.player.finishPosition)
+      .map(item => item.index);
+    
+    // NOW move to next player and clear penalty - AFTER animation is complete
+    // This prevents the attacker from playing during the animation
+    const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+      playerIndex, 
+      gamePlayers.length, 
+      room.direction || "clockwise",
+      false,
+      false,
+      finishedPlayerIndices
+    );
+    
+    console.log(`🎯 PENALTY COMPLETE: Turn advancing from ${playerIndex} (${player.nickname}) to ${nextPlayerIndex} after drawing ${penaltyAmount} cards`);
+    
+    await storage.updateRoom(roomId, { 
+      pendingDraw: 0,
+      currentPlayerIndex: nextPlayerIndex
     });
     
     await broadcastRoomState(roomId);

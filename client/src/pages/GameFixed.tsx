@@ -263,6 +263,49 @@ export default function Game() {
     setShowGuruReplaceModal(true);
   };
 
+  // Guru Wild Draw 4 response - allows guru to instantly play +4 when facing a pending draw
+  const [showGuruWild4ColorPicker, setShowGuruWild4ColorPicker] = useState(false);
+  
+  const handleGuruWild4Response = async (color: string) => {
+    if (!roomId || !playerId) return;
+    
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/guru-wild4-response`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${playerId}`
+        },
+        body: JSON.stringify({ color })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log(`✅ Guru Wild4 response successful - stacked to ${result.newPendingDraw} cards`);
+        toast({
+          title: "GURU POWER! +4",
+          description: `Wild Draw 4 played! Total penalty: ${result.newPendingDraw} cards`,
+        });
+        setShowGuruWild4ColorPicker(false);
+      } else {
+        console.error("Guru Wild4 response failed:", result.error);
+        toast({
+          title: "Failed",
+          description: result.error || "Could not play Wild Draw 4",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error with Guru Wild4 response:", error);
+      toast({
+        title: "Error",
+        description: "Network error",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Host spectator assignment for active games - with robust player state handling
   const handleHostAssignSpectatorToGame = async (spectatorId: string) => {
     if (!isHost || !roomId) return;
@@ -552,10 +595,22 @@ export default function Game() {
             ? (room.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
             : 'bg-yellow-600 border-yellow-400'
         }`}>
-          <div className="text-white font-bold text-sm text-center">
+          <div className="text-white font-bold text-sm text-center flex items-center gap-2">
             {isMyTurn ? (
               room.pendingDraw > 0 ? (
-                <span>⚠️ MUST DRAW {room.pendingDraw} CARDS! ⚠️</span>
+                <>
+                  <span>⚠️ MUST DRAW {room.pendingDraw} CARDS! ⚠️</span>
+                  {/* Guru +4 Response Button */}
+                  {isGuruUser && (
+                    <button
+                      onClick={() => setShowGuruWild4ColorPicker(true)}
+                      className="ml-2 px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded-full border-2 border-white/50 shadow-lg animate-bounce"
+                      data-testid="button-guru-wild4"
+                    >
+                      🧙‍♂️ +4
+                    </button>
+                  )}
+                </>
               ) : (
                 <span>⭐ YOUR TURN - Play or Draw! ⭐</span>
               )
@@ -566,6 +621,42 @@ export default function Game() {
                 <span>🎮 {currentGamePlayer.nickname}'s turn</span>
               )
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Guru Wild4 Color Picker Modal */}
+      {showGuruWild4ColorPicker && (
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-slate-800 rounded-lg border-2 border-purple-500 p-6 max-w-sm mx-4 shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="text-2xl font-bold text-purple-400 mb-2">🧙‍♂️ GURU POWER</div>
+              <div className="text-white">Play Wild Draw 4 - Choose Color:</div>
+              <div className="text-sm text-slate-400 mt-1">Stack +4 onto next player!</div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {['red', 'blue', 'green', 'yellow'].map(color => (
+                <button
+                  key={color}
+                  onClick={() => handleGuruWild4Response(color)}
+                  className={`p-4 rounded-lg font-bold text-white text-lg shadow-lg transform hover:scale-105 transition-transform ${
+                    color === 'red' ? 'bg-red-600 hover:bg-red-500' :
+                    color === 'blue' ? 'bg-blue-600 hover:bg-blue-500' :
+                    color === 'green' ? 'bg-green-600 hover:bg-green-500' :
+                    'bg-yellow-500 hover:bg-yellow-400 text-black'
+                  }`}
+                  data-testid={`button-guru-color-${color}`}
+                >
+                  {color.charAt(0).toUpperCase() + color.slice(1)}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowGuruWild4ColorPicker(false)}
+              className="mt-4 w-full py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
