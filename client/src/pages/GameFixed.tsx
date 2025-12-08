@@ -474,7 +474,8 @@ export default function Game() {
 
   const room = gameState.room;
   const players = gameState.players || [];
-  const gamePlayers = players.filter((p: any) => !p.isSpectator);
+  // CRITICAL: Sort by position to match server-side order for correct turn tracking
+  const gamePlayers = players.filter((p: any) => !p.isSpectator).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
   
   // Helper function for checking online status - MUST BE DEFINED BEFORE USAGE
   const isPlayerOnline = (player: any) => {
