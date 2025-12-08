@@ -1160,14 +1160,11 @@ export default function Game() {
         </div>
       )}
 
-      {/* Non-host pause message */}
+      {/* Non-host pause message - subtle banner at top, not a popup */}
       {isPaused && !currentPlayer?.isHost && (
-        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-40">
-          <div className="bg-slate-600/90 backdrop-blur-sm px-6 py-3 rounded-lg border border-slate-500 shadow-lg">
-            <div className="text-center">
-              <div className="text-white text-sm font-medium mb-1">Game Paused</div>
-              <div className="text-slate-300 text-xs">Waiting for host to continue...</div>
-            </div>
+        <div className="fixed top-28 left-1/2 transform -translate-x-1/2 z-30">
+          <div className="bg-slate-700/80 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-600 text-center">
+            <div className="text-slate-300 text-xs">⏸️ Waiting for host to continue...</div>
           </div>
         </div>
       )}

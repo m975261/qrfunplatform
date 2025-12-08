@@ -414,6 +414,11 @@ export function useSocket(autoConnect: boolean = true) {
       setIsConnected(false);
       console.log(`WebSocket closed: code=${event.code}, reason="${event.reason}", wasClean=${event.wasClean}`);
       
+      // CRITICAL: Reset hasJoinedRoomRef so we can re-join on reconnect
+      // Each new WebSocket connection needs to send join_room again
+      hasJoinedRoomRef.current = null;
+      console.log("Reset join state for reconnection");
+      
       // Log additional context for game end related disconnections
       if (event.code === 1006) {
         console.log("WebSocket closed abnormally (1006) - possible network issue or server termination");
