@@ -91,3 +91,11 @@ The platform is designed as a full-stack, real-time multiplayer gaming system wi
 - **QR Code Generation**: QRCode library
 - **Build Tools**: Vite
 - **ORM**: Drizzle ORM
+- **AI Image Generation**: Leonardo.ai API (optional, for custom game assets)
+
+## Asset Generation (Leonardo.ai)
+- **API Integration**: Server endpoint at `/api/leonardo/generate` and `/api/leonardo/generate-assets`
+- **Asset Generator Page**: Access at `/assets` route for in-app generation
+- **External Generation**: See `ASSET_SPECIFICATIONS.md` for complete prompts and specifications
+- **Asset Folder**: Place custom assets in `attached_assets/generated/`
+- **Key Assets**: table-background.jpg (1920x1080), card-back.png (256x384), logo.png (512x256)
