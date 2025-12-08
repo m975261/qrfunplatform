@@ -2323,27 +2323,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!room || !player) return;
     
+    // If game is in progress, save cards to position before player leaves
+    if (room.status === "playing" && player.position !== null && player.hand) {
+      const updatedPositionHands = { ...room.positionHands };
+      updatedPositionHands[player.position.toString()] = player.hand;
+      await storage.updateRoom(connection.roomId, { positionHands: updatedPositionHands });
+      console.log(`Saved ${player.hand.length} cards for position ${player.position} (player ${player.nickname} leaving)`);
+    }
+    
     // Mark player as left
     await storage.updatePlayer(connection.playerId, { 
       hasLeft: true, 
       leftAt: new Date(),
-      isSpectator: true 
+      isSpectator: true,
+      position: null,
+      hand: [] // Clear hand since cards are saved to positionHands
     });
     
     // If game is in progress, pause and set finish position as last
     if (room.status === "playing") {
-      const gamePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
+      const gamePlayers = players.filter(p => !p.isSpectator && !p.hasLeft && p.id !== connection.playerId);
       const finishPosition = gamePlayers.length + 1; // Last position
       
       await storage.updatePlayer(connection.playerId, { finishPosition });
-      await storage.updateRoom(connection.roomId, { status: "waiting" });
       
-      // Removed system message as requested by user
+      // Set to "paused" so host sees the continue button
+      await storage.updateRoom(connection.roomId, { status: "paused" });
       
       broadcastToRoom(connection.roomId, {
         type: 'player_left',
         player: player.nickname,
-        needsContinue: true
+        needsContinue: true,
+        vacantPosition: player.position // Tell client which position is now vacant
       });
     }
     
