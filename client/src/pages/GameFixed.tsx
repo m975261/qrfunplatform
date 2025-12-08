@@ -14,6 +14,7 @@ import NicknameEditor from "@/components/NicknameEditor";
 
 import { WinnerModal } from "@/components/game/WinnerModal";
 import GuruCardReplaceModal from "@/components/game/GuruCardReplaceModal";
+import tableBackground from "@assets/generated/table-background.jpg";
 
 export default function Game() {
   const [, params] = useRoute("/game/:roomId");
@@ -526,7 +527,16 @@ export default function Game() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden pt-16 sm:pt-20 md:pt-24">
+    <div 
+      className="min-h-screen relative overflow-hidden pt-16 sm:pt-20 md:pt-24"
+      style={{
+        backgroundImage: `url(${tableBackground})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundColor: '#1e293b'
+      }}
+    >
       {/* Floating emojis */}
       {floatingEmojis.map((emoji) => (
         <div
