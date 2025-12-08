@@ -544,6 +544,23 @@ export default function Game() {
         </div>
       ))}
 
+      {/* Turn Indicator Banner - Shows whose turn it is to all players */}
+      {room.status === "playing" && currentGamePlayer && (
+        <div className={`fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full shadow-lg border-2 transition-all ${
+          isMyTurn 
+            ? 'bg-green-600 border-green-400 animate-pulse' 
+            : 'bg-yellow-600 border-yellow-400'
+        }`}>
+          <div className="text-white font-bold text-sm text-center">
+            {isMyTurn ? (
+              <span>⭐ YOUR TURN - Play or Draw! ⭐</span>
+            ) : (
+              <span>🎮 {currentGamePlayer.nickname}'s turn</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-10">
         <div className="flex items-center justify-between flex-wrap gap-2">
