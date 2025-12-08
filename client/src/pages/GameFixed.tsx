@@ -530,13 +530,17 @@ export default function Game() {
     <div 
       className="min-h-screen relative overflow-hidden pt-16 sm:pt-20 md:pt-24"
       style={{
-        backgroundImage: `url(${tableBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
         backgroundColor: '#1e293b'
       }}
     >
+      {/* Background image layer - cross-browser compatible */}
+      <div 
+        className="game-table-bg"
+        style={{
+          backgroundImage: `url(${tableBackground})`
+        }}
+        aria-hidden="true"
+      />
       {/* Floating emojis */}
       {floatingEmojis.map((emoji) => (
         <div
