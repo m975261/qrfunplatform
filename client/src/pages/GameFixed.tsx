@@ -187,21 +187,6 @@ export default function Game() {
     chooseColor(color);
     setShowColorPicker(false);
     
-    // Clear the colorChoiceRequested flag immediately and update current color
-    setGameState((prev: any) => ({
-      ...prev,
-      colorChoiceRequested: false,
-      selectedColor: color,
-      room: {
-        ...prev?.room,
-        currentColor: color, // Update the current color immediately for all players
-        waitingForColorChoice: null // Clear waiting state
-      },
-      forceRefresh: Math.random(),
-      colorUpdate: Date.now(), // Add color update trigger
-      activeColorUpdate: Date.now() // Specific trigger for active color display
-    }));
-    
     // Force immediate visual refresh after color choice (especially important after UNO penalties)
     setHandRefreshKey(prev => prev + 1);
     
@@ -533,13 +518,18 @@ export default function Game() {
         backgroundColor: '#1e293b'
       }}
     >
-      {/* Background image layer - cross-browser compatible */}
-      <div 
-        className="game-table-bg"
-        style={{
-          backgroundImage: `url(${tableBackground})`
-        }}
+      {/* Background image layer - cross-browser compatible using img element */}
+      <img 
+        src={tableBackground}
+        alt=""
         aria-hidden="true"
+        className="fixed inset-0 w-full h-full object-cover -z-10"
+        style={{
+          objectFit: 'cover',
+          objectPosition: 'center',
+          minWidth: '100%',
+          minHeight: '100%'
+        }}
       />
       {/* Floating emojis */}
       {floatingEmojis.map((emoji) => (
