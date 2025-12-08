@@ -1893,6 +1893,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
+    console.log(`➡️ NEXT PLAYER: Turn advancing from ${currentPlayerIndex} (${currentPlayer?.nickname}) to ${nextPlayerIndex} (${gamePlayers[nextPlayerIndex]?.nickname})`);
+    
     // Update room state
     await storage.updateRoom(connection.roomId, {
       discardPile: newDiscardPile,
@@ -2140,7 +2142,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const currentPlayerIndex = room.currentPlayerIndex || 0;
     const currentPlayer = gamePlayers[currentPlayerIndex];
     
-    if (currentPlayer.id !== connection.playerId) return;
+    console.log(`🎴 DRAW CHECK: Current turn is index ${currentPlayerIndex} (${currentPlayer?.nickname}), player ${player.nickname} trying to draw`);
+    
+    if (currentPlayer.id !== connection.playerId) {
+      console.log(`⏳ NOT YOUR TURN TO DRAW: ${player.nickname} tried to draw but it's ${currentPlayer?.nickname}'s turn (index ${currentPlayerIndex})`);
+      return;
+    }
     
     // Don't allow finished players to draw cards
     if (currentPlayer.finishPosition) return;
