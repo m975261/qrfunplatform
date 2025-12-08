@@ -564,11 +564,12 @@ export default function Game() {
               className="bg-green-900/50 border-green-700 text-green-300 hover:bg-green-800/50 p-2 sm:px-3"
               data-testid="button-share-game"
               onClick={() => {
-                const gameUrl = window.location.href;
-                navigator.clipboard.writeText(gameUrl).then(() => {
+                const baseUrl = window.location.origin;
+                const joinUrl = `${baseUrl}?room=${room.code}`;
+                navigator.clipboard.writeText(joinUrl).then(() => {
                   toast({
                     title: "Link Copied!",
-                    description: "Game link copied to clipboard",
+                    description: "Room join link copied to clipboard",
                   });
                 }).catch(() => {
                   toast({
