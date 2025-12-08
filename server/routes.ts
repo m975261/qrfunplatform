@@ -2015,17 +2015,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   async function applyPenaltyWithAnimation(roomId: string, playerIndex: number, gamePlayers: any[], penaltyAmount: number) {
+    console.log(`🎴 PENALTY ANIMATION START: roomId=${roomId}, playerIndex=${playerIndex}, penaltyAmount=${penaltyAmount}`);
+    
     const room = await storage.getRoom(roomId);
-    if (!room || penaltyAmount <= 0) return;
+    if (!room || penaltyAmount <= 0) {
+      console.log(`❌ PENALTY ANIMATION: Invalid room or penalty amount`);
+      return;
+    }
 
     const currentPlayer = gamePlayers[playerIndex];
-    if (!currentPlayer) return;
+    if (!currentPlayer) {
+      console.log(`❌ PENALTY ANIMATION: No current player at index ${playerIndex}`);
+      return;
+    }
 
     const player = await storage.getPlayer(currentPlayer.id);
-    if (!player) return;
+    if (!player) {
+      console.log(`❌ PENALTY ANIMATION: Player not found in storage`);
+      return;
+    }
 
     const deck = room.deck || [];
-    if (deck.length < penaltyAmount) return;
+    if (deck.length < penaltyAmount) {
+      console.log(`❌ PENALTY ANIMATION: Not enough cards in deck (${deck.length} < ${penaltyAmount})`);
+      return;
+    }
+
+    console.log(`✅ PENALTY ANIMATION: Drawing ${penaltyAmount} cards for ${player.nickname}`);
 
     // Start penalty animation
     broadcastToRoom(roomId, {
@@ -2109,23 +2125,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   async function checkAndApplyAutomaticPenalty(roomId: string, playerIndex: number, gamePlayers: any[]) {
     const room = await storage.getRoom(roomId);
-    if (!room || !room.pendingDraw || room.pendingDraw === 0) return;
+    console.log(`🔍 PENALTY CHECK: roomId=${roomId}, playerIndex=${playerIndex}, pendingDraw=${room?.pendingDraw}`);
+    
+    if (!room || !room.pendingDraw || room.pendingDraw === 0) {
+      console.log(`❌ PENALTY CHECK: No pending draw, skipping`);
+      return;
+    }
 
     const currentPlayer = gamePlayers[playerIndex];
-    if (!currentPlayer) return;
+    if (!currentPlayer) {
+      console.log(`❌ PENALTY CHECK: No current player at index ${playerIndex}`);
+      return;
+    }
 
     const player = await storage.getPlayer(currentPlayer.id);
-    if (!player) return;
+    if (!player) {
+      console.log(`❌ PENALTY CHECK: Player not found in storage`);
+      return;
+    }
 
     const topCard = (room.discardPile || [])[0];
-    if (!topCard) return;
+    if (!topCard) {
+      console.log(`❌ PENALTY CHECK: No top card on discard pile`);
+      return;
+    }
 
     // Check if the player can stack draw cards
     const canStack = UnoGameLogic.canPlayerStackDraw(player.hand || [], topCard, room.pendingDraw);
+    console.log(`🎯 PENALTY CHECK: Player ${player.nickname} canStack=${canStack}, pendingDraw=${room.pendingDraw}, topCard=${topCard.type}`);
     
     if (!canStack) {
       // Player cannot stack, automatically apply penalty with animation
+      console.log(`✅ PENALTY APPLY: Auto-applying ${room.pendingDraw} card penalty to ${player.nickname}`);
       await applyPenaltyWithAnimation(roomId, playerIndex, gamePlayers, room.pendingDraw);
+    } else {
+      console.log(`⏳ PENALTY WAIT: ${player.nickname} can stack, waiting for their action`);
     }
   }
 
