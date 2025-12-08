@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import cardBackImage from "@assets/generated/card-back.jpg";
 
 interface PlayerAreaProps {
   player: any;
@@ -21,7 +22,7 @@ export default function PlayerArea({ player, position, isCurrentTurn }: PlayerAr
   };
 
   const getCardClasses = (index: number) => {
-    const baseClasses = "bg-gradient-to-br from-blue-800 to-blue-900 rounded border-2 border-white shadow-sm";
+    const baseClasses = "rounded-lg border-2 border-white shadow-lg overflow-hidden";
     
     if (position === "top") {
       const rotations = ["-rotate-3", "rotate-2", "-rotate-1", "rotate-3", "-rotate-2"];
@@ -59,7 +60,15 @@ export default function PlayerArea({ player, position, isCurrentTurn }: PlayerAr
               </div>
               <div className="flex space-x-1">
                 {cards.map((_, index) => (
-                  <div key={index} className={getCardClasses(index)}></div>
+                  <div 
+                    key={index} 
+                    className={getCardClasses(index)}
+                    style={{
+                      backgroundImage: `url(${cardBackImage})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  />
                 ))}
               </div>
             </>
@@ -85,7 +94,15 @@ export default function PlayerArea({ player, position, isCurrentTurn }: PlayerAr
               </div>
               <div className="flex flex-col space-y-1">
                 {cards.map((_, index) => (
-                  <div key={index} className={getCardClasses(index)}></div>
+                  <div 
+                    key={index} 
+                    className={getCardClasses(index)}
+                    style={{
+                      backgroundImage: `url(${cardBackImage})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  />
                 ))}
               </div>
             </div>
