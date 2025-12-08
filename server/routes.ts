@@ -1724,7 +1724,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const currentPlayerIndex = room.currentPlayerIndex || 0;
     const currentPlayer = gamePlayers[currentPlayerIndex];
     
-    if (currentPlayer.id !== connection.playerId) return;
+    console.log(`🔄 TURN CHECK: Current turn is index ${currentPlayerIndex} (${currentPlayer?.nickname}), player ${player.nickname} trying to play`);
+    
+    if (currentPlayer.id !== connection.playerId) {
+      console.log(`⏳ NOT YOUR TURN: ${player.nickname} tried to play but it's ${currentPlayer?.nickname}'s turn (index ${currentPlayerIndex})`);
+      return;
+    }
     
     // Don't allow finished players to play cards
     if (currentPlayer.finishPosition) return;
