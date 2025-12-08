@@ -15,8 +15,6 @@ import NicknameEditor from "@/components/NicknameEditor";
 import { WinnerModal } from "@/components/game/WinnerModal";
 import GuruCardReplaceModal from "@/components/game/GuruCardReplaceModal";
 
-import tableBackground from "@assets/generated/table-background.jpg";
-
 export default function Game() {
   const [, params] = useRoute("/game/:roomId");
   const [, setLocation] = useLocation();
@@ -187,6 +185,21 @@ export default function Game() {
   const handleColorChoice = (color: string) => {
     chooseColor(color);
     setShowColorPicker(false);
+    
+    // Clear the colorChoiceRequested flag immediately and update current color
+    setGameState((prev: any) => ({
+      ...prev,
+      colorChoiceRequested: false,
+      selectedColor: color,
+      room: {
+        ...prev?.room,
+        currentColor: color, // Update the current color immediately for all players
+        waitingForColorChoice: null // Clear waiting state
+      },
+      forceRefresh: Math.random(),
+      colorUpdate: Date.now(), // Add color update trigger
+      activeColorUpdate: Date.now() // Specific trigger for active color display
+    }));
     
     // Force immediate visual refresh after color choice (especially important after UNO penalties)
     setHandRefreshKey(prev => prev + 1);
@@ -513,18 +526,7 @@ export default function Game() {
 
 
   return (
-    <div 
-      className="min-h-screen relative overflow-hidden pt-16 sm:pt-20 md:pt-24"
-      style={{
-        backgroundImage: `url(${tableBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
-      {/* Dark overlay for better card visibility */}
-      <div className="absolute inset-0 bg-black/30" />
-      
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden pt-16 sm:pt-20 md:pt-24">
       {/* Floating emojis */}
       {floatingEmojis.map((emoji) => (
         <div
