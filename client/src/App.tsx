@@ -10,6 +10,7 @@ import Game from "@/pages/GameFixed";
 import XOPlaceholder from "@/pages/XOPlaceholder";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AssetGenerator from "@/pages/AssetGenerator";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/game/:roomId" component={Game} />
       <Route path="/man" component={AdminLogin} />
       <Route path="/man/dashboard" component={AdminDashboard} />
+      <Route path="/assets" component={AssetGenerator} />
       <Route component={NotFound} />
     </Switch>
   );

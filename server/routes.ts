@@ -11,6 +11,7 @@ import { adminAuthService } from "./adminAuth";
 import { db } from "./db";
 import { eq, and, or, ne } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { generateImage, generateGameAssets, checkApiStatus } from "./leonardo";
 
 interface SocketConnection {
   ws: WebSocket;
@@ -1325,6 +1326,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.redirect(302, `/?room=${code}`);
     } else {
       res.redirect(302, '/');
+    }
+  });
+
+  // Leonardo.ai API routes
+  app.get("/api/leonardo/status", async (req, res) => {
+    try {
+      const status = await checkApiStatus();
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ available: false, error: 'Failed to check API status' });
+    }
+  });
+
+  app.post("/api/leonardo/generate", async (req, res) => {
+    try {
+      const { prompt, width, height } = z.object({
+        prompt: z.string().min(1),
+        width: z.number().optional(),
+        height: z.number().optional()
+      }).parse(req.body);
+
+      const imageUrl = await generateImage(prompt, { width, height });
+      
+      if (!imageUrl) {
+        return res.status(500).json({ error: 'Image generation failed' });
+      }
+      
+      res.json({ success: true, imageUrl });
+    } catch (error) {
+      console.error('Leonardo generate error:', error);
+      res.status(500).json({ error: 'Image generation failed' });
+    }
+  });
+
+  app.post("/api/leonardo/generate-assets", async (req, res) => {
+    try {
+      const assets = await generateGameAssets();
+      res.json({ success: true, assets });
+    } catch (error) {
+      console.error('Leonardo generate assets error:', error);
+      res.status(500).json({ error: 'Asset generation failed' });
     }
   });
 
