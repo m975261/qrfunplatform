@@ -679,6 +679,7 @@ export function useSocket(autoConnect: boolean = true) {
   return {
     isConnected,
     gameState,
+    setGameState,
     floatingEmojis,
     joinRoom,
     startGame,

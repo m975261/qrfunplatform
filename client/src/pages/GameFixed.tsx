@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle } from "lucide-react";
+import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle, Share2 } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import PlayerArea from "@/components/game/PlayerArea";
@@ -26,6 +26,7 @@ export default function Game() {
   
   const {
     gameState,
+    setGameState,
     floatingEmojis,
     joinRoom,
     playCard,
@@ -183,6 +184,8 @@ export default function Game() {
   };
 
   const handleColorChoice = (color: string) => {
+    const isGuruUserLocal = localStorage.getItem("isGuruUser") === "true";
+    
     chooseColor(color);
     setShowColorPicker(false);
     
@@ -201,15 +204,18 @@ export default function Game() {
       activeColorUpdate: Date.now() // Specific trigger for active color display
     }));
     
-    // Force immediate visual refresh after color choice (especially important after UNO penalties)
+    // Force immediate visual refresh after color choice
     setHandRefreshKey(prev => prev + 1);
     
-    // Multiple refresh intervals to ensure visual update (similar to card replacement system)
-    setTimeout(() => setHandRefreshKey(prev => prev + 1), 1);
-    setTimeout(() => setHandRefreshKey(prev => prev + 1), 5);
-    setTimeout(() => setHandRefreshKey(prev => prev + 1), 10);
-    setTimeout(() => setHandRefreshKey(prev => prev + 1), 20);
-    setTimeout(() => setHandRefreshKey(prev => prev + 1), 30);
+    // For guru/admin users - instant update, no delays
+    // For regular users - use gradual refresh intervals
+    if (!isGuruUserLocal) {
+      setTimeout(() => setHandRefreshKey(prev => prev + 1), 1);
+      setTimeout(() => setHandRefreshKey(prev => prev + 1), 5);
+      setTimeout(() => setHandRefreshKey(prev => prev + 1), 10);
+      setTimeout(() => setHandRefreshKey(prev => prev + 1), 20);
+      setTimeout(() => setHandRefreshKey(prev => prev + 1), 30);
+    }
   };
 
   const handleUnoCall = () => {
@@ -552,6 +558,31 @@ export default function Game() {
           </div>
 
           <div className="flex space-x-1 sm:space-x-2 flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-green-900/50 border-green-700 text-green-300 hover:bg-green-800/50 p-2 sm:px-3"
+              data-testid="button-share-game"
+              onClick={() => {
+                const gameUrl = window.location.href;
+                navigator.clipboard.writeText(gameUrl).then(() => {
+                  toast({
+                    title: "Link Copied!",
+                    description: "Game link copied to clipboard",
+                  });
+                }).catch(() => {
+                  toast({
+                    title: "Copy Failed",
+                    description: "Could not copy link",
+                    variant: "destructive",
+                  });
+                });
+              }}
+            >
+              <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline sm:ml-2">Share</span>
+            </Button>
+            
             <Button
               variant="outline"
               size="sm"
