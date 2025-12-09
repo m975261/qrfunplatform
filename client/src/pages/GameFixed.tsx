@@ -41,6 +41,7 @@ export default function Game() {
     continueGame,
     replacePlayer,
     playAgain,
+    submitHostVote,
     isConnected,
     refreshGameState
   } = useSocket();
@@ -63,6 +64,14 @@ export default function Game() {
   const [unoPenaltyAnimation, setUnoPenaltyAnimation] = useState<{ playerName: string; show: boolean } | null>(null);
   const [handRefreshKey, setHandRefreshKey] = useState(0);
   const [showConnectionError, setShowConnectionError] = useState(false);
+  
+  // Host election state
+  const [showHostElection, setShowHostElection] = useState(false);
+  const [electionCandidates, setElectionCandidates] = useState<{id: string, nickname: string}[]>([]);
+  const [electionVotes, setElectionVotes] = useState<{[id: string]: number}>({});
+  const [hasVoted, setHasVoted] = useState(false);
+  const [hostDisconnectedWarning, setHostDisconnectedWarning] = useState<string | null>(null);
+  const [electionCountdown, setElectionCountdown] = useState(30);
 
   // Debug logs for troubleshooting
   console.log("🚨 WHITE PAGE DEBUG:", {
@@ -170,6 +179,70 @@ export default function Game() {
       setHandRefreshKey(prev => prev + 1);
     }
   }, [gameState?.colorUpdate, gameState?.activeColorUpdate, gameState?.colorUpdateTimestamp, gameState?.room?.currentColor]);
+
+  // Handle host election messages
+  useEffect(() => {
+    if (gameState?.hostDisconnectedWarning) {
+      setHostDisconnectedWarning(gameState.hostDisconnectedWarning);
+      setElectionCountdown(gameState.electionStartsIn || 30);
+      
+      // Start countdown timer
+      const interval = setInterval(() => {
+        setElectionCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    } else {
+      setHostDisconnectedWarning(null);
+    }
+  }, [gameState?.hostDisconnectedWarning, gameState?.electionStartsIn]);
+
+  useEffect(() => {
+    if (gameState?.hostElectionActive) {
+      setShowHostElection(true);
+      setElectionCandidates(gameState.electionCandidates || []);
+      setHasVoted(false);
+    } else {
+      // Reset all election state when election ends
+      setShowHostElection(false);
+      setHasVoted(false);
+      setElectionCandidates([]);
+      setElectionVotes({});
+    }
+  }, [gameState?.hostElectionActive, gameState?.electionCandidates]);
+
+  useEffect(() => {
+    if (gameState?.electionVotes) {
+      setElectionVotes(gameState.electionVotes);
+    }
+  }, [gameState?.electionVotes]);
+
+  // Show toast when new host is elected
+  useEffect(() => {
+    if (gameState?.newHostName) {
+      toast({
+        title: "New Host Elected!",
+        description: `${gameState.newHostName} is now the host.`,
+      });
+      // Clear newHostName after showing toast
+      setGameState((prev: any) => ({
+        ...prev,
+        newHostName: null
+      }));
+    }
+  }, [gameState?.newHostName, toast]);
+
+  const handleVoteForHost = (candidateId: string) => {
+    if (hasVoted) return;
+    submitHostVote(candidateId);
+    setHasVoted(true);
+  };
 
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -794,6 +867,64 @@ export default function Game() {
         </div>
       )}
 
+      {/* Host Disconnected Warning Banner */}
+      {hostDisconnectedWarning && !showHostElection && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl bg-orange-600 border-2 border-orange-400 shadow-lg animate-pulse">
+          <div className="text-white font-bold text-center">
+            <div className="text-lg">⚠️ Host Disconnected</div>
+            <div className="text-sm mt-1">Vote for new host in {electionCountdown} seconds...</div>
+          </div>
+        </div>
+      )}
+
+      {/* Host Election Voting Modal */}
+      {showHostElection && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-xl border-2 border-yellow-500 p-6 max-w-md w-full shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="text-3xl font-bold text-yellow-400 mb-2">🗳️ VOTE FOR NEW HOST</div>
+              <div className="text-white">The host has disconnected. Choose who should lead the game!</div>
+            </div>
+            
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {electionCandidates.map((candidate) => (
+                <button
+                  key={candidate.id}
+                  onClick={() => handleVoteForHost(candidate.id)}
+                  disabled={hasVoted}
+                  className={`w-full p-4 rounded-lg flex items-center justify-between transition-all ${
+                    hasVoted
+                      ? 'bg-slate-700 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 cursor-pointer transform hover:scale-102'
+                  }`}
+                  data-testid={`button-vote-${candidate.id}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                      {candidate.nickname[0].toUpperCase()}
+                    </div>
+                    <span className="text-white font-semibold text-lg">{candidate.nickname}</span>
+                  </div>
+                  <div className="text-white font-bold text-xl">
+                    {electionVotes[candidate.id] || 0} votes
+                  </div>
+                </button>
+              ))}
+            </div>
+            
+            {hasVoted && (
+              <div className="mt-4 text-center text-green-400 font-semibold">
+                ✓ Your vote has been submitted!
+              </div>
+            )}
+            
+            <div className="mt-4 text-center text-slate-400 text-sm">
+              Waiting for all players to vote...
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-10">
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -876,29 +1007,29 @@ export default function Game() {
               </Button>
             )}
             
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-red-900/50 border-red-700 text-red-300 hover:bg-red-800/50 px-2 sm:px-3"
-              onClick={() => {
-                if (confirm("Are you sure you want to exit the game?")) {
-                  try {
-                    // Send exit message to server
-                    exitGame();
-                  } catch (error) {
-                    console.log("Exit game message failed:", error);
+            {/* Exit button - Only show when NOT playing (in lobby or finished) */}
+            {room?.status !== "playing" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-red-900/50 border-red-700 text-red-300 hover:bg-red-800/50 px-2 sm:px-3"
+                onClick={() => {
+                  if (confirm("Are you sure you want to exit?")) {
+                    try {
+                      exitGame();
+                    } catch (error) {
+                      console.log("Exit game message failed:", error);
+                    }
+                    localStorage.removeItem("currentRoomId");
+                    localStorage.removeItem("playerId");
+                    localStorage.removeItem("playerNickname");
+                    window.location.replace("/");
                   }
-                  // Clear all game-related storage
-                  localStorage.removeItem("currentRoomId");
-                  localStorage.removeItem("playerId");
-                  localStorage.removeItem("playerNickname");
-                  // Force navigation to main page
-                  window.location.replace("/");
-                }
-              }}
-            >
-              Exit
-            </Button>
+                }}
+              >
+                Exit
+              </Button>
+            )}
           </div>
         </div>
 

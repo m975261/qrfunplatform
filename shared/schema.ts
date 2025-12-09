@@ -21,8 +21,13 @@ export const rooms = pgTable("rooms", {
   deck: jsonb("deck").$type<any[]>().default([]),
   discardPile: jsonb("discard_pile").$type<any[]>().default([]),
   pendingDraw: integer("pending_draw").default(0),
-  positionHands: jsonb("position_hands").$type<{[key: string]: any[]}>().default({}), // Store cards for each position (0-3)
-  activePositions: jsonb("active_positions").$type<number[]>().default([]), // Track which positions were active when game started
+  positionHands: jsonb("position_hands").$type<{[key: string]: any[]}>().default({}),
+  activePositions: jsonb("active_positions").$type<number[]>().default([]),
+  hostElectionActive: boolean("host_election_active").default(false),
+  hostElectionStartTime: timestamp("host_election_start_time"),
+  hostElectionVotes: jsonb("host_election_votes").$type<{[voterId: string]: string}>().default({}),
+  hostElectionEligibleVoters: jsonb("host_election_eligible_voters").$type<string[]>().default([]),
+  hostDisconnectedAt: timestamp("host_disconnected_at"),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 

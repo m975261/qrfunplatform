@@ -130,6 +130,67 @@ export function useSocket(autoConnect: boolean = true) {
               }));
             }
             break;
+          case 'host_disconnected_warning':
+            console.log("Host disconnected warning:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              hostDisconnectedWarning: message.message,
+              electionStartsIn: message.electionStartsIn
+            }));
+            break;
+          case 'host_reconnected':
+            console.log("Host reconnected:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              hostDisconnectedWarning: null,
+              hostElectionActive: false,
+              electionCandidates: [],
+              electionVotes: {},
+              room: {
+                ...prev?.room,
+                hostElectionActive: false,
+                hostElectionVotes: {},
+                hostDisconnectedAt: null
+              }
+            }));
+            break;
+          case 'host_election_started':
+            console.log("Host election started:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              hostDisconnectedWarning: null,
+              hostElectionActive: true,
+              electionCandidates: message.candidates,
+              votingDuration: message.votingDuration
+            }));
+            break;
+          case 'host_vote_update':
+            console.log("Host vote update:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              electionVotes: message.votes,
+              votesSubmitted: message.votesSubmitted,
+              totalVoters: message.totalVoters
+            }));
+            break;
+          case 'host_elected':
+            console.log("New host elected:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              hostElectionActive: false,
+              hostDisconnectedWarning: null,
+              electionCandidates: [],
+              electionVotes: {},
+              newHostName: message.newHostName,
+              room: {
+                ...prev?.room,
+                hostId: message.newHostId,
+                hostElectionActive: false,
+                hostElectionVotes: {},
+                hostDisconnectedAt: null
+              }
+            }));
+            break;
           case 'uno_called':
             // Remove notification - just log silently
             console.log("UNO called by:", message.player);
@@ -618,6 +679,13 @@ export function useSocket(autoConnect: boolean = true) {
     });
   };
 
+  const submitHostVote = (candidateId: string) => {
+    sendMessage({
+      type: 'submit_host_vote',
+      candidateId
+    });
+  };
+
   useEffect(() => {
     if (autoConnect) {
       connect();
@@ -701,6 +769,7 @@ export function useSocket(autoConnect: boolean = true) {
     replacePlayer,
     assignSpectator,
     playAgain,
+    submitHostVote,
     connect: manualConnect,
     refreshGameState
   };

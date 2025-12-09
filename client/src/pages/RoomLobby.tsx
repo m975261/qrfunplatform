@@ -244,14 +244,18 @@ export default function RoomLobby() {
                   <QrCode className="mr-2 h-4 w-4" />
                   QR Code
                 </Button>
-                <Button
-                  onClick={handleLeaveRoom}
-                  variant="outline"
-                  size="sm"
-                  className="bg-red-100 text-red-600 hover:bg-red-200"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                {/* Exit button - Only show for host in waiting room */}
+                {isHost && (
+                  <Button
+                    onClick={handleLeaveRoom}
+                    variant="outline"
+                    size="sm"
+                    className="bg-red-100 text-red-600 hover:bg-red-200"
+                    title="Exit Room"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
             

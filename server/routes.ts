@@ -1792,6 +1792,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'play_again':
             await handlePlayAgain(connection, message);
             break;
+          case 'submit_host_vote':
+            await handleSubmitHostVote(connection, message);
+            break;
           case 'heartbeat':
             // Update last seen time and handle tab visibility
             connection.lastSeen = Date.now();
@@ -1919,6 +1922,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Update player's socket ID
     await storage.updatePlayer(playerId, { socketId: connectionId });
+    
+    // Check if this is the host reconnecting - cancel any pending election
+    if (room.hostId === playerId && room.hostDisconnectedAt) {
+      console.log(`Host ${player.nickname} reconnected, canceling election`);
+      await cancelHostElectionIfNeeded(actualRoomId);
+      broadcastToRoom(actualRoomId, {
+        type: 'host_reconnected',
+        message: `Host ${player.nickname} has reconnected!`
+      });
+    }
     
     console.log("Broadcasting room state to all players in room:", actualRoomId);
     // Broadcast room state to all players
@@ -2994,6 +3007,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   }
 
+  async function handleSubmitHostVote(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const { candidateId } = message;
+    if (!candidateId) return;
+    
+    const room = await storage.getRoom(connection.roomId);
+    const voter = await storage.getPlayer(connection.playerId);
+    
+    if (!room || !voter || !room.hostElectionActive) {
+      console.log('Vote rejected: no active election');
+      return;
+    }
+    
+    // Use snapshotted eligible voters from when election started
+    const eligibleVoterIds = room.hostElectionEligibleVoters || [];
+    
+    // Only allow votes from snapshotted eligible voters
+    if (!eligibleVoterIds.includes(connection.playerId)) {
+      console.log(`Vote rejected: ${voter.nickname} not in eligible voter list`);
+      return;
+    }
+    
+    // Prevent double voting
+    if (room.hostElectionVotes && room.hostElectionVotes[connection.playerId]) {
+      console.log(`Vote rejected: ${voter.nickname} already voted`);
+      return;
+    }
+    
+    // Record vote
+    const votes = { ...room.hostElectionVotes, [connection.playerId]: candidateId };
+    await storage.updateRoom(connection.roomId, { hostElectionVotes: votes });
+    
+    console.log(`Vote recorded: ${voter.nickname} voted for ${candidateId}`);
+    
+    // Count votes - only count votes from eligible voters
+    const voteCounts: { [candidateId: string]: number } = {};
+    Object.entries(votes).forEach(([voterId, cId]: [string, any]) => {
+      if (eligibleVoterIds.includes(voterId)) {
+        voteCounts[cId] = (voteCounts[cId] || 0) + 1;
+      }
+    });
+    
+    // Get players for display purposes
+    const players = await storage.getPlayersByRoom(connection.roomId);
+    const eligibleVoters = players.filter(p => eligibleVoterIds.includes(p.id));
+    
+    // Broadcast vote update
+    broadcastToRoom(connection.roomId, {
+      type: 'host_vote_update',
+      votes: voteCounts,
+      totalVoters: eligibleVoterIds.length,
+      votesSubmitted: Object.keys(votes).filter(vid => eligibleVoterIds.includes(vid)).length
+    });
+    
+    // Check if all eligible votes are in
+    const validVoteCount = Object.keys(votes).filter(vid => eligibleVoterIds.includes(vid)).length;
+    if (validVoteCount >= eligibleVoterIds.length) {
+      await finalizeHostElection(connection.roomId, votes, eligibleVoters, eligibleVoterIds);
+    }
+  }
+  
+  async function finalizeHostElection(roomId: string, votes: { [voterId: string]: string }, eligibleVoters: any[], eligibleVoterIds: string[]) {
+    // Count votes - only count from eligible voters
+    const voteCounts: { [candidateId: string]: number } = {};
+    Object.entries(votes).forEach(([voterId, candidateId]: [string, string]) => {
+      if (eligibleVoterIds.includes(voterId)) {
+        voteCounts[candidateId] = (voteCounts[candidateId] || 0) + 1;
+      }
+    });
+    
+    // Find winner (highest votes)
+    let maxVotes = 0;
+    let winnerId: string | null = null;
+    Object.entries(voteCounts).forEach(([candidateId, count]) => {
+      if (count > maxVotes) {
+        maxVotes = count;
+        winnerId = candidateId;
+      }
+    });
+    
+    // Handle tie by picking first candidate in list
+    if (!winnerId && eligibleVoters.length > 0) {
+      winnerId = eligibleVoters[0].id;
+    }
+    
+    if (!winnerId) return;
+    
+    const newHost = await storage.getPlayer(winnerId);
+    if (!newHost) return;
+    
+    // Update room with new host - clear all election state
+    await storage.updateRoom(roomId, {
+      hostId: winnerId,
+      hostElectionActive: false,
+      hostElectionStartTime: null,
+      hostElectionVotes: {},
+      hostElectionEligibleVoters: [],
+      hostDisconnectedAt: null
+    });
+    
+    console.log(`Host election complete: ${newHost.nickname} is the new host`);
+    
+    // Broadcast election result
+    broadcastToRoom(roomId, {
+      type: 'host_elected',
+      newHostId: winnerId,
+      newHostName: newHost.nickname,
+      voteCounts,
+      message: `${newHost.nickname} is now the host!`
+    });
+    
+    await broadcastRoomState(roomId);
+  }
+
   async function handlePlayAgain(connection: SocketConnection, message: any) {
     if (!connection.roomId || !connection.playerId) return;
     
@@ -3036,6 +3164,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await broadcastRoomState(connection.roomId);
   }
 
+  // Track host disconnection timers to cancel if host reconnects
+  const hostDisconnectTimers: Map<string, NodeJS.Timeout> = new Map();
+  
   async function handlePlayerDisconnect(playerId: string, roomId: string) {
     const room = await storage.getRoom(roomId);
     const players = await storage.getPlayersByRoom(roomId);
@@ -3062,7 +3193,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'Host has left the game. Redirecting to main page...'
         });
         
-        // Clean up the room after a delay to allow the message to be sent
         setTimeout(async () => {
           try {
             await storage.deleteRoom(roomId);
@@ -3072,22 +3202,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }, 2000);
         
-        return; // Exit early, don't proceed with normal disconnect handling
+        return;
       }
       
-      // For other game states, transfer host to another player
-      const activePlayers = players.filter(p => p.id !== playerId && !p.isSpectator);
-      if (activePlayers.length > 0) {
-        const newHost = activePlayers[0];
-        await storage.updateRoom(roomId, { hostId: newHost.id });
-        console.log(`Host transferred from ${disconnectedPlayer.nickname} to ${newHost.nickname}`);
+      // Record host disconnection time
+      await storage.updateRoom(roomId, { 
+        hostDisconnectedAt: new Date()
+      });
+      
+      // Notify players that host is disconnected and election will start in 30 seconds
+      broadcastToRoom(roomId, {
+        type: 'host_disconnected_warning',
+        hostName: disconnectedPlayer.nickname,
+        electionStartsIn: 30,
+        message: `Host ${disconnectedPlayer.nickname} disconnected. Vote for new host in 30 seconds...`
+      });
+      
+      // Start 30-second timer for host election
+      const timer = setTimeout(async () => {
+        // Check if host reconnected
+        const currentRoom = await storage.getRoom(roomId);
+        if (!currentRoom) return;
+        
+        const hostPlayer = await storage.getPlayer(currentRoom.hostId);
+        const hostHasActiveConnection = Array.from(connections.values())
+          .some(conn => conn.playerId === currentRoom.hostId && conn.ws.readyState === WebSocket.OPEN);
+        
+        if (hostHasActiveConnection) {
+          // Host reconnected, cancel election
+          console.log(`Host ${hostPlayer?.nickname} reconnected, canceling election`);
+          await storage.updateRoom(roomId, { 
+            hostDisconnectedAt: null,
+            hostElectionActive: false,
+            hostElectionVotes: {},
+            hostElectionEligibleVoters: []
+          });
+          broadcastToRoom(roomId, {
+            type: 'host_reconnected',
+            message: `Host ${hostPlayer?.nickname} has reconnected!`
+          });
+          return;
+        }
+        
+        // Start the election
+        console.log(`Starting host election in room ${roomId}`);
+        const activePlayers = (await storage.getPlayersByRoom(roomId))
+          .filter(p => !p.isSpectator && !p.hasLeft && p.id !== currentRoom.hostId);
+        
+        if (activePlayers.length === 0) {
+          // No one left to vote, clean up room
+          console.log(`No active players left in room ${roomId}, cleaning up`);
+          broadcastToRoom(roomId, {
+            type: 'host_left_redirect',
+            message: 'No players available. Returning to main page...'
+          });
+          return;
+        }
+        
+        if (activePlayers.length === 1) {
+          // Only one player left, auto-assign as host
+          const newHost = activePlayers[0];
+          await storage.updateRoom(roomId, { 
+            hostId: newHost.id,
+            hostDisconnectedAt: null,
+            hostElectionActive: false,
+            hostElectionVotes: {},
+            hostElectionEligibleVoters: []
+          });
+          await storage.updatePlayer(newHost.id, { isHost: true });
+          console.log(`Auto-assigned ${newHost.nickname} as new host (only player)`);
+          broadcastToRoom(roomId, {
+            type: 'host_elected',
+            newHostId: newHost.id,
+            newHostName: newHost.nickname,
+            message: `${newHost.nickname} is now the host!`
+          });
+          await broadcastRoomState(roomId);
+          return;
+        }
+        
+        // Multiple players - start voting with snapshotted eligible voters
+        const eligibleVoterIds = activePlayers.map(p => p.id);
+        await storage.updateRoom(roomId, { 
+          hostElectionActive: true,
+          hostElectionStartTime: new Date(),
+          hostElectionVotes: {},
+          hostElectionEligibleVoters: eligibleVoterIds
+        });
         
         broadcastToRoom(roomId, {
-          type: 'host_changed',
-          newHost: newHost.nickname,
-          message: `${newHost.nickname} is now the host`
+          type: 'host_election_started',
+          candidates: activePlayers.map(p => ({ id: p.id, nickname: p.nickname })),
+          eligibleVoterIds,
+          votingDuration: 30,
+          message: 'Vote for the new host!'
         });
-      }
+        
+        await broadcastRoomState(roomId);
+        
+        hostDisconnectTimers.delete(roomId);
+      }, 30000); // 30 seconds
+      
+      hostDisconnectTimers.set(roomId, timer);
     }
     
     // If game is in progress and player is not a spectator, pause the game
@@ -3095,9 +3311,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateRoom(roomId, { 
         status: "paused"
       });
-      
-      // Send system message
-      // Removed system message as requested by user
       
       broadcastToRoom(roomId, {
         type: 'game_paused',
@@ -3107,6 +3320,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     await broadcastRoomState(roomId);
+  }
+  
+  // Cancel host election timer if host reconnects
+  async function cancelHostElectionIfNeeded(roomId: string) {
+    // Clear any pending timer
+    const timer = hostDisconnectTimers.get(roomId);
+    if (timer) {
+      clearTimeout(timer);
+      hostDisconnectTimers.delete(roomId);
+    }
+    
+    // Always check and clear election state, even if timer already fired
+    const room = await storage.getRoom(roomId);
+    if (room && (room.hostDisconnectedAt || room.hostElectionActive)) {
+      // Reset all election state first
+      await storage.updateRoom(roomId, { 
+        hostDisconnectedAt: null,
+        hostElectionActive: false,
+        hostElectionVotes: {},
+        hostElectionEligibleVoters: []
+      });
+      
+      // Notify players that election is cancelled (after state is reset)
+      broadcastToRoom(roomId, {
+        type: 'host_reconnected',
+        message: 'Host has reconnected. Election cancelled.'
+      });
+      
+      // Broadcast updated room state so clients sync properly
+      await broadcastRoomState(roomId);
+    }
   }
 
   async function broadcastRoomState(roomId: string) {
