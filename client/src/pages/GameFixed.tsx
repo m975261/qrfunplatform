@@ -1006,48 +1006,56 @@ export default function Game() {
               </div>
               
               {/* Header with timer */}
-              <div className="text-center mb-1.5">
-                <div className="text-xs font-bold text-orange-400">⚠️ Host Left</div>
-                <div className="text-sm font-bold text-white">
+              <div className="text-center mb-1">
+                <div className="text-xs font-bold text-orange-400">⚠️ Host Left - Vote!</div>
+                <div className="text-xs font-bold text-white">
                   {electionCountdown > 0 ? (
-                    <span className="text-yellow-400">{electionCountdown}s</span>
+                    <span className="text-yellow-400">{electionCountdown}s remaining</span>
                   ) : (
                     <span className="text-red-400">Closed!</span>
                   )}
                 </div>
               </div>
               
-              {/* Compact voting buttons */}
-              <div className="flex flex-wrap gap-1 justify-center">
-                {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
-                  <button
-                    key={candidate.id}
-                    onClick={(e) => { e.stopPropagation(); handleVoteForHost(candidate.id); }}
-                    disabled={hasVoted}
-                    className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
-                      hasVoted
-                        ? 'bg-slate-600 cursor-not-allowed opacity-50'
-                        : 'bg-blue-600 hover:bg-blue-500 cursor-pointer'
-                    } text-white`}
-                    data-testid={`button-vote-${candidate.id}`}
-                  >
-                    {candidate.nickname} ({electionVotes[candidate.id] || 0})
-                  </button>
-                ))}
+              {/* Voting buttons - horizontal layout */}
+              <div className="space-y-1">
+                {/* Player candidates */}
+                <div className="grid grid-cols-2 gap-1">
+                  {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
+                    <button
+                      key={candidate.id}
+                      onClick={(e) => { e.stopPropagation(); handleVoteForHost(candidate.id); }}
+                      disabled={hasVoted}
+                      className={`p-1 rounded text-xs font-semibold transition-all flex items-center justify-between gap-1 ${
+                        hasVoted
+                          ? 'bg-slate-600 cursor-not-allowed opacity-50'
+                          : 'bg-blue-600 hover:bg-blue-500 cursor-pointer'
+                      } text-white`}
+                      data-testid={`button-vote-${candidate.id}`}
+                    >
+                      <span className="truncate">{candidate.nickname}</span>
+                      <span className="text-[10px] font-bold">({electionVotes[candidate.id] || 0})</span>
+                    </button>
+                  ))}
+                </div>
                 
-                {/* Continue without host - compact */}
+                {/* Continue without host button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleVoteForHost('NO_HOST'); }}
                   disabled={hasVoted}
-                  className={`px-2 py-1 rounded text-xs font-semibold transition-all border border-dashed ${
+                  className={`w-full p-1 rounded text-xs font-semibold transition-all border border-dashed flex items-center justify-between gap-1 ${
                     hasVoted
                       ? 'bg-slate-600 border-slate-500 cursor-not-allowed opacity-50'
                       : 'bg-green-700 border-green-400 hover:bg-green-600 cursor-pointer'
                   } text-white`}
                   data-testid="button-vote-no-host"
                 >
-                  No Host ({electionVotes['NO_HOST'] || 0})
+                  <span>Continue without host</span>
+                  <span className="text-[10px] font-bold">({electionVotes['NO_HOST'] || 0})</span>
                 </button>
+                <div className="text-center text-green-300 text-[10px] font-semibold">
+                  👆 Click Here
+                </div>
               </div>
               
               {hasVoted && (
