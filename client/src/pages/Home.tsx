@@ -545,13 +545,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Recent Rooms */}
-            <div className="border-t pt-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Recent Rooms</h3>
-              <div className="text-center text-gray-500 text-sm">
-                No recent rooms found
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>

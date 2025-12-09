@@ -686,6 +686,21 @@ export function useSocket(autoConnect: boolean = true) {
     });
   };
 
+  const hostEndGame = () => {
+    sendMessage({ type: 'host_end_game' });
+  };
+
+  const hostExitRoom = () => {
+    sendMessage({ type: 'host_exit_room' });
+  };
+
+  const voteNoHost = () => {
+    sendMessage({ 
+      type: 'submit_host_vote',
+      candidateId: 'NO_HOST'
+    });
+  };
+
   useEffect(() => {
     if (autoConnect) {
       connect();
@@ -770,6 +785,9 @@ export function useSocket(autoConnect: boolean = true) {
     assignSpectator,
     playAgain,
     submitHostVote,
+    hostEndGame,
+    hostExitRoom,
+    voteNoHost,
     connect: manualConnect,
     refreshGameState
   };

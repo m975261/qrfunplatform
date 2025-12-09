@@ -1795,6 +1795,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'submit_host_vote':
             await handleSubmitHostVote(connection, message);
             break;
+          case 'host_end_game':
+            await handleHostEndGame(connection, message);
+            break;
+          case 'host_exit_room':
+            await handleHostExitRoom(connection, message);
+            break;
           case 'heartbeat':
             // Update last seen time and handle tab visibility
             connection.lastSeen = Date.now();
@@ -3088,12 +3094,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
     
-    // Handle tie by picking first candidate in list
+    // Handle tie by picking first candidate in list (not NO_HOST)
     if (!winnerId && eligibleVoters.length > 0) {
       winnerId = eligibleVoters[0].id;
     }
     
     if (!winnerId) return;
+    
+    // Handle "Continue without host" option
+    if (winnerId === 'NO_HOST') {
+      // Clear election state and set hostId to null
+      await storage.updateRoom(roomId, {
+        hostId: null,
+        hostElectionActive: false,
+        hostElectionStartTime: null,
+        hostElectionVotes: {},
+        hostElectionEligibleVoters: [],
+        hostDisconnectedAt: null
+      });
+      
+      console.log(`Host election complete: Players chose to continue without host`);
+      
+      // Broadcast result
+      broadcastToRoom(roomId, {
+        type: 'host_elected',
+        newHostId: null,
+        newHostName: 'No host selected',
+        noHost: true,
+        voteCounts,
+        message: 'Game continues without a host!'
+      });
+      
+      await broadcastRoomState(roomId);
+      return;
+    }
     
     const newHost = await storage.getPlayer(winnerId);
     if (!newHost) return;
@@ -3120,6 +3154,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     await broadcastRoomState(roomId);
+  }
+
+  // Handle host clicking "End Game" during gameplay - triggers 15-second voting
+  async function handleHostEndGame(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const room = await storage.getRoom(connection.roomId);
+    const player = await storage.getPlayer(connection.playerId);
+    
+    if (!room || !player) return;
+    
+    // Only host can trigger this
+    if (room.hostId !== connection.playerId) {
+      console.log('Non-host tried to use host_end_game');
+      return;
+    }
+    
+    // Only during gameplay
+    if (room.status !== 'playing') return;
+    
+    // Save host's cards to position before they leave
+    if (player.position !== null && player.hand) {
+      const updatedPositionHands = { ...room.positionHands };
+      updatedPositionHands[player.position.toString()] = player.hand;
+      await storage.updateRoom(connection.roomId, { positionHands: updatedPositionHands });
+    }
+    
+    // Mark host as spectator and remove host status
+    await storage.updatePlayer(connection.playerId, { 
+      hasLeft: true, 
+      leftAt: new Date(),
+      isSpectator: true,
+      isHost: false,
+      position: null,
+      hand: []
+    });
+    
+    // Get remaining active players
+    const players = await storage.getPlayersByRoom(connection.roomId);
+    const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
+    
+    if (activePlayers.length === 0) {
+      // No players left, end game
+      broadcastToRoom(connection.roomId, {
+        type: 'host_left_redirect',
+        message: 'No players remaining. Returning to main page...'
+      });
+      return;
+    }
+    
+    if (activePlayers.length === 1) {
+      // Auto-assign as host
+      const newHost = activePlayers[0];
+      await storage.updateRoom(connection.roomId, { 
+        hostId: newHost.id,
+        hostDisconnectedAt: null,
+        hostElectionActive: false
+      });
+      await storage.updatePlayer(newHost.id, { isHost: true });
+      broadcastToRoom(connection.roomId, {
+        type: 'host_elected',
+        newHostId: newHost.id,
+        newHostName: newHost.nickname,
+        message: `${newHost.nickname} is now the host!`
+      });
+      await broadcastRoomState(connection.roomId);
+      return;
+    }
+    
+    // Multiple players - start 15-second voting with "Continue without host" option
+    const eligibleVoterIds = activePlayers.map(p => p.id);
+    // Clear hostId immediately so clients know there's no current host
+    await storage.updateRoom(connection.roomId, { 
+      hostId: null,
+      hostElectionActive: true,
+      hostElectionStartTime: new Date(),
+      hostElectionVotes: {},
+      hostElectionEligibleVoters: eligibleVoterIds,
+      hostDisconnectedAt: null
+    });
+    
+    // Add "NO_HOST" as a special candidate option
+    const candidates = [
+      ...activePlayers.map(p => ({ id: p.id, nickname: p.nickname })),
+      { id: 'NO_HOST', nickname: 'Continue without host' }
+    ];
+    
+    broadcastToRoom(connection.roomId, {
+      type: 'host_election_started',
+      candidates,
+      eligibleVoterIds,
+      votingDuration: 15,
+      isHostEndGame: true,
+      message: `Host ${player.nickname} ended their game. Vote for new host or continue without one!`
+    });
+    
+    await broadcastRoomState(connection.roomId);
+  }
+
+  // Handle host clicking "Exit" in lobby/finished state - closes room for everyone
+  async function handleHostExitRoom(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const room = await storage.getRoom(connection.roomId);
+    const player = await storage.getPlayer(connection.playerId);
+    
+    if (!room || !player) return;
+    
+    // Only host can trigger this
+    if (room.hostId !== connection.playerId) {
+      console.log('Non-host tried to use host_exit_room');
+      return;
+    }
+    
+    console.log(`Host ${player.nickname} exiting room - closing for everyone`);
+    
+    // Clear host flags before broadcasting
+    await storage.updateRoom(connection.roomId, { hostId: null });
+    await storage.updatePlayer(connection.playerId, { isHost: false });
+    
+    // Notify all players to redirect
+    broadcastToRoom(connection.roomId, {
+      type: 'host_left_redirect',
+      message: 'Host has closed the room. Returning to main page...'
+    });
+    
+    // Clean up room after brief delay
+    setTimeout(async () => {
+      try {
+        await storage.deleteRoom(connection.roomId!);
+        console.log(`Room ${connection.roomId} cleaned up after host exit`);
+      } catch (error) {
+        console.error('Failed to clean up room:', error);
+      }
+    }, 2000);
   }
 
   async function handlePlayAgain(connection: SocketConnection, message: any) {

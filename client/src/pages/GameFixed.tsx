@@ -42,6 +42,9 @@ export default function Game() {
     replacePlayer,
     playAgain,
     submitHostVote,
+    hostEndGame,
+    hostExitRoom,
+    voteNoHost,
     isConnected,
     refreshGameState
   } = useSocket();
@@ -883,11 +886,11 @@ export default function Game() {
           <div className="bg-slate-800 rounded-xl border-2 border-yellow-500 p-6 max-w-md w-full shadow-2xl">
             <div className="text-center mb-6">
               <div className="text-3xl font-bold text-yellow-400 mb-2">🗳️ VOTE FOR NEW HOST</div>
-              <div className="text-white">The host has disconnected. Choose who should lead the game!</div>
+              <div className="text-white">Choose who should lead the game!</div>
             </div>
             
             <div className="space-y-3 max-h-60 overflow-y-auto">
-              {electionCandidates.map((candidate) => (
+              {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
                 <button
                   key={candidate.id}
                   onClick={() => handleVoteForHost(candidate.id)}
@@ -910,6 +913,30 @@ export default function Game() {
                   </div>
                 </button>
               ))}
+              
+              {/* Continue without host option */}
+              {electionCandidates.some(c => c.id === 'NO_HOST') && (
+                <button
+                  onClick={() => handleVoteForHost('NO_HOST')}
+                  disabled={hasVoted}
+                  className={`w-full p-4 rounded-lg flex items-center justify-between transition-all mt-4 border-2 border-dashed ${
+                    hasVoted
+                      ? 'bg-slate-700 border-slate-600 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-green-700 to-teal-700 border-green-500 hover:from-green-600 hover:to-teal-600 cursor-pointer transform hover:scale-102'
+                  }`}
+                  data-testid="button-vote-no-host"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                      ▶️
+                    </div>
+                    <span className="text-white font-semibold text-lg">Continue without host</span>
+                  </div>
+                  <div className="text-white font-bold text-xl">
+                    {electionVotes['NO_HOST'] || 0} votes
+                  </div>
+                </button>
+              )}
             </div>
             
             {hasVoted && (
@@ -997,8 +1024,16 @@ export default function Game() {
                 size="sm"
                 className="bg-orange-900/50 border-orange-600 text-orange-300 hover:bg-orange-800/50 px-2 sm:px-3"
                 onClick={() => {
-                  if (confirm("End your game and become a viewer? You'll be able to watch but not play.")) {
-                    exitGame();
+                  if (isHost) {
+                    // Host ending game triggers voting for new host
+                    if (confirm("End your game? Other players will vote for a new host.")) {
+                      hostEndGame();
+                    }
+                  } else {
+                    // Non-host just becomes a viewer
+                    if (confirm("End your game and become a viewer? You'll be able to watch but not play.")) {
+                      exitGame();
+                    }
                   }
                 }}
                 data-testid="button-end-game"
@@ -1007,23 +1042,15 @@ export default function Game() {
               </Button>
             )}
             
-            {/* Exit button - Only show when NOT playing (in lobby or finished) */}
-            {room?.status !== "playing" && (
+            {/* Exit button - Only show for host when NOT playing (in lobby or finished) */}
+            {room?.status !== "playing" && isHost && (
               <Button
                 variant="outline"
                 size="sm"
                 className="bg-red-900/50 border-red-700 text-red-300 hover:bg-red-800/50 px-2 sm:px-3"
                 onClick={() => {
-                  if (confirm("Are you sure you want to exit?")) {
-                    try {
-                      exitGame();
-                    } catch (error) {
-                      console.log("Exit game message failed:", error);
-                    }
-                    localStorage.removeItem("currentRoomId");
-                    localStorage.removeItem("playerId");
-                    localStorage.removeItem("playerNickname");
-                    window.location.replace("/");
+                  if (confirm("Exit and close the room for everyone?")) {
+                    hostExitRoom();
                   }
                 }}
               >
