@@ -859,6 +859,23 @@ export default function Game() {
               Home
             </Button>
             
+            {/* End Game button - Only show for active players during gameplay */}
+            {room?.status === "playing" && currentPlayer && !currentPlayer.isSpectator && !currentPlayer.hasLeft && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-orange-900/50 border-orange-600 text-orange-300 hover:bg-orange-800/50 px-2 sm:px-3"
+                onClick={() => {
+                  if (confirm("End your game and become a viewer? You'll be able to watch but not play.")) {
+                    exitGame();
+                  }
+                }}
+                data-testid="button-end-game"
+              >
+                End Game
+              </Button>
+            )}
+            
             <Button
               variant="outline"
               size="sm"

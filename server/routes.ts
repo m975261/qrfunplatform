@@ -2685,7 +2685,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Saved ${player.hand.length} cards for position ${player.position} (player ${player.nickname} leaving)`);
     }
     
-    // Mark player as left
+    // Count active players before this player exits
+    const activePlayersBefore = players.filter(p => !p.isSpectator && !p.hasLeft && p.id !== connection.playerId);
+    
+    // Mark player as left/spectator
     await storage.updatePlayer(connection.playerId, { 
       hasLeft: true, 
       leftAt: new Date(),
@@ -2694,22 +2697,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hand: [] // Clear hand since cards are saved to positionHands
     });
     
-    // If game is in progress, pause and set finish position as last
+    // If game is in progress
     if (room.status === "playing") {
-      const gamePlayers = players.filter(p => !p.isSpectator && !p.hasLeft && p.id !== connection.playerId);
-      const finishPosition = gamePlayers.length + 1; // Last position
-      
+      // Set exiting player's finish position as last
+      const finishPosition = activePlayersBefore.length + 1;
       await storage.updatePlayer(connection.playerId, { finishPosition });
       
-      // Set to "paused" so host sees the continue button
-      await storage.updateRoom(connection.roomId, { status: "paused" });
-      
-      broadcastToRoom(connection.roomId, {
-        type: 'player_left',
-        player: player.nickname,
-        needsContinue: true,
-        vacantPosition: player.position // Tell client which position is now vacant
-      });
+      // Check if only 1 player remains (2-player game scenario)
+      if (activePlayersBefore.length === 1) {
+        const winner = activePlayersBefore[0];
+        
+        // Set winner's finish position
+        await storage.updatePlayer(winner.id, { finishPosition: 1 });
+        
+        // End the game
+        await storage.updateRoom(connection.roomId, { 
+          status: "finished",
+          winner: winner.nickname,
+          rankings: [
+            { nickname: winner.nickname, position: 1, hasLeft: false },
+            { nickname: player.nickname, position: 2, hasLeft: true }
+          ]
+        });
+        
+        // Broadcast game end with winner
+        const gameEndMessage = {
+          type: 'game_end',
+          winner: winner.nickname,
+          rankings: [
+            { nickname: winner.nickname, position: 1, hasLeft: false },
+            { nickname: player.nickname, position: 2, hasLeft: true }
+          ]
+        };
+        
+        console.log(`🏆 Player ${player.nickname} exited - ${winner.nickname} wins by default!`);
+        broadcastToRoom(connection.roomId, gameEndMessage);
+        
+        // Delayed re-broadcast for reconnecting players
+        setTimeout(() => {
+          broadcastToRoom(connection.roomId, gameEndMessage);
+        }, 2000);
+      } else {
+        // More than 1 player remains - pause game for host to continue
+        await storage.updateRoom(connection.roomId, { status: "paused" });
+        
+        broadcastToRoom(connection.roomId, {
+          type: 'player_left',
+          player: player.nickname,
+          needsContinue: true,
+          vacantPosition: player.position
+        });
+      }
     }
     
     await broadcastRoomState(connection.roomId);
