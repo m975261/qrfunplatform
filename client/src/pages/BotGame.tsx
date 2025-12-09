@@ -653,31 +653,6 @@ export default function BotGame() {
               </div>
             ))}
           </div>
-          
-          {/* Turn Indicator under bot deck */}
-          {!gameState.winner && (
-            <div className={`mt-3 px-4 py-2 rounded-full shadow-lg border-2 transition-all inline-block ${
-              isMyTurn 
-                ? (gameState.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
-                : 'bg-yellow-600 border-yellow-400'
-            }`}>
-              <div className="text-white font-bold text-sm text-center">
-                {isMyTurn ? (
-                  gameState.pendingDraw > 0 ? (
-                    <span>⚠️ MUST DRAW {gameState.pendingDraw} CARDS! ⚠️</span>
-                  ) : (
-                    <span>⭐ YOUR TURN - Play or Draw! ⭐</span>
-                  )
-                ) : (
-                  gameState.pendingDraw > 0 ? (
-                    <span>🤖 Bot must draw {gameState.pendingDraw} cards</span>
-                  ) : (
-                    <span>🤖 Bot's turn</span>
-                  )
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="flex justify-center items-center gap-8 my-6">
@@ -710,6 +685,21 @@ export default function BotGame() {
             )}
             <div className={`w-10 h-10 rounded-full ${getColorClass(gameState.currentColor)} border-3 border-white shadow-lg mx-auto mt-2`} />
             <div className="text-white capitalize text-sm mt-1">{gameState.currentColor}</div>
+            
+            {/* YOUR TURN Indicator - centered under current color with good spacing */}
+            {!gameState.winner && isMyTurn && (
+              <div className={`mt-6 px-5 py-3 rounded-full shadow-lg border-2 transition-all ${
+                gameState.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse'
+              }`}>
+                <div className="text-white font-bold text-base text-center">
+                  {gameState.pendingDraw > 0 ? (
+                    <span>⚠️ MUST DRAW {gameState.pendingDraw} CARDS! ⚠️</span>
+                  ) : (
+                    <span>⭐ YOUR TURN ⭐</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
