@@ -364,7 +364,14 @@ export default function BotGame() {
   };
 
   const callUno = () => {
-    if (!gameState || gameState.playerHand.length > 2) return;
+    if (!gameState || gameState.playerCalledUno) return;
+    
+    if (gameState.playerHand.length > 2) {
+      setMessage("False UNO call! Draw 2 penalty cards!");
+      drawCards(2, "player", false);
+      return;
+    }
+    
     setGameState(prev => prev ? { ...prev, playerCalledUno: true } : prev);
     setMessage("UNO!");
   };
@@ -598,32 +605,7 @@ export default function BotGame() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-800 via-green-700 to-green-900 p-4 flex flex-col">
-      {/* Turn Indicator Banner */}
-      {!gameState.winner && (
-        <div className={`fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full shadow-lg border-2 transition-all ${
-          isMyTurn 
-            ? (gameState.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
-            : 'bg-yellow-600 border-yellow-400'
-        }`}>
-          <div className="text-white font-bold text-sm text-center flex items-center gap-2">
-            {isMyTurn ? (
-              gameState.pendingDraw > 0 ? (
-                <span>⚠️ MUST DRAW {gameState.pendingDraw} CARDS! ⚠️</span>
-              ) : (
-                <span>⭐ YOUR TURN - Play or Draw! ⭐</span>
-              )
-            ) : (
-              gameState.pendingDraw > 0 ? (
-                <span>🤖 Bot must draw {gameState.pendingDraw} cards</span>
-              ) : (
-                <span>🤖 Bot's turn</span>
-              )
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="flex justify-between items-center mb-4 mt-8">
+      <div className="flex justify-between items-center mb-4">
         <Button
           variant="outline"
           onClick={() => setLocation("/")}
@@ -671,6 +653,31 @@ export default function BotGame() {
               </div>
             ))}
           </div>
+          
+          {/* Turn Indicator under bot deck */}
+          {!gameState.winner && (
+            <div className={`mt-3 px-4 py-2 rounded-full shadow-lg border-2 transition-all inline-block ${
+              isMyTurn 
+                ? (gameState.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
+                : 'bg-yellow-600 border-yellow-400'
+            }`}>
+              <div className="text-white font-bold text-sm text-center">
+                {isMyTurn ? (
+                  gameState.pendingDraw > 0 ? (
+                    <span>⚠️ MUST DRAW {gameState.pendingDraw} CARDS! ⚠️</span>
+                  ) : (
+                    <span>⭐ YOUR TURN - Play or Draw! ⭐</span>
+                  )
+                ) : (
+                  gameState.pendingDraw > 0 ? (
+                    <span>🤖 Bot must draw {gameState.pendingDraw} cards</span>
+                  ) : (
+                    <span>🤖 Bot's turn</span>
+                  )
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-center items-center gap-8 my-6">
@@ -698,16 +705,11 @@ export default function BotGame() {
           </div>
 
           <div className="text-center">
-            <div className="text-white/70 text-sm mb-2">Current Color</div>
-            <div className={`w-12 h-12 rounded-full ${getColorClass(gameState.currentColor)} border-4 border-white shadow-lg mx-auto mb-2`} />
-            <div className="text-white capitalize">{gameState.currentColor}</div>
-          </div>
-
-          <div className="text-center">
-            <div className="text-white/70 text-sm mb-2">Discard Pile</div>
             {topCard && (
               <GameCard card={topCard} size="medium" />
             )}
+            <div className={`w-10 h-10 rounded-full ${getColorClass(gameState.currentColor)} border-3 border-white shadow-lg mx-auto mt-2`} />
+            <div className="text-white capitalize text-sm mt-1">{gameState.currentColor}</div>
           </div>
         </div>
 
@@ -720,13 +722,13 @@ export default function BotGame() {
             <div className="text-white/70 text-sm">({gameState.playerHand.length} cards)</div>
             <Button
               onClick={callUno}
-              disabled={gameState.playerHand.length > 2 || gameState.playerCalledUno}
+              disabled={gameState.playerCalledUno}
               className={`ml-2 font-bold ${
                 gameState.playerCalledUno 
                   ? 'bg-green-500 text-white cursor-default' 
                   : gameState.playerHand.length <= 2 
                     ? 'bg-yellow-500 hover:bg-yellow-600 text-black animate-pulse' 
-                    : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    : 'bg-yellow-500 hover:bg-yellow-600 text-black'
               }`}
               size="sm"
               data-testid="button-call-uno"

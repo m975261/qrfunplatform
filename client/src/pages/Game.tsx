@@ -238,6 +238,19 @@ export default function Game() {
         </div>
       )}
 
+      {/* False UNO Penalty Message */}
+      {gameState?.falseUnoMessage && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white text-xl sm:text-2xl md:text-3xl font-bold px-6 py-4 rounded-2xl shadow-2xl border-4 border-white animate-bounce">
+            <div className="flex items-center space-x-3">
+              <span className="animate-pulse">❌</span>
+              <span>{gameState.falseUnoMessage}</span>
+              <span className="animate-pulse">❌</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* One Card Left Message */}
       {oneCardMessage && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 pointer-events-none z-40">

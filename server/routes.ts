@@ -2595,14 +2595,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   async function handleCallUno(connection: SocketConnection, message: any) {
-    if (!connection.playerId) return;
+    if (!connection.playerId || !connection.roomId) return;
     
     const player = await storage.getPlayer(connection.playerId);
     if (!player) return;
     
-    console.log(`📢 UNO CALL: ${player.nickname} trying to call UNO with ${(player.hand || []).length} cards`);
+    const handLength = (player.hand || []).length;
+    console.log(`📢 UNO CALL: ${player.nickname} trying to call UNO with ${handLength} cards`);
     
-    // Allow UNO call anytime - validation happens when playing card
+    // False UNO call penalty: if player has more than 2 cards, draw 2 penalty cards
+    if (handLength > 2) {
+      console.log(`❌ FALSE UNO CALL: ${player.nickname} has ${handLength} cards, applying 2 card penalty`);
+      
+      const room = await storage.getRoom(connection.roomId);
+      if (!room) return;
+      
+      let deck = [...(room.deck || [])];
+      const penaltyCards: any[] = [];
+      
+      // Draw 2 cards using pop() to match existing draw logic (LIFO)
+      for (let i = 0; i < 2; i++) {
+        if (deck.length === 0) {
+          // Reshuffle discard pile if deck is empty (keep top card)
+          const discardPile = room.discardPile || [];
+          if (discardPile.length > 1) {
+            const topCard = discardPile.pop();
+            deck = UnoGameLogic.shuffleDeck([...discardPile]);
+            await storage.updateRoom(connection.roomId, { discardPile: topCard ? [topCard] : [] });
+          }
+        }
+        if (deck.length > 0) {
+          penaltyCards.push(deck.pop());
+        }
+      }
+      
+      const newHand = [...(player.hand || []), ...penaltyCards];
+      
+      await storage.updatePlayer(connection.playerId, { hand: newHand });
+      await storage.updateRoom(connection.roomId, { deck });
+      
+      // Broadcast false UNO penalty
+      broadcastToRoom(connection.roomId, {
+        type: 'false_uno_penalty',
+        player: player.nickname,
+        cardsDrawn: penaltyCards.length
+      });
+      
+      await broadcastRoomState(connection.roomId);
+      return;
+    }
+    
+    // Valid UNO call (1 or 2 cards)
     if (!player.hasCalledUno) {
       await storage.updatePlayer(connection.playerId, { hasCalledUno: true });
       console.log(`✅ UNO CALLED: Set hasCalledUno=true for ${player.nickname}`);

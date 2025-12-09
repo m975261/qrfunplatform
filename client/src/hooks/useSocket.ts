@@ -251,6 +251,23 @@ export function useSocket(autoConnect: boolean = true) {
               }));
             }, 4000); // Extended from 3000 to 4000ms
             break;
+          case 'false_uno_penalty':
+            console.log(`❌ FALSE UNO: ${message.player} drew ${message.cardsDrawn} penalty cards`);
+            // Show penalty message for false UNO call
+            setGameState((prev: any) => ({
+              ...prev,
+              falseUnoMessage: `${message.player} made a false UNO call! Drew ${message.cardsDrawn} cards!`,
+              falseUnoTimestamp: Date.now(),
+              forceRefresh: Math.random()
+            }));
+            // Clear message after animation
+            setTimeout(() => {
+              setGameState((prev: any) => ({
+                ...prev,
+                falseUnoMessage: null
+              }));
+            }, 3000);
+            break;
           case 'one_card_left':
             console.log(`🃏 ${message.player} has 1 card left!`);
             // Show notification message for 1 card left
