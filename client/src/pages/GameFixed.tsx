@@ -962,53 +962,15 @@ export default function Game() {
           }
         };
         
-        const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-          e.preventDefault();
-          setIsDraggingBanner(true);
-          const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-          const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-          setDragStartPos({ x: clientX - bannerDragOffset.x, y: clientY - bannerDragOffset.y });
-        };
-        
-        const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
-          if (!isDraggingBanner) return;
-          const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-          const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-          setBannerDragOffset({
-            x: clientX - dragStartPos.x,
-            y: clientY - dragStartPos.y
-          });
-        };
-        
-        const handleDragEnd = () => {
-          setIsDraggingBanner(false);
-        };
-        
         return (
           <div 
-            className={`fixed ${getBannerPosition()} z-50 w-auto max-w-xs cursor-move select-none`}
-            style={{ 
-              transform: `translate(${bannerDragOffset.x}px, ${bannerDragOffset.y}px)`,
-              touchAction: 'none'
-            }}
-            onMouseDown={handleDragStart}
-            onMouseMove={handleDragMove}
-            onMouseUp={handleDragEnd}
-            onMouseLeave={handleDragEnd}
-            onTouchStart={handleDragStart}
-            onTouchMove={handleDragMove}
-            onTouchEnd={handleDragEnd}
+            className={`fixed ${getBannerPosition()} z-50 w-72 select-none`}
           >
-            <div className="bg-slate-800/95 backdrop-blur-sm rounded-lg border-2 border-orange-500 p-2 shadow-2xl">
-              {/* Drag handle */}
-              <div className="flex justify-center mb-0.5">
-                <div className="w-8 h-0.5 bg-slate-500 rounded-full"></div>
-              </div>
-              
+            <div className="bg-slate-800/95 backdrop-blur-sm rounded-lg border-2 border-orange-500 p-3 shadow-2xl">
               {/* Header with timer */}
-              <div className="text-center mb-1">
+              <div className="text-center mb-2.5">
                 <div className="text-xs font-bold text-orange-400">⚠️ Host Left - Vote!</div>
-                <div className="text-xs font-bold text-white">
+                <div className="text-sm font-bold text-white">
                   {electionCountdown > 0 ? (
                     <span className="text-yellow-400">{electionCountdown}s remaining</span>
                   ) : (
@@ -1017,33 +979,32 @@ export default function Game() {
                 </div>
               </div>
               
-              {/* Voting buttons - horizontal layout */}
-              <div className="space-y-1">
-                {/* Player candidates */}
-                <div className="grid grid-cols-2 gap-1">
-                  {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
-                    <button
-                      key={candidate.id}
-                      onClick={(e) => { e.stopPropagation(); handleVoteForHost(candidate.id); }}
-                      disabled={hasVoted}
-                      className={`p-1 rounded text-xs font-semibold transition-all flex items-center justify-between gap-1 ${
-                        hasVoted
-                          ? 'bg-slate-600 cursor-not-allowed opacity-50'
-                          : 'bg-blue-600 hover:bg-blue-500 cursor-pointer'
-                      } text-white`}
-                      data-testid={`button-vote-${candidate.id}`}
-                    >
-                      <span className="truncate">{candidate.nickname}</span>
-                      <span className="text-[10px] font-bold">({electionVotes[candidate.id] || 0})</span>
-                    </button>
-                  ))}
-                </div>
+              {/* Voting buttons - vertical layout */}
+              <div className="space-y-2">
+                {/* Player candidates - each on new line */}
+                {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
+                  <button
+                    key={candidate.id}
+                    onClick={(e) => { e.stopPropagation(); handleVoteForHost(candidate.id); }}
+                    disabled={hasVoted}
+                    className={`w-full px-2 py-1.5 rounded text-xs font-semibold transition-all flex items-center justify-between ${
+                      hasVoted
+                        ? 'bg-slate-600 cursor-not-allowed opacity-50'
+                        : 'bg-blue-600 hover:bg-blue-500 cursor-pointer'
+                    } text-white`}
+                    data-testid={`button-vote-${candidate.id}`}
+                  >
+                    <span className="font-bold">{candidate.nickname}</span>
+                    <span className="text-[10px]">Click to vote for hoster</span>
+                    <span className="text-[10px] font-bold">({electionVotes[candidate.id] || 0})</span>
+                  </button>
+                ))}
                 
-                {/* Continue without host button */}
+                {/* Continue without host button - two lines format */}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleVoteForHost('NO_HOST'); }}
                   disabled={hasVoted}
-                  className={`w-full p-1 rounded text-xs font-semibold transition-all border border-dashed flex items-center justify-between gap-1 ${
+                  className={`w-full px-2 py-1.5 rounded text-xs font-semibold transition-all border border-dashed flex flex-col items-center justify-center gap-0.5 ${
                     hasVoted
                       ? 'bg-slate-600 border-slate-500 cursor-not-allowed opacity-50'
                       : 'bg-green-700 border-green-400 hover:bg-green-600 cursor-pointer'
@@ -1051,15 +1012,12 @@ export default function Game() {
                   data-testid="button-vote-no-host"
                 >
                   <span>Continue without host</span>
-                  <span className="text-[10px] font-bold">({electionVotes['NO_HOST'] || 0})</span>
+                  <span className="text-[10px] font-bold">👆 Click Here ({electionVotes['NO_HOST'] || 0})</span>
                 </button>
-                <div className="text-center text-green-300 text-[10px] font-semibold">
-                  👆 Click Here
-                </div>
               </div>
               
               {hasVoted && (
-                <div className="mt-1 text-center text-green-400 font-semibold text-[10px]">
+                <div className="mt-2 text-center text-green-400 font-semibold text-[10px]">
                   ✓ Voted!
                 </div>
               )}
