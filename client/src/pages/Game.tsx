@@ -46,6 +46,12 @@ export default function Game() {
   const [unoMessage, setUnoMessage] = useState<string | null>(null);
   const [oneCardMessage, setOneCardMessage] = useState<string | null>(null);
   const [turnFinishedMessage, setTurnFinishedMessage] = useState<string | null>(null);
+  const [cardAnimation, setCardAnimation] = useState<{
+    card: any;
+    from: 'player' | 'opponent' | 'deck';
+    to: 'discard' | 'player';
+    show: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -121,6 +127,17 @@ export default function Game() {
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
     const card = player?.hand?.[cardIndex];
+    
+    // Show card animation
+    if (card) {
+      setCardAnimation({
+        card: { ...card },
+        from: 'player',
+        to: 'discard',
+        show: true
+      });
+      setTimeout(() => setCardAnimation(null), 400);
+    }
     
     if (card?.type === "wild" || card?.type === "wild4") {
       // For wild cards, play immediately and let server request color choice
@@ -212,6 +229,54 @@ export default function Game() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 relative overflow-hidden">
+      {/* Card Animation Overlay */}
+      {cardAnimation?.show && (
+        <div className="fixed inset-0 pointer-events-none z-[60] flex items-center justify-center">
+          <div 
+            className={`transition-all duration-300 ease-out ${
+              cardAnimation.from === 'player' && cardAnimation.to === 'discard'
+                ? 'animate-card-play-up'
+                : cardAnimation.from === 'opponent' && cardAnimation.to === 'discard'
+                ? 'animate-card-play-down'
+                : cardAnimation.from === 'deck' && cardAnimation.to === 'player'
+                ? 'animate-card-draw-player'
+                : ''
+            }`}
+          >
+            {cardAnimation.from === 'deck' ? (
+              <div className="w-16 h-24 bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-xl border-3 border-red-800 shadow-2xl flex items-center justify-center">
+                <span className="text-white font-bold text-sm transform -rotate-12">UNO</span>
+              </div>
+            ) : (
+              <div className="transform scale-125">
+                <GameCard card={cardAnimation.card} size="large" />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <style>{`
+        @keyframes cardPlayUp {
+          0% { transform: translateY(200px) scale(0.8); opacity: 0.5; }
+          50% { transform: translateY(0) scale(1.1); opacity: 1; }
+          100% { transform: translateY(-50px) scale(1); opacity: 0; }
+        }
+        @keyframes cardPlayDown {
+          0% { transform: translateY(-200px) scale(0.8); opacity: 0.5; }
+          50% { transform: translateY(0) scale(1.1); opacity: 1; }
+          100% { transform: translateY(50px) scale(1); opacity: 0; }
+        }
+        @keyframes cardDrawPlayer {
+          0% { transform: translateY(-100px) translateX(-100px) scale(0.8); opacity: 0.5; }
+          50% { transform: translateY(50px) translateX(0) scale(1.1); opacity: 1; }
+          100% { transform: translateY(200px) scale(0.9); opacity: 0; }
+        }
+        .animate-card-play-up { animation: cardPlayUp 0.4s ease-out forwards; }
+        .animate-card-play-down { animation: cardPlayDown 0.4s ease-out forwards; }
+        .animate-card-draw-player { animation: cardDrawPlayer 0.35s ease-out forwards; }
+      `}</style>
+      
       {/* Floating Emojis */}
       <div className="absolute inset-0 pointer-events-none z-50">
         {floatingEmojis.map((emoji) => (
