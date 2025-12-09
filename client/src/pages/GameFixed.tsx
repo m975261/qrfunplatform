@@ -676,15 +676,24 @@ export default function Game() {
               room.pendingDraw > 0 ? (
                 <>
                   <span>⚠️ MUST DRAW {room.pendingDraw} CARDS! ⚠️</span>
-                  {/* Guru +4 Response Button */}
+                  {/* Guru Response Buttons - can respond with +2 or +4 */}
                   {isGuruUser && (
-                    <button
-                      onClick={() => setShowGuruWild4ColorPicker(true)}
-                      className="ml-2 px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded-full border-2 border-white/50 shadow-lg animate-bounce"
-                      data-testid="button-guru-wild4"
-                    >
-                      🧙‍♂️ +4
-                    </button>
+                    <div className="flex gap-1 ml-2">
+                      <button
+                        onClick={() => handleGuruStartCard('+2')}
+                        className="px-2 py-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-xs rounded-full border-2 border-white/50 shadow-lg animate-bounce"
+                        data-testid="button-guru-response-plus2"
+                      >
+                        🧙‍♂️ +2
+                      </button>
+                      <button
+                        onClick={() => handleGuruStartCard('+4')}
+                        className="px-2 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded-full border-2 border-white/50 shadow-lg animate-bounce"
+                        data-testid="button-guru-response-plus4"
+                      >
+                        🧙‍♂️ +4
+                      </button>
+                    </div>
                   )}
                 </>
               ) : (
