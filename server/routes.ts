@@ -2777,26 +2777,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const eligibleVoterIds = activePlayersBefore.map(p => p.id);
       
       // Record host disconnection time and enable voting during countdown
+      // Keep hostId so host can return by clicking their slot or rejoining via link
       await storage.updateRoom(connection.roomId, { 
-        hostId: null,
         hostDisconnectedAt: new Date(),
         hostElectionActive: true,
         hostElectionStartTime: new Date(),
         hostElectionVotes: {},
-        hostElectionEligibleVoters: eligibleVoterIds
+        hostElectionEligibleVoters: eligibleVoterIds,
+        hostPreviousPosition: player.position
       });
       
       // Notify players with candidates - voting is available immediately
-      // Note: For explicit exits, host cannot return (only for unexpected disconnects)
+      // Host can return by clicking their slot or rejoining via link
       broadcastToRoom(connection.roomId, {
         type: 'host_disconnected_warning',
         hostName: player.nickname,
+        hostId: connection.playerId,
+        hostPreviousPosition: player.position,
         electionStartsIn: 30,
         candidates,
         eligibleVoterIds,
         canVoteNow: true,
-        hostCanReturn: false,
-        message: `Host ${player.nickname} left. Vote for new host within 30 seconds...`
+        hostCanReturn: true,
+        message: `Host ${player.nickname} left. Vote now or host can return within 30 seconds...`
       });
       
       // Start 30-second timer - when it ends, tally votes
@@ -3506,25 +3509,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ];
     
     // Record host disconnection and enable voting during countdown
+    // Keep hostId so host can return by clicking their slot or rejoining via link
     await storage.updateRoom(connection.roomId, { 
-      hostId: null,
       hostDisconnectedAt: new Date(),
       hostElectionActive: true,
       hostElectionStartTime: new Date(),
       hostElectionVotes: {},
-      hostElectionEligibleVoters: eligibleVoterIds
+      hostElectionEligibleVoters: eligibleVoterIds,
+      hostPreviousPosition: player.position
     });
     
     // Notify players with candidates - voting is available immediately
+    // Host can return by clicking their slot or rejoining via link
     broadcastToRoom(connection.roomId, {
       type: 'host_disconnected_warning',
       hostName: player.nickname,
+      hostId: connection.playerId,
+      hostPreviousPosition: player.position,
       electionStartsIn: 30,
       candidates,
       eligibleVoterIds,
       canVoteNow: true,
-      hostCanReturn: false,
-      message: `Host ${player.nickname} ended the game. Vote for new host within 30 seconds...`
+      hostCanReturn: true,
+      message: `Host ${player.nickname} ended the game. Vote now or host can return within 30 seconds...`
     });
     
     await broadcastRoomState(connection.roomId);

@@ -152,6 +152,8 @@ export function useSocket(autoConnect: boolean = true) {
               eligibleVoterIds: message.eligibleVoterIds || [],
               canVoteNow: message.canVoteNow || false,
               hostCanReturn: message.hostCanReturn ?? true,
+              disconnectedHostId: message.hostId || null,
+              disconnectedHostPosition: message.hostPreviousPosition ?? null,
               hostElectionActive: true,
               electionVotes: {}
             }));

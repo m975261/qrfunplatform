@@ -986,7 +986,7 @@ export default function Game() {
         
         return (
           <div 
-            className={`fixed ${getBannerPosition()} z-50 w-[85%] max-w-sm cursor-move select-none`}
+            className={`fixed ${getBannerPosition()} z-50 w-auto max-w-xs cursor-move select-none`}
             style={{ 
               transform: `translate(${bannerDragOffset.x}px, ${bannerDragOffset.y}px)`,
               touchAction: 'none'
@@ -999,79 +999,60 @@ export default function Game() {
             onTouchMove={handleDragMove}
             onTouchEnd={handleDragEnd}
           >
-            <div className="bg-slate-800/95 backdrop-blur-sm rounded-xl border-2 border-orange-500 p-3 shadow-2xl">
-              {/* Drag handle indicator */}
-              <div className="flex justify-center mb-1">
-                <div className="w-12 h-1 bg-slate-500 rounded-full"></div>
+            <div className="bg-slate-800/95 backdrop-blur-sm rounded-lg border-2 border-orange-500 p-2 shadow-2xl">
+              {/* Drag handle */}
+              <div className="flex justify-center mb-0.5">
+                <div className="w-8 h-0.5 bg-slate-500 rounded-full"></div>
               </div>
               
-              <div className="text-center mb-2">
-                <div className="text-sm font-bold text-orange-400">⚠️ Host Left Game</div>
-                <div className="text-xl font-bold text-white">
+              {/* Header with timer */}
+              <div className="text-center mb-1.5">
+                <div className="text-xs font-bold text-orange-400">⚠️ Host Left</div>
+                <div className="text-sm font-bold text-white">
                   {electionCountdown > 0 ? (
-                    hostCanReturn ? (
-                      <>Host can return in: <span className="text-yellow-400">{electionCountdown}s</span></>
-                    ) : (
-                      <>Voting ends in: <span className="text-yellow-400">{electionCountdown}s</span></>
-                    )
+                    <span className="text-yellow-400">{electionCountdown}s</span>
                   ) : (
-                    <span className="text-red-400">Voting closed!</span>
+                    <span className="text-red-400">Closed!</span>
                   )}
                 </div>
               </div>
               
-              {/* Voting buttons - always visible during countdown */}
-              <div className="space-y-1.5 max-h-32 overflow-y-auto">
+              {/* Compact voting buttons */}
+              <div className="flex flex-wrap gap-1 justify-center">
                 {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
                   <button
                     key={candidate.id}
                     onClick={(e) => { e.stopPropagation(); handleVoteForHost(candidate.id); }}
                     disabled={hasVoted}
-                    className={`w-full p-2 rounded-lg flex items-center justify-between transition-all ${
+                    className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
                       hasVoted
-                        ? 'bg-slate-700 cursor-not-allowed opacity-60'
-                        : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 cursor-pointer'
-                    }`}
+                        ? 'bg-slate-600 cursor-not-allowed opacity-50'
+                        : 'bg-blue-600 hover:bg-blue-500 cursor-pointer'
+                    } text-white`}
                     data-testid={`button-vote-${candidate.id}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                        {candidate.nickname[0].toUpperCase()}
-                      </div>
-                      <span className="text-white font-semibold text-sm">{candidate.nickname}</span>
-                    </div>
-                    <div className="text-white font-bold text-sm">
-                      {electionVotes[candidate.id] || 0} 🗳️
-                    </div>
+                    {candidate.nickname} ({electionVotes[candidate.id] || 0})
                   </button>
                 ))}
                 
-                {/* Continue without host option */}
+                {/* Continue without host - compact */}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleVoteForHost('NO_HOST'); }}
                   disabled={hasVoted}
-                  className={`w-full p-2 rounded-lg flex items-center justify-between transition-all border-2 border-dashed ${
+                  className={`px-2 py-1 rounded text-xs font-semibold transition-all border border-dashed ${
                     hasVoted
-                      ? 'bg-slate-700 border-slate-600 cursor-not-allowed opacity-60'
-                      : 'bg-gradient-to-r from-green-700 to-teal-700 border-green-500 hover:from-green-600 hover:to-teal-600 cursor-pointer'
-                  }`}
+                      ? 'bg-slate-600 border-slate-500 cursor-not-allowed opacity-50'
+                      : 'bg-green-700 border-green-400 hover:bg-green-600 cursor-pointer'
+                  } text-white`}
                   data-testid="button-vote-no-host"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                      ▶️
-                    </div>
-                    <span className="text-white font-semibold text-sm">Continue without host</span>
-                  </div>
-                  <div className="text-white font-bold text-sm">
-                    {electionVotes['NO_HOST'] || 0} 🗳️
-                  </div>
+                  No Host ({electionVotes['NO_HOST'] || 0})
                 </button>
               </div>
               
               {hasVoted && (
-                <div className="mt-1.5 text-center text-green-400 font-semibold text-xs">
-                  ✓ Your vote has been submitted!
+                <div className="mt-1 text-center text-green-400 font-semibold text-[10px]">
+                  ✓ Voted!
                 </div>
               )}
             </div>
@@ -1396,41 +1377,67 @@ export default function Game() {
                     </div>
                   ) : (
                     // Empty / joinable slot
-                    <div
-                      className={`rounded-full flex items-center justify-center border-4 border-white/20 ${
-                        currentPlayer?.isSpectator && isPaused && activePositions.includes(position)
-                          ? 'cursor-pointer hover:bg-gray-500/40 transition-colors'
-                          : ''
-                      } bg-gray-500/30`}
-                      style={{ width: 'var(--avatar)', height: 'var(--avatar)' }}
-                      onClick={() => {
-                        if (currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) {
-                          replacePlayer(position);
-                        } else if (!currentPlayer) {
-                          const roomCode = room?.code;
-                          if (roomCode) window.location.href = `/?room=${roomCode}&position=${position}`;
-                        }
-                      }}
-                    >
-                      <div className="text-center">
-                        {(currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) ||
-                        (!currentPlayer && activePositions.includes(position)) ? (
-                          <>
-                            <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
-                              <span className="text-white text-sm font-bold">+</span>
-                            </div>
-                            <div className="text-xs text-blue-400 mt-1">
-                              {currentPlayer?.isSpectator ? 'Join' : 'Click to Join'}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
-                            <div className="text-xs text-gray-400 mt-1">Closed</div>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                    (() => {
+                      // Check if this is the host's slot during election countdown
+                      const isHostSlot = gameState?.hostElectionActive && 
+                        gameState?.disconnectedHostPosition === position && 
+                        hostCanReturn;
+                      const isCurrentPlayerHost = playerId === gameState?.disconnectedHostId;
+                      const canHostReturn = isHostSlot && isCurrentPlayerHost;
+                      
+                      return (
+                        <div
+                          className={`rounded-full flex items-center justify-center border-4 ${
+                            canHostReturn 
+                              ? 'border-yellow-400 cursor-pointer hover:bg-yellow-500/40 transition-colors animate-pulse'
+                              : currentPlayer?.isSpectator && isPaused && activePositions.includes(position)
+                                ? 'cursor-pointer hover:bg-gray-500/40 transition-colors border-white/20'
+                                : 'border-white/20'
+                          } bg-gray-500/30`}
+                          style={{ width: 'var(--avatar)', height: 'var(--avatar)' }}
+                          onClick={() => {
+                            // Host returning to their slot
+                            if (canHostReturn) {
+                              console.log('Host returning to slot', position);
+                              replacePlayer(position);
+                              return;
+                            }
+                            if (currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) {
+                              replacePlayer(position);
+                            } else if (!currentPlayer) {
+                              const roomCode = room?.code;
+                              if (roomCode) window.location.href = `/?room=${roomCode}&position=${position}`;
+                            }
+                          }}
+                        >
+                          <div className="text-center">
+                            {canHostReturn ? (
+                              <>
+                                <div className="w-8 h-8 rounded-full bg-yellow-400 mx-auto flex items-center justify-center">
+                                  <span className="text-black text-sm font-bold">👑</span>
+                                </div>
+                                <div className="text-xs text-yellow-400 mt-1 font-bold">Return</div>
+                              </>
+                            ) : (currentPlayer?.isSpectator && isPaused && activePositions.includes(position)) ||
+                            (!currentPlayer && activePositions.includes(position)) ? (
+                              <>
+                                <div className="w-8 h-8 rounded-full bg-blue-400 mx-auto flex items-center justify-center">
+                                  <span className="text-white text-sm font-bold">+</span>
+                                </div>
+                                <div className="text-xs text-blue-400 mt-1">
+                                  {currentPlayer?.isSpectator ? 'Join' : 'Click to Join'}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="w-8 h-8 rounded-full bg-gray-400 mx-auto" />
+                                <div className="text-xs text-gray-400 mt-1">Closed</div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()
                   )}
                 </div>
               </div>
