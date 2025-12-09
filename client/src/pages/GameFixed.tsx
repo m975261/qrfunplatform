@@ -266,6 +266,11 @@ export default function Game() {
   // Guru Wild Draw 4 response - allows guru to instantly play +4 when facing a pending draw
   const [showGuruWild4ColorPicker, setShowGuruWild4ColorPicker] = useState(false);
   
+  // Guru +2/+4 with card sacrifice - new flow
+  const [guruCardMode, setGuruCardMode] = useState<'+2' | '+4' | null>(null);
+  const [guruSelectedColor, setGuruSelectedColor] = useState<string | null>(null);
+  const [showGuruCardPicker, setShowGuruCardPicker] = useState(false);
+  
   const handleGuruWild4Response = async (color: string) => {
     if (!roomId || !playerId) return;
     
@@ -304,6 +309,77 @@ export default function Game() {
         variant: "destructive"
       });
     }
+  };
+
+  // Guru +2/+4 with card sacrifice - color selection step
+  const handleGuruStartCard = (mode: '+2' | '+4') => {
+    setGuruCardMode(mode);
+    setGuruSelectedColor(null);
+    // Show inline color options in the buttons area
+  };
+
+  // Guru color selected - now show card sacrifice picker
+  const handleGuruColorSelect = (color: string) => {
+    setGuruSelectedColor(color);
+    setShowGuruCardPicker(true);
+  };
+
+  // Guru card sacrifice - execute the +2 or +4
+  const handleGuruCardSacrifice = async (sacrificeCardIndex: number) => {
+    if (!roomId || !playerId || !guruSelectedColor || !guruCardMode) return;
+    
+    try {
+      const endpoint = guruCardMode === '+2' 
+        ? `/api/rooms/${roomId}/guru-plus2`
+        : `/api/rooms/${roomId}/guru-plus4`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${playerId}`
+        },
+        body: JSON.stringify({ 
+          color: guruSelectedColor,
+          sacrificeCardIndex: sacrificeCardIndex
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log(`✅ Guru ${guruCardMode} successful - stacked to ${result.newPendingDraw} cards`);
+        toast({
+          title: `GURU POWER! ${guruCardMode}`,
+          description: `${guruCardMode} played! Total penalty: ${result.newPendingDraw} cards`,
+        });
+        // Reset state
+        setGuruCardMode(null);
+        setGuruSelectedColor(null);
+        setShowGuruCardPicker(false);
+      } else {
+        console.error(`Guru ${guruCardMode} failed:`, result.error);
+        toast({
+          title: "Failed",
+          description: result.error || `Could not play ${guruCardMode}`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error(`Error with Guru ${guruCardMode}:`, error);
+      toast({
+        title: "Error",
+        description: "Network error",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Cancel guru card flow
+  const handleGuruCardCancel = () => {
+    setGuruCardMode(null);
+    setGuruSelectedColor(null);
+    setShowGuruCardPicker(false);
   };
 
   // Host spectator assignment for active games - with robust player state handling
@@ -653,6 +729,54 @@ export default function Game() {
             </div>
             <button
               onClick={() => setShowGuruWild4ColorPicker(false)}
+              className="mt-4 w-full py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Guru Card Sacrifice Modal - Select which card to remove from hand */}
+      {showGuruCardPicker && guruSelectedColor && guruCardMode && currentPlayer?.hand && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-lg border-2 border-purple-500 p-4 max-w-lg w-full shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="text-2xl font-bold text-purple-400 mb-2">🧙‍♂️ GURU POWER</div>
+              <div className="text-white">
+                Playing {guruCardMode} with 
+                <span className={`ml-1 px-2 py-0.5 rounded text-white font-bold ${
+                  guruSelectedColor === 'red' ? 'bg-red-500' :
+                  guruSelectedColor === 'blue' ? 'bg-blue-500' :
+                  guruSelectedColor === 'green' ? 'bg-green-500' :
+                  'bg-yellow-400 text-black'
+                }`}>{guruSelectedColor}</span>
+              </div>
+              <div className="text-sm text-slate-400 mt-2">Select a card to sacrifice:</div>
+            </div>
+            
+            <div className="max-h-48 overflow-x-auto overflow-y-hidden">
+              <div className="flex gap-2 min-w-max p-2 justify-center">
+                {currentPlayer.hand.map((card: any, index: number) => (
+                  <div 
+                    key={index}
+                    className="cursor-pointer hover:scale-110 hover:-translate-y-2 transition-all"
+                    onClick={() => handleGuruCardSacrifice(index)}
+                  >
+                    <GameCard
+                      card={card}
+                      size="extra-small"
+                      selected={false}
+                      disabled={false}
+                      interactive={true}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <button
+              onClick={handleGuruCardCancel}
               className="mt-4 w-full py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg"
             >
               Cancel
@@ -1011,6 +1135,56 @@ export default function Game() {
 
           {/* === DRAW PILE (bottom-left of board) === */}
           <div className="absolute z-20 bottom-2 left-2">
+            {/* Guru +2/+4 Buttons - Above draw pile, only for guru users */}
+            {isGuruUser && isMyTurn && (
+              <div className="absolute bottom-full left-0 mb-2 flex flex-col gap-1">
+                {guruCardMode === null ? (
+                  <>
+                    <button
+                      onClick={() => handleGuruStartCard('+2')}
+                      className="px-2 py-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-xs rounded border border-white/50 shadow-lg"
+                      data-testid="button-guru-plus2"
+                    >
+                      🧙‍♂️ +2
+                    </button>
+                    <button
+                      onClick={() => handleGuruStartCard('+4')}
+                      className="px-2 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded border border-white/50 shadow-lg"
+                      data-testid="button-guru-plus4"
+                    >
+                      🧙‍♂️ +4
+                    </button>
+                  </>
+                ) : (
+                  /* Color selection after clicking +2 or +4 */
+                  <div className="bg-slate-800/95 rounded-lg p-2 border border-purple-500/50">
+                    <div className="text-white text-xs font-bold mb-1 text-center">{guruCardMode} Color:</div>
+                    <div className="grid grid-cols-2 gap-1">
+                      {['red', 'blue', 'green', 'yellow'].map(color => (
+                        <button
+                          key={color}
+                          onClick={() => handleGuruColorSelect(color)}
+                          className={`w-6 h-6 rounded shadow-sm border-2 border-white/50 ${
+                            color === 'red' ? 'bg-red-500' :
+                            color === 'blue' ? 'bg-blue-500' :
+                            color === 'green' ? 'bg-green-500' :
+                            'bg-yellow-400'
+                          }`}
+                          data-testid={`button-guru-color-${color}`}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleGuruCardCancel}
+                      className="mt-1 w-full text-xs text-slate-400 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="relative cursor-pointer group" onClick={drawCard}>
               <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
               <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>

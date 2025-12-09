@@ -1238,8 +1238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a Wild Draw 4 card
       const wild4Card: Card = {
         type: 'wild4',
-        color: 'wild',
-        value: '+4'
+        color: 'wild'
       };
       
       // Add the card to discard pile
@@ -1284,26 +1283,236 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await broadcastRoomState(roomId);
       
       res.json({ success: true, message: 'Guru Wild Draw 4 played successfully', newPendingDraw });
-      
-      // Check if next player can stack - if not, auto-apply penalty (AFTER response is sent)
-      try {
-        const nextPlayer = gamePlayers[nextPlayerIndex];
-        if (nextPlayer) {
-          const nextPlayerData = await storage.getPlayer(nextPlayer.id);
-          if (nextPlayerData) {
-            const canStack = UnoGameLogic.canPlayerStackDraw(nextPlayerData.hand || [], wild4Card, newPendingDraw);
-            if (!canStack) {
-              // Apply penalty with animation
-              await applyPenaltyWithAnimation(roomId, nextPlayerIndex, gamePlayers, newPendingDraw);
-            }
-          }
-        }
-      } catch (penaltyError) {
-        console.error("Error applying penalty after guru Wild4:", penaltyError);
-      }
+      // No auto-apply penalty - next player must explicitly choose to draw or play +4
     } catch (error) {
       console.error("Error with guru Wild4 response:", error);
       res.status(500).json({ error: 'Failed to play guru Wild Draw 4' });
+    }
+  });
+
+  // Guru +2 card - guru can play +2 with any color by sacrificing a card
+  app.post("/api/rooms/:roomId/guru-plus2", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const playerId = req.headers.authorization?.replace('Bearer ', '');
+      const { color, sacrificeCardIndex } = z.object({
+        color: z.enum(['red', 'blue', 'green', 'yellow']),
+        sacrificeCardIndex: z.number().min(0)
+      }).parse(req.body);
+      
+      if (!playerId) {
+        return res.status(401).json({ error: 'Player ID required' });
+      }
+      
+      const room = await storage.getRoom(roomId);
+      if (!room || room.status !== 'playing') {
+        return res.status(400).json({ error: 'Game not in progress' });
+      }
+      
+      const player = await storage.getPlayer(playerId);
+      if (!player || player.roomId !== roomId) {
+        return res.status(403).json({ error: 'Not authorized for this room' });
+      }
+      
+      // Verify it's this player's turn
+      const players = await storage.getPlayersByRoom(roomId);
+      const gamePlayers = players.filter(p => !p.isSpectator).sort((a, b) => (a.position || 0) - (b.position || 0));
+      const currentPlayerIndex = room.currentPlayerIndex || 0;
+      const currentPlayer = gamePlayers[currentPlayerIndex];
+      
+      if (!currentPlayer || currentPlayer.id !== playerId) {
+        return res.status(400).json({ error: 'Not your turn' });
+      }
+      
+      // Verify player has a card to sacrifice
+      const hand = player.hand || [];
+      if (sacrificeCardIndex < 0 || sacrificeCardIndex >= hand.length) {
+        return res.status(400).json({ error: 'Invalid card index' });
+      }
+      
+      console.log(`🧙‍♂️ GURU +2: ${player.nickname} using guru privilege to play +2 (color: ${color}, sacrificing card at index ${sacrificeCardIndex})`);
+      
+      // Create a +2 card with chosen color
+      const plus2Card: Card = {
+        type: 'draw2',
+        color: color
+      };
+      
+      // Remove the sacrificed card from hand
+      const newHand = [...hand];
+      newHand.splice(sacrificeCardIndex, 1);
+      
+      // Add the +2 card to discard pile
+      const newDiscardPile = [plus2Card, ...(room.discardPile || [])];
+      
+      // Stack the penalty
+      const newPendingDraw = (room.pendingDraw || 0) + 2;
+      
+      // Get finished player indices for turn calculation
+      const finishedPlayerIndices = gamePlayers
+        .map((p, idx) => ({ player: p, index: idx }))
+        .filter(item => item.player.finishPosition)
+        .map(item => item.index);
+      
+      // Move to next player
+      const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+        currentPlayerIndex, 
+        gamePlayers.length, 
+        room.direction || "clockwise",
+        false,
+        false,
+        finishedPlayerIndices
+      );
+      
+      // Update player hand
+      await storage.updatePlayer(playerId, { 
+        hand: newHand,
+        hasCalledUno: newHand.length > 1 ? false : player.hasCalledUno
+      });
+      
+      // Update position hands
+      if (player.position !== null) {
+        const updatedPositionHands = { ...room.positionHands };
+        updatedPositionHands[player.position.toString()] = newHand;
+        await storage.updateRoom(roomId, { positionHands: updatedPositionHands });
+      }
+      
+      // Update room state
+      await storage.updateRoom(roomId, {
+        discardPile: newDiscardPile,
+        currentColor: color,
+        pendingDraw: newPendingDraw,
+        currentPlayerIndex: nextPlayerIndex
+      });
+      
+      // Broadcast the guru +2 play
+      broadcastToRoom(roomId, {
+        type: 'guru_plus2',
+        player: player.nickname,
+        color: color,
+        newPendingDraw: newPendingDraw,
+        message: `${player.nickname} used GURU POWER to play +2! (Total penalty: ${newPendingDraw} cards)`
+      });
+      
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: 'Guru +2 played successfully', newPendingDraw, cardsRemaining: newHand.length });
+    } catch (error) {
+      console.error("Error with guru +2:", error);
+      res.status(500).json({ error: 'Failed to play guru +2' });
+    }
+  });
+
+  // Guru +4 card with sacrifice - guru can play +4 anytime by sacrificing a card
+  app.post("/api/rooms/:roomId/guru-plus4", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const playerId = req.headers.authorization?.replace('Bearer ', '');
+      const { color, sacrificeCardIndex } = z.object({
+        color: z.enum(['red', 'blue', 'green', 'yellow']),
+        sacrificeCardIndex: z.number().min(0)
+      }).parse(req.body);
+      
+      if (!playerId) {
+        return res.status(401).json({ error: 'Player ID required' });
+      }
+      
+      const room = await storage.getRoom(roomId);
+      if (!room || room.status !== 'playing') {
+        return res.status(400).json({ error: 'Game not in progress' });
+      }
+      
+      const player = await storage.getPlayer(playerId);
+      if (!player || player.roomId !== roomId) {
+        return res.status(403).json({ error: 'Not authorized for this room' });
+      }
+      
+      // Verify it's this player's turn
+      const players = await storage.getPlayersByRoom(roomId);
+      const gamePlayers = players.filter(p => !p.isSpectator).sort((a, b) => (a.position || 0) - (b.position || 0));
+      const currentPlayerIndex = room.currentPlayerIndex || 0;
+      const currentPlayer = gamePlayers[currentPlayerIndex];
+      
+      if (!currentPlayer || currentPlayer.id !== playerId) {
+        return res.status(400).json({ error: 'Not your turn' });
+      }
+      
+      // Verify player has a card to sacrifice
+      const hand = player.hand || [];
+      if (sacrificeCardIndex < 0 || sacrificeCardIndex >= hand.length) {
+        return res.status(400).json({ error: 'Invalid card index' });
+      }
+      
+      console.log(`🧙‍♂️ GURU +4: ${player.nickname} using guru privilege to play +4 (color: ${color}, sacrificing card at index ${sacrificeCardIndex})`);
+      
+      // Create a Wild Draw 4 card
+      const wild4Card: Card = {
+        type: 'wild4',
+        color: 'wild'
+      };
+      
+      // Remove the sacrificed card from hand
+      const newHand = [...hand];
+      newHand.splice(sacrificeCardIndex, 1);
+      
+      // Add the +4 card to discard pile
+      const newDiscardPile = [wild4Card, ...(room.discardPile || [])];
+      
+      // Stack the penalty
+      const newPendingDraw = (room.pendingDraw || 0) + 4;
+      
+      // Get finished player indices for turn calculation
+      const finishedPlayerIndices = gamePlayers
+        .map((p, idx) => ({ player: p, index: idx }))
+        .filter(item => item.player.finishPosition)
+        .map(item => item.index);
+      
+      // Move to next player
+      const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+        currentPlayerIndex, 
+        gamePlayers.length, 
+        room.direction || "clockwise",
+        false,
+        false,
+        finishedPlayerIndices
+      );
+      
+      // Update player hand
+      await storage.updatePlayer(playerId, { 
+        hand: newHand,
+        hasCalledUno: newHand.length > 1 ? false : player.hasCalledUno
+      });
+      
+      // Update position hands
+      if (player.position !== null) {
+        const updatedPositionHands = { ...room.positionHands };
+        updatedPositionHands[player.position.toString()] = newHand;
+        await storage.updateRoom(roomId, { positionHands: updatedPositionHands });
+      }
+      
+      // Update room state
+      await storage.updateRoom(roomId, {
+        discardPile: newDiscardPile,
+        currentColor: color,
+        pendingDraw: newPendingDraw,
+        currentPlayerIndex: nextPlayerIndex
+      });
+      
+      // Broadcast the guru +4 play
+      broadcastToRoom(roomId, {
+        type: 'guru_plus4',
+        player: player.nickname,
+        color: color,
+        newPendingDraw: newPendingDraw,
+        message: `${player.nickname} used GURU POWER to play +4! (Total penalty: ${newPendingDraw} cards)`
+      });
+      
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: 'Guru +4 played successfully', newPendingDraw, cardsRemaining: newHand.length });
+    } catch (error) {
+      console.error("Error with guru +4:", error);
+      res.status(500).json({ error: 'Failed to play guru +4' });
     }
   });
 
@@ -2266,17 +2475,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
 
-    // Check if the player can stack draw cards
+    // NEW BEHAVIOR: Never auto-apply penalty - always wait for player to choose
+    // Player can either: 1) Play a +4 from their hand, or 2) Press draw to accept penalty
     const canStack = UnoGameLogic.canPlayerStackDraw(player.hand || [], topCard, room.pendingDraw);
     console.log(`🎯 PENALTY CHECK: Player ${player.nickname} canStack=${canStack}, pendingDraw=${room.pendingDraw}, topCard=${topCard.type}`);
-    
-    if (!canStack) {
-      // Player cannot stack, automatically apply penalty with animation
-      console.log(`✅ PENALTY APPLY: Auto-applying ${room.pendingDraw} card penalty to ${player.nickname}`);
-      await applyPenaltyWithAnimation(roomId, playerIndex, gamePlayers, room.pendingDraw);
-    } else {
-      console.log(`⏳ PENALTY WAIT: ${player.nickname} can stack, waiting for their action`);
-    }
+    console.log(`⏳ WAITING: ${player.nickname} must choose - play +4 or draw ${room.pendingDraw} cards`);
+    // No auto-apply - player must explicitly press draw or play a +4
   }
 
   async function handleDrawCard(connection: SocketConnection, message: any) {
