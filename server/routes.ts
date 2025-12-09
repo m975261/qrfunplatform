@@ -2750,6 +2750,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Count active players before this player exits
     const activePlayersBefore = players.filter(p => !p.isSpectator && !p.hasLeft && p.id !== connection.playerId);
     
+    // Check if the exiting player is the host
+    const isHost = room.hostId === connection.playerId;
+    
     // Mark player as left/spectator
     await storage.updatePlayer(connection.playerId, { 
       hasLeft: true, 
@@ -2758,6 +2761,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       position: null,
       hand: [] // Clear hand since cards are saved to positionHands
     });
+    
+    // If host is leaving and there are other players, start host election
+    if (isHost && activePlayersBefore.length > 0) {
+      console.log(`Host ${player.nickname} is leaving the game - starting host election`);
+      
+      // Record host disconnection time
+      await storage.updateRoom(connection.roomId, { 
+        hostDisconnectedAt: new Date()
+      });
+      
+      // Notify players that host is leaving and election will start in 30 seconds
+      broadcastToRoom(connection.roomId, {
+        type: 'host_disconnected_warning',
+        hostName: player.nickname,
+        electionStartsIn: 30,
+        message: `Host ${player.nickname} left. Vote for new host in 30 seconds...`
+      });
+      
+      // Start 30-second timer for host election
+      const roomId = connection.roomId;
+      const timer = setTimeout(async () => {
+        // Start the election
+        console.log(`Starting host election in room ${roomId} (host left)`);
+        const currentRoom = await storage.getRoom(roomId);
+        if (!currentRoom) return;
+        
+        const activePlayers = (await storage.getPlayersByRoom(roomId))
+          .filter(p => !p.isSpectator && !p.hasLeft);
+        
+        if (activePlayers.length === 0) {
+          // No one left to vote, clean up room
+          console.log(`No active players left in room ${roomId}, cleaning up`);
+          broadcastToRoom(roomId, {
+            type: 'host_left_redirect',
+            message: 'No players available. Returning to main page...'
+          });
+          return;
+        }
+        
+        // Single player - auto-promote
+        if (activePlayers.length === 1) {
+          const newHost = activePlayers[0];
+          await storage.updateRoom(roomId, { 
+            hostId: newHost.id,
+            hostDisconnectedAt: null,
+            hostElectionActive: false
+          });
+          await storage.updatePlayer(newHost.id, { isHost: true });
+          
+          broadcastToRoom(roomId, {
+            type: 'host_elected',
+            newHostId: newHost.id,
+            newHostName: newHost.nickname,
+            message: `${newHost.nickname} is now the host!`
+          });
+          
+          await broadcastRoomState(roomId);
+          return;
+        }
+        
+        // Multiple players - start voting
+        const eligibleVoterIds = activePlayers.map(p => p.id);
+        
+        // Add "Continue without host" option
+        const candidatesWithNoHost = [
+          ...activePlayers.map(p => ({ id: p.id, nickname: p.nickname })),
+          { id: 'NO_HOST', nickname: 'Continue without host' }
+        ];
+        
+        await storage.updateRoom(roomId, {
+          hostElectionActive: true,
+          hostElectionVotes: {},
+          hostElectionEligibleVoters: eligibleVoterIds,
+          hostElectionCandidates: candidatesWithNoHost
+        });
+        
+        broadcastToRoom(roomId, {
+          type: 'host_election_started',
+          candidates: candidatesWithNoHost,
+          eligibleVoterIds,
+          votingDuration: 30,
+          message: 'Vote for the new host!'
+        });
+        
+        await broadcastRoomState(roomId);
+        
+        hostDisconnectTimers.delete(roomId);
+      }, 30000); // 30 seconds
+      
+      hostDisconnectTimers.set(connection.roomId, timer);
+    }
     
     // If game is in progress
     if (room.status === "playing") {
