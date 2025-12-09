@@ -90,10 +90,10 @@ export default function MainHome() {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        {/* Games Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8 mb-16 max-w-7xl mx-auto">
+        {/* Games Grid - Centered */}
+        <div className="flex flex-wrap justify-center gap-6 lg:gap-8 mb-16 max-w-5xl mx-auto">
           {games.map((game) => (
-            <Card key={game.id} className="relative group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-lg h-full flex flex-col">
+            <Card key={game.id} className="relative group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-lg flex flex-col w-full sm:w-96">
               <div className="p-6 lg:p-8 flex-1 flex flex-col">
                 {/* Game Header */}
                 <div className="mb-6">
