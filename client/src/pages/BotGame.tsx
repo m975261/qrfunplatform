@@ -643,29 +643,41 @@ export default function BotGame() {
             <div className="text-white/70 text-sm">({gameState.botHand.length} cards)</div>
             {botThinking && <div className="text-yellow-300 animate-pulse ml-2">Thinking...</div>}
           </div>
-          <div className="flex justify-center gap-1 flex-wrap max-w-md mx-auto">
+          <div className="flex justify-center gap-1 flex-wrap max-w-lg mx-auto">
             {gameState.botHand.map((_, index) => (
               <div
                 key={index}
-                className="w-10 h-14 bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-lg border-2 border-red-800 shadow-lg flex items-center justify-center"
+                className="w-14 h-20 bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-lg border-2 border-red-800 shadow-lg flex items-center justify-center"
               >
-                <span className="text-white font-bold text-[8px] transform -rotate-12">UNO</span>
+                <span className="text-white font-bold text-[10px] transform -rotate-12">UNO</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex justify-center items-center gap-8 my-6">
+        {/* Center section with played card */}
+        <div className="flex flex-col items-center my-6">
+          <div className="text-center">
+            {topCard && (
+              <GameCard card={topCard} size="medium" />
+            )}
+            <div className={`w-10 h-10 rounded-full ${getColorClass(gameState.currentColor)} border-3 border-white shadow-lg mx-auto mt-2`} />
+            <div className="text-white capitalize text-sm mt-1">{gameState.currentColor}</div>
+          </div>
+        </div>
+        
+        {/* Draw deck - positioned separately */}
+        <div className="flex justify-center mb-4">
           <div className="text-center">
             <div className="text-white/70 text-sm mb-2">Deck ({gameState.deck.length})</div>
             <button
               onClick={handlePlayerDraw}
               disabled={gameState.currentTurn !== "player" || !!gameState.winner || gameState.playerJustDrew}
-              className="w-20 h-28 bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-xl border-4 border-red-800 shadow-xl hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center"
+              className="w-16 h-22 bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-xl border-3 border-red-800 shadow-xl hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center"
               data-testid="button-draw"
             >
-              <span className="text-white font-bold text-lg transform -rotate-12 drop-shadow-lg">UNO</span>
-              <span className="text-white/80 font-medium text-[10px] mt-1">DRAW</span>
+              <span className="text-white font-bold text-base transform -rotate-12 drop-shadow-lg">UNO</span>
+              <span className="text-white/80 font-medium text-[9px] mt-1">DRAW</span>
             </button>
             {gameState.playerJustDrew && gameState.lastDrawnCard && canPlayCard(gameState.lastDrawnCard, topCard, gameState.currentColor) && (
               <Button
@@ -677,14 +689,6 @@ export default function BotGame() {
                 Pass Turn
               </Button>
             )}
-          </div>
-
-          <div className="text-center relative">
-            {topCard && (
-              <GameCard card={topCard} size="medium" />
-            )}
-            <div className={`w-10 h-10 rounded-full ${getColorClass(gameState.currentColor)} border-3 border-white shadow-lg mx-auto mt-2`} />
-            <div className="text-white capitalize text-sm mt-1">{gameState.currentColor}</div>
           </div>
         </div>
         
