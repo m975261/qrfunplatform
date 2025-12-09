@@ -82,6 +82,9 @@ export default function Game() {
   const [hostDisconnectedWarning, setHostDisconnectedWarning] = useState<string | null>(null);
   const [electionCountdown, setElectionCountdown] = useState(30);
   const [hostCanReturn, setHostCanReturn] = useState(true);
+  const [bannerDragOffset, setBannerDragOffset] = useState({ x: 0, y: 0 });
+  const [isDraggingBanner, setIsDraggingBanner] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
 
   // Debug logs for troubleshooting
   console.log("🚨 WHITE PAGE DEBUG:", {
@@ -938,82 +941,143 @@ export default function Game() {
         </div>
       )}
 
-      {/* Host Disconnected Warning with Voting Buttons */}
-      {hostDisconnectedWarning && electionCandidates.length > 0 && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md">
-          <div className="bg-slate-800 rounded-xl border-2 border-orange-500 p-4 shadow-2xl">
-            <div className="text-center mb-3">
-              <div className="text-lg font-bold text-orange-400">⚠️ Host Left Game</div>
-              <div className="text-2xl font-bold text-white mt-1">
-                {electionCountdown > 0 ? (
-                  hostCanReturn ? (
-                    <>Host can return in: <span className="text-yellow-400">{electionCountdown}s</span></>
-                  ) : (
-                    <>Voting ends in: <span className="text-yellow-400">{electionCountdown}s</span></>
-                  )
-                ) : (
-                  <span className="text-red-400">Voting closed!</span>
-                )}
+      {/* Host Disconnected Warning with Voting Buttons - Draggable & Positioned Away from Host Slot */}
+      {hostDisconnectedWarning && electionCandidates.length > 0 && (() => {
+        // Find the host's position to avoid overlapping their slot
+        const hostPlayer = players.find((p: any) => p.isHost || room?.hostId === p.id);
+        const hostPosition = hostPlayer?.position ?? 0;
+        
+        // Position banner away from host slot:
+        // Host at 0 (top) -> banner at bottom
+        // Host at 1 (right) -> banner at left
+        // Host at 2 (bottom) -> banner at top
+        // Host at 3 (left) -> banner at right
+        const getBannerPosition = () => {
+          switch (hostPosition) {
+            case 0: return 'bottom-20 left-1/2 -translate-x-1/2'; // Host at top, banner at bottom
+            case 1: return 'top-1/2 left-4 -translate-y-1/2'; // Host at right, banner at left
+            case 2: return 'top-20 left-1/2 -translate-x-1/2'; // Host at bottom, banner at top
+            case 3: return 'top-1/2 right-4 -translate-y-1/2'; // Host at left, banner at right
+            default: return 'bottom-20 left-1/2 -translate-x-1/2';
+          }
+        };
+        
+        const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+          e.preventDefault();
+          setIsDraggingBanner(true);
+          const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+          const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+          setDragStartPos({ x: clientX - bannerDragOffset.x, y: clientY - bannerDragOffset.y });
+        };
+        
+        const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+          if (!isDraggingBanner) return;
+          const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+          const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+          setBannerDragOffset({
+            x: clientX - dragStartPos.x,
+            y: clientY - dragStartPos.y
+          });
+        };
+        
+        const handleDragEnd = () => {
+          setIsDraggingBanner(false);
+        };
+        
+        return (
+          <div 
+            className={`fixed ${getBannerPosition()} z-50 w-[85%] max-w-sm cursor-move select-none`}
+            style={{ 
+              transform: `translate(${bannerDragOffset.x}px, ${bannerDragOffset.y}px)`,
+              touchAction: 'none'
+            }}
+            onMouseDown={handleDragStart}
+            onMouseMove={handleDragMove}
+            onMouseUp={handleDragEnd}
+            onMouseLeave={handleDragEnd}
+            onTouchStart={handleDragStart}
+            onTouchMove={handleDragMove}
+            onTouchEnd={handleDragEnd}
+          >
+            <div className="bg-slate-800/95 backdrop-blur-sm rounded-xl border-2 border-orange-500 p-3 shadow-2xl">
+              {/* Drag handle indicator */}
+              <div className="flex justify-center mb-1">
+                <div className="w-12 h-1 bg-slate-500 rounded-full"></div>
               </div>
-            </div>
-            
-            {/* Voting buttons - always visible during countdown */}
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
+              
+              <div className="text-center mb-2">
+                <div className="text-sm font-bold text-orange-400">⚠️ Host Left Game</div>
+                <div className="text-xl font-bold text-white">
+                  {electionCountdown > 0 ? (
+                    hostCanReturn ? (
+                      <>Host can return in: <span className="text-yellow-400">{electionCountdown}s</span></>
+                    ) : (
+                      <>Voting ends in: <span className="text-yellow-400">{electionCountdown}s</span></>
+                    )
+                  ) : (
+                    <span className="text-red-400">Voting closed!</span>
+                  )}
+                </div>
+              </div>
+              
+              {/* Voting buttons - always visible during countdown */}
+              <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
+                  <button
+                    key={candidate.id}
+                    onClick={(e) => { e.stopPropagation(); handleVoteForHost(candidate.id); }}
+                    disabled={hasVoted}
+                    className={`w-full p-2 rounded-lg flex items-center justify-between transition-all ${
+                      hasVoted
+                        ? 'bg-slate-700 cursor-not-allowed opacity-60'
+                        : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 cursor-pointer'
+                    }`}
+                    data-testid={`button-vote-${candidate.id}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                        {candidate.nickname[0].toUpperCase()}
+                      </div>
+                      <span className="text-white font-semibold text-sm">{candidate.nickname}</span>
+                    </div>
+                    <div className="text-white font-bold text-sm">
+                      {electionVotes[candidate.id] || 0} 🗳️
+                    </div>
+                  </button>
+                ))}
+                
+                {/* Continue without host option */}
                 <button
-                  key={candidate.id}
-                  onClick={() => handleVoteForHost(candidate.id)}
+                  onClick={(e) => { e.stopPropagation(); handleVoteForHost('NO_HOST'); }}
                   disabled={hasVoted}
-                  className={`w-full p-3 rounded-lg flex items-center justify-between transition-all ${
+                  className={`w-full p-2 rounded-lg flex items-center justify-between transition-all border-2 border-dashed ${
                     hasVoted
-                      ? 'bg-slate-700 cursor-not-allowed opacity-60'
-                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 cursor-pointer'
+                      ? 'bg-slate-700 border-slate-600 cursor-not-allowed opacity-60'
+                      : 'bg-gradient-to-r from-green-700 to-teal-700 border-green-500 hover:from-green-600 hover:to-teal-600 cursor-pointer'
                   }`}
-                  data-testid={`button-vote-${candidate.id}`}
+                  data-testid="button-vote-no-host"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center text-white font-bold">
-                      {candidate.nickname[0].toUpperCase()}
+                    <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                      ▶️
                     </div>
-                    <span className="text-white font-semibold">{candidate.nickname}</span>
+                    <span className="text-white font-semibold text-sm">Continue without host</span>
                   </div>
-                  <div className="text-white font-bold">
-                    {electionVotes[candidate.id] || 0} 🗳️
+                  <div className="text-white font-bold text-sm">
+                    {electionVotes['NO_HOST'] || 0} 🗳️
                   </div>
                 </button>
-              ))}
-              
-              {/* Continue without host option */}
-              <button
-                onClick={() => handleVoteForHost('NO_HOST')}
-                disabled={hasVoted}
-                className={`w-full p-3 rounded-lg flex items-center justify-between transition-all border-2 border-dashed ${
-                  hasVoted
-                    ? 'bg-slate-700 border-slate-600 cursor-not-allowed opacity-60'
-                    : 'bg-gradient-to-r from-green-700 to-teal-700 border-green-500 hover:from-green-600 hover:to-teal-600 cursor-pointer'
-                }`}
-                data-testid="button-vote-no-host"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
-                    ▶️
-                  </div>
-                  <span className="text-white font-semibold">Continue without host</span>
-                </div>
-                <div className="text-white font-bold">
-                  {electionVotes['NO_HOST'] || 0} 🗳️
-                </div>
-              </button>
-            </div>
-            
-            {hasVoted && (
-              <div className="mt-2 text-center text-green-400 font-semibold text-sm">
-                ✓ Your vote has been submitted!
               </div>
-            )}
+              
+              {hasVoted && (
+                <div className="mt-1.5 text-center text-green-400 font-semibold text-xs">
+                  ✓ Your vote has been submitted!
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Header */}
       <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-10">
