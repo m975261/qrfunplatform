@@ -594,9 +594,36 @@ export default function BotGame() {
     ? getPlayableCards(gameState.playerHand, topCard, gameState.currentColor)
     : [];
 
+  const isMyTurn = gameState.currentTurn === "player" && !gameState.winner;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-800 via-green-700 to-green-900 p-4 flex flex-col">
-      <div className="flex justify-between items-center mb-4">
+      {/* Turn Indicator Banner */}
+      {!gameState.winner && (
+        <div className={`fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full shadow-lg border-2 transition-all ${
+          isMyTurn 
+            ? (gameState.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
+            : 'bg-yellow-600 border-yellow-400'
+        }`}>
+          <div className="text-white font-bold text-sm text-center flex items-center gap-2">
+            {isMyTurn ? (
+              gameState.pendingDraw > 0 ? (
+                <span>⚠️ MUST DRAW {gameState.pendingDraw} CARDS! ⚠️</span>
+              ) : (
+                <span>⭐ YOUR TURN - Play or Draw! ⭐</span>
+              )
+            ) : (
+              gameState.pendingDraw > 0 ? (
+                <span>🤖 Bot must draw {gameState.pendingDraw} cards</span>
+              ) : (
+                <span>🤖 Bot's turn</span>
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center mb-4 mt-8">
         <Button
           variant="outline"
           onClick={() => setLocation("/")}
@@ -638,8 +665,10 @@ export default function BotGame() {
             {gameState.botHand.map((_, index) => (
               <div
                 key={index}
-                className="w-10 h-14 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border-2 border-gray-600 shadow-lg"
-              />
+                className="w-10 h-14 bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-lg border-2 border-red-800 shadow-lg flex items-center justify-center"
+              >
+                <span className="text-white font-bold text-[8px] transform -rotate-12">UNO</span>
+              </div>
             ))}
           </div>
         </div>
@@ -650,10 +679,11 @@ export default function BotGame() {
             <button
               onClick={handlePlayerDraw}
               disabled={gameState.currentTurn !== "player" || !!gameState.winner || gameState.playerJustDrew}
-              className="w-20 h-28 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl border-4 border-gray-600 shadow-xl hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-20 h-28 bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-xl border-4 border-red-800 shadow-xl hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center"
               data-testid="button-draw"
             >
-              <span className="text-white font-bold text-xs">DRAW</span>
+              <span className="text-white font-bold text-lg transform -rotate-12 drop-shadow-lg">UNO</span>
+              <span className="text-white/80 font-medium text-[10px] mt-1">DRAW</span>
             </button>
             {gameState.playerJustDrew && gameState.lastDrawnCard && canPlayCard(gameState.lastDrawnCard, topCard, gameState.currentColor) && (
               <Button
@@ -688,19 +718,21 @@ export default function BotGame() {
             </div>
             <div className="text-white font-bold">{nickname}</div>
             <div className="text-white/70 text-sm">({gameState.playerHand.length} cards)</div>
-            {gameState.playerHand.length === 2 && !gameState.playerCalledUno && (
-              <Button
-                onClick={callUno}
-                className="ml-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold animate-pulse"
-                size="sm"
-                data-testid="button-call-uno"
-              >
-                Call UNO!
-              </Button>
-            )}
-            {gameState.playerCalledUno && gameState.playerHand.length <= 2 && (
-              <span className="text-yellow-400 font-bold ml-2">UNO!</span>
-            )}
+            <Button
+              onClick={callUno}
+              disabled={gameState.playerHand.length > 2 || gameState.playerCalledUno}
+              className={`ml-2 font-bold ${
+                gameState.playerCalledUno 
+                  ? 'bg-green-500 text-white cursor-default' 
+                  : gameState.playerHand.length <= 2 
+                    ? 'bg-yellow-500 hover:bg-yellow-600 text-black animate-pulse' 
+                    : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+              }`}
+              size="sm"
+              data-testid="button-call-uno"
+            >
+              {gameState.playerCalledUno ? '✓ UNO!' : 'Call UNO!'}
+            </Button>
           </div>
           
           <div className="flex justify-center gap-2 flex-wrap px-4 pb-4">
