@@ -679,29 +679,31 @@ export default function BotGame() {
             )}
           </div>
 
-          <div className="text-center">
+          <div className="text-center relative">
             {topCard && (
               <GameCard card={topCard} size="medium" />
             )}
             <div className={`w-10 h-10 rounded-full ${getColorClass(gameState.currentColor)} border-3 border-white shadow-lg mx-auto mt-2`} />
             <div className="text-white capitalize text-sm mt-1">{gameState.currentColor}</div>
-            
-            {/* YOUR TURN Indicator - centered under current color with good spacing */}
-            {!gameState.winner && isMyTurn && (
-              <div className={`mt-6 px-5 py-3 rounded-full shadow-lg border-2 transition-all ${
-                gameState.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse'
-              }`}>
-                <div className="text-white font-bold text-base text-center">
-                  {gameState.pendingDraw > 0 ? (
-                    <span>⚠️ MUST DRAW {gameState.pendingDraw} CARDS! ⚠️</span>
-                  ) : (
-                    <span>⭐ YOUR TURN ⭐</span>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </div>
+        
+        {/* YOUR TURN Indicator - absolutely positioned below center section */}
+        {!gameState.winner && isMyTurn && (
+          <div className="flex justify-center -mt-2 mb-4">
+            <div className={`px-5 py-3 rounded-full shadow-lg border-2 transition-all ${
+              gameState.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse'
+            }`}>
+              <div className="text-white font-bold text-base text-center">
+                {gameState.pendingDraw > 0 ? (
+                  <span>⚠️ MUST DRAW {gameState.pendingDraw} CARDS! ⚠️</span>
+                ) : (
+                  <span>⭐ YOUR TURN ⭐</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-auto">
           <div className="flex items-center justify-center gap-2 mb-3">
