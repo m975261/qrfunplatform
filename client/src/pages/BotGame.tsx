@@ -94,6 +94,12 @@ export default function BotGame() {
   const [message, setMessage] = useState("");
   const [botThinking, setBotThinking] = useState(false);
   const [pendingUnoPenalty, setPendingUnoPenalty] = useState(false);
+  const [cardAnimation, setCardAnimation] = useState<{
+    card: UnoCard;
+    from: 'player' | 'bot' | 'deck';
+    to: 'discard' | 'player' | 'bot';
+    show: boolean;
+  } | null>(null);
 
   const initializeGame = useCallback(() => {
     let deck = shuffleDeck(createDeck());
@@ -191,35 +197,63 @@ export default function BotGame() {
     if (!gameState || gameState.currentTurn !== "player" || gameState.winner) return;
     if (gameState.playerJustDrew) return;
     
+    // Get the card that will be drawn for animation (peek at top of deck)
+    const cardToDraw = gameState.deck.length > 0 ? gameState.deck[gameState.deck.length - 1] : null;
+    
     if (gameState.pendingDraw > 0) {
       const drawCount = gameState.pendingDraw;
+      
+      // Show animation for first card
+      if (cardToDraw) {
+        setCardAnimation({
+          card: { type: 'number', color: 'red', number: 0 }, // Show card back
+          from: 'deck',
+          to: 'player',
+          show: true
+        });
+        setTimeout(() => setCardAnimation(null), 350);
+      }
+      
       drawCards(drawCount, "player", true);
       setMessage(`You drew ${drawCount} cards. Bot's turn!`);
       setTimeout(() => {
         setGameState(prev => prev ? { ...prev, currentTurn: "bot", playerJustDrew: false, lastDrawnCard: null } : prev);
       }, 500);
     } else {
-      const drawnCards = drawCards(1, "player", false);
-      if (drawnCards.length > 0) {
-        const drawnCard = drawnCards[0];
-        const topCard = gameState.discardPile[gameState.discardPile.length - 1];
-        const canPlay = canPlayCard(drawnCard, topCard, gameState.currentColor);
-        
-        setGameState(prev => prev ? { 
-          ...prev, 
-          playerJustDrew: true, 
-          lastDrawnCard: drawnCard 
-        } : prev);
-        
-        if (canPlay) {
-          setMessage(`You drew a playable card! Play it or pass.`);
-        } else {
-          setMessage(`You drew a card you can't play. Passing turn...`);
-          setTimeout(() => {
-            setGameState(prev => prev ? { ...prev, currentTurn: "bot", playerJustDrew: false, lastDrawnCard: null } : prev);
-          }, 800);
-        }
+      // Show draw animation
+      if (cardToDraw) {
+        setCardAnimation({
+          card: { type: 'number', color: 'red', number: 0 }, // Show card back during animation
+          from: 'deck',
+          to: 'player',
+          show: true
+        });
       }
+      
+      setTimeout(() => {
+        setCardAnimation(null);
+        const drawnCards = drawCards(1, "player", false);
+        if (drawnCards.length > 0) {
+          const drawnCard = drawnCards[0];
+          const topCard = gameState.discardPile[gameState.discardPile.length - 1];
+          const canPlay = canPlayCard(drawnCard, topCard, gameState.currentColor);
+          
+          setGameState(prev => prev ? { 
+            ...prev, 
+            playerJustDrew: true, 
+            lastDrawnCard: drawnCard 
+          } : prev);
+          
+          if (canPlay) {
+            setMessage(`You drew a playable card! Play it or pass.`);
+          } else {
+            setMessage(`You drew a card you can't play. Passing turn...`);
+            setTimeout(() => {
+              setGameState(prev => prev ? { ...prev, currentTurn: "bot", playerJustDrew: false, lastDrawnCard: null } : prev);
+            }, 800);
+          }
+        }
+      }, 350);
     }
   }, [gameState, drawCards]);
 
@@ -287,31 +321,44 @@ export default function BotGame() {
       return;
     }
     
+    // Show card animation
+    setCardAnimation({
+      card: { ...card },
+      from: isPlayer ? 'player' : 'bot',
+      to: 'discard',
+      show: true
+    });
+    
     const newHand = [...hand];
     const playedCard = { ...newHand.splice(cardIndex, 1)[0] };
     
     const currentHandLength = hand.length;
     
-    setGameState(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [isPlayer ? "playerHand" : "botHand"]: newHand,
-        discardPile: [...prev.discardPile, playedCard],
-        playerJustDrew: false,
-        lastDrawnCard: null
-      };
-    });
-    
-    const cardName = card.type === "number" ? `${card.color} ${card.number}` : `${card.color || ''} ${card.type}`;
-    setMessage(isPlayer ? `You played ${cardName}` : `Bot played ${cardName}`);
-    
-    const needsUnoPenalty = isPlayer && currentHandLength === 2 && !gameState.playerCalledUno;
-    if (needsUnoPenalty) {
-      setPendingUnoPenalty(true);
-    }
-    
-    applyCardEffect(playedCard, isPlayer ? "player" : "bot", newHand.length, chosenColor);
+    // Delay state update to allow animation to play
+    setTimeout(() => {
+      setCardAnimation(null);
+      
+      setGameState(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [isPlayer ? "playerHand" : "botHand"]: newHand,
+          discardPile: [...prev.discardPile, playedCard],
+          playerJustDrew: false,
+          lastDrawnCard: null
+        };
+      });
+      
+      const cardName = card.type === "number" ? `${card.color} ${card.number}` : `${card.color || ''} ${card.type}`;
+      setMessage(isPlayer ? `You played ${cardName}` : `Bot played ${cardName}`);
+      
+      const needsUnoPenalty = isPlayer && currentHandLength === 2 && !gameState.playerCalledUno;
+      if (needsUnoPenalty) {
+        setPendingUnoPenalty(true);
+      }
+      
+      applyCardEffect(playedCard, isPlayer ? "player" : "bot", newHand.length, chosenColor);
+    }, 400);
   }, [gameState, applyCardEffect]);
 
   const handleColorChoice = (color: CardColor) => {
@@ -604,7 +651,55 @@ export default function BotGame() {
   const isMyTurn = gameState.currentTurn === "player" && !gameState.winner;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-800 via-green-700 to-green-900 p-4 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-green-800 via-green-700 to-green-900 p-4 flex flex-col relative overflow-hidden">
+      {/* Card Animation Overlay */}
+      {cardAnimation?.show && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div 
+            className={`transition-all duration-300 ease-out ${
+              cardAnimation.from === 'player' && cardAnimation.to === 'discard'
+                ? 'animate-card-play-up'
+                : cardAnimation.from === 'bot' && cardAnimation.to === 'discard'
+                ? 'animate-card-play-down'
+                : cardAnimation.from === 'deck' && cardAnimation.to === 'player'
+                ? 'animate-card-draw-player'
+                : ''
+            }`}
+          >
+            {cardAnimation.from === 'deck' ? (
+              <div className="w-16 h-24 bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-xl border-3 border-red-800 shadow-2xl flex items-center justify-center">
+                <span className="text-white font-bold text-sm transform -rotate-12">UNO</span>
+              </div>
+            ) : (
+              <div className="transform scale-125">
+                <GameCard card={cardAnimation.card} size="large" />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <style>{`
+        @keyframes cardPlayUp {
+          0% { transform: translateY(200px) scale(0.8); opacity: 0.5; }
+          50% { transform: translateY(0) scale(1.1); opacity: 1; }
+          100% { transform: translateY(-50px) scale(1); opacity: 0; }
+        }
+        @keyframes cardPlayDown {
+          0% { transform: translateY(-200px) scale(0.8); opacity: 0.5; }
+          50% { transform: translateY(0) scale(1.1); opacity: 1; }
+          100% { transform: translateY(50px) scale(1); opacity: 0; }
+        }
+        @keyframes cardDrawPlayer {
+          0% { transform: translateY(-100px) translateX(-100px) scale(0.8); opacity: 0.5; }
+          50% { transform: translateY(50px) translateX(0) scale(1.1); opacity: 1; }
+          100% { transform: translateY(200px) scale(0.9); opacity: 0; }
+        }
+        .animate-card-play-up { animation: cardPlayUp 0.4s ease-out forwards; }
+        .animate-card-play-down { animation: cardPlayDown 0.4s ease-out forwards; }
+        .animate-card-draw-player { animation: cardDrawPlayer 0.35s ease-out forwards; }
+      `}</style>
+      
       <div className="flex justify-between items-center mb-4">
         <Button
           variant="outline"
