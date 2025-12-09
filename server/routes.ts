@@ -1824,6 +1824,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
             break;
+          case 'assign_host':
+            await handleAssignHost(connection, message);
+            break;
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -3293,7 +3296,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await broadcastRoomState(roomId);
   }
 
-  // Handle host clicking "End Game" during gameplay - triggers 15-second voting
+  // Handle host manually assigning a new host by clicking on player avatar
+  async function handleAssignHost(connection: SocketConnection, message: any) {
+    if (!connection.roomId || !connection.playerId) return;
+    
+    const { targetPlayerId } = message;
+    const room = await storage.getRoom(connection.roomId);
+    const currentHost = await storage.getPlayer(connection.playerId);
+    const newHost = await storage.getPlayer(targetPlayerId);
+    
+    if (!room || !currentHost || !newHost) return;
+    
+    // Only host can assign a new host
+    if (room.hostId !== connection.playerId) {
+      console.log('Non-host tried to assign host');
+      return;
+    }
+    
+    // Can't assign to spectator or left player
+    if (newHost.isSpectator || newHost.hasLeft) {
+      console.log('Cannot assign host to spectator or left player');
+      return;
+    }
+    
+    // Can't assign to self
+    if (targetPlayerId === connection.playerId) {
+      console.log('Cannot assign host to self');
+      return;
+    }
+    
+    console.log(`Host ${currentHost.nickname} manually assigned ${newHost.nickname} as new host`);
+    
+    // Cancel any pending host election timer
+    const timer = hostDisconnectTimers.get(connection.roomId);
+    if (timer) {
+      clearTimeout(timer);
+      hostDisconnectTimers.delete(connection.roomId);
+    }
+    
+    // Update room with new host
+    await storage.updateRoom(connection.roomId, { 
+      hostId: targetPlayerId,
+      hostDisconnectedAt: null,
+      hostElectionActive: false,
+      hostElectionVotes: {},
+      hostElectionEligibleVoters: []
+    });
+    
+    // Broadcast the host change
+    broadcastToRoom(connection.roomId, {
+      type: 'host_assigned',
+      previousHostId: connection.playerId,
+      previousHostName: currentHost.nickname,
+      newHostId: targetPlayerId,
+      newHostName: newHost.nickname,
+      message: `${currentHost.nickname} assigned ${newHost.nickname} as the new host!`
+    });
+    
+    await broadcastRoomState(connection.roomId);
+  }
+
+  // Handle host clicking "End Game" during gameplay - shows 30-second countdown then voting
   async function handleHostEndGame(connection: SocketConnection, message: any) {
     if (!connection.roomId || !connection.playerId) return;
     
@@ -3323,7 +3386,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hasLeft: true, 
       leftAt: new Date(),
       isSpectator: true,
-      isHost: false,
       position: null,
       hand: []
     });
@@ -3334,6 +3396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (activePlayers.length === 0) {
       // No players left, end game
+      await storage.updateRoom(connection.roomId, { hostId: null });
       broadcastToRoom(connection.roomId, {
         type: 'host_left_redirect',
         message: 'No players remaining. Returning to main page...'
@@ -3349,7 +3412,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hostDisconnectedAt: null,
         hostElectionActive: false
       });
-      await storage.updatePlayer(newHost.id, { isHost: true });
       broadcastToRoom(connection.roomId, {
         type: 'host_elected',
         newHostId: newHost.id,
@@ -3360,34 +3422,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
     
-    // Multiple players - start 15-second voting with "Continue without host" option
-    const eligibleVoterIds = activePlayers.map(p => p.id);
-    // Clear hostId immediately so clients know there's no current host
+    // Multiple players - show 30-second countdown warning first
+    // Record host disconnection time and clear hostId
     await storage.updateRoom(connection.roomId, { 
       hostId: null,
-      hostElectionActive: true,
-      hostElectionStartTime: new Date(),
-      hostElectionVotes: {},
-      hostElectionEligibleVoters: eligibleVoterIds,
-      hostDisconnectedAt: null
+      hostDisconnectedAt: new Date()
     });
     
-    // Add "NO_HOST" as a special candidate option
-    const candidates = [
-      ...activePlayers.map(p => ({ id: p.id, nickname: p.nickname })),
-      { id: 'NO_HOST', nickname: 'Continue without host' }
-    ];
-    
+    // Notify players that host left and election will start in 30 seconds
     broadcastToRoom(connection.roomId, {
-      type: 'host_election_started',
-      candidates,
-      eligibleVoterIds,
-      votingDuration: 15,
-      isHostEndGame: true,
-      message: `Host ${player.nickname} ended their game. Vote for new host or continue without one!`
+      type: 'host_disconnected_warning',
+      hostName: player.nickname,
+      electionStartsIn: 30,
+      message: `Host ${player.nickname} left the game. Vote for new host in 30 seconds...`
     });
     
     await broadcastRoomState(connection.roomId);
+    
+    // Start 30-second timer for host election
+    const roomId = connection.roomId;
+    const timer = setTimeout(async () => {
+      const currentRoom = await storage.getRoom(roomId);
+      if (!currentRoom) return;
+      
+      // Check if a new host was already assigned manually
+      if (currentRoom.hostId) {
+        console.log(`Host was manually assigned during countdown, skipping election`);
+        hostDisconnectTimers.delete(roomId);
+        return;
+      }
+      
+      // Start the election
+      console.log(`Starting host election in room ${roomId} (30s countdown finished)`);
+      
+      const currentPlayers = (await storage.getPlayersByRoom(roomId))
+        .filter(p => !p.isSpectator && !p.hasLeft);
+      
+      if (currentPlayers.length === 0) {
+        broadcastToRoom(roomId, {
+          type: 'host_left_redirect',
+          message: 'No players available. Returning to main page...'
+        });
+        return;
+      }
+      
+      // Single player - auto-promote
+      if (currentPlayers.length === 1) {
+        const newHost = currentPlayers[0];
+        await storage.updateRoom(roomId, { 
+          hostId: newHost.id,
+          hostDisconnectedAt: null,
+          hostElectionActive: false
+        });
+        
+        broadcastToRoom(roomId, {
+          type: 'host_elected',
+          newHostId: newHost.id,
+          newHostName: newHost.nickname,
+          message: `${newHost.nickname} is now the host!`
+        });
+        
+        await broadcastRoomState(roomId);
+        hostDisconnectTimers.delete(roomId);
+        return;
+      }
+      
+      // Multiple players - start voting
+      const eligibleVoterIds = currentPlayers.map(p => p.id);
+      
+      // Add "Continue without host" option
+      const candidates = [
+        ...currentPlayers.map(p => ({ id: p.id, nickname: p.nickname })),
+        { id: 'NO_HOST', nickname: 'Continue without host' }
+      ];
+      
+      await storage.updateRoom(roomId, {
+        hostElectionActive: true,
+        hostElectionStartTime: new Date(),
+        hostElectionVotes: {},
+        hostElectionEligibleVoters: eligibleVoterIds,
+        hostDisconnectedAt: null
+      });
+      
+      broadcastToRoom(roomId, {
+        type: 'host_election_started',
+        candidates,
+        eligibleVoterIds,
+        votingDuration: 30,
+        message: 'Vote for the new host or continue without one!'
+      });
+      
+      await broadcastRoomState(roomId);
+      hostDisconnectTimers.delete(roomId);
+    }, 30000); // 30 seconds
+    
+    hostDisconnectTimers.set(connection.roomId, timer);
   }
 
   // Handle host clicking "Exit" in lobby/finished state - closes room for everyone

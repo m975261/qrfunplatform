@@ -191,6 +191,25 @@ export function useSocket(autoConnect: boolean = true) {
               }
             }));
             break;
+          case 'host_assigned':
+            console.log("Host manually assigned:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              hostElectionActive: false,
+              hostDisconnectedWarning: null,
+              electionCandidates: [],
+              electionVotes: {},
+              newHostName: message.newHostName,
+              hostAssignedMessage: message.message,
+              room: {
+                ...prev?.room,
+                hostId: message.newHostId,
+                hostElectionActive: false,
+                hostElectionVotes: {},
+                hostDisconnectedAt: null
+              }
+            }));
+            break;
           case 'uno_called':
             // Remove notification - just log silently
             console.log("UNO called by:", message.player);
@@ -703,6 +722,13 @@ export function useSocket(autoConnect: boolean = true) {
     });
   };
 
+  const assignHost = (targetPlayerId: string) => {
+    sendMessage({
+      type: 'assign_host',
+      targetPlayerId
+    });
+  };
+
   const hostEndGame = () => {
     sendMessage({ type: 'host_end_game' });
   };
@@ -802,6 +828,7 @@ export function useSocket(autoConnect: boolean = true) {
     assignSpectator,
     playAgain,
     submitHostVote,
+    assignHost,
     hostEndGame,
     hostExitRoom,
     voteNoHost,

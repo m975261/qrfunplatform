@@ -42,6 +42,7 @@ export default function Game() {
     replacePlayer,
     playAgain,
     submitHostVote,
+    assignHost,
     hostEndGame,
     hostExitRoom,
     voteNoHost,
@@ -1297,23 +1298,45 @@ export default function Game() {
                       )}
 
                       {isHost && player.id !== playerId && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Kick button clicked for player:', player.id);
-                            kickPlayer(player.id);
-                          }}
-                          className={`absolute w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto z-30 cursor-pointer ${
-                            position === 0 ? '-top-7 left-1/2 -translate-x-1/2 translate-x-6'
-                            : position === 1 ? 'top-1/2 -right-7 -translate-y-1/2 translate-y-6'
-                            : position === 2 ? '-bottom-7 left-1/2 -translate-x-1/2 translate-x-6'
-                            : '-left-7 top-1/2 -translate-y-1/2 translate-y-6'
-                          }`}
-                          title={isOnline ? 'Remove player' : 'Remove offline player'}
-                        >
-                          K
-                        </button>
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Kick button clicked for player:', player.id);
+                              kickPlayer(player.id);
+                            }}
+                            className={`absolute w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto z-30 cursor-pointer ${
+                              position === 0 ? '-top-7 left-1/2 -translate-x-1/2 translate-x-6'
+                              : position === 1 ? 'top-1/2 -right-7 -translate-y-1/2 translate-y-6'
+                              : position === 2 ? '-bottom-7 left-1/2 -translate-x-1/2 translate-x-6'
+                              : '-left-7 top-1/2 -translate-y-1/2 translate-y-6'
+                            }`}
+                            title={isOnline ? 'Remove player' : 'Remove offline player'}
+                          >
+                            K
+                          </button>
+                          
+                          {/* Make Host button - appears for host on other players */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Make Host button clicked for player:', player.id);
+                              assignHost(player.id);
+                            }}
+                            className={`absolute w-5 h-5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto z-30 cursor-pointer ${
+                              position === 0 ? '-top-7 left-1/2 -translate-x-1/2 -translate-x-6'
+                              : position === 1 ? 'top-1/2 -right-7 -translate-y-1/2 -translate-y-6'
+                              : position === 2 ? '-bottom-7 left-1/2 -translate-x-1/2 -translate-x-6'
+                              : '-left-7 top-1/2 -translate-y-1/2 -translate-y-6'
+                            }`}
+                            title="Make this player the host"
+                            data-testid={`button-make-host-${player.id}`}
+                          >
+                            👑
+                          </button>
+                        </>
                       )}
                     </div>
                   ) : (
