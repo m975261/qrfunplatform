@@ -75,13 +75,13 @@ export default function Game() {
     show: boolean;
   } | null>(null);
   
-  // Host election state
-  const [showHostElection, setShowHostElection] = useState(false);
+  // Host election state - voting happens during countdown, no separate modal
   const [electionCandidates, setElectionCandidates] = useState<{id: string, nickname: string}[]>([]);
   const [electionVotes, setElectionVotes] = useState<{[id: string]: number}>({});
   const [hasVoted, setHasVoted] = useState(false);
   const [hostDisconnectedWarning, setHostDisconnectedWarning] = useState<string | null>(null);
   const [electionCountdown, setElectionCountdown] = useState(30);
+  const [hostCanReturn, setHostCanReturn] = useState(true);
 
   // Debug logs for troubleshooting
   console.log("🚨 WHITE PAGE DEBUG:", {
@@ -215,17 +215,19 @@ export default function Game() {
 
   useEffect(() => {
     if (gameState?.hostElectionActive) {
-      setShowHostElection(true);
+      // Election is active - candidates come from the warning message now
       setElectionCandidates(gameState.electionCandidates || []);
-      setHasVoted(false);
+      setHostCanReturn(gameState.hostCanReturn ?? true);
+      // Don't reset hasVoted here - let it persist until election ends
     } else {
       // Reset all election state when election ends
-      setShowHostElection(false);
       setHasVoted(false);
       setElectionCandidates([]);
       setElectionVotes({});
+      setHostDisconnectedWarning(null);
+      setHostCanReturn(true);
     }
-  }, [gameState?.hostElectionActive, gameState?.electionCandidates]);
+  }, [gameState?.hostElectionActive, gameState?.electionCandidates, gameState?.hostCanReturn]);
 
   useEffect(() => {
     if (gameState?.electionVotes) {
@@ -944,7 +946,11 @@ export default function Game() {
               <div className="text-lg font-bold text-orange-400">⚠️ Host Left Game</div>
               <div className="text-2xl font-bold text-white mt-1">
                 {electionCountdown > 0 ? (
-                  <>Host can return in: <span className="text-yellow-400">{electionCountdown}s</span></>
+                  hostCanReturn ? (
+                    <>Host can return in: <span className="text-yellow-400">{electionCountdown}s</span></>
+                  ) : (
+                    <>Voting ends in: <span className="text-yellow-400">{electionCountdown}s</span></>
+                  )
                 ) : (
                   <span className="text-red-400">Voting closed!</span>
                 )}

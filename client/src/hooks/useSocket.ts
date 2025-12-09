@@ -151,6 +151,7 @@ export function useSocket(autoConnect: boolean = true) {
               electionCandidates: message.candidates || [],
               eligibleVoterIds: message.eligibleVoterIds || [],
               canVoteNow: message.canVoteNow || false,
+              hostCanReturn: message.hostCanReturn ?? true,
               hostElectionActive: true,
               electionVotes: {}
             }));
@@ -191,7 +192,7 @@ export function useSocket(autoConnect: boolean = true) {
             console.log("Host election started:", message);
             setGameState((prev: any) => ({
               ...prev,
-              hostDisconnectedWarning: null,
+              // Keep hostDisconnectedWarning so voting banner stays visible
               hostElectionActive: true,
               electionCandidates: message.candidates,
               votingDuration: message.votingDuration
