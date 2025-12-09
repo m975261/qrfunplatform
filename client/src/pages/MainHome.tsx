@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Play, Users, Bot } from "lucide-react";
 
 export default function MainHome() {
   const [, setLocation] = useLocation();
+  const [showGameModeDialog, setShowGameModeDialog] = useState(false);
 
   // Handle shared room links - redirect to UNO page with room parameters
   useEffect(() => {
@@ -104,7 +106,17 @@ export default function MainHome() {
                         <h3 className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white">
                           {game.name}
                         </h3>
-                        {game.status === "available" && (
+                        {game.status === "available" && game.id === "uno" && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => setShowGameModeDialog(true)}
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 px-3 py-2 text-sm w-fit"
+                          >
+                            <Play className="w-3 h-3 mr-1" />
+                            Play Now
+                          </Button>
+                        )}
+                        {game.status === "available" && game.id !== "uno" && (
                           <Link href={game.path}>
                             <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 px-3 py-2 text-sm w-fit">
                               <Play className="w-3 h-3 mr-1" />
@@ -227,6 +239,41 @@ export default function MainHome() {
           </p>
         </div>
       </footer>
+
+      {/* UNO Game Mode Selection Dialog */}
+      <Dialog open={showGameModeDialog} onOpenChange={setShowGameModeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center font-fredoka text-2xl bg-gradient-to-r from-uno-red to-uno-yellow bg-clip-text text-transparent">
+              Choose Game Mode
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <Button
+              onClick={() => {
+                setShowGameModeDialog(false);
+                setLocation("/uno");
+              }}
+              className="w-full h-20 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium text-lg shadow-lg hover:shadow-xl transition-all"
+              data-testid="button-play-with-friends"
+            >
+              <Users className="w-6 h-6 mr-3" />
+              Play with Friends
+            </Button>
+            <Button
+              onClick={() => {
+                setShowGameModeDialog(false);
+                setLocation("/uno/bot");
+              }}
+              className="w-full h-20 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium text-lg shadow-lg hover:shadow-xl transition-all"
+              data-testid="button-play-with-bot"
+            >
+              <Bot className="w-6 h-6 mr-3" />
+              Play with Bot
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

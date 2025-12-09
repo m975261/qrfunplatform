@@ -7,6 +7,7 @@ import MainHome from "@/pages/MainHome";
 import Home from "@/pages/Home";
 import RoomLobby from "@/pages/RoomLobby";
 import Game from "@/pages/GameFixed";
+import BotGame from "@/pages/BotGame";
 import XOPlaceholder from "@/pages/XOPlaceholder";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -18,6 +19,7 @@ function Router() {
     <Switch>
       <Route path="/" component={MainHome} />
       <Route path="/uno" component={Home} />
+      <Route path="/uno/bot" component={BotGame} />
       <Route path="/xo" component={XOPlaceholder} />
       <Route path="/room/:roomId" component={RoomLobby} />
       <Route path="/game/:roomId" component={Game} />
