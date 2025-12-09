@@ -85,6 +85,7 @@ export default function Game() {
   const [bannerDragOffset, setBannerDragOffset] = useState({ x: 0, y: 0 });
   const [isDraggingBanner, setIsDraggingBanner] = useState(false);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [showVotingWindow, setShowVotingWindow] = useState(false);
 
   // Debug logs for troubleshooting
   console.log("🚨 WHITE PAGE DEBUG:", {
@@ -108,6 +109,15 @@ export default function Game() {
       joinRoom(playerId, roomId);
     }
   }, [roomId, playerId, isConnected, joinRoom, setLocation]);
+
+  useEffect(() => {
+    // Sync voting window visibility with host disconnection state
+    if (hostDisconnectedWarning && electionCandidates.length > 0) {
+      setShowVotingWindow(true);
+    } else {
+      setShowVotingWindow(false);
+    }
+  }, [hostDisconnectedWarning, electionCandidates]);
 
   useEffect(() => {
     if (gameState?.gameEndData) {
@@ -942,7 +952,7 @@ export default function Game() {
       )}
 
       {/* Host Disconnected Warning with Voting Buttons - Draggable & Positioned Away from Host Slot */}
-      {hostDisconnectedWarning && electionCandidates.length > 0 && (() => {
+      {showVotingWindow && (() => {
         // Find the host's position to avoid overlapping their slot
         const hostPlayer = players.find((p: any) => p.isHost || room?.hostId === p.id);
         const hostPosition = hostPlayer?.position ?? 0;
@@ -967,16 +977,26 @@ export default function Game() {
             className={`fixed ${getBannerPosition()} z-50 w-72 select-none`}
           >
             <div className="bg-slate-800/95 backdrop-blur-sm rounded-lg border-2 border-orange-500 p-3 shadow-2xl">
-              {/* Header with timer */}
-              <div className="text-center mb-2.5">
-                <div className="text-xs font-bold text-orange-400">⚠️ Host Left - Vote!</div>
-                <div className="text-sm font-bold text-white">
-                  {electionCountdown > 0 ? (
-                    <span className="text-yellow-400">{electionCountdown}s remaining</span>
-                  ) : (
-                    <span className="text-red-400">Closed!</span>
-                  )}
+              {/* Header with close button and timer */}
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex-1 text-center">
+                  <div className="text-xs font-bold text-orange-400">⚠️ Host Left - Vote!</div>
+                  <div className="text-sm font-bold text-white">
+                    {electionCountdown > 0 ? (
+                      <span className="text-yellow-400">{electionCountdown}s remaining</span>
+                    ) : (
+                      <span className="text-red-400">Closed!</span>
+                    )}
+                  </div>
                 </div>
+                <button
+                  onClick={() => setShowVotingWindow(false)}
+                  className="ml-2 text-red-400 hover:text-red-300 font-bold text-lg leading-none"
+                  data-testid="button-close-voting-window"
+                  aria-label="Close voting window"
+                >
+                  ✕
+                </button>
               </div>
               
               {/* Voting buttons - vertical layout */}
