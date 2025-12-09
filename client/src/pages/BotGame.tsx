@@ -655,8 +655,8 @@ export default function BotGame() {
           </div>
         </div>
 
-        {/* Center section with draw deck on left and played card centered */}
-        <div className="flex justify-center items-end gap-6 my-6">
+        {/* Center section with draw deck on left and played card centered under bot deck */}
+        <div className="flex justify-center items-end gap-6 my-6 -ml-14">
           {/* Draw deck - left side */}
           <div className="text-center">
             <div className="text-white/70 text-xs mb-1">Deck ({gameState.deck.length})</div>
