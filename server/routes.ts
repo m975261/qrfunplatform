@@ -1932,14 +1932,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Update player's socket ID
     await storage.updatePlayer(playerId, { socketId: connectionId });
     
-    // Check if this is the host reconnecting - cancel any pending election
-    if (room.hostId === playerId && room.hostDisconnectedAt) {
-      console.log(`Host ${player.nickname} reconnected, canceling election`);
-      await cancelHostElectionIfNeeded(actualRoomId);
-      broadcastToRoom(actualRoomId, {
-        type: 'host_reconnected',
-        message: `Host ${player.nickname} has reconnected!`
-      });
+    // Check if this is the host reconnecting - always send host_reconnected to clear any voting state
+    if (room.hostId === playerId) {
+      if (room.hostDisconnectedAt || room.hostElectionActive) {
+        console.log(`Host ${player.nickname} reconnected, canceling election`);
+        await cancelHostElectionIfNeeded(actualRoomId);
+      } else {
+        // Even if no election was active, send host_reconnected to clear any stale voting window on client
+        broadcastToRoom(actualRoomId, {
+          type: 'host_reconnected',
+          message: `Host ${player.nickname} has reconnected!`
+        });
+      }
     }
     
     console.log("Broadcasting room state to all players in room:", actualRoomId);
