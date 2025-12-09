@@ -28,6 +28,7 @@ export const rooms = pgTable("rooms", {
   hostElectionVotes: jsonb("host_election_votes").$type<{[voterId: string]: string}>().default({}),
   hostElectionEligibleVoters: jsonb("host_election_eligible_voters").$type<string[]>().default([]),
   hostDisconnectedAt: timestamp("host_disconnected_at"),
+  noHostMode: boolean("no_host_mode").default(false),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 

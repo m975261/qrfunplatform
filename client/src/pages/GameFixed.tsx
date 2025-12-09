@@ -936,84 +936,75 @@ export default function Game() {
         </div>
       )}
 
-      {/* Host Disconnected Warning Banner */}
-      {hostDisconnectedWarning && !showHostElection && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl bg-orange-600 border-2 border-orange-400 shadow-lg animate-pulse">
-          <div className="text-white font-bold text-center">
-            <div className="text-lg">⚠️ Host Disconnected</div>
-            <div className="text-sm mt-1">Vote for new host in {electionCountdown} seconds...</div>
-          </div>
-        </div>
-      )}
-
-      {/* Host Election Voting Modal */}
-      {showHostElection && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-xl border-2 border-yellow-500 p-6 max-w-md w-full shadow-2xl">
-            <div className="text-center mb-6">
-              <div className="text-3xl font-bold text-yellow-400 mb-2">🗳️ VOTE FOR NEW HOST</div>
-              <div className="text-white">Choose who should lead the game!</div>
+      {/* Host Disconnected Warning with Voting Buttons */}
+      {hostDisconnectedWarning && electionCandidates.length > 0 && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md">
+          <div className="bg-slate-800 rounded-xl border-2 border-orange-500 p-4 shadow-2xl">
+            <div className="text-center mb-3">
+              <div className="text-lg font-bold text-orange-400">⚠️ Host Left Game</div>
+              <div className="text-2xl font-bold text-white mt-1">
+                {electionCountdown > 0 ? (
+                  <>Host can return in: <span className="text-yellow-400">{electionCountdown}s</span></>
+                ) : (
+                  <span className="text-red-400">Voting closed!</span>
+                )}
+              </div>
             </div>
             
-            <div className="space-y-3 max-h-60 overflow-y-auto">
+            {/* Voting buttons - always visible during countdown */}
+            <div className="space-y-2 max-h-40 overflow-y-auto">
               {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
                 <button
                   key={candidate.id}
                   onClick={() => handleVoteForHost(candidate.id)}
                   disabled={hasVoted}
-                  className={`w-full p-4 rounded-lg flex items-center justify-between transition-all ${
+                  className={`w-full p-3 rounded-lg flex items-center justify-between transition-all ${
                     hasVoted
-                      ? 'bg-slate-700 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 cursor-pointer transform hover:scale-102'
+                      ? 'bg-slate-700 cursor-not-allowed opacity-60'
+                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 cursor-pointer'
                   }`}
                   data-testid={`button-vote-${candidate.id}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center text-white font-bold">
                       {candidate.nickname[0].toUpperCase()}
                     </div>
-                    <span className="text-white font-semibold text-lg">{candidate.nickname}</span>
+                    <span className="text-white font-semibold">{candidate.nickname}</span>
                   </div>
-                  <div className="text-white font-bold text-xl">
-                    {electionVotes[candidate.id] || 0} votes
+                  <div className="text-white font-bold">
+                    {electionVotes[candidate.id] || 0} 🗳️
                   </div>
                 </button>
               ))}
               
               {/* Continue without host option */}
-              {electionCandidates.some(c => c.id === 'NO_HOST') && (
-                <button
-                  onClick={() => handleVoteForHost('NO_HOST')}
-                  disabled={hasVoted}
-                  className={`w-full p-4 rounded-lg flex items-center justify-between transition-all mt-4 border-2 border-dashed ${
-                    hasVoted
-                      ? 'bg-slate-700 border-slate-600 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-green-700 to-teal-700 border-green-500 hover:from-green-600 hover:to-teal-600 cursor-pointer transform hover:scale-102'
-                  }`}
-                  data-testid="button-vote-no-host"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                      ▶️
-                    </div>
-                    <span className="text-white font-semibold text-lg">Continue without host</span>
+              <button
+                onClick={() => handleVoteForHost('NO_HOST')}
+                disabled={hasVoted}
+                className={`w-full p-3 rounded-lg flex items-center justify-between transition-all border-2 border-dashed ${
+                  hasVoted
+                    ? 'bg-slate-700 border-slate-600 cursor-not-allowed opacity-60'
+                    : 'bg-gradient-to-r from-green-700 to-teal-700 border-green-500 hover:from-green-600 hover:to-teal-600 cursor-pointer'
+                }`}
+                data-testid="button-vote-no-host"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
+                    ▶️
                   </div>
-                  <div className="text-white font-bold text-xl">
-                    {electionVotes['NO_HOST'] || 0} votes
-                  </div>
-                </button>
-              )}
+                  <span className="text-white font-semibold">Continue without host</span>
+                </div>
+                <div className="text-white font-bold">
+                  {electionVotes['NO_HOST'] || 0} 🗳️
+                </div>
+              </button>
             </div>
             
             {hasVoted && (
-              <div className="mt-4 text-center text-green-400 font-semibold">
+              <div className="mt-2 text-center text-green-400 font-semibold text-sm">
                 ✓ Your vote has been submitted!
               </div>
             )}
-            
-            <div className="mt-4 text-center text-slate-400 text-sm">
-              Waiting for all players to vote...
-            </div>
           </div>
         </div>
       )}
@@ -1298,7 +1289,12 @@ export default function Game() {
                       )}
 
                       {isHost && player.id !== playerId && (
-                        <>
+                        <div className={`absolute flex gap-1 pointer-events-auto z-30 ${
+                          position === 0 ? '-top-7 left-1/2 -translate-x-1/2'
+                          : position === 1 ? 'top-1/2 -right-7 -translate-y-1/2 flex-col'
+                          : position === 2 ? '-bottom-7 left-1/2 -translate-x-1/2'
+                          : '-left-7 top-1/2 -translate-y-1/2 flex-col'
+                        }`}>
                           <button
                             onClick={(e) => {
                               e.preventDefault();
@@ -1306,18 +1302,12 @@ export default function Game() {
                               console.log('Kick button clicked for player:', player.id);
                               kickPlayer(player.id);
                             }}
-                            className={`absolute w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto z-30 cursor-pointer ${
-                              position === 0 ? '-top-7 left-1/2 -translate-x-1/2 translate-x-6'
-                              : position === 1 ? 'top-1/2 -right-7 -translate-y-1/2 translate-y-6'
-                              : position === 2 ? '-bottom-7 left-1/2 -translate-x-1/2 translate-x-6'
-                              : '-left-7 top-1/2 -translate-y-1/2 translate-y-6'
-                            }`}
+                            className="w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white cursor-pointer"
                             title={isOnline ? 'Remove player' : 'Remove offline player'}
                           >
                             K
                           </button>
                           
-                          {/* Make Host button - appears for host on other players */}
                           <button
                             onClick={(e) => {
                               e.preventDefault();
@@ -1325,18 +1315,13 @@ export default function Game() {
                               console.log('Make Host button clicked for player:', player.id);
                               assignHost(player.id);
                             }}
-                            className={`absolute w-5 h-5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto z-30 cursor-pointer ${
-                              position === 0 ? '-top-7 left-1/2 -translate-x-1/2 -translate-x-6'
-                              : position === 1 ? 'top-1/2 -right-7 -translate-y-1/2 -translate-y-6'
-                              : position === 2 ? '-bottom-7 left-1/2 -translate-x-1/2 -translate-x-6'
-                              : '-left-7 top-1/2 -translate-y-1/2 -translate-y-6'
-                            }`}
+                            className="w-5 h-5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white cursor-pointer"
                             title="Make this player the host"
                             data-testid={`button-make-host-${player.id}`}
                           >
                             👑
                           </button>
-                        </>
+                        </div>
                       )}
                     </div>
                   ) : (

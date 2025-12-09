@@ -3141,6 +3141,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     console.log(`${playerToReplace.nickname} joined position ${position} with ${newHand.length} cards`);
     
+    // Check if this player was the former host returning during countdown
+    // If host election is active and no host assigned, check if we should restore host status
+    if (room.hostElectionActive && !room.hostId && room.hostDisconnectedAt) {
+      // This player is returning during the countdown - make them host again
+      const timer = hostDisconnectTimers.get(connection.roomId);
+      if (timer) {
+        clearTimeout(timer);
+        hostDisconnectTimers.delete(connection.roomId);
+        console.log(`Former host ${playerToReplace.nickname} returned during countdown, restoring host status`);
+      }
+      
+      // Restore host status and clear election state
+      await storage.updateRoom(connection.roomId, {
+        hostId: connection.playerId,
+        hostElectionActive: false,
+        hostElectionStartTime: null,
+        hostElectionVotes: {},
+        hostElectionEligibleVoters: [],
+        hostDisconnectedAt: null
+      });
+      
+      // Notify all players
+      broadcastToRoom(connection.roomId, {
+        type: 'host_reconnected',
+        hostId: connection.playerId,
+        hostName: playerToReplace.nickname,
+        message: `${playerToReplace.nickname} has returned as host!`
+      });
+    }
+    
     // Removed system message as requested by user
     
     broadcastToRoom(connection.roomId, {
@@ -3422,38 +3452,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
     
-    // Multiple players - show 30-second countdown warning first
-    // Record host disconnection time and clear hostId
+    // Multiple players - show 30-second countdown with voting enabled immediately
+    const eligibleVoterIds = activePlayers.map(p => p.id);
+    
+    // Add "Continue without host" option
+    const candidates = [
+      ...activePlayers.map(p => ({ id: p.id, nickname: p.nickname })),
+      { id: 'NO_HOST', nickname: 'Continue without host' }
+    ];
+    
+    // Record host disconnection and enable voting during countdown
     await storage.updateRoom(connection.roomId, { 
       hostId: null,
-      hostDisconnectedAt: new Date()
+      hostDisconnectedAt: new Date(),
+      hostElectionActive: true,
+      hostElectionStartTime: new Date(),
+      hostElectionVotes: {},
+      hostElectionEligibleVoters: eligibleVoterIds
     });
     
-    // Notify players that host left and election will start in 30 seconds
+    // Notify players with candidates - voting is available immediately
     broadcastToRoom(connection.roomId, {
       type: 'host_disconnected_warning',
       hostName: player.nickname,
       electionStartsIn: 30,
-      message: `Host ${player.nickname} left the game. Vote for new host in 30 seconds...`
+      candidates,
+      eligibleVoterIds,
+      canVoteNow: true,
+      message: `Host ${player.nickname} left the game. Vote now or host can return within 30 seconds...`
     });
     
     await broadcastRoomState(connection.roomId);
     
-    // Start 30-second timer for host election
+    // Start 30-second timer - when it ends, tally votes
     const roomId = connection.roomId;
     const timer = setTimeout(async () => {
       const currentRoom = await storage.getRoom(roomId);
       if (!currentRoom) return;
       
-      // Check if a new host was already assigned manually
+      // Check if a new host was already assigned (manually or via unanimous vote)
       if (currentRoom.hostId) {
-        console.log(`Host was manually assigned during countdown, skipping election`);
+        console.log(`Host was assigned during countdown, skipping tally`);
         hostDisconnectTimers.delete(roomId);
         return;
       }
       
-      // Start the election
-      console.log(`Starting host election in room ${roomId} (30s countdown finished)`);
+      // Countdown finished - tally votes and determine winner
+      console.log(`Countdown finished in room ${roomId}, tallying votes`);
       
       const currentPlayers = (await storage.getPlayersByRoom(roomId))
         .filter(p => !p.isSpectator && !p.hasLeft);
@@ -3466,20 +3511,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
       
-      // Single player - auto-promote
-      if (currentPlayers.length === 1) {
-        const newHost = currentPlayers[0];
-        await storage.updateRoom(roomId, { 
-          hostId: newHost.id,
-          hostDisconnectedAt: null,
-          hostElectionActive: false
+      // Tally the votes that were cast during countdown
+      const votes = currentRoom.hostElectionVotes || {};
+      const voteCounts: { [key: string]: number } = {};
+      Object.values(votes).forEach((candidateId: any) => {
+        voteCounts[candidateId] = (voteCounts[candidateId] || 0) + 1;
+      });
+      
+      // Find winner
+      let winnerId: string | null = null;
+      let maxVotes = 0;
+      for (const [candidateId, count] of Object.entries(voteCounts)) {
+        if (count > maxVotes) {
+          maxVotes = count;
+          winnerId = candidateId;
+        }
+      }
+      
+      // If no votes, default to first player as host
+      if (!winnerId && currentPlayers.length > 0) {
+        winnerId = currentPlayers[0].id;
+        console.log(`No votes cast, defaulting to first player: ${winnerId}`);
+      }
+      
+      if (!winnerId) return;
+      
+      // Handle "Continue without host" option
+      if (winnerId === 'NO_HOST') {
+        await storage.updateRoom(roomId, {
+          hostId: null,
+          noHostMode: true,
+          hostElectionActive: false,
+          hostElectionStartTime: null,
+          hostElectionVotes: {},
+          hostElectionEligibleVoters: [],
+          hostDisconnectedAt: null
         });
         
         broadcastToRoom(roomId, {
-          type: 'host_elected',
-          newHostId: newHost.id,
-          newHostName: newHost.nickname,
-          message: `${newHost.nickname} is now the host!`
+          type: 'no_host_mode_enabled',
+          message: 'Game will continue without a host. When game ends, a new room will be created.'
         });
         
         await broadcastRoomState(roomId);
@@ -3487,32 +3558,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
       
-      // Multiple players - start voting
-      const eligibleVoterIds = currentPlayers.map(p => p.id);
+      // Assign winner as new host
+      const winner = currentPlayers.find(p => p.id === winnerId);
+      if (winner) {
+        await storage.updateRoom(roomId, { 
+          hostId: winner.id,
+          hostElectionActive: false,
+          hostElectionStartTime: null,
+          hostElectionVotes: {},
+          hostElectionEligibleVoters: [],
+          hostDisconnectedAt: null
+        });
+        
+        broadcastToRoom(roomId, {
+          type: 'host_elected',
+          newHostId: winner.id,
+          newHostName: winner.nickname,
+          message: `${winner.nickname} is now the host!`
+        });
+        
+        await broadcastRoomState(roomId);
+      }
       
-      // Add "Continue without host" option
-      const candidates = [
-        ...currentPlayers.map(p => ({ id: p.id, nickname: p.nickname })),
-        { id: 'NO_HOST', nickname: 'Continue without host' }
-      ];
-      
-      await storage.updateRoom(roomId, {
-        hostElectionActive: true,
-        hostElectionStartTime: new Date(),
-        hostElectionVotes: {},
-        hostElectionEligibleVoters: eligibleVoterIds,
-        hostDisconnectedAt: null
-      });
-      
-      broadcastToRoom(roomId, {
-        type: 'host_election_started',
-        candidates,
-        eligibleVoterIds,
-        votingDuration: 30,
-        message: 'Vote for the new host or continue without one!'
-      });
-      
-      await broadcastRoomState(roomId);
       hostDisconnectTimers.delete(roomId);
     }, 30000); // 30 seconds
     
@@ -3568,7 +3635,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Only allow play again if game is finished
     if (room.status !== "finished") return;
     
-    // Reset room to waiting state, keeping all existing players
+    // If noHostMode is enabled, create a new room instead of returning to lobby
+    if (room.noHostMode) {
+      console.log('noHostMode enabled - creating new room instead of returning to lobby');
+      
+      // Generate new room code
+      const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Create new room with same settings
+      const newRoom = await storage.createRoom({
+        code: newCode,
+        hostId: player.id, // First player to click becomes host
+        status: "waiting",
+        maxPlayers: room.maxPlayers,
+        currentPlayerIndex: 0,
+        direction: "clockwise",
+        currentColor: null,
+        deck: [],
+        discardPile: [],
+        pendingDraw: 0,
+        positionHands: {},
+        activePositions: [],
+        noHostMode: false // Reset for new room
+      });
+      
+      // Notify all players to redirect to new room
+      broadcastToRoom(connection.roomId, {
+        type: 'new_room_created',
+        newRoomCode: newCode,
+        newRoomId: newRoom.id,
+        message: `New game room created! Redirecting to room ${newCode}...`
+      });
+      
+      return;
+    }
+    
+    // Normal flow - reset room to waiting state (return to lobby)
     await storage.updateRoom(connection.roomId, {
       status: "waiting",
       currentPlayerIndex: 0,
@@ -3576,7 +3678,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pendingDraw: 0,
       direction: "clockwise",
       deck: [],
-      discardPile: []
+      discardPile: [],
+      noHostMode: false // Reset noHostMode
     });
     
     // Reset all players' game state but keep them in the room

@@ -147,7 +147,28 @@ export function useSocket(autoConnect: boolean = true) {
             setGameState((prev: any) => ({
               ...prev,
               hostDisconnectedWarning: message.message,
-              electionStartsIn: message.electionStartsIn
+              electionStartsIn: message.electionStartsIn,
+              electionCandidates: message.candidates || [],
+              eligibleVoterIds: message.eligibleVoterIds || [],
+              canVoteNow: message.canVoteNow || false,
+              hostElectionActive: true,
+              electionVotes: {}
+            }));
+            break;
+          case 'no_host_mode_enabled':
+            console.log("No host mode enabled:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              hostDisconnectedWarning: null,
+              hostElectionActive: false,
+              electionCandidates: [],
+              noHostMode: true,
+              room: {
+                ...prev?.room,
+                noHostMode: true,
+                hostId: null,
+                hostElectionActive: false
+              }
             }));
             break;
           case 'host_reconnected':
@@ -400,6 +421,14 @@ export function useSocket(autoConnect: boolean = true) {
             // Show brief message before redirect
             alert(message.message || "Host has left the game. Redirecting to main page...");
             window.location.href = "/";
+            break;
+          case 'new_room_created':
+            // noHostMode game ended - redirect to new room
+            console.log("New room created:", message);
+            localStorage.removeItem("currentRoomId");
+            localStorage.removeItem("playerId");
+            // Redirect to join the new room
+            window.location.href = `/?room=${message.newRoomCode}`;
             break;
           case 'host_changed':
             // New host assigned
