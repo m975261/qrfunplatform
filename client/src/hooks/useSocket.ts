@@ -60,7 +60,19 @@ export function useSocket(autoConnect: boolean = true) {
         
         switch (message.type) {
           case 'room_state':
-            setGameState(message.data);
+            // Preserve election-related state when updating room state
+            setGameState((prev: any) => ({
+              ...message.data,
+              // Preserve these election states from being overwritten by room_state broadcasts
+              hostDisconnectedWarning: prev?.hostDisconnectedWarning,
+              electionStartsIn: prev?.electionStartsIn,
+              hostElectionActive: prev?.hostElectionActive,
+              electionCandidates: prev?.electionCandidates,
+              electionVotes: prev?.electionVotes,
+              votingDuration: prev?.votingDuration,
+              newHostName: prev?.newHostName,
+              hostAssignedMessage: prev?.hostAssignedMessage
+            }));
             break;
           case 'floating_emoji':
             handleFloatingEmoji(message);
