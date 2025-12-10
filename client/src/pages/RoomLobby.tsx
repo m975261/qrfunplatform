@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, QrCode, X, Plus, Play, Crown, GripVertical } from "lucide-react";
+import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/hooks/useSocket";
@@ -14,6 +14,9 @@ export default function RoomLobby() {
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
+  // State for editing spectator nicknames (host only in streaming mode)
+  const [editingSpectatorId, setEditingSpectatorId] = useState<string | null>(null);
+  const [editingSpectatorNickname, setEditingSpectatorNickname] = useState<string>("");
   
   // Draggable QR code panel state
   const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
@@ -496,6 +499,20 @@ export default function RoomLobby() {
                         </div>
                         <span className="text-xs text-gray-700 flex-1 truncate">{spectator.nickname}</span>
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+                        {/* Host controls for spectators in streaming mode - Edit nickname button */}
+                        {isHost && isStreamingMode && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingSpectatorId(spectator.id);
+                              setEditingSpectatorNickname(spectator.nickname);
+                            }}
+                            className="p-1 hover:bg-gray-200 rounded transition-colors"
+                            title="Edit nickname"
+                          >
+                            <Pencil className="w-3 h-3 text-gray-500" />
+                          </button>
+                        )}
                         {isHost && (
                           <div className="text-xs text-blue-600 font-medium">+</div>
                         )}
@@ -508,7 +525,8 @@ export default function RoomLobby() {
                   ))}
                 </div>
                 <div className="mt-2 text-xs text-gray-500 text-center">
-                  {isHost ? "Click spectators to assign to slots" : 
+                  {isHost && isStreamingMode ? "Edit nicknames with ✏️, assign to slots with +" : 
+                   isHost ? "Click + to assign spectators to slots" : 
                    isStreamingMode ? "Wait for host to assign you a slot" : "Click empty slots to join"}
                 </div>
               </CardContent>
@@ -609,6 +627,24 @@ export default function RoomLobby() {
             onNicknameChanged={(newNickname) => {
               // The WebSocket will handle the real-time update
               setShowNicknameEditor(false);
+            }}
+          />
+        )}
+
+        {/* Spectator Nickname Editor Modal (Host only in Streaming Mode) */}
+        {editingSpectatorId && (
+          <NicknameEditor
+            currentNickname={editingSpectatorNickname}
+            playerId={editingSpectatorId}
+            isOpen={!!editingSpectatorId}
+            onClose={() => {
+              setEditingSpectatorId(null);
+              setEditingSpectatorNickname("");
+            }}
+            onNicknameChanged={(newNickname) => {
+              // The WebSocket will handle the real-time update
+              setEditingSpectatorId(null);
+              setEditingSpectatorNickname("");
             }}
           />
         )}
