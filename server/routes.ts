@@ -1625,97 +1625,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Host successfully assigned spectator ${spectator.nickname} to position ${position} during active game`);
       
       // CRITICAL: Handle election during spectator assignment
+      // If OLD HOST returns BEFORE timer finishes, they become host again automatically
+      // Voting rules only apply when the 30-second timer expires
       if (room.hostElectionActive || room.hostDisconnectedAt) {
-        console.log(`🟢 Spectator assigned during active election - checking votes`);
+        const isOldHostReturning = (room as any).hostPreviousId === spectatorId;
         
-        // Cancel the timer first
-        const timer = hostDisconnectTimers.get(roomId);
-        if (timer) {
-          clearTimeout(timer);
-          hostDisconnectTimers.delete(roomId);
-        }
-        
-        // Re-fetch room to get latest votes (they may have been updated)
-        const currentRoom = await storage.getRoom(roomId);
-        const votes = currentRoom?.hostElectionVotes || {};
-        const playerVotes: { [key: string]: number } = {};
-        let noHostVotes = 0;
-        
-        Object.values(votes).forEach((candidateId: any) => {
-          if (candidateId === 'NO_HOST') {
-            noHostVotes++;
-          } else {
-            playerVotes[candidateId] = (playerVotes[candidateId] || 0) + 1;
-          }
-        });
-        
-        // Find highest voted player
-        let highestVotedPlayerId: string | null = null;
-        let highestVotes = 0;
-        let isTie = false;
-        for (const [playerId, count] of Object.entries(playerVotes)) {
-          if (count > highestVotes) {
-            highestVotes = count;
-            highestVotedPlayerId = playerId;
-            isTie = false;
-          } else if (count === highestVotes && count > 0) {
-            isTie = true;
-          }
-        }
-        
-        // Get active players for fallback
-        const activePlayers = (await storage.getPlayersByRoom(roomId))
-          .filter(p => !p.isSpectator && !p.hasLeft);
-        
-        const getDefaultHost = () => {
-          for (const pos of [1, 2, 3, 0]) {
-            const player = activePlayers.find(p => p.position === pos);
-            if (player) return player;
-          }
-          return activePlayers[0];
-        };
-        
-        // Determine new host
-        let newHostId: string | null = null;
-        let newHostName: string | null = null;
-        
-        if (highestVotedPlayerId && !isTie) {
-          // Someone got votes - they become host (even if old host is returning)
-          const votedPlayer = activePlayers.find(p => p.id === highestVotedPlayerId);
-          if (votedPlayer) {
-            newHostId = votedPlayer.id;
-            newHostName = votedPlayer.nickname;
-            console.log(`🗳️ Vote winner: ${newHostName} with ${highestVotes} votes - they become host`);
-          }
-        } else if (isTie || Object.keys(playerVotes).length === 0) {
-          // Tie or no player votes - use position-based fallback
-          const defaultHost = getDefaultHost();
-          if (defaultHost) {
-            newHostId = defaultHost.id;
-            newHostName = defaultHost.nickname;
-            console.log(`🗳️ Using position-based fallback: ${newHostName} (position ${defaultHost.position})`);
-          }
-        }
-        
-        // Update host if someone was elected
-        if (newHostId) {
-          await storage.updateRoom(roomId, {
-            hostId: newHostId,
-            hostDisconnectedAt: null,
-            hostElectionActive: false,
-            hostElectionVotes: {},
-            hostElectionEligibleVoters: []
-          });
+        if (isOldHostReturning) {
+          console.log(`🟢 Old host ${spectator.nickname} returned BEFORE timer - they become host again`);
           
-          broadcastToRoom(roomId, {
-            type: 'host_elected',
-            newHostId: newHostId,
-            newHostName: newHostName,
-            message: `${newHostName} is now the host!`
-          });
-        } else {
-          // Just clear election state
+          // Cancel the timer
+          const timer = hostDisconnectTimers.get(roomId);
+          if (timer) {
+            clearTimeout(timer);
+            hostDisconnectTimers.delete(roomId);
+          }
+          
+          // Restore old host as host, clear election state
           await storage.updateRoom(roomId, {
+            hostId: spectatorId,
+            hostPreviousId: null,
             hostDisconnectedAt: null,
             hostElectionActive: false,
             hostElectionVotes: {},
@@ -1724,8 +1652,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           broadcastToRoom(roomId, {
             type: 'host_reconnected',
-            message: 'Election ended.'
+            message: `Host ${spectator.nickname} has returned. Election cancelled.`
           });
+        } else {
+          // Not the old host - just a regular spectator assignment during election
+          // Don't cancel timer or tally votes - let the timer handle it
+          console.log(`🟢 Spectator ${spectator.nickname} assigned during election (not old host) - timer continues`);
         }
       }
       
@@ -3755,27 +3687,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
       
-      // Tally the votes that were cast during countdown
+      // Tally the votes with correct logic:
+      // 1. NO_HOST only wins if ALL eligible voters voted for it
+      // 2. If any player got votes and clear winner, they become host
+      // 3. If tie or no votes, default to 2nd slot, then 3rd, then 4th
       const votes = currentRoom.hostElectionVotes || {};
-      const voteCounts: { [key: string]: number } = {};
+      const eligibleVoters = currentRoom.hostElectionEligibleVoters || [];
+      
+      // Separate player votes from NO_HOST votes
+      const playerVotes: { [key: string]: number } = {};
+      let noHostVotes = 0;
       Object.values(votes).forEach((candidateId: any) => {
-        voteCounts[candidateId] = (voteCounts[candidateId] || 0) + 1;
+        if (candidateId === 'NO_HOST') {
+          noHostVotes++;
+        } else {
+          playerVotes[candidateId] = (playerVotes[candidateId] || 0) + 1;
+        }
       });
       
-      // Find winner
-      let winnerId: string | null = null;
-      let maxVotes = 0;
-      for (const [candidateId, count] of Object.entries(voteCounts)) {
-        if (count > maxVotes) {
-          maxVotes = count;
-          winnerId = candidateId;
+      console.log(`Vote tally: playerVotes=${JSON.stringify(playerVotes)}, noHostVotes=${noHostVotes}, eligible=${eligibleVoters.length}`);
+      
+      // Check if ALL players voted for NO_HOST
+      const allVotedNoHost = noHostVotes === eligibleVoters.length && eligibleVoters.length > 0;
+      
+      // Find highest voted player
+      let highestVotedPlayerId: string | null = null;
+      let highestVotes = 0;
+      let isTie = false;
+      for (const [playerId, count] of Object.entries(playerVotes)) {
+        if (count > highestVotes) {
+          highestVotes = count;
+          highestVotedPlayerId = playerId;
+          isTie = false;
+        } else if (count === highestVotes && count > 0) {
+          isTie = true;
         }
       }
       
-      // If no votes, default to first player as host
-      if (!winnerId && currentPlayers.length > 0) {
-        winnerId = currentPlayers[0].id;
-        console.log(`No votes cast, defaulting to first player: ${winnerId}`);
+      // Position-based fallback: 2nd slot (pos 1), 3rd (pos 2), 4th (pos 3), then 1st (pos 0)
+      const getDefaultHost = () => {
+        for (const pos of [1, 2, 3, 0]) {
+          const player = currentPlayers.find(p => p.position === pos);
+          if (player) return player;
+        }
+        return currentPlayers[0];
+      };
+      
+      let winnerId: string | null = null;
+      
+      // Rule 1: NO_HOST only wins if ALL players voted for it
+      if (allVotedNoHost) {
+        winnerId = 'NO_HOST';
+        console.log(`All players voted for NO_HOST - enabling no host mode`);
+      }
+      // Rule 2: If any player got votes and clear winner, they become host
+      else if (highestVotedPlayerId && !isTie) {
+        winnerId = highestVotedPlayerId;
+        console.log(`Highest voted player wins: ${winnerId} with ${highestVotes} votes`);
+      }
+      // Rule 3: Tie or no votes - default to position 2nd, 3rd, 4th
+      else {
+        const defaultHost = getDefaultHost();
+        if (defaultHost) {
+          winnerId = defaultHost.id;
+          console.log(`Using position-based fallback: ${defaultHost.nickname} (position ${defaultHost.position})`);
+        }
       }
       
       if (!winnerId) return;
