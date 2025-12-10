@@ -3,12 +3,45 @@ import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Play, Users, Bot } from "lucide-react";
+import { Play, Users, Bot, LogIn } from "lucide-react";
 
 export default function MainHome() {
   const [, setLocation] = useLocation();
   const [showGameModeDialog, setShowGameModeDialog] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
+  const [joinError, setJoinError] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+
+  const handleJoinWithCode = async () => {
+    const code = roomCode.trim();
+    if (!code) {
+      setJoinError("Please enter a room code");
+      return;
+    }
+    
+    setIsJoining(true);
+    setJoinError("");
+    
+    try {
+      const response = await fetch(`/api/rooms/code/${code}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.room) {
+          setLocation(`/uno?room=${code}`);
+        } else {
+          setJoinError("Room not found");
+        }
+      } else {
+        setJoinError("Room not found");
+      }
+    } catch (error) {
+      setJoinError("Could not connect. Try again.");
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   // Handle shared room links - redirect to UNO page with room parameters
   useEffect(() => {
@@ -92,6 +125,53 @@ export default function MainHome() {
       </header>
 
       <main className="container mx-auto px-4 py-12">
+        {/* Join with Room Code - Prominent section for visitors */}
+        <div className="max-w-md mx-auto mb-12">
+          <Card className="bg-gradient-to-r from-green-500 to-emerald-600 border-0 shadow-xl overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <LogIn className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Join with Room Code</h2>
+                  <p className="text-white/80 text-sm">Enter the code shared with you</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Enter room code (e.g. 12345)"
+                  value={roomCode}
+                  onChange={(e) => {
+                    setRoomCode(e.target.value.toUpperCase());
+                    setJoinError("");
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleJoinWithCode()}
+                  className="bg-white/95 border-0 text-gray-800 placeholder:text-gray-500 font-mono text-lg tracking-wider"
+                  maxLength={10}
+                  data-testid="input-room-code"
+                />
+                <Button
+                  onClick={handleJoinWithCode}
+                  disabled={isJoining || !roomCode.trim()}
+                  className="bg-white text-green-600 hover:bg-gray-100 font-semibold px-6 shadow-lg"
+                  data-testid="button-join-room"
+                >
+                  {isJoining ? "Joining..." : "Join"}
+                </Button>
+              </div>
+              
+              {joinError && (
+                <p className="text-white/90 text-sm mt-2 bg-red-500/30 px-3 py-1 rounded-lg">
+                  {joinError}
+                </p>
+              )}
+            </div>
+          </Card>
+        </div>
+
         {/* Games Grid - Centered */}
         <div className="flex flex-wrap justify-center gap-6 lg:gap-8 mb-16 max-w-5xl mx-auto">
           {games.map((game) => (
