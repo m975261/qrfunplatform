@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRoute, useSearch } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, QrCode, Users, Tv, X, GripVertical } from "lucide-react";
+import { Copy, QrCode, Users, Tv, X, GripVertical, Link2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
@@ -120,6 +120,16 @@ export default function StreamPage() {
   const handleCopyCode = () => {
     if (room?.code) {
       navigator.clipboard.writeText(room.code);
+      toast({ title: "Room code copied!", duration: 1500 });
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (room?.code) {
+      const baseUrl = window.location.origin;
+      const joinLink = `${baseUrl}?room=${room.code}`;
+      navigator.clipboard.writeText(joinLink);
+      toast({ title: "Join link copied!", description: "Share this link with players", duration: 2000 });
     }
   };
 
@@ -314,15 +324,26 @@ export default function StreamPage() {
                 </button>
               </div>
               
-              <Button
-                onClick={handleCopyCode}
-                variant="outline"
-                size="sm"
-                className="w-full mb-3 bg-purple-600 text-white hover:bg-purple-700"
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Code
-              </Button>
+              <div className="flex gap-2 mb-3">
+                <Button
+                  onClick={handleCopyCode}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 bg-purple-600 text-white hover:bg-purple-700"
+                >
+                  <Copy className="mr-1 h-4 w-4" />
+                  Code
+                </Button>
+                <Button
+                  onClick={handleCopyLink}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                >
+                  <Link2 className="mr-1 h-4 w-4" />
+                  Link
+                </Button>
+              </div>
               
               <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100">
                 <img 
