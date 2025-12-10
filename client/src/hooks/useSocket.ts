@@ -60,19 +60,22 @@ export function useSocket(autoConnect: boolean = true) {
         
         switch (message.type) {
           case 'room_state':
-            // Preserve election-related state when updating room state
-            setGameState((prev: any) => ({
-              ...message.data,
-              // Preserve these election states from being overwritten by room_state broadcasts
-              hostDisconnectedWarning: prev?.hostDisconnectedWarning,
-              electionStartsIn: prev?.electionStartsIn,
-              hostElectionActive: prev?.hostElectionActive,
-              electionCandidates: prev?.electionCandidates,
-              electionVotes: prev?.electionVotes,
-              votingDuration: prev?.votingDuration,
-              newHostName: prev?.newHostName,
-              hostAssignedMessage: prev?.hostAssignedMessage
-            }));
+            // Only preserve election state if it's actively in progress (not after host returns)
+            setGameState((prev: any) => {
+              const shouldPreserveElectionState = prev?.hostElectionActive === true && prev?.hostDisconnectedWarning;
+              return {
+                ...message.data,
+                // Only preserve election states if election is still active
+                hostDisconnectedWarning: shouldPreserveElectionState ? prev?.hostDisconnectedWarning : message.data.hostDisconnectedWarning,
+                electionStartsIn: shouldPreserveElectionState ? prev?.electionStartsIn : message.data.electionStartsIn,
+                hostElectionActive: shouldPreserveElectionState ? prev?.hostElectionActive : message.data.hostElectionActive,
+                electionCandidates: shouldPreserveElectionState ? prev?.electionCandidates : message.data.electionCandidates,
+                electionVotes: shouldPreserveElectionState ? prev?.electionVotes : message.data.electionVotes,
+                votingDuration: shouldPreserveElectionState ? prev?.votingDuration : message.data.votingDuration,
+                newHostName: prev?.newHostName,
+                hostAssignedMessage: prev?.hostAssignedMessage
+              };
+            });
             break;
           case 'floating_emoji':
             handleFloatingEmoji(message);
