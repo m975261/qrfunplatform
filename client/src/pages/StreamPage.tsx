@@ -1,10 +1,11 @@
-import { useEffect, useState, useRef } from "react";
-import { useRoute } from "wouter";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useRoute, useSearch } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, QrCode, Users, Tv, X, GripVertical } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
+import { useToast } from "@/hooks/use-toast";
 
 interface StreamPlayer {
   id: string;
@@ -17,21 +18,34 @@ interface StreamPlayer {
 
 export default function StreamPage() {
   const [, params] = useRoute("/stream/:roomId");
+  const search = useSearch();
   const roomId = params?.roomId;
+  const roomCode = new URLSearchParams(search).get('code') || undefined;
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
   const [isDraggingQR, setIsDraggingQR] = useState(false);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [hasSubscribed, setHasSubscribed] = useState(false);
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
+  const { toast } = useToast();
   
-  const { gameState, isConnected } = useSocket();
+  const { gameState, isConnected, streamSubscribe } = useSocket();
+
+  // Subscribe to room updates when connected
+  useEffect(() => {
+    if (isConnected && roomId && !hasSubscribed) {
+      console.log("📺 StreamPage: Subscribing to room", roomId);
+      streamSubscribe(roomId, roomCode);
+      setHasSubscribed(true);
+    }
+  }, [isConnected, roomId, roomCode, hasSubscribed, streamSubscribe]);
 
   const { data: roomData } = useQuery({
     queryKey: ["/api/rooms", roomId],
     enabled: !!roomId,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   });
 
   useEffect(() => {

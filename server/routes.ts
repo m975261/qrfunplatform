@@ -1923,11 +1923,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'assign_host':
             await handleAssignHost(connection, message);
             break;
+          case 'stream_subscribe':
+            // Stream viewer subscribing to room updates (read-only, no player)
+            await handleStreamSubscribe(connection, message, connectionId);
+            break;
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
       }
     });
+    
+  // Handle stream viewer subscription - they get room updates without being a player
+  async function handleStreamSubscribe(connection: any, message: any, connectionId: string) {
+    const { roomId, roomCode } = message;
+    
+    let room;
+    if (roomId) {
+      room = await storage.getRoom(roomId);
+    } else if (roomCode) {
+      room = await storage.getRoomByCode(roomCode.toUpperCase());
+    }
+    
+    if (!room) {
+      connection.ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Room not found'
+      }));
+      return;
+    }
+    
+    console.log(`📺 Stream viewer ${connectionId} subscribing to room ${room.code}`);
+    
+    // Register this connection to the room (for broadcasts) but mark as stream viewer
+    connection.roomId = room.id;
+    connection.isStreamViewer = true;
+    connection.playerId = null; // No player, just a viewer
+    connections.set(connectionId, connection);
+    
+    // Send current room state to stream viewer
+    const players = await storage.getPlayersByRoom(room.id);
+    
+    connection.ws.send(JSON.stringify({
+      type: 'room_state',
+      data: {
+        room,
+        players: players.map(p => ({
+          id: p.id,
+          nickname: p.nickname,
+          position: p.position,
+          isSpectator: p.isSpectator,
+          isOnline: p.isOnline,
+          hasCalledUno: p.hasCalledUno,
+          cardCount: room.positionHands?.[p.position ?? -1]?.length || 0
+        })),
+        messages: []
+      }
+    }));
+  }
     
     ws.on('close', (code, reason) => {
       console.log(`WebSocket connection closed: ${connectionId} (code: ${code}, reason: ${reason?.toString()})`);

@@ -888,6 +888,33 @@ export function useSocket(autoConnect: boolean = true) {
     }));
   }, []);
 
+  // Stream subscribe - for read-only stream viewers (no player needed)
+  const streamSubscribe = useCallback((roomId: string, roomCode?: string) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      console.log("📺 Subscribing to room stream:", { roomId, roomCode });
+      socketRef.current.send(JSON.stringify({
+        type: 'stream_subscribe',
+        roomId,
+        roomCode
+      }));
+    } else {
+      console.log("📺 WebSocket not ready, will subscribe when connected");
+      // Try again when connected
+      const checkConnection = setInterval(() => {
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          clearInterval(checkConnection);
+          socketRef.current.send(JSON.stringify({
+            type: 'stream_subscribe',
+            roomId,
+            roomCode
+          }));
+        }
+      }, 500);
+      // Clean up after 10 seconds
+      setTimeout(() => clearInterval(checkConnection), 10000);
+    }
+  }, []);
+
   return {
     isConnected,
     gameState,
@@ -915,6 +942,7 @@ export function useSocket(autoConnect: boolean = true) {
     hostExitRoom,
     voteNoHost,
     connect: manualConnect,
-    refreshGameState
+    refreshGameState,
+    streamSubscribe
   };
 }
