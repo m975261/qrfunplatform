@@ -10,6 +10,7 @@ export function useSocket(autoConnect: boolean = true) {
   const [isConnected, setIsConnected] = useState(false);
   const [gameState, setGameState] = useState<any>(null);
   const [floatingEmojis, setFloatingEmojis] = useState<any[]>([]);
+  const [avatarMessages, setAvatarMessages] = useState<any[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
@@ -79,6 +80,9 @@ export function useSocket(autoConnect: boolean = true) {
             break;
           case 'floating_emoji':
             handleFloatingEmoji(message);
+            break;
+          case 'avatar_message':
+            handleAvatarMessage(message);
             break;
           case 'game_end':
             // Enhanced Safari debugging for game end
@@ -634,6 +638,25 @@ export function useSocket(autoConnect: boolean = true) {
     }, 2000);
   };
 
+  const handleAvatarMessage = (message: any) => {
+    const msgId = Math.random().toString(36).substring(7);
+    const avatarMsg = {
+      id: msgId,
+      content: message.content,
+      contentType: message.contentType,
+      playerId: message.playerId,
+      playerNickname: message.playerNickname,
+      playerPosition: message.playerPosition
+    };
+    
+    setAvatarMessages(prev => [...prev, avatarMsg]);
+    
+    // Remove message after 4 seconds
+    setTimeout(() => {
+      setAvatarMessages(prev => prev.filter(m => m.id !== msgId));
+    }, 4000);
+  };
+
   const sendMessage = (message: SocketMessage) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify(message));
@@ -870,6 +893,7 @@ export function useSocket(autoConnect: boolean = true) {
     gameState,
     setGameState,
     floatingEmojis,
+    avatarMessages,
     joinRoom,
     startGame,
     playCard,

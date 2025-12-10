@@ -2756,6 +2756,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       type: "chat"
     });
     
+    // Get player info for avatar message display
+    const player = await storage.getPlayer(connection.playerId);
+    if (player) {
+      broadcastToRoom(connection.roomId, {
+        type: 'avatar_message',
+        content: text,
+        contentType: 'chat',
+        playerId: connection.playerId,
+        playerNickname: player.nickname,
+        playerPosition: player.position
+      });
+    }
+    
     await broadcastRoomState(connection.roomId);
   }
 
@@ -2769,6 +2782,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       emoji,
       type: "emoji"
     });
+    
+    // Get player info for avatar message display
+    const player = await storage.getPlayer(connection.playerId);
+    if (player) {
+      broadcastToRoom(connection.roomId, {
+        type: 'avatar_message',
+        content: emoji,
+        contentType: 'emoji',
+        playerId: connection.playerId,
+        playerNickname: player.nickname,
+        playerPosition: player.position
+      });
+    }
     
     broadcastToRoom(connection.roomId, {
       type: 'floating_emoji',

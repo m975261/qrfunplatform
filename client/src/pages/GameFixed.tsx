@@ -28,6 +28,7 @@ export default function Game() {
     gameState,
     setGameState,
     floatingEmojis,
+    avatarMessages,
     joinRoom,
     playCard,
     drawCard,
@@ -1340,6 +1341,35 @@ export default function Game() {
                       {player.id === room?.hostId && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2">👑</div>
                       )}
+
+                      {/* Floating chat/emoji message bubble */}
+                      {avatarMessages?.filter((m: any) => m.playerId === player.id).slice(-1).map((msg: any) => (
+                        <div
+                          key={msg.id}
+                          className={`absolute z-50 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+                            position === 0 ? 'bottom-full left-1/2 -translate-x-1/2 mb-4'
+                            : position === 1 ? 'right-full top-1/2 -translate-y-1/2 mr-4'
+                            : position === 2 ? 'top-full left-1/2 -translate-x-1/2 mt-4'
+                            : 'left-full top-1/2 -translate-y-1/2 ml-4'
+                          }`}
+                        >
+                          <div className="bg-white/95 dark:bg-gray-800/95 rounded-xl px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-600 max-w-[150px]">
+                            <div className="text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate">
+                              {msg.playerNickname}
+                            </div>
+                            <div className={`${msg.contentType === 'emoji' ? 'text-2xl text-center' : 'text-sm text-gray-800 dark:text-white break-words'}`}>
+                              {msg.content}
+                            </div>
+                          </div>
+                          {/* Speech bubble pointer */}
+                          <div className={`absolute w-0 h-0 ${
+                            position === 0 ? 'top-full left-1/2 -translate-x-1/2 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white/95 dark:border-t-gray-800/95'
+                            : position === 1 ? 'left-full top-1/2 -translate-y-1/2 border-t-8 border-b-8 border-l-8 border-t-transparent border-b-transparent border-l-white/95 dark:border-l-gray-800/95'
+                            : position === 2 ? 'bottom-full left-1/2 -translate-x-1/2 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-white/95 dark:border-b-gray-800/95'
+                            : 'right-full top-1/2 -translate-y-1/2 border-t-8 border-b-8 border-r-8 border-t-transparent border-b-transparent border-r-white/95 dark:border-r-gray-800/95'
+                          }`} />
+                        </div>
+                      ))}
 
                       {/* Finish badge */}
                       {player.finishPosition && (
