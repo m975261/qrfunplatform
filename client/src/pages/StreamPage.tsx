@@ -280,11 +280,11 @@ export default function StreamPage() {
                       )}
                     </div>
                   ) : (
-                    // Empty Slot - Same style as RoomLobby
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center border-4 bg-gray-300/50 border-white/30">
+                    // Empty Slot - Read-only, non-interactive (Stream Page is for viewing only)
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center border-4 bg-gray-400/30 border-white/20">
                       <div className="text-center">
-                        <Plus className="w-8 h-8 text-gray-500 mx-auto" />
-                        <div className="text-xs text-gray-600">Empty</div>
+                        <div className="w-8 h-8 rounded-full bg-gray-500/50 mx-auto" />
+                        <div className="text-xs text-gray-500 mt-1">Empty</div>
                       </div>
                     </div>
                   )}
