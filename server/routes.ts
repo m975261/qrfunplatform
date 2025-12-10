@@ -1619,31 +1619,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Host successfully assigned spectator ${spectator.nickname} to position ${position} during active game`);
       
-      // CRITICAL: Check if this is the host returning to the game (or any spectator being assigned during election)
-      // If election is active, clear it and notify all clients to close voting windows
+      // CRITICAL: Handle election during spectator assignment
       if (room.hostElectionActive || room.hostDisconnectedAt) {
-        console.log(`🟢 Spectator assigned during active election - clearing election state and closing voting windows`);
+        console.log(`🟢 Spectator assigned during active election - checking votes`);
         
-        // Clear election state
-        await storage.updateRoom(roomId, {
-          hostDisconnectedAt: null,
-          hostElectionActive: false,
-          hostElectionVotes: {},
-          hostElectionEligibleVoters: []
-        });
-        
-        // Cancel any pending election timer
+        // Cancel the timer first
         const timer = hostDisconnectTimers.get(roomId);
         if (timer) {
           clearTimeout(timer);
           hostDisconnectTimers.delete(roomId);
         }
         
-        // Notify all clients to close voting windows
-        broadcastToRoom(roomId, {
-          type: 'host_reconnected',
-          message: 'Host has returned. Election cancelled.'
+        // Check if any player votes exist
+        const votes = room.hostElectionVotes || {};
+        const playerVotes: { [key: string]: number } = {};
+        let noHostVotes = 0;
+        
+        Object.values(votes).forEach((candidateId: any) => {
+          if (candidateId === 'NO_HOST') {
+            noHostVotes++;
+          } else {
+            playerVotes[candidateId] = (playerVotes[candidateId] || 0) + 1;
+          }
         });
+        
+        // Find highest voted player
+        let highestVotedPlayerId: string | null = null;
+        let highestVotes = 0;
+        let isTie = false;
+        for (const [playerId, count] of Object.entries(playerVotes)) {
+          if (count > highestVotes) {
+            highestVotes = count;
+            highestVotedPlayerId = playerId;
+            isTie = false;
+          } else if (count === highestVotes && count > 0) {
+            isTie = true;
+          }
+        }
+        
+        // Get active players for fallback
+        const activePlayers = (await storage.getPlayersByRoom(roomId))
+          .filter(p => !p.isSpectator && !p.hasLeft);
+        
+        const getDefaultHost = () => {
+          for (const pos of [1, 2, 3, 0]) {
+            const player = activePlayers.find(p => p.position === pos);
+            if (player) return player;
+          }
+          return activePlayers[0];
+        };
+        
+        // Determine new host
+        let newHostId: string | null = null;
+        let newHostName: string | null = null;
+        
+        if (highestVotedPlayerId && !isTie) {
+          // Someone got votes - they become host (even if old host is returning)
+          const votedPlayer = activePlayers.find(p => p.id === highestVotedPlayerId);
+          if (votedPlayer) {
+            newHostId = votedPlayer.id;
+            newHostName = votedPlayer.nickname;
+            console.log(`🗳️ Vote winner: ${newHostName} with ${highestVotes} votes - they become host`);
+          }
+        } else if (isTie || Object.keys(playerVotes).length === 0) {
+          // Tie or no player votes - use position-based fallback
+          const defaultHost = getDefaultHost();
+          if (defaultHost) {
+            newHostId = defaultHost.id;
+            newHostName = defaultHost.nickname;
+            console.log(`🗳️ Using position-based fallback: ${newHostName} (position ${defaultHost.position})`);
+          }
+        }
+        
+        // Update host if someone was elected
+        if (newHostId) {
+          await storage.updateRoom(roomId, {
+            hostId: newHostId,
+            hostDisconnectedAt: null,
+            hostElectionActive: false,
+            hostElectionVotes: {},
+            hostElectionEligibleVoters: []
+          });
+          
+          broadcastToRoom(roomId, {
+            type: 'host_elected',
+            newHostId: newHostId,
+            newHostName: newHostName,
+            message: `${newHostName} is now the host!`
+          });
+        } else {
+          // Just clear election state
+          await storage.updateRoom(roomId, {
+            hostDisconnectedAt: null,
+            hostElectionActive: false,
+            hostElectionVotes: {},
+            hostElectionEligibleVoters: []
+          });
+          
+          broadcastToRoom(roomId, {
+            type: 'host_reconnected',
+            message: 'Election ended.'
+          });
+        }
       }
       
       // Broadcast updated room state
