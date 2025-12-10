@@ -2814,8 +2814,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Check if a new host was already assigned
         if (currentRoom.hostId) {
-          console.log(`Host was assigned during countdown, skipping tally`);
+          console.log(`Host was assigned during countdown, skipping tally - clearing election state`);
           hostDisconnectTimers.delete(roomId);
+          // CRITICAL: Clear election state and notify clients to close voting window
+          await storage.updateRoom(roomId, {
+            hostDisconnectedAt: null,
+            hostElectionActive: false,
+            hostElectionVotes: {},
+            hostElectionEligibleVoters: []
+          });
+          broadcastToRoom(roomId, {
+            type: 'host_reconnected',
+            message: 'Host has returned. Election cancelled.'
+          });
+          await broadcastRoomState(roomId);
           return;
         }
         
@@ -3548,8 +3560,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if a new host was already assigned (manually or via unanimous vote)
       if (currentRoom.hostId) {
-        console.log(`Host was assigned during countdown, skipping tally`);
+        console.log(`Host was assigned during countdown, skipping tally - clearing election state`);
         hostDisconnectTimers.delete(roomId);
+        // CRITICAL: Clear election state and notify clients to close voting window
+        await storage.updateRoom(roomId, {
+          hostDisconnectedAt: null,
+          hostElectionActive: false,
+          hostElectionVotes: {},
+          hostElectionEligibleVoters: []
+        });
+        broadcastToRoom(roomId, {
+          type: 'host_reconnected',
+          message: 'Host has returned. Election cancelled.'
+        });
+        await broadcastRoomState(roomId);
         return;
       }
       
@@ -3860,8 +3884,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Check if a new host was already assigned
         if (currentRoom.hostId) {
-          console.log(`Host was assigned during countdown, skipping tally`);
+          console.log(`Host was assigned during countdown, skipping tally - clearing election state`);
           hostDisconnectTimers.delete(roomId);
+          // CRITICAL: Clear election state and notify clients to close voting window
+          await storage.updateRoom(roomId, {
+            hostDisconnectedAt: null,
+            hostElectionActive: false,
+            hostElectionVotes: {},
+            hostElectionEligibleVoters: []
+          });
+          broadcastToRoom(roomId, {
+            type: 'host_reconnected',
+            message: 'Host has returned. Election cancelled.'
+          });
+          await broadcastRoomState(roomId);
           return;
         }
         
