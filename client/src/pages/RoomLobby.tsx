@@ -227,6 +227,7 @@ export default function RoomLobby() {
   const gamePlayers = players.filter((p: any) => !p.isSpectator);
   const currentPlayer = players.find((p: any) => p.id === playerId);
   const isHost = currentPlayer?.isHost || currentPlayer?.id === room?.hostId;
+  const isStreamingMode = room?.isStreamingMode || false;
 
   // Debug logging
   console.log("RoomLobby state:", {
@@ -374,15 +375,22 @@ export default function RoomLobby() {
                     </div>
                   ) : (
                     // Empty Slot
+                    // In streaming mode, only the host can see/interact with slots - spectators see "Empty"
                     <div 
                       className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors ${
-                        gameInProgress && !wasActiveAtStart
+                        isStreamingMode && !isHost
+                          ? 'bg-gray-400/30 border-white/20 cursor-default'
+                          : gameInProgress && !wasActiveAtStart
                           ? 'bg-gray-200/50 border-gray-300/30 cursor-not-allowed' 
                           : gameInProgress && wasActiveAtStart
                           ? 'bg-blue-100/50 border-blue-300/50 cursor-pointer hover:bg-blue-200/70'
                           : 'bg-gray-300/50 border-white/30 cursor-pointer hover:bg-gray-300/70'
                       }`}
                       onClick={() => {
+                        // In streaming mode, spectators cannot click slots
+                        if (isStreamingMode && !isHost) {
+                          return;
+                        }
                         if (gameInProgress && !wasActiveAtStart) {
                           return; // Slot was never active, permanently closed
                         }
@@ -397,7 +405,13 @@ export default function RoomLobby() {
                         }
                       }}
                     >
-                      {gameInProgress && !wasActiveAtStart ? (
+                      {/* Streaming mode spectators see non-interactive empty slots */}
+                      {isStreamingMode && !isHost ? (
+                        <div className="text-center">
+                          <div className="w-8 h-8 rounded-full bg-gray-500/50 mx-auto" />
+                          <div className="text-xs text-gray-500 mt-1">Empty</div>
+                        </div>
+                      ) : gameInProgress && !wasActiveAtStart ? (
                         <div className="text-center">
                           <X className="w-8 h-8 text-gray-400 mx-auto" />
                           <div className="text-xs text-gray-500 mt-1">Closed</div>

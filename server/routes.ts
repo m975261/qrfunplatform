@@ -813,8 +813,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let playerHand: any[] = [];
       let isSpectator = true; // NEW SPECTATOR SYSTEM: All new joiners start as spectators
 
-      // ONLY exception: If room is empty, first joiner becomes host at position 0
-      if (existingPlayers.length === 0) {
+      // STREAMING MODE: Only first joiner becomes host, everyone else is a spectator
+      if (room.isStreamingMode) {
+        if (existingPlayers.length === 0) {
+          // First joiner in streaming mode becomes host at position 0
+          isSpectator = false;
+          playerPosition = 0;
+          console.log(`[STREAMING MODE] First joiner ${nickname} becomes host at position 0`);
+        } else {
+          // All subsequent joiners in streaming mode are forced to be spectators
+          isSpectator = true;
+          playerPosition = null;
+          console.log(`[STREAMING MODE] Player ${nickname} joining as spectator (streaming room)`);
+        }
+      }
+      // NORMAL MODE: Existing behavior
+      else if (existingPlayers.length === 0) {
+        // First joiner becomes host at position 0
         isSpectator = false;
         playerPosition = 0;
       } else if (room.status === "playing" || room.status === "paused") {
