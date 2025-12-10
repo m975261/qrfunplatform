@@ -1535,8 +1535,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Room not found' });
       }
       
-      // Verify the requester is the host
-      if (room.hostId !== hostId) {
+      // Verify the requester is the host OR old host returning during election
+      const isCurrentHost = room.hostId === hostId;
+      const isOldHostReturningDuringElection = room.hostElectionActive && 
+        (room as any).hostPreviousId === hostId && 
+        spectatorId === hostId;
+      
+      if (!isCurrentHost && !isOldHostReturningDuringElection) {
         return res.status(403).json({ error: 'Only host can assign spectators' });
       }
       
@@ -1630,8 +1635,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hostDisconnectTimers.delete(roomId);
         }
         
-        // Check if any player votes exist
-        const votes = room.hostElectionVotes || {};
+        // Re-fetch room to get latest votes (they may have been updated)
+        const currentRoom = await storage.getRoom(roomId);
+        const votes = currentRoom?.hostElectionVotes || {};
         const playerVotes: { [key: string]: number } = {};
         let noHostVotes = 0;
         
@@ -3680,8 +3686,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ];
     
     // Record host disconnection and enable voting during countdown
-    // Keep hostId so host can return by clicking their slot or rejoining via link
+    // CRITICAL: Clear hostId so timer knows no new host has been elected yet
+    // Store old host ID in hostPreviousId so we can track if they return
     await storage.updateRoom(connection.roomId, { 
+      hostId: null,
+      hostPreviousId: connection.playerId,
       hostDisconnectedAt: new Date(),
       hostElectionActive: true,
       hostElectionStartTime: new Date(),

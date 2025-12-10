@@ -12,7 +12,7 @@ export const users = pgTable("users", {
 export const rooms = pgTable("rooms", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: varchar("code", { length: 6 }).notNull().unique(),
-  hostId: varchar("host_id").notNull(),
+  hostId: varchar("host_id"),
   status: varchar("status", { enum: ["waiting", "playing", "finished", "paused"] }).notNull().default("waiting"),
   maxPlayers: integer("max_players").notNull().default(4),
   currentPlayerIndex: integer("current_player_index").default(0),
@@ -28,6 +28,7 @@ export const rooms = pgTable("rooms", {
   hostElectionVotes: jsonb("host_election_votes").$type<{[voterId: string]: string}>().default({}),
   hostElectionEligibleVoters: jsonb("host_election_eligible_voters").$type<string[]>().default([]),
   hostDisconnectedAt: timestamp("host_disconnected_at"),
+  hostPreviousId: varchar("host_previous_id"),
   hostPreviousPosition: integer("host_previous_position"),
   noHostMode: boolean("no_host_mode").default(false),
   createdAt: timestamp("created_at").default(sql`now()`),
