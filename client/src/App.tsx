@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import RoomLobby from "@/pages/RoomLobby";
 import Game from "@/pages/GameFixed";
 import BotGame from "@/pages/BotGame";
+import StreamPage from "@/pages/StreamPage";
 import XOPlaceholder from "@/pages/XOPlaceholder";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/xo" component={XOPlaceholder} />
       <Route path="/room/:roomId" component={RoomLobby} />
       <Route path="/game/:roomId" component={Game} />
+      <Route path="/stream/:roomId" component={StreamPage} />
       <Route path="/man" component={AdminLogin} />
       <Route path="/man/dashboard" component={AdminDashboard} />
       <Route path="/assets" component={AssetGenerator} />

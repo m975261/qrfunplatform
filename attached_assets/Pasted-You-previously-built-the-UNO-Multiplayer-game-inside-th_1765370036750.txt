@@ -1,0 +1,287 @@
+You previously built the UNO Multiplayer game inside the QRFun platform.
+Now extend QRFun by adding a new feature to UNO only:
+
+⭐ UNO  STREAMING MODE
+
+This must be added cleanly, modularly, and without modifying or breaking any existing UNO code, logic, UI, or behavior.
+Current UNO Normal Mode must continue functioning exactly as it does today.
+
+All Streaming Mode features must be additive, leaving existing UNO untouched.
+
+=========================
+⭐ PART 1 — ROOM CREATION MODIFICATION
+=========================
+
+UNO must now support two different room creation flows, depending on whether the creator is a Normal User or a Guru User.
+
+🔷 1. NORMAL USER ROOM CREATION — “Advanced” Checkbox
+
+When a normal user creates a UNO room:
+
+Display:
+
+Nickname input (as already implemented)
+
+A small label: “Advanced”, with a checkbox next to it.
+
+✔ If the checkbox is NOT checked
+
+→ Create a regular UNO room (Normal Mode)
+→ Use existing UNO pages and logic exactly as they are
+→ No Streaming Mode active
+
+✔ If the checkbox IS checked
+
+Before activating Streaming Mode, show a confirmation dialog:
+
+“Warning: Streaming Mode changes room behavior and requires special setup.
+If you are not sure how this feature works, please uncheck Advanced Mode.”
+
+If user confirms → enable Streaming Mode.
+If user cancels → uncheck the box and default to Normal Mode.
+
+🔷 2. GURU USER ROOM CREATION — Two Tabs
+
+When a Guru User logs in and creates a UNO room:
+
+Show two large, clear tabs:
+
+Normal Mode
+
+Streaming Mode
+
+✔ Normal Mode Tab
+
+Behaves exactly like current UNO.
+Use all existing pages and logic unchanged.
+
+✔ Streaming Mode Tab
+
+Enables the special Streaming Mode behavior defined below.
+
+=========================
+⭐ PART 2 — STREAMING MODE BEHAVIOR
+=========================
+
+Streaming Mode is a separate game flow designed for content creators, streamers, and Guru Users, while ensuring that:
+
+✔ Players experience a normal UNO game
+✔ The Stream Page does NOT reveal any hidden cards
+✔ Existing UNO logic remains untouched
+
+Streaming Mode does not affect gameplay rules — only the visibility and room entry logic.
+
+⭐ A. FIRST PAGE = STREAM PAGE (NO HOST CONNECTED)
+
+When Streaming Mode is selected:
+
+Immediately create the UNO room
+
+Load the waiting lobby
+
+Make it appear that no host is connected
+
+All player slots appear empty
+
+The first-rendered page becomes the STREAM PAGE
+
+The creator (Normal or Guru) is NOT automatically joined as host.
+
+This page is intended for:
+
+Live streaming
+
+OBS
+
+TikTok Live
+
+YouTube Live
+
+Display systems
+
+⭐ B. HOST MUST JOIN MANUALLY
+
+After room creation in Streaming Mode, the creator must rejoin through:
+
+Invite link
+
+QR code scan
+
+QR code upload
+
+Manual room code entry
+
+Host assignment rule:
+
+The first authenticated joiner becomes host
+
+If Guru logs in → Guru becomes host
+
+If Normal User joins → they become host
+
+All other players who joined after first joiner which is the host should be listed in the spectator table.
+
+Host only  will be choosing who will play and assighn them to slots
+Host will be able to edit there nick names in the spectator table before choosing them.
+
+all spectator users will be transfared to the viewer table when the game starts.
+
+only nicknames that are availbe will show any user with no network connectivity will be removed automaticly.
+
+⭐ C. TWO PAGE TYPES MUST EXIST
+
+Streaming Mode produces two different client experiences.
+
+⭐ 1. STREAM PAGE (Public View)
+
+This is the FIRST page created automatically.
+
+It must:
+
+Show UNO table normally
+
+Show turn indicator
+
+Show player nicknames
+
+Show all player card decks as hidden (card back only)
+
+NEVER show:
+
+Player cards
+
+Bot indicators
+
+Guru indicators
+
+Host controls
+
+Be read-only
+
+This page continues updating in real time via WebSockets.
+
+⭐ 2. HOST / GURU PAGE (Private View)
+
+When the creator joins the room:
+
+They load the standard UNO gameplay page
+
+This page must work EXACTLY like current UNO
+
+All original UNO controls must remain unchanged:
+
+Start Game
+
+Kick player
+
+Promote viewer
+
+Restart game
+
+Play cards
+
+Draw cards
+
+Select colors, etc.
+
+Visibility rules:
+
+Guru User sees ALL player cards
+
+Normal host sees only their own hand (unchanged)
+
+Normal players see only their own cards
+
+Stream page must continue showing hidden cards only
+
+=========================
+⭐ PART 3 — PLAYER EXPERIENCE
+=========================
+✔ Normal players see:
+
+Only their own cards
+
+No indication that Streaming Mode is active
+
+No exposure to Guru features
+
+✔ Viewers see:
+
+Board
+
+Nicknames
+
+Turn info
+
+Hidden cards only
+
+No control elements
+
+✔ Bots (if used) behave normally
+
+No change in existing bot logic.
+
+=========================
+⭐ PART 4 — GURU USER BEHAVIOR
+=========================
+
+Streaming Mode does NOT change existing Guru behavior.
+
+If Guru hosts:
+
+Guru page shows all player cards
+
+Stream page hides all cards
+
+Normal players remain unaffected
+
+Guru labels must NEVER appear in UI
+
+=========================
+⭐ PART 5 — DO NOT BREAK EXISTING UNO SYSTEM
+=========================
+
+The following must remain untouched:
+
+All existing UNO pages
+
+All UNO card logic
+
+All turn/stacking rules
+
+All draw, skip, reverse, and action card mechanics
+
+All host controls
+
+All viewer logic
+
+All WebSocket events
+
+All lobby flows
+
+All existing UI layouts
+
+All UNO game files
+
+Streaming Mode must be fully independent and additive.
+
+=========================
+⭐ FINAL REQUIREMENT
+=========================
+
+IMPORTANT:
+Normal UNO Mode must continue operating EXACTLY as it does today.
+Do NOT modify or delete any current logic or UI.
+Streaming Mode must be implemented as an optional layer that activates ONLY when selected.
+
+Deliver:
+
+Full UNO Streaming Mode feature
+
+Two creation flows (Normal User & Guru User)
+
+Stream Page + Host/Guru Page separation
+
+Full compatibility with current UNO logic
+
+Production-ready code

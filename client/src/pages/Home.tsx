@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Upload, Camera, ArrowRight, ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Upload, Camera, ArrowRight, ArrowLeft, Radio, Tv } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -26,7 +28,20 @@ export default function Home() {
   const [guruPassword, setGuruPassword] = useState("");
   const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
   const [guruLoginError, setGuruLoginError] = useState("");
+  
+  // Streaming Mode state
+  const [isStreamingMode, setIsStreamingMode] = useState(false);
+  const [showStreamingConfirm, setShowStreamingConfirm] = useState(false);
+  const [selectedModeTab, setSelectedModeTab] = useState<'normal' | 'streaming'>('normal');
+  const [isGuruUserLoggedIn, setIsGuruUserLoggedIn] = useState(false);
+  
   const { toast } = useToast();
+  
+  // Check if user is already logged in as guru
+  useEffect(() => {
+    const guruStatus = localStorage.getItem("isGuruUser");
+    setIsGuruUserLoggedIn(guruStatus === "true");
+  }, []);
 
   // Smart session and nickname management
   useEffect(() => {
@@ -85,11 +100,26 @@ export default function Home() {
   }, [toast, setLocation]);
 
   const createRoomMutation = useMutation({
-    mutationFn: async (hostNickname: string) => {
-      const response = await apiRequest("POST", "/api/rooms", { hostNickname });
+    mutationFn: async ({ hostNickname, streamingMode }: { hostNickname: string; streamingMode: boolean }) => {
+      const response = await apiRequest("POST", "/api/rooms", { 
+        hostNickname, 
+        isStreamingMode: streamingMode 
+      });
       return response.json();
     },
     onSuccess: (data) => {
+      // STREAMING MODE: Redirect to stream page (no player created)
+      if (data.isStreamingMode) {
+        setShowHostPopup(false);
+        setIsStreamingMode(false);
+        // Store room info for later joining
+        localStorage.setItem("streamingRoomId", data.room.id);
+        localStorage.setItem("streamingRoomCode", data.room.code);
+        setLocation(data.streamPageUrl);
+        return;
+      }
+      
+      // NORMAL MODE: Standard room creation flow
       localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", data.hostNickname || popupNickname);
       localStorage.setItem("currentRoomId", data.room.id);
@@ -255,7 +285,10 @@ export default function Home() {
         
         if (pendingAction === 'create') {
           // Use guru user's playerName instead of entered nickname
-          createRoomMutation.mutate(data.guruUser.playerName);
+          // Guru users use the tab selection for streaming mode
+          const streamingMode = selectedModeTab === 'streaming';
+          setIsGuruUserLoggedIn(true);
+          createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode });
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
             // Use guru user's playerName instead of entered nickname
@@ -296,7 +329,10 @@ export default function Home() {
     // Regular user - clear any previous guru status and proceed normally
     localStorage.removeItem("isGuruUser");
     localStorage.removeItem("guruUserData");
-    createRoomMutation.mutate(popupNickname);
+    
+    // Determine streaming mode based on user type
+    const streamingMode = isGuruUserLoggedIn ? (selectedModeTab === 'streaming') : isStreamingMode;
+    createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode });
   };
 
   const handleJoinRoom = async () => {
@@ -658,6 +694,8 @@ export default function Home() {
         if (!open) {
           setPopupNickname("");
           setSelectedAvatar('male');
+          setIsStreamingMode(false);
+          setSelectedModeTab('normal');
         }
       }}>
         <DialogContent className="sm:max-w-md">
@@ -666,7 +704,31 @@ export default function Home() {
               Create New Room
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
+          
+          {/* GURU USER: Show Mode Tabs */}
+          {isGuruUserLoggedIn && (
+            <Tabs value={selectedModeTab} onValueChange={(v) => setSelectedModeTab(v as 'normal' | 'streaming')} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="normal" className="flex items-center gap-2">
+                  <Radio className="h-4 w-4" />
+                  Normal Mode
+                </TabsTrigger>
+                <TabsTrigger value="streaming" className="flex items-center gap-2">
+                  <Tv className="h-4 w-4" />
+                  Streaming Mode
+                </TabsTrigger>
+              </TabsList>
+              
+              {selectedModeTab === 'streaming' && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4 text-sm text-purple-700">
+                  <p className="font-medium mb-1">Streaming Mode Active</p>
+                  <p className="text-xs">Room will open on Stream Page. Join manually via link/QR to become host.</p>
+                </div>
+              )}
+            </Tabs>
+          )}
+          
+          <div className="space-y-4 pt-2">
             <div>
               <Label htmlFor="host-nickname" className="text-sm font-medium text-gray-700 mb-2">
                 Enter Your Nickname
@@ -718,12 +780,39 @@ export default function Home() {
                 </button>
               </div>
             </div>
+            
+            {/* NORMAL USER: Advanced Checkbox */}
+            {!isGuruUserLoggedIn && (
+              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <Checkbox 
+                  id="streaming-mode" 
+                  checked={isStreamingMode}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setShowStreamingConfirm(true);
+                    } else {
+                      setIsStreamingMode(false);
+                    }
+                  }}
+                />
+                <Label 
+                  htmlFor="streaming-mode" 
+                  className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"
+                >
+                  <Tv className="h-4 w-4 text-purple-500" />
+                  Advanced (Streaming Mode)
+                </Label>
+              </div>
+            )}
+            
             <div className="flex space-x-2">
               <Button
                 onClick={() => {
                   setShowHostPopup(false);
                   setPopupNickname("");
                   setSelectedAvatar('male');
+                  setIsStreamingMode(false);
+                  setSelectedModeTab('normal');
                 }}
                 variant="outline"
                 className="flex-1"
@@ -742,6 +831,56 @@ export default function Home() {
                   <Plus className="mr-2 h-4 w-4" />
                 )}
                 Create Room
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Streaming Mode Confirmation Dialog */}
+      <Dialog open={showStreamingConfirm} onOpenChange={setShowStreamingConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg font-semibold text-purple-700">
+              Enable Streaming Mode?
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm text-gray-600 pt-2">
+              Streaming Mode changes room behavior and requires special setup.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+              <p className="font-medium mb-2">What happens in Streaming Mode:</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>Room opens on a Stream Page (for OBS/streaming)</li>
+                <li>You must join manually via link or QR code</li>
+                <li>All cards are hidden on the Stream Page</li>
+                <li>First person to join becomes the host</li>
+              </ul>
+            </div>
+            <p className="text-xs text-gray-500 text-center">
+              If you are not sure how this feature works, please click Cancel.
+            </p>
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => {
+                  setShowStreamingConfirm(false);
+                  setIsStreamingMode(false);
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowStreamingConfirm(false);
+                  setIsStreamingMode(true);
+                }}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+              >
+                <Tv className="mr-2 h-4 w-4" />
+                Enable Streaming
               </Button>
             </div>
           </div>

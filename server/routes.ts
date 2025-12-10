@@ -666,22 +666,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Create room
+  // Create room (supports normal and streaming mode)
   app.post("/api/rooms", async (req, res) => {
     try {
-      const { hostNickname } = z.object({
-        hostNickname: z.string().min(1).max(20)
+      const { hostNickname, isStreamingMode } = z.object({
+        hostNickname: z.string().min(1).max(20),
+        isStreamingMode: z.boolean().optional().default(false)
       }).parse(req.body);
 
       const code = UnoGameLogic.generateRoomCode();
+      
       // Create the room first
       const room = await storage.createRoom({
         code,
-        hostId: "", // Will be set when host joins
-        status: "waiting"
+        hostId: "", // Will be set when host joins (or later for streaming mode)
+        status: "waiting",
+        isStreamingMode: isStreamingMode
       });
 
-      // Create the host player immediately
+      // STREAMING MODE: Don't create host player immediately
+      // The first person to join manually becomes the host
+      if (isStreamingMode) {
+        console.log(`[STREAMING MODE] Room ${code} created - no host assigned yet`);
+        
+        // Generate QR code for streaming mode room
+        let domain;
+        let roomLink;
+        
+        if (process.env.REPL_SLUG && process.env.REPLIT_DEPLOYMENT_ID) {
+          domain = `${process.env.REPL_SLUG}.replit.app`;
+        } else if (process.env.REPLIT_DOMAINS) {
+          domain = process.env.REPLIT_DOMAINS.split(',')[0].replace(/^https?:\/\//, '');
+        } else {
+          domain = req.get('host') || 'localhost:5000';
+        }
+        
+        roomLink = `https://${domain}?room=${code}`;
+        roomLink = roomLink.replace(/([^:]\/)\/+/g, "$1");
+        
+        const qrCode = await QRCode.toDataURL(roomLink, {
+          errorCorrectionLevel: 'M',
+          margin: 1,
+          color: { dark: '#000000', light: '#FFFFFF' }
+        });
+        
+        // Return room without player - creator goes to stream page
+        return res.json({ 
+          room, 
+          qrCode, 
+          player: null,
+          isStreamingMode: true,
+          streamPageUrl: `/stream/${room.id}?code=${code}`
+        });
+      }
+
+      // NORMAL MODE: Create the host player immediately (existing behavior)
       const hostPlayer = await storage.createPlayer({
         nickname: hostNickname,
         roomId: room.id,
@@ -726,7 +765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      res.json({ room: updatedRoom, qrCode, player: hostPlayer });
+      res.json({ room: updatedRoom, qrCode, player: hostPlayer, hostNickname });
     } catch (error) {
       console.error("Room creation error:", error);
       res.status(400).json({ error: "Failed to create room", details: error instanceof Error ? error.message : String(error) });
