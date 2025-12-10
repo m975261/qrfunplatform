@@ -684,10 +684,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isStreamingMode: isStreamingMode
       });
 
-      // STREAMING MODE: Don't create host player immediately
-      // The first person to join manually becomes the host
+      // STREAMING MODE: Create host player so they can manage the lobby
       if (isStreamingMode) {
-        console.log(`[STREAMING MODE] Room ${code} created - no host assigned yet`);
+        console.log(`[STREAMING MODE] Room ${code} created with host`);
+        
+        // Create the host player for streaming mode
+        const hostPlayer = await storage.createPlayer({
+          nickname: hostNickname,
+          roomId: room.id,
+          isSpectator: false,
+          position: 0
+        });
+        
+        // Update room with host ID
+        const updatedRoom = await storage.updateRoom(room.id, { hostId: hostPlayer.id });
         
         // Generate QR code for streaming mode room
         let domain;
@@ -710,11 +720,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           color: { dark: '#000000', light: '#FFFFFF' }
         });
         
-        // Return room without player - creator goes to stream page
+        // Return room with player - creator goes to lobby first
         return res.json({ 
-          room, 
-          qrCode, 
-          player: null,
+          room: updatedRoom || room, 
+          qrCode,
+          hostNickname,
+          player: hostPlayer,
           isStreamingMode: true,
           streamPageUrl: `/stream/${room.id}?code=${code}`
         });

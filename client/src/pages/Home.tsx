@@ -112,10 +112,14 @@ export default function Home() {
       if (data.isStreamingMode) {
         setShowHostPopup(false);
         setIsStreamingMode(false);
-        // Store room info and stream page URL for display in lobby
-        localStorage.setItem("streamingRoomId", data.room.id);
-        localStorage.setItem("streamingRoomCode", data.room.code);
+        // Store player info (host is created in streaming mode now)
+        localStorage.setItem("playerId", data.player.id);
+        localStorage.setItem("playerNickname", data.hostNickname || popupNickname);
+        localStorage.setItem("currentRoomId", data.room.id);
+        // Store stream page URL for display in lobby
         localStorage.setItem("streamPageUrl", data.streamPageUrl);
+        // Save selected avatar
+        localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
         // Go to the lobby where host can manage spectators
         setLocation(`/room/${data.room.id}?code=${data.room.code}&streaming=true`);
         return;
