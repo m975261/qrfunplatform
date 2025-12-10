@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,6 +86,7 @@ export default function Game() {
   const [isDraggingBanner, setIsDraggingBanner] = useState(false);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [showVotingWindow, setShowVotingWindow] = useState(false);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debug logs for troubleshooting
   console.log("🚨 WHITE PAGE DEBUG:", {
@@ -205,18 +206,24 @@ export default function Game() {
 
   // Handle host election messages
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
     if (gameState?.hostDisconnectedWarning) {
       console.log("🔴 Host disconnection warning - starting election countdown");
       setHostDisconnectedWarning(gameState.hostDisconnectedWarning);
       setElectionCountdown(gameState.electionStartsIn || 30);
       
+      // Clear any existing interval first
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+      
       // Start countdown timer
-      interval = setInterval(() => {
+      countdownIntervalRef.current = setInterval(() => {
         setElectionCountdown(prev => {
           if (prev <= 1) {
-            clearInterval(interval);
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
             return 0;
           }
           return prev - 1;
@@ -224,21 +231,26 @@ export default function Game() {
       }, 1000);
       
       return () => {
-        console.log("🟢 Cleaning up election countdown interval");
-        clearInterval(interval);
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
       };
     } else {
-      // Host has returned - clear election state immediately
+      // Host has returned - clear election state immediately and stop timer
       console.log("🟢 Host returned - clearing election state and stopping timer");
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
       setHostDisconnectedWarning(null);
-      setElectionCountdown(30); // Reset to initial value
+      setElectionCountdown(30);
       setElectionCandidates([]);
       setElectionVotes({});
       setHasVoted(false);
-      setShowVotingWindow(false); // Force close voting window
-      if (interval) clearInterval(interval);
+      setShowVotingWindow(false);
     }
-  }, [gameState?.hostDisconnectedWarning, gameState?.electionStartsIn]);
+  }, [gameState?.hostDisconnectedWarning]);
 
   useEffect(() => {
     if (gameState?.hostElectionActive) {
