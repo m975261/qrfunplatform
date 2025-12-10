@@ -178,20 +178,31 @@ export function useSocket(autoConnect: boolean = true) {
             }));
             break;
           case 'host_reconnected':
-            console.log("Host reconnected:", message);
-            setGameState((prev: any) => ({
-              ...prev,
-              hostDisconnectedWarning: null,
-              hostElectionActive: false,
-              electionCandidates: [],
-              electionVotes: {},
-              room: {
-                ...prev?.room,
+            console.log("🟢 HOST RECONNECTED MESSAGE RECEIVED - Clearing all voting state", message);
+            setGameState((prev: any) => {
+              const newState = {
+                ...prev,
+                hostDisconnectedWarning: null,
                 hostElectionActive: false,
-                hostElectionVotes: {},
-                hostDisconnectedAt: null
-              }
-            }));
+                electionCandidates: [],
+                electionVotes: {},
+                votesSubmitted: undefined,
+                totalVoters: undefined,
+                votingDuration: undefined,
+                room: {
+                  ...prev?.room,
+                  hostElectionActive: false,
+                  hostElectionVotes: {},
+                  hostDisconnectedAt: null
+                }
+              };
+              console.log("🟢 New gameState after host_reconnected:", {
+                hostDisconnectedWarning: newState.hostDisconnectedWarning,
+                hostElectionActive: newState.hostElectionActive,
+                electionCandidates: newState.electionCandidates
+              });
+              return newState;
+            });
             break;
           case 'host_election_started':
             console.log("Host election started:", message);
