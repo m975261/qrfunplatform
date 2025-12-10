@@ -2872,31 +2872,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        // Tally votes
+        // Tally votes with new logic:
+        // 1. Only give host to highest vote if ALL players voted AND clear winner
+        // 2. If tie or not all voted, default to position 1, then 2, then 3
+        // 3. NO_HOST only wins if ALL players voted for it
         const votes = currentRoom.hostElectionVotes || {};
+        const eligibleVoters = currentRoom.hostElectionEligibleVoters || [];
+        const totalVotes = Object.keys(votes).length;
+        const allPlayersVoted = totalVotes === eligibleVoters.length && eligibleVoters.length > 0;
+        
         const voteCounts: { [key: string]: number } = {};
         Object.values(votes).forEach((candidateId: any) => {
           voteCounts[candidateId] = (voteCounts[candidateId] || 0) + 1;
         });
         
-        // Find winner
-        let winnerId: string | null = null;
-        let maxVotes = 0;
+        console.log(`Election tally: ${totalVotes}/${eligibleVoters.length} voted, allVoted=${allPlayersVoted}, votes:`, voteCounts);
+        
+        // Get default host by position priority: 2nd slot (pos 1), 3rd (pos 2), 4th (pos 3), then 1st (pos 0)
+        const getDefaultHost = () => {
+          for (const pos of [1, 2, 3, 0]) {
+            const player = currentPlayers.find(p => p.position === pos);
+            if (player) return player;
+          }
+          return currentPlayers[0];
+        };
+        
+        // Separate player votes from NO_HOST votes
+        const playerVoteCounts: { [key: string]: number } = {};
+        let noHostVotes = 0;
         for (const [candidateId, count] of Object.entries(voteCounts)) {
-          if (count > maxVotes) {
-            maxVotes = count;
-            winnerId = candidateId;
+          if (candidateId === 'NO_HOST') {
+            noHostVotes = count;
+          } else {
+            playerVoteCounts[candidateId] = count;
           }
         }
         
-        // If no votes, default to first player as host
-        if (!winnerId && currentPlayers.length > 0) {
-          winnerId = currentPlayers[0].id;
+        // Find highest voted player (excluding NO_HOST)
+        let highestPlayerVotes = 0;
+        let highestVotedPlayerId: string | null = null;
+        let isTie = false;
+        for (const [playerId, count] of Object.entries(playerVoteCounts)) {
+          if (count > highestPlayerVotes) {
+            highestPlayerVotes = count;
+            highestVotedPlayerId = playerId;
+            isTie = false;
+          } else if (count === highestPlayerVotes && count > 0) {
+            isTie = true;
+          }
+        }
+        
+        let winnerId: string | null = null;
+        
+        // Only give host to highest vote if ALL players voted AND there's a clear winner
+        if (allPlayersVoted && !isTie && highestVotedPlayerId && highestPlayerVotes > noHostVotes) {
+          winnerId = highestVotedPlayerId;
+          console.log(`All players voted, clear winner: ${winnerId} with ${highestPlayerVotes} votes`);
+        } else if (allPlayersVoted && noHostVotes > highestPlayerVotes && !isTie) {
+          // Only NO_HOST wins if ALL voted and it has more votes than any player
+          winnerId = 'NO_HOST';
+          console.log(`All players voted for NO_HOST: ${noHostVotes} votes`);
+        } else {
+          // Default to position-based fallback (2nd, 3rd, 4th slot priority)
+          const defaultHost = getDefaultHost();
+          if (defaultHost) {
+            winnerId = defaultHost.id;
+            console.log(`Using position-based fallback: ${defaultHost.nickname} (position ${defaultHost.position})`);
+          }
         }
         
         if (!winnerId) return;
         
-        // Handle "Continue without host" option
+        // Handle "Continue without host" option - only if ALL players voted for it
         if (winnerId === 'NO_HOST') {
           await storage.updateRoom(roomId, {
             hostId: null,
@@ -3942,31 +3989,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        // Tally votes
+        // Tally votes with new logic:
+        // 1. Only give host to highest vote if ALL players voted AND clear winner
+        // 2. If tie or not all voted, default to position 1, then 2, then 3
+        // 3. NO_HOST only wins if ALL players voted for it
         const votes = currentRoom.hostElectionVotes || {};
+        const eligibleVoters = currentRoom.hostElectionEligibleVoters || [];
+        const totalVotes = Object.keys(votes).length;
+        const allPlayersVoted = totalVotes === eligibleVoters.length && eligibleVoters.length > 0;
+        
         const voteCounts: { [key: string]: number } = {};
         Object.values(votes).forEach((candidateId: any) => {
           voteCounts[candidateId] = (voteCounts[candidateId] || 0) + 1;
         });
         
-        // Find winner
-        let winnerId: string | null = null;
-        let maxVotes = 0;
+        console.log(`Election tally: ${totalVotes}/${eligibleVoters.length} voted, allVoted=${allPlayersVoted}, votes:`, voteCounts);
+        
+        // Get default host by position priority: 2nd slot (pos 1), 3rd (pos 2), 4th (pos 3), then 1st (pos 0)
+        const getDefaultHost = () => {
+          for (const pos of [1, 2, 3, 0]) {
+            const player = currentPlayers.find(p => p.position === pos);
+            if (player) return player;
+          }
+          return currentPlayers[0];
+        };
+        
+        // Separate player votes from NO_HOST votes
+        const playerVoteCounts: { [key: string]: number } = {};
+        let noHostVotes = 0;
         for (const [candidateId, count] of Object.entries(voteCounts)) {
-          if (count > maxVotes) {
-            maxVotes = count;
-            winnerId = candidateId;
+          if (candidateId === 'NO_HOST') {
+            noHostVotes = count;
+          } else {
+            playerVoteCounts[candidateId] = count;
           }
         }
         
-        // If no votes, default to first player as host
-        if (!winnerId && currentPlayers.length > 0) {
-          winnerId = currentPlayers[0].id;
+        // Find highest voted player (excluding NO_HOST)
+        let highestPlayerVotes = 0;
+        let highestVotedPlayerId: string | null = null;
+        let isTie = false;
+        for (const [playerId, count] of Object.entries(playerVoteCounts)) {
+          if (count > highestPlayerVotes) {
+            highestPlayerVotes = count;
+            highestVotedPlayerId = playerId;
+            isTie = false;
+          } else if (count === highestPlayerVotes && count > 0) {
+            isTie = true;
+          }
+        }
+        
+        let winnerId: string | null = null;
+        
+        // Only give host to highest vote if ALL players voted AND there's a clear winner
+        if (allPlayersVoted && !isTie && highestVotedPlayerId && highestPlayerVotes > noHostVotes) {
+          winnerId = highestVotedPlayerId;
+          console.log(`All players voted, clear winner: ${winnerId} with ${highestPlayerVotes} votes`);
+        } else if (allPlayersVoted && noHostVotes > highestPlayerVotes && !isTie) {
+          // Only NO_HOST wins if ALL voted and it has more votes than any player
+          winnerId = 'NO_HOST';
+          console.log(`All players voted for NO_HOST: ${noHostVotes} votes`);
+        } else {
+          // Default to position-based fallback (2nd, 3rd, 4th slot priority)
+          const defaultHost = getDefaultHost();
+          if (defaultHost) {
+            winnerId = defaultHost.id;
+            console.log(`Using position-based fallback: ${defaultHost.nickname} (position ${defaultHost.position})`);
+          }
         }
         
         if (!winnerId) return;
         
-        // Handle "Continue without host" option
+        // Handle "Continue without host" option - only if ALL players voted for it
         if (winnerId === 'NO_HOST') {
           await storage.updateRoom(roomId, {
             hostId: null,
