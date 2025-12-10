@@ -524,19 +524,22 @@ export default function RoomLobby() {
           >
             <Card className="w-64 shadow-2xl border-2 border-uno-blue/50 bg-white/98 backdrop-blur-sm animate-in slide-in-from-top-2 duration-200">
               <CardContent className="p-4">
-                {/* Drag handle */}
+                {/* Drag handle with fixed background */}
                 <div
-                  className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing"
+                  className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing bg-uno-blue rounded-lg px-3 py-2"
                   onMouseDown={handleQRDragStart}
                   onTouchStart={handleQRDragStart}
                 >
                   <div className="flex items-center gap-2">
-                    <GripVertical className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm font-semibold text-gray-700">Room {room?.code}</span>
+                    <GripVertical className="h-4 w-4 text-white/70" />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-white">Room {room?.code}</span>
+                      <span className="text-xs text-white/80">QrFun.net/uno</span>
+                    </div>
                   </div>
                   <button
                     onClick={() => setShowQRCode(false)}
-                    className="text-gray-400 hover:text-gray-600 p-1"
+                    className="text-white/70 hover:text-white p-1"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -549,9 +552,6 @@ export default function RoomLobby() {
                     alt={`QR Code for room ${room?.code}`}
                     className="w-full h-auto"
                   />
-                  <div className="text-center mt-2 pt-2 border-t border-gray-100">
-                    <span className="text-sm font-bold text-uno-blue">QrFun.net/uno</span>
-                  </div>
                 </div>
                 
                 {/* Copy Link Button */}
