@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRoute, useSearch } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, QrCode, Users, Tv, X, GripVertical, Link2 } from "lucide-react";
+import { Copy, QrCode, Users, Tv, X, GripVertical, Link2, Crown, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
@@ -150,118 +150,139 @@ export default function StreamPage() {
   const isPlaying = room.status === 'playing';
   const currentColor = room.currentColor;
 
+  // Check if a player is online
+  const isPlayerOnline = (player: any): boolean => {
+    return player?.isOnline || false;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-4 overflow-hidden">
-      {/* Stream Header */}
-      <div className="absolute top-4 left-4 z-20">
-        <div className="flex items-center gap-3">
-          <div className="bg-purple-600/80 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
-            <Tv className="w-5 h-5 text-white" />
-            <span className="text-white font-bold">STREAM VIEW</span>
-          </div>
-          <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-            <span className="text-white font-mono">Room: {room.code}</span>
-          </div>
-          {isConnected && (
-            <div className="bg-green-500/80 px-3 py-1 rounded-full">
-              <span className="text-white text-sm">LIVE</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* QR Code Button */}
-      <div className="absolute top-4 right-4 z-20">
-        <Button
-          ref={qrButtonRef}
-          onClick={() => {
-            if (!showQRCode && qrButtonRef.current) {
-              const rect = qrButtonRef.current.getBoundingClientRect();
-              setQrPosition({ x: rect.left - 200, y: rect.bottom + 8 });
-            }
-            setShowQRCode(!showQRCode);
-          }}
-          className="bg-white/20 hover:bg-white/30 text-white"
-        >
-          <QrCode className="mr-2 h-4 w-4" />
-          Share Room
-        </Button>
-      </div>
-
-      {/* Main Game Area */}
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="relative w-[500px] h-[500px]">
-          {/* Center Table */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-gradient-to-br from-green-700 to-green-900 shadow-2xl border-4 border-green-600 flex flex-col items-center justify-center">
-            {isPlaying ? (
-              <>
-                {/* Discard Pile - Only show current color, not card value */}
-                <div className={`w-16 h-24 rounded-lg ${getCardColor(currentColor)} shadow-lg flex items-center justify-center border-2 border-white/30`}>
-                  <div className="w-12 h-20 bg-gradient-to-br from-gray-800 to-gray-900 rounded-md flex items-center justify-center border border-gray-600">
-                    <span className="text-2xl font-bold text-white opacity-60">UNO</span>
+    <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Room Header - Same style as RoomLobby */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Room <span className="font-mono text-uno-blue">{room?.code}</span>
+                  </h2>
+                  <div className="bg-purple-600 px-3 py-1 rounded-full flex items-center gap-2">
+                    <Tv className="w-4 h-4 text-white" />
+                    <span className="text-white text-sm font-bold">STREAM</span>
                   </div>
+                  {isConnected && (
+                    <div className="bg-green-500 px-3 py-1 rounded-full">
+                      <span className="text-white text-sm font-bold">LIVE</span>
+                    </div>
+                  )}
                 </div>
-                <p className="text-white/80 text-xs mt-2 font-medium capitalize">{currentColor || 'Starting...'}</p>
-              </>
-            ) : (
-              <div className="text-center">
-                <span className="text-white font-bold text-xl">UNO</span>
-                <p className="text-white/60 text-sm mt-1">
-                  {room.status === 'waiting' ? 'Waiting...' : 'Starting...'}
+                <p className="text-gray-600">
+                  {isPlaying ? 'Game in progress...' : 'Waiting for players to join...'}
                 </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Button
+                  onClick={handleCopyLink}
+                  variant="outline"
+                  size="sm"
+                  className="bg-uno-blue text-white hover:bg-blue-600"
+                >
+                  <Link2 className="mr-2 h-4 w-4" />
+                  Copy Link
+                </Button>
+                <Button
+                  ref={qrButtonRef}
+                  onClick={() => {
+                    if (!showQRCode && qrButtonRef.current) {
+                      const rect = qrButtonRef.current.getBoundingClientRect();
+                      setQrPosition({ x: rect.left - 200, y: rect.bottom + 8 });
+                    }
+                    setShowQRCode(!showQRCode);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="bg-uno-green text-white hover:bg-green-600"
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  QR Code
+                </Button>
+              </div>
+            </div>
+            
+            <div className="text-sm text-gray-600">
+              {gamePlayers.length}/4 players joined
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Central Game Area with 4 Fixed Avatar Positions - Same style as RoomLobby */}
+        <div className="relative w-80 h-80 mx-auto mb-8 bg-white/10 backdrop-blur-sm rounded-full border-2 border-white/20">
+          {/* UNO Logo in Center */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            {isPlaying ? (
+              <div className={`w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-lg ${getCardColor(currentColor)}`}>
+                <span className="text-white font-bold text-lg">UNO</span>
+                <span className="text-white/80 text-xs capitalize">{currentColor || 'playing'}</span>
+              </div>
+            ) : (
+              <div className="w-20 h-20 bg-gradient-to-br from-uno-red to-uno-yellow rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg">UNO</span>
               </div>
             )}
           </div>
 
-          {/* Player Positions - 4 Fixed Slots */}
+          {/* 4 Fixed Avatar Positions - Same style as RoomLobby */}
           {[0, 1, 2, 3].map((position) => {
             const player = gamePlayers.find((p: any) => p.position === position);
+            const isOnline = player ? isPlayerOnline(player) : false;
             const isCurrentTurn = room.currentPlayerIndex === position && isPlaying;
-            const cardCount = player ? (room.positionHands?.[position]?.length || 0) : 0;
+            const cardCount = player ? (player.cardCount || room.positionHands?.[position]?.length || 0) : 0;
 
             return (
               <div
                 key={position}
-                className={`absolute ${getPositionClass(position)}`}
+                className={`absolute ${getPositionClass(position)} w-20 h-20`}
               >
-                <div className={`relative ${isCurrentTurn ? 'scale-110' : ''} transition-transform`}>
-                  {/* Avatar */}
-                  <div className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg border-4 ${
-                    isCurrentTurn 
-                      ? 'border-yellow-400 bg-yellow-500/20 animate-pulse' 
-                      : player 
-                        ? 'border-white/50 bg-white/20' 
-                        : 'border-gray-500/30 bg-gray-700/30'
-                  }`}>
-                    {player ? (
-                      <span className="text-2xl">👤</span>
-                    ) : (
-                      <span className="text-gray-500 text-2xl">?</span>
-                    )}
-                  </div>
-                  
-                  {/* Player Info */}
-                  {player && (
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
-                      <p className="text-white font-bold text-sm bg-black/50 px-2 py-0.5 rounded">
-                        {player.nickname}
-                      </p>
+                <div className={`relative ${isCurrentTurn ? 'scale-110 transition-transform' : ''}`}>
+                  {player ? (
+                    // Player Avatar - Same style as RoomLobby
+                    <div className={`w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 ${
+                      isCurrentTurn ? 'border-yellow-400' : 'border-white/20'
+                    }`}>
+                      <div className="text-lg">{player.nickname[0].toUpperCase()}</div>
+                      <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
+                      {/* Online/Offline indicator */}
+                      <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
+                        isOnline ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                      {/* Host crown */}
+                      {player.id === room?.hostId && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          <Crown className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+                        </div>
+                      )}
+                      {/* Card count during game */}
                       {isPlaying && (
-                        <div className="flex items-center justify-center gap-1 mt-1">
-                          {/* Hidden Card Count */}
-                          <div className="bg-gray-800/80 px-2 py-0.5 rounded text-xs text-white flex items-center gap-1">
-                            <span>🎴</span>
-                            <span>{cardCount}</span>
-                          </div>
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gray-800 px-2 py-0.5 rounded text-xs text-white flex items-center gap-1">
+                          <span>🎴</span>
+                          <span>{cardCount}</span>
+                        </div>
+                      )}
+                      {/* Current turn indicator */}
+                      {isCurrentTurn && (
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full animate-bounce">
+                          TURN
                         </div>
                       )}
                     </div>
-                  )}
-                  
-                  {/* Current Turn Indicator */}
-                  {isCurrentTurn && (
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full animate-bounce">
-                      TURN
+                  ) : (
+                    // Empty Slot - Same style as RoomLobby
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center border-4 bg-gray-300/50 border-white/30">
+                      <div className="text-center">
+                        <Plus className="w-8 h-8 text-gray-500 mx-auto" />
+                        <div className="text-xs text-gray-600">Empty</div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -269,27 +290,36 @@ export default function StreamPage() {
             );
           })}
         </div>
-      </div>
 
-      {/* Player Count / Status */}
-      <div className="absolute bottom-4 left-4 z-20">
-        <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg flex items-center gap-2">
-          <Users className="w-5 h-5 text-white" />
-          <span className="text-white">{gamePlayers.length}/4 Players</span>
-          <span className="text-white/60">|</span>
-          <span className="text-white capitalize">{room.status}</span>
-        </div>
-      </div>
-
-      {/* Direction Indicator */}
-      {isPlaying && (
-        <div className="absolute bottom-4 right-4 z-20">
-          <div className="bg-yellow-500/80 px-4 py-2 rounded-lg flex items-center gap-2">
-            <span className="text-2xl">{room.direction === 'clockwise' ? '↻' : '↺'}</span>
-            <span className="text-black font-bold">{room.direction === 'clockwise' ? 'Clockwise' : 'Counter-Clockwise'}</span>
+        {/* Direction Indicator - Below circle */}
+        {isPlaying && (
+          <div className="flex justify-center mb-4">
+            <div className="bg-yellow-500/80 px-4 py-2 rounded-lg flex items-center gap-2">
+              <span className="text-2xl">{room.direction === 'clockwise' ? '↻' : '↺'}</span>
+              <span className="text-black font-bold">{room.direction === 'clockwise' ? 'Clockwise' : 'Counter-Clockwise'}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Status Footer */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-gray-600" />
+                <span className="text-gray-800 font-medium">{gamePlayers.length}/4 Players</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-600">Status:</span>
+                <span className={`font-bold capitalize ${
+                  room.status === 'playing' ? 'text-green-600' : 
+                  room.status === 'waiting' ? 'text-blue-600' : 'text-gray-600'
+                }`}>{room.status}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* QR Code Floating Panel */}
       {showQRCode && qrCodeData && (
