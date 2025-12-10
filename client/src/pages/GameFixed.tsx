@@ -1056,8 +1056,8 @@ export default function Game() {
               
               {/* Voting buttons - vertical layout */}
               <div className="space-y-2">
-                {/* Player candidates - each on new line */}
-                {electionCandidates.filter(c => c.id !== 'NO_HOST').map((candidate) => (
+                {/* Player candidates - each on new line (exclude self) */}
+                {electionCandidates.filter(c => c.id !== 'NO_HOST' && c.id !== playerId).map((candidate) => (
                   <button
                     key={candidate.id}
                     onClick={(e) => { e.stopPropagation(); handleVoteForHost(candidate.id); }}
@@ -1148,6 +1148,22 @@ export default function Game() {
               }}
             >
               Home
+            </Button>
+            
+            {/* Exit Game button - Takes player to UNO entry page */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-purple-900/50 border-purple-600 text-purple-300 hover:bg-purple-800/50 px-2 sm:px-3"
+              onClick={() => {
+                localStorage.removeItem("currentRoomId");
+                localStorage.removeItem("playerId");
+                localStorage.removeItem("playerNickname");
+                window.location.replace("/uno");
+              }}
+              data-testid="button-exit-game"
+            >
+              Exit Game
             </Button>
             
             {/* End Game button - Only show for active players during gameplay */}
@@ -1663,21 +1679,28 @@ export default function Game() {
           </div>
           <div className="space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length > 0 ? (
-              players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).map((spectator: any, index: number, arr: any[]) => (
+              players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).map((spectator: any, index: number, arr: any[]) => {
+                // Allow clicking if: host, OR this is the current player AND election is active
+                const isOwnNameDuringElection = spectator.id === playerId && hostDisconnectedWarning;
+                const canClick = isHost || isOwnNameDuringElection;
+                
+                return (
                 <div key={spectator.id}>
                   <div 
                     className={`flex items-center space-x-2 p-2 rounded-lg transition-colors ${
-                      isHost 
+                      canClick 
                         ? 'hover:bg-blue-50 cursor-pointer' 
                         : ''
                     }`}
                     onClick={
-                      isHost
+                      canClick
                         ? () => handleHostAssignSpectatorToGame(spectator.id)
                         : undefined
                     }
                     title={
-                      isHost
+                      isOwnNameDuringElection
+                        ? "Click to rejoin the game"
+                        : isHost
                         ? "Click to assign to next available slot"
                         : ""
                     }
@@ -1693,7 +1716,8 @@ export default function Game() {
                     <hr className="border-gray-200 mx-1 my-1" />
                   )}
                 </div>
-              ))
+              );
+              })
             ) : (
               <div className="flex items-center justify-center h-16 text-gray-400 text-xs">
                 No viewers watching
