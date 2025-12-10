@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, QrCode, X, Plus, Play, Crown } from "lucide-react";
+import { Copy, QrCode, X, Plus, Play, Crown, GripVertical } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/hooks/useSocket";
@@ -14,6 +14,12 @@ export default function RoomLobby() {
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
+  
+  // Draggable QR code panel state
+  const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
+  const [isDraggingQR, setIsDraggingQR] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const qrPanelRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { 
     gameState, 
@@ -102,6 +108,56 @@ export default function RoomLobby() {
     localStorage.removeItem("currentRoomId");
     setLocation("/");
   };
+
+  // QR Panel drag handlers
+  const handleQRDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDraggingQR(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setDragStartPos({ x: clientX - qrPosition.x, y: clientY - qrPosition.y });
+  };
+
+  const handleQRDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDraggingQR) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setQrPosition({
+      x: Math.max(0, Math.min(window.innerWidth - 200, clientX - dragStartPos.x)),
+      y: Math.max(0, Math.min(window.innerHeight - 300, clientY - dragStartPos.y))
+    });
+  };
+
+  const handleQRDragEnd = () => {
+    setIsDraggingQR(false);
+  };
+
+  // Global mouse/touch move and end for QR dragging
+  useEffect(() => {
+    if (!isDraggingQR) return;
+    
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      setQrPosition({
+        x: Math.max(0, Math.min(window.innerWidth - 200, clientX - dragStartPos.x)),
+        y: Math.max(0, Math.min(window.innerHeight - 300, clientY - dragStartPos.y))
+      });
+    };
+    
+    const handleEnd = () => setIsDraggingQR(false);
+    
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchend', handleEnd);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+    };
+  }, [isDraggingQR, dragStartPos]);
 
   const kickPlayerLocal = async (playerIdToKick: string) => {
     if (!playerId || !gameState?.room?.id) return;
@@ -401,7 +457,7 @@ export default function RoomLobby() {
                   Spectators ({players.filter((p: any) => p.isSpectator && p.isOnline).length})
                 </div>
                 <div className="max-h-32 overflow-y-auto space-y-1">
-                  {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index, arr) => (
+                  {players.filter((p: any) => p.isSpectator && p.isOnline).map((spectator: any, index: number, arr: any[]) => (
                     <div key={spectator.id}>
                       <div 
                         className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
@@ -455,38 +511,56 @@ export default function RoomLobby() {
           </CardContent>
         </Card>
 
-        {/* QR Code Modal - Fixed position popup that doesn't affect layout */}
+        {/* QR Code Floating Panel - Draggable, non-blocking */}
         {showQRCode && qrCodeData && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <Card className="max-w-sm w-full mx-4 animate-slide-up">
-              <CardContent className="p-6 text-center">
-                <h3 className="text-lg font-semibold mb-4">Scan to Join Room {room?.code}</h3>
-                <div className="bg-white p-4 rounded-lg inline-block shadow-lg mb-4">
+          <div
+            ref={qrPanelRef}
+            className="fixed z-40 select-none"
+            style={{
+              left: qrPosition.x,
+              top: qrPosition.y,
+              cursor: isDraggingQR ? 'grabbing' : 'default'
+            }}
+          >
+            <Card className="w-64 shadow-2xl border-2 border-uno-blue/50 bg-white/98 backdrop-blur-sm animate-in slide-in-from-top-2 duration-200">
+              <CardContent className="p-4">
+                {/* Drag handle */}
+                <div
+                  className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing"
+                  onMouseDown={handleQRDragStart}
+                  onTouchStart={handleQRDragStart}
+                >
+                  <div className="flex items-center gap-2">
+                    <GripVertical className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm font-semibold text-gray-700">Room {room?.code}</span>
+                  </div>
+                  <button
+                    onClick={() => setShowQRCode(false)}
+                    className="text-gray-400 hover:text-gray-600 p-1"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                
+                {/* QR Code */}
+                <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 mb-3">
                   <img 
                     src={qrCodeData} 
                     alt={`QR Code for room ${room?.code}`}
-                    className="w-48 h-48"
+                    className="w-full h-auto"
                   />
                 </div>
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={handleCopyLink}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-uno-blue text-white hover:bg-blue-600"
-                  >
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy Link
-                  </Button>
-                  <Button
-                    onClick={() => setShowQRCode(false)}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                  >
-                    Close
-                  </Button>
-                </div>
+                
+                {/* Copy Link Button */}
+                <Button
+                  onClick={handleCopyLink}
+                  variant="outline"
+                  size="sm"
+                  className="w-full bg-uno-blue text-white hover:bg-blue-600"
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Link
+                </Button>
               </CardContent>
             </Card>
           </div>
