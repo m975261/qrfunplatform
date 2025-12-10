@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card as UICard } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tv, Home, Users, Share2, MessageCircle } from "lucide-react";
+import { Tv, Home, Users, Share2 } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import StreamGameBoard from "@/components/game/StreamGameBoard";
-import ColorPickerModal from "@/components/game/ColorPickerModal";
 
 export default function StreamPlayerPage() {
   const [, playerParams] = useRoute("/stream/:roomId/player/:slot");
@@ -19,19 +18,10 @@ export default function StreamPlayerPage() {
   const isHostGame = !!hostParams?.roomId;
   const roomCode = new URLSearchParams(search).get('code') || undefined;
   
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [handRefreshKey, setHandRefreshKey] = useState(0);
-  const [cardAnimation, setCardAnimation] = useState<{
-    card: any;
-    from: 'player' | 'opponent' | 'deck';
-    to: 'discard' | 'player';
-    show: boolean;
-  } | null>(null);
   const { toast } = useToast();
   
   const { 
     gameState, 
-    setGameState,
     joinRoom, 
     playCard, 
     drawCard, 
@@ -48,82 +38,27 @@ export default function StreamPlayerPage() {
     }
   }, [isConnected, roomId, playerId, joinRoom]);
 
-  useEffect(() => {
-    if (gameState?.colorChoiceRequested || (gameState?.room?.waitingForColorChoice === playerId)) {
-      setShowColorPicker(true);
-    }
-  }, [gameState?.colorChoiceRequested, gameState?.room?.waitingForColorChoice, playerId]);
-
   const room = gameState?.room;
   const players = gameState?.players || [];
   
   const myPlayer = players.find((p: any) => p.id === playerId);
-  const myHand = myPlayer?.hand || [];
   const isMyTurn = room?.currentPlayerIndex === myPlayer?.position;
+  const isSpectator = myPlayer?.isSpectator === true || myPlayer?.position == null;
   
   const gamePlayers = players.filter((p: any) => 
     !p.isSpectator && p.position !== null && p.position !== undefined
   );
 
-  const topCard = room?.topCard || room?.discardPile?.[room?.discardPile?.length - 1];
-  const currentColor = room?.currentColor;
-
-  const canPlayCard = (card: any) => {
-    if (!topCard || !isMyTurn) return false;
-    if (card.type === 'wild' || card.type === 'wild4') return true;
-    if (card.color === currentColor) return true;
-    if (card.color === topCard.color) return true;
-    if (card.type === 'number' && topCard.type === 'number' && card.number === topCard.number) return true;
-    if (card.type === topCard.type && card.type !== 'number') return true;
-    return false;
-  };
-
   const handlePlayCard = (cardIndex: number) => {
-    const card = myHand[cardIndex];
-    if (!card || !canPlayCard(card)) return;
-    
-    setCardAnimation({
-      card: { ...card },
-      from: 'player',
-      to: 'discard',
-      show: true
-    });
-    setTimeout(() => setCardAnimation(null), 400);
-    
     playCard(cardIndex);
   };
 
   const handleColorChoice = (color: string) => {
     chooseColor(color as 'red' | 'yellow' | 'green' | 'blue');
-    setShowColorPicker(false);
-    
-    setGameState((prev: any) => ({
-      ...prev,
-      colorChoiceRequested: false,
-      selectedColor: color,
-      room: {
-        ...prev?.room,
-        currentColor: color,
-        waitingForColorChoice: null
-      },
-      forceRefresh: Math.random(),
-    }));
-    
-    setHandRefreshKey(prev => prev + 1);
-    setTimeout(() => setHandRefreshKey(prev => prev + 1), 1);
-    setTimeout(() => setHandRefreshKey(prev => prev + 1), 5);
-    setTimeout(() => setHandRefreshKey(prev => prev + 1), 10);
   };
 
   const handleDrawCard = () => {
     if (isMyTurn) {
-      setCardAnimation({
-        card: null,
-        from: 'deck',
-        to: 'player',
-        show: true
-      });
-      setTimeout(() => setCardAnimation(null), 350);
       drawCard();
     }
   };
@@ -211,25 +146,14 @@ export default function StreamPlayerPage() {
       <StreamGameBoard
         room={room}
         players={players}
-        currentPlayerId={playerId}
-        isMyTurn={isMyTurn}
+        currentPlayerId={playerId || undefined}
         onPlayCard={handlePlayCard}
         onDrawCard={handleDrawCard}
         onCallUno={handleCallUno}
-        canPlayCard={canPlayCard}
-        streamingHostDisconnected={streamingHostDisconnected}
-        streamingHostDeadlineMs={streamingHostDeadlineMs}
-        streamingHostName={streamingHostName}
-        handRefreshKey={handRefreshKey}
-        cardAnimation={cardAnimation}
+        onChooseColor={handleColorChoice}
+        isSpectator={isSpectator}
+        colorChoiceRequested={gameState?.colorChoiceRequested || room?.waitingForColorChoice === playerId}
       />
-
-      {showColorPicker && (
-        <ColorPickerModal
-          onChooseColor={handleColorChoice}
-          onClose={() => setShowColorPicker(false)}
-        />
-      )}
     </div>
   );
 }

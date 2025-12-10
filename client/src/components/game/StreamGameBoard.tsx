@@ -5,10 +5,13 @@ interface StreamGameBoardProps {
   room: any;
   players: any[];
   currentPlayerId?: string;
-  onPlayCard?: (cardId: string, color?: string) => void;
+  onPlayCard?: (cardIndex: number) => void;
   onDrawCard?: () => void;
   onCallUno?: () => void;
+  onChooseColor?: (color: string) => void;
   isSpectator?: boolean;
+  colorChoiceRequested?: boolean;
+  cardAnimation?: { type: string; playerId?: string } | null;
 }
 
 export default function StreamGameBoard({
@@ -18,11 +21,13 @@ export default function StreamGameBoard({
   onPlayCard,
   onDrawCard,
   onCallUno,
+  onChooseColor,
   isSpectator = false,
+  colorChoiceRequested = false,
+  cardAnimation = null,
 }: StreamGameBoardProps) {
-  const [playingCardId, setPlayingCardId] = useState<string | null>(null);
+  const [playingCardIndex, setPlayingCardIndex] = useState<number | null>(null);
   const [drawingCard, setDrawingCard] = useState(false);
-  const [colorPickerCard, setColorPickerCard] = useState<any>(null);
 
   const gamePlayers = players
     .filter((p: any) => !p.isSpectator && p.position !== null && p.position !== undefined)
@@ -42,6 +47,13 @@ export default function StreamGameBoard({
     return gamePlayers.find((player: any) => player.position === position) || null;
   };
 
+  const getPlayerAvatar = (id: string) => {
+    const savedAvatar = localStorage.getItem(`avatar_${id}`);
+    if (savedAvatar === 'male') return '👨';
+    if (savedAvatar === 'female') return '👩';
+    return '👨';
+  };
+
   const isCardPlayable = (card: any) => {
     if (!isMyTurn || !topCard || isSpectator) return false;
     if (pendingDraw > 0) return false;
@@ -53,28 +65,14 @@ export default function StreamGameBoard({
     return false;
   };
 
-  const handleCardClick = (card: any) => {
+  const handleCardClick = (cardIndex: number, card: any) => {
     if (!isCardPlayable(card) || !onPlayCard) return;
-    if (card.type === "wild" || card.type === "wild4") {
-      setColorPickerCard(card);
-      return;
-    }
-    setPlayingCardId(card.id);
+    
+    setPlayingCardIndex(cardIndex);
     setTimeout(() => {
-      onPlayCard(card.id);
-      setPlayingCardId(null);
+      onPlayCard(cardIndex);
+      setPlayingCardIndex(null);
     }, 300);
-  };
-
-  const handleColorSelect = (color: string) => {
-    if (colorPickerCard && onPlayCard) {
-      setPlayingCardId(colorPickerCard.id);
-      setTimeout(() => {
-        onPlayCard(colorPickerCard.id, color);
-        setPlayingCardId(null);
-        setColorPickerCard(null);
-      }, 300);
-    }
   };
 
   const handleDraw = () => {
@@ -84,15 +82,22 @@ export default function StreamGameBoard({
     setTimeout(() => setDrawingCard(false), 400);
   };
 
-  const PlayerSilhouette = ({ player, position, isCurrentTurn }: { player: any; position: number; isCurrentTurn: boolean }) => {
+  const handleColorSelect = (color: string) => {
+    if (onChooseColor) {
+      onChooseColor(color);
+    }
+  };
+
+  const PlayerSlot = ({ player, position, isCurrentTurn }: { player: any; position: number; isCurrentTurn: boolean }) => {
     const cardCount = player?.hand?.length || player?.cardCount || 0;
     const isOnline = player?.isOnline !== false;
+    const isAnimating = cardAnimation?.playerId === player?.id;
 
     const positionStyles: { [key: number]: string } = {
       0: "top-0 left-1/2 -translate-x-1/2",
-      1: "right-0 top-1/2 -translate-y-1/2 md:right-2",
-      2: "bottom-0 left-1/2 -translate-x-1/2",
-      3: "left-0 top-1/2 -translate-y-1/2 md:left-2",
+      1: "right-0 top-1/2 -translate-y-1/2",
+      2: "bottom-16 left-1/2 -translate-x-1/2",
+      3: "left-0 top-1/2 -translate-y-1/2",
     };
 
     const cardRotations: { [key: number]: string } = {
@@ -105,8 +110,8 @@ export default function StreamGameBoard({
     if (!player) {
       return (
         <div className={`absolute ${positionStyles[position]} z-10`}>
-          <div className="w-16 h-20 md:w-20 md:h-24 rounded-lg bg-gray-700/30 border-2 border-dashed border-gray-600 flex items-center justify-center">
-            <span className="text-gray-500 text-xs">Empty</span>
+          <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-700/50 border-2 border-dashed border-gray-500 flex items-center justify-center">
+            <span className="text-gray-400 text-xs">Empty</span>
           </div>
         </div>
       );
@@ -114,65 +119,78 @@ export default function StreamGameBoard({
 
     return (
       <div className={`absolute ${positionStyles[position]} z-10`}>
-        <div className={`relative flex flex-col items-center transition-all duration-300 ${isCurrentTurn ? "scale-110" : ""}`}>
+        <div className={`relative flex flex-col items-center transition-all duration-300 ${isCurrentTurn ? "scale-105" : ""}`}>
           <div className={`relative ${cardRotations[position]}`}>
-            <div className="flex -space-x-6 md:-space-x-8">
+            <div className="flex -space-x-4 md:-space-x-5">
               {Array.from({ length: Math.min(cardCount, 5) }).map((_, i) => (
                 <div
                   key={i}
-                  className="w-8 h-12 md:w-10 md:h-14 bg-gradient-to-br from-blue-600 to-blue-800 rounded-md border-2 border-blue-400 shadow-lg transform transition-transform"
+                  className={`w-6 h-9 md:w-8 md:h-11 bg-gradient-to-br from-blue-600 to-blue-800 rounded border border-blue-400 shadow-md transform transition-all ${
+                    isAnimating && cardAnimation?.type === 'play' ? 'animate-pulse' : ''
+                  }`}
                   style={{
-                    transform: `rotate(${(i - Math.min(cardCount, 5) / 2) * 8}deg)`,
+                    transform: `rotate(${(i - Math.min(cardCount, 5) / 2) * 6}deg)`,
                     zIndex: i,
                   }}
                 >
                   <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-4 h-6 md:w-5 md:h-8 rounded-sm bg-blue-900 flex items-center justify-center">
-                      <span className="text-white text-[8px] md:text-xs font-bold">UNO</span>
-                    </div>
+                    <span className="text-white text-[6px] md:text-[8px] font-bold">U</span>
                   </div>
                 </div>
               ))}
             </div>
             {cardCount > 5 && (
-              <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1 rounded-full font-bold">
                 +{cardCount - 5}
               </div>
             )}
           </div>
 
           <div
-            className={`mt-2 px-2 py-1 rounded-full text-xs font-bold shadow-lg transition-all ${
+            className={`mt-1 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xl md:text-2xl shadow-lg border-3 transition-all ${
               isCurrentTurn
-                ? "bg-green-500 text-white ring-2 ring-green-300 animate-pulse"
+                ? "bg-gradient-to-br from-green-400 to-green-600 border-green-300 ring-2 ring-green-400/50 animate-pulse"
+                : "bg-gradient-to-br from-blue-500 to-blue-700 border-blue-400"
+            }`}
+          >
+            {getPlayerAvatar(player.id)}
+          </div>
+
+          <div
+            className={`mt-1 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold shadow-lg transition-all max-w-[80px] truncate ${
+              isCurrentTurn
+                ? "bg-green-500 text-white"
                 : "bg-black/70 text-white"
             }`}
           >
             {player.nickname}
-            {isCurrentTurn && " ⭐"}
           </div>
 
           <div
-            className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border border-white ${
+            className={`absolute top-6 -right-1 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white ${
               isOnline ? "bg-green-500" : "bg-red-500"
             }`}
           />
 
           {player.id === room?.hostId && (
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-sm">👑</div>
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs">👑</div>
           )}
 
           {cardCount <= 1 && player.hasCalledUno && (
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-pulse whitespace-nowrap">
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold animate-pulse whitespace-nowrap">
               UNO!
             </div>
           )}
 
           {player.finishPosition && (
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-[8px] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
               {player.finishPosition === 1 ? "1ST" : player.finishPosition === 2 ? "2ND" : player.finishPosition === 3 ? "3RD" : `${player.finishPosition}TH`}
             </div>
           )}
+
+          <div className="absolute -left-2 top-8 bg-slate-800 text-white text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow border border-slate-600">
+            {cardCount}
+          </div>
         </div>
       </div>
     );
@@ -183,23 +201,23 @@ export default function StreamGameBoard({
       <style>{`
         @keyframes cardPlayUp { 
           0% { transform: translateY(0) scale(1); opacity: 1; }
-          100% { transform: translateY(-150px) scale(0.7); opacity: 0; }
+          100% { transform: translateY(-100px) scale(0.6); opacity: 0; }
         }
         @keyframes cardDraw { 
-          0% { transform: translateY(-50px) scale(0.8); opacity: 0; }
+          0% { transform: translateY(-30px) scale(0.8); opacity: 0; }
           100% { transform: translateY(0) scale(1); opacity: 1; }
         }
-        .animate-card-play { animation: cardPlayUp 0.4s ease-out forwards; }
-        .animate-card-draw { animation: cardDraw 0.35s ease-out forwards; }
+        .animate-card-play { animation: cardPlayUp 0.35s ease-out forwards; }
+        .animate-card-draw { animation: cardDraw 0.3s ease-out forwards; }
       `}</style>
 
       {room?.status === "playing" && currentGamePlayer && (
-        <div className={`fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-lg border-2 transition-all ${
+        <div className={`fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1 md:px-4 md:py-1.5 rounded-full shadow-lg border-2 transition-all ${
           isMyTurn 
             ? (pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
             : 'bg-yellow-600/90 border-yellow-400'
         }`}>
-          <div className="text-white font-bold text-xs md:text-sm text-center flex items-center gap-1 md:gap-2">
+          <div className="text-white font-bold text-[10px] md:text-xs text-center flex items-center gap-1">
             {isMyTurn ? (
               pendingDraw > 0 ? (
                 <span>⚠️ DRAW {pendingDraw}!</span>
@@ -207,25 +225,21 @@ export default function StreamGameBoard({
                 <span>⭐ YOUR TURN</span>
               )
             ) : (
-              pendingDraw > 0 ? (
-                <span>🎮 {currentGamePlayer.nickname} draws {pendingDraw}</span>
-              ) : (
-                <span>🎮 {currentGamePlayer.nickname}'s turn</span>
-              )
+              <span>🎮 {currentGamePlayer.nickname}'s turn</span>
             )}
           </div>
         </div>
       )}
 
-      <div className="absolute inset-0 flex items-center justify-center p-4 pt-12 pb-32 md:pb-40">
-        <div className="relative w-full max-w-md md:max-w-xl aspect-[4/3] md:aspect-video">
-          <div className="absolute inset-[15%] md:inset-[20%] rounded-full bg-gradient-to-br from-slate-700 to-slate-800 shadow-2xl border-4 border-slate-600" />
+      <div className="absolute inset-0 flex items-center justify-center p-2 pt-10 pb-28 md:pb-36">
+        <div className="relative w-full max-w-sm md:max-w-lg aspect-square">
+          <div className="absolute inset-[20%] rounded-full bg-gradient-to-br from-slate-700 to-slate-800 shadow-2xl border-4 border-slate-600" />
 
           {[0, 1, 2, 3].map((position) => {
             const player = getPlayerAtPosition(position);
             const isCurrentTurn = currentGamePlayer?.id === player?.id;
             return (
-              <PlayerSilhouette
+              <PlayerSlot
                 key={position}
                 player={player}
                 position={position}
@@ -235,30 +249,29 @@ export default function StreamGameBoard({
           })}
 
           <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-3">
               <div
-                className={`w-12 h-16 md:w-16 md:h-22 lg:w-20 lg:h-28 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center cursor-pointer hover:scale-105 transition-transform ${
+                className={`w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center cursor-pointer hover:scale-105 transition-transform ${
                   drawingCard ? "animate-card-draw" : ""
                 } ${isMyTurn && !isSpectator ? "ring-2 ring-green-400" : ""}`}
                 onClick={handleDraw}
               >
-                <div className="text-white text-xs md:text-sm font-bold text-center">
+                <div className="text-white text-[8px] md:text-xs font-bold text-center">
                   DRAW
-                  <div className="text-[10px] md:text-xs opacity-70">PILE</div>
                 </div>
               </div>
 
               {topCard && (
-                <div className="transform scale-90 md:scale-100 lg:scale-110">
+                <div className="transform scale-75 md:scale-100">
                   <GameCard card={topCard} size="large" interactive={false} onClick={() => {}} />
                 </div>
               )}
             </div>
 
             {currentColor && (topCard?.type === "wild" || topCard?.type === "wild4") && (
-              <div className="absolute -bottom-8 md:-bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center">
+              <div className="absolute -bottom-6 md:-bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center">
                 <div
-                  className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-white shadow-lg ${
+                  className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-white shadow-lg ${
                     currentColor === "red" ? "bg-red-500"
                     : currentColor === "yellow" ? "bg-yellow-500"
                     : currentColor === "blue" ? "bg-blue-500"
@@ -266,15 +279,15 @@ export default function StreamGameBoard({
                     : "bg-gray-500"
                   }`}
                 />
-                <span className="text-[10px] md:text-xs text-white font-bold mt-1 uppercase">{currentColor}</span>
+                <span className="text-[8px] md:text-[10px] text-white font-bold mt-0.5 uppercase">{currentColor}</span>
               </div>
             )}
           </div>
 
           {room?.direction && room?.status === "playing" && (
-            <div className="absolute top-2 left-2 md:top-4 md:left-4 z-30">
-              <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
-                <span className="text-white text-lg md:text-xl">
+            <div className="absolute top-2 left-2 z-30">
+              <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg w-8 h-8 md:w-10 md:h-10 flex items-center justify-center">
+                <span className="text-white text-sm md:text-lg">
                   {room.direction === "clockwise" ? "↻" : "↺"}
                 </span>
               </div>
@@ -284,37 +297,37 @@ export default function StreamGameBoard({
       </div>
 
       {!isSpectator && myHand.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/90 to-transparent">
-          <div className="container mx-auto px-2 py-2 md:px-4 md:py-3 relative">
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-black/95 to-black/70">
+          <div className="container mx-auto px-2 py-2 relative">
             {onCallUno && (
-              <div className="absolute top-2 right-2 z-50">
+              <div className="absolute top-1 right-2 z-50">
                 <button
                   onClick={onCallUno}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm shadow-lg animate-pulse border-2 border-red-500"
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold px-2 py-1 rounded text-[10px] md:text-xs shadow-lg animate-pulse border border-red-500"
                 >
-                  🔥 UNO! 🔥
+                  🔥 UNO!
                 </button>
               </div>
             )}
 
-            <div className="flex justify-center">
-              <div className="flex items-end gap-1 overflow-x-auto pb-2 px-2 scrollbar-hide max-w-full">
+            <div className="flex justify-center overflow-x-auto pb-1 scrollbar-hide">
+              <div className="flex items-end gap-0.5 px-2">
                 {myHand.map((card: any, index: number) => {
                   const playable = isCardPlayable(card);
-                  const isPlaying = playingCardId === card.id;
+                  const isPlaying = playingCardIndex === index;
                   return (
                     <div
-                      key={card.id}
+                      key={index}
                       className={`flex-shrink-0 transition-all duration-200 ${
-                        playable ? "hover:-translate-y-3 cursor-pointer" : "opacity-60"
+                        playable ? "hover:-translate-y-2 cursor-pointer" : "opacity-50"
                       } ${isPlaying ? "animate-card-play" : ""}`}
                       style={{
-                        marginLeft: index > 0 ? "-1rem" : "0",
+                        marginLeft: index > 0 ? "-0.75rem" : "0",
                         zIndex: index,
                       }}
-                      onClick={() => handleCardClick(card)}
+                      onClick={() => handleCardClick(index, card)}
                     >
-                      <div className="transform scale-75 md:scale-90 lg:scale-100">
+                      <div className="transform scale-[0.6] md:scale-75 lg:scale-90 origin-bottom">
                         <GameCard
                           card={card}
                           size="medium"
@@ -331,16 +344,16 @@ export default function StreamGameBoard({
         </div>
       )}
 
-      {colorPickerCard && (
+      {colorChoiceRequested && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
           <div className="bg-slate-800 rounded-xl p-4 md:p-6 border-2 border-slate-600 shadow-2xl">
-            <h3 className="text-white text-lg md:text-xl font-bold text-center mb-4">Choose Color</h3>
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <h3 className="text-white text-base md:text-lg font-bold text-center mb-3">Choose Color</h3>
+            <div className="grid grid-cols-2 gap-2 md:gap-3">
               {["red", "yellow", "green", "blue"].map((color) => (
                 <button
                   key={color}
                   onClick={() => handleColorSelect(color)}
-                  className={`w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-lg transform hover:scale-110 transition-transform ${
+                  className={`w-12 h-12 md:w-16 md:h-16 rounded-full border-3 border-white shadow-lg transform hover:scale-110 transition-transform ${
                     color === "red" ? "bg-red-500"
                     : color === "yellow" ? "bg-yellow-500"
                     : color === "green" ? "bg-green-500"
@@ -349,12 +362,6 @@ export default function StreamGameBoard({
                 />
               ))}
             </div>
-            <button
-              onClick={() => setColorPickerCard(null)}
-              className="mt-4 w-full py-2 text-gray-400 hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}
