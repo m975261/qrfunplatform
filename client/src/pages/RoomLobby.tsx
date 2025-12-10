@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil } from "lucide-react";
+import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/hooks/useSocket";
@@ -91,6 +91,16 @@ export default function RoomLobby() {
     const roomLink = `${window.location.origin}/?room=${gameState?.room?.code}`;
     navigator.clipboard.writeText(roomLink);
     // Link copied - no toast notification needed
+  };
+
+  const handleCopyStreamUrl = () => {
+    const streamUrl = `${window.location.origin}/stream/${roomId}?code=${gameState?.room?.code}`;
+    navigator.clipboard.writeText(streamUrl);
+    toast({
+      title: "Stream URL Copied!",
+      description: "Use this URL in OBS or your streaming software",
+      duration: 2000,
+    });
   };
 
   const handleStartGame = () => {
@@ -281,12 +291,32 @@ export default function RoomLobby() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Room <span className="font-mono text-uno-blue">{room?.code}</span>
-                </h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Room <span className="font-mono text-uno-blue">{room?.code}</span>
+                  </h2>
+                  {isStreamingMode && (
+                    <span className="bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <Tv className="w-3 h-3" />
+                      STREAMING
+                    </span>
+                  )}
+                </div>
                 <p className="text-gray-600">Waiting for players to join...</p>
               </div>
               <div className="flex items-center space-x-3">
+                {/* Stream URL button for Streaming Mode */}
+                {isStreamingMode && isHost && (
+                  <Button
+                    onClick={handleCopyStreamUrl}
+                    variant="outline"
+                    size="sm"
+                    className="bg-purple-600 text-white hover:bg-purple-700"
+                  >
+                    <Tv className="mr-2 h-4 w-4" />
+                    Stream URL
+                  </Button>
+                )}
                 <Button
                   onClick={handleCopyLink}
                   variant="outline"
