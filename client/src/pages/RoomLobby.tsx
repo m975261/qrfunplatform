@@ -534,7 +534,7 @@ export default function RoomLobby() {
                     <GripVertical className="h-4 w-4 text-white/70" />
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-white">Room {room?.code}</span>
-                      <span className="text-xs text-white/80">QrFun.net/uno</span>
+                      <span className="text-xs font-bold text-white">QrFun.org</span>
                     </div>
                   </div>
                   <button
@@ -554,15 +554,19 @@ export default function RoomLobby() {
                   />
                 </div>
                 
-                {/* Copy Link Button */}
+                {/* Copy Code Button */}
                 <Button
-                  onClick={handleCopyLink}
+                  onClick={() => {
+                    if (room?.code) {
+                      navigator.clipboard.writeText(room.code);
+                    }
+                  }}
                   variant="outline"
                   size="sm"
                   className="w-full bg-uno-blue text-white hover:bg-blue-600"
                 >
                   <Copy className="mr-2 h-4 w-4" />
-                  Copy Link
+                  Copy Code
                 </Button>
               </CardContent>
             </Card>
