@@ -2872,21 +2872,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        // Tally votes with new logic:
-        // 1. Only give host to highest vote if ALL players voted AND clear winner
-        // 2. If tie or not all voted, default to position 1, then 2, then 3
-        // 3. NO_HOST only wins if ALL players voted for it
+        // Tally votes with simplified logic:
+        // 1. NO_HOST only wins if ALL players voted for it
+        // 2. If any player vote exists and clear winner, give them host
+        // 3. If tie or no votes, default to 2nd slot, then 3rd, then 4th
         const votes = currentRoom.hostElectionVotes || {};
         const eligibleVoters = currentRoom.hostElectionEligibleVoters || [];
         const totalVotes = Object.keys(votes).length;
-        const allPlayersVoted = totalVotes === eligibleVoters.length && eligibleVoters.length > 0;
         
         const voteCounts: { [key: string]: number } = {};
         Object.values(votes).forEach((candidateId: any) => {
           voteCounts[candidateId] = (voteCounts[candidateId] || 0) + 1;
         });
         
-        console.log(`Election tally: ${totalVotes}/${eligibleVoters.length} voted, allVoted=${allPlayersVoted}, votes:`, voteCounts);
+        console.log(`Election tally: ${totalVotes}/${eligibleVoters.length} voted, votes:`, voteCounts);
         
         // Get default host by position priority: 2nd slot (pos 1), 3rd (pos 2), 4th (pos 3), then 1st (pos 0)
         const getDefaultHost = () => {
@@ -2908,6 +2907,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
+        // Check if ALL players voted for NO_HOST
+        const allVotedNoHost = noHostVotes === eligibleVoters.length && eligibleVoters.length > 0;
+        
         // Find highest voted player (excluding NO_HOST)
         let highestPlayerVotes = 0;
         let highestVotedPlayerId: string | null = null;
@@ -2924,16 +2926,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         let winnerId: string | null = null;
         
-        // Only give host to highest vote if ALL players voted AND there's a clear winner
-        if (allPlayersVoted && !isTie && highestVotedPlayerId && highestPlayerVotes > noHostVotes) {
-          winnerId = highestVotedPlayerId;
-          console.log(`All players voted, clear winner: ${winnerId} with ${highestPlayerVotes} votes`);
-        } else if (allPlayersVoted && noHostVotes > highestPlayerVotes && !isTie) {
-          // Only NO_HOST wins if ALL voted and it has more votes than any player
+        // Rule 1: NO_HOST only wins if ALL players voted for it
+        if (allVotedNoHost) {
           winnerId = 'NO_HOST';
           console.log(`All players voted for NO_HOST: ${noHostVotes} votes`);
-        } else {
-          // Default to position-based fallback (2nd, 3rd, 4th slot priority)
+        }
+        // Rule 2: If any player vote exists and clear winner, give them host
+        else if (highestVotedPlayerId && !isTie) {
+          winnerId = highestVotedPlayerId;
+          console.log(`Highest voted player: ${winnerId} with ${highestPlayerVotes} votes`);
+        }
+        // Rule 3: Tie or no votes - default to position 2nd, 3rd, 4th
+        else {
           const defaultHost = getDefaultHost();
           if (defaultHost) {
             winnerId = defaultHost.id;
@@ -3989,21 +3993,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        // Tally votes with new logic:
-        // 1. Only give host to highest vote if ALL players voted AND clear winner
-        // 2. If tie or not all voted, default to position 1, then 2, then 3
-        // 3. NO_HOST only wins if ALL players voted for it
+        // Tally votes with simplified logic:
+        // 1. NO_HOST only wins if ALL players voted for it
+        // 2. If any player vote exists and clear winner, give them host
+        // 3. If tie or no votes, default to 2nd slot, then 3rd, then 4th
         const votes = currentRoom.hostElectionVotes || {};
         const eligibleVoters = currentRoom.hostElectionEligibleVoters || [];
         const totalVotes = Object.keys(votes).length;
-        const allPlayersVoted = totalVotes === eligibleVoters.length && eligibleVoters.length > 0;
         
         const voteCounts: { [key: string]: number } = {};
         Object.values(votes).forEach((candidateId: any) => {
           voteCounts[candidateId] = (voteCounts[candidateId] || 0) + 1;
         });
         
-        console.log(`Election tally: ${totalVotes}/${eligibleVoters.length} voted, allVoted=${allPlayersVoted}, votes:`, voteCounts);
+        console.log(`Election tally: ${totalVotes}/${eligibleVoters.length} voted, votes:`, voteCounts);
         
         // Get default host by position priority: 2nd slot (pos 1), 3rd (pos 2), 4th (pos 3), then 1st (pos 0)
         const getDefaultHost = () => {
@@ -4025,6 +4028,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
+        // Check if ALL players voted for NO_HOST
+        const allVotedNoHost = noHostVotes === eligibleVoters.length && eligibleVoters.length > 0;
+        
         // Find highest voted player (excluding NO_HOST)
         let highestPlayerVotes = 0;
         let highestVotedPlayerId: string | null = null;
@@ -4041,16 +4047,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         let winnerId: string | null = null;
         
-        // Only give host to highest vote if ALL players voted AND there's a clear winner
-        if (allPlayersVoted && !isTie && highestVotedPlayerId && highestPlayerVotes > noHostVotes) {
-          winnerId = highestVotedPlayerId;
-          console.log(`All players voted, clear winner: ${winnerId} with ${highestPlayerVotes} votes`);
-        } else if (allPlayersVoted && noHostVotes > highestPlayerVotes && !isTie) {
-          // Only NO_HOST wins if ALL voted and it has more votes than any player
+        // Rule 1: NO_HOST only wins if ALL players voted for it
+        if (allVotedNoHost) {
           winnerId = 'NO_HOST';
           console.log(`All players voted for NO_HOST: ${noHostVotes} votes`);
-        } else {
-          // Default to position-based fallback (2nd, 3rd, 4th slot priority)
+        }
+        // Rule 2: If any player vote exists and clear winner, give them host
+        else if (highestVotedPlayerId && !isTie) {
+          winnerId = highestVotedPlayerId;
+          console.log(`Highest voted player: ${winnerId} with ${highestPlayerVotes} votes`);
+        }
+        // Rule 3: Tie or no votes - default to position 2nd, 3rd, 4th
+        else {
           const defaultHost = getDefaultHost();
           if (defaultHost) {
             winnerId = defaultHost.id;
