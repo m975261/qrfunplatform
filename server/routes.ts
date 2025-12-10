@@ -4380,17 +4380,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const messages = await storage.getMessagesByRoom(roomId, 20);
     
     // Add online status to players - check for active connections (only latest per user)
-    // CRITICAL FIX: Remove duplicate players with same nickname
+    // CRITICAL FIX: Remove duplicate players with same nickname ONLY if they are ghost/left records
+    // Do NOT dedupe different active players who happen to have same nickname
     const uniquePlayers = players.reduce((acc, player) => {
       const existing = acc.find(p => p.nickname.toLowerCase() === player.nickname.toLowerCase());
       if (existing) {
-        // Keep the non-spectator one, or the one that's not left, or the more recent one
-        if (!player.isSpectator && existing.isSpectator) {
-          return acc.map(p => p.id === existing.id ? player : p);
+        // Only dedupe if one has left (ghost record) - otherwise keep both as separate players
+        if (player.hasLeft && !existing.hasLeft) {
+          // Current player left, existing is active - keep existing only
+          return acc;
         } else if (!player.hasLeft && existing.hasLeft) {
+          // Existing left, current player is active - replace with current
           return acc.map(p => p.id === existing.id ? player : p);
         }
-        // Keep existing if it's better
+        // Both are active or both left - keep both as they may be different people
+        // This allows spectators and players to coexist with same nickname
+        acc.push(player);
         return acc;
       } else {
         acc.push(player);
