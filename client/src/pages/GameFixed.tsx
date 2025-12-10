@@ -259,14 +259,22 @@ export default function Game() {
       setHostCanReturn(gameState.hostCanReturn ?? true);
       // Don't reset hasVoted here - let it persist until election ends
     } else {
-      // Reset all election state when election ends
+      // Reset all election state when election ends or host returns
+      console.log("🟢 Election ended - clearing all voting state");
       setHasVoted(false);
       setElectionCandidates([]);
       setElectionVotes({});
       setHostDisconnectedWarning(null);
       setHostCanReturn(true);
+      setShowVotingWindow(false); // Force close voting window
+      // Stop countdown timer
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      setElectionCountdown(30);
     }
-  }, [gameState?.hostElectionActive, gameState?.electionCandidates, gameState?.hostCanReturn]);
+  }, [gameState?.hostElectionActive]);
 
   useEffect(() => {
     if (gameState?.electionVotes) {
