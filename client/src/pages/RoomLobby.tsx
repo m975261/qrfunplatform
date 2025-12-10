@@ -508,7 +508,8 @@ export default function RoomLobby() {
                   ))}
                 </div>
                 <div className="mt-2 text-xs text-gray-500 text-center">
-                  {isHost ? "Click spectators to assign to slots" : "Click empty slots to join"}
+                  {isHost ? "Click spectators to assign to slots" : 
+                   isStreamingMode ? "Wait for host to assign you a slot" : "Click empty slots to join"}
                 </div>
               </CardContent>
             </Card>
