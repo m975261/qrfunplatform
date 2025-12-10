@@ -1619,6 +1619,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Host successfully assigned spectator ${spectator.nickname} to position ${position} during active game`);
       
+      // CRITICAL: Check if this is the host returning to the game (or any spectator being assigned during election)
+      // If election is active, clear it and notify all clients to close voting windows
+      if (room.hostElectionActive || room.hostDisconnectedAt) {
+        console.log(`🟢 Spectator assigned during active election - clearing election state and closing voting windows`);
+        
+        // Clear election state
+        await storage.updateRoom(roomId, {
+          hostDisconnectedAt: null,
+          hostElectionActive: false,
+          hostElectionVotes: {},
+          hostElectionEligibleVoters: []
+        });
+        
+        // Cancel any pending election timer
+        const timer = hostDisconnectTimers.get(roomId);
+        if (timer) {
+          clearTimeout(timer);
+          hostDisconnectTimers.delete(roomId);
+        }
+        
+        // Notify all clients to close voting windows
+        broadcastToRoom(roomId, {
+          type: 'host_reconnected',
+          message: 'Host has returned. Election cancelled.'
+        });
+      }
+      
       // Broadcast updated room state
       await broadcastRoomState(roomId);
       
