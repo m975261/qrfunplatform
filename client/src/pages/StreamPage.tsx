@@ -60,6 +60,9 @@ export default function StreamPage() {
   const gamePlayers = players.filter((p: any) => 
     !p.isSpectator && p.position !== null && p.position !== undefined
   );
+  
+  // Spectators - players without a position
+  const spectators = players.filter((p: any) => p.isSpectator && p.isOnline);
 
   const getPositionClass = (position: number): string => {
     const positions = [
@@ -298,6 +301,40 @@ export default function StreamPage() {
               <span className="text-2xl">{room.direction === 'clockwise' ? '↻' : '↺'}</span>
               <span className="text-black font-bold">{room.direction === 'clockwise' ? 'Clockwise' : 'Counter-Clockwise'}</span>
             </div>
+          </div>
+        )}
+
+        {/* Spectators Table - Same style as RoomLobby */}
+        {spectators.length > 0 && (
+          <div className="w-full flex justify-center mb-6">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-xl" style={{
+              width: 'min(20rem, 90vw)',
+            }}>
+              <CardContent className="p-3">
+                <div className="text-xs font-semibold text-gray-700 mb-2 text-center">
+                  Spectators ({spectators.length})
+                </div>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {spectators.map((spectator: any, index: number) => (
+                    <div key={spectator.id}>
+                      <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-50">
+                        <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                          {spectator.nickname?.[0]?.toUpperCase()}
+                        </div>
+                        <span className="text-xs text-gray-700 flex-1 truncate">{spectator.nickname}</span>
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+                      </div>
+                      {index < spectators.length - 1 && (
+                        <hr className="border-gray-200 mx-1" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 text-xs text-gray-500 text-center">
+                  Waiting for host to assign slots
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
