@@ -20,6 +20,7 @@ export default function RoomLobby() {
   const [isDraggingQR, setIsDraggingQR] = useState(false);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const qrPanelRef = useRef<HTMLDivElement>(null);
+  const qrButtonRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
   const { 
     gameState, 
@@ -292,7 +293,17 @@ export default function RoomLobby() {
                   Copy Link
                 </Button>
                 <Button
-                  onClick={() => setShowQRCode(!showQRCode)}
+                  ref={qrButtonRef}
+                  onClick={() => {
+                    if (!showQRCode && qrButtonRef.current) {
+                      const rect = qrButtonRef.current.getBoundingClientRect();
+                      setQrPosition({
+                        x: rect.left,
+                        y: rect.bottom + 8
+                      });
+                    }
+                    setShowQRCode(!showQRCode);
+                  }}
                   variant="outline"
                   size="sm"
                   className="bg-uno-green text-white hover:bg-green-600"
