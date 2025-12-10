@@ -205,12 +205,15 @@ export default function Game() {
 
   // Handle host election messages
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
     if (gameState?.hostDisconnectedWarning) {
+      console.log("🔴 Host disconnection warning - starting election countdown");
       setHostDisconnectedWarning(gameState.hostDisconnectedWarning);
       setElectionCountdown(gameState.electionStartsIn || 30);
       
       // Start countdown timer
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         setElectionCountdown(prev => {
           if (prev <= 1) {
             clearInterval(interval);
@@ -220,9 +223,20 @@ export default function Game() {
         });
       }, 1000);
       
-      return () => clearInterval(interval);
+      return () => {
+        console.log("🟢 Cleaning up election countdown interval");
+        clearInterval(interval);
+      };
     } else {
+      // Host has returned - clear election state immediately
+      console.log("🟢 Host returned - clearing election state and stopping timer");
       setHostDisconnectedWarning(null);
+      setElectionCountdown(30); // Reset to initial value
+      setElectionCandidates([]);
+      setElectionVotes({});
+      setHasVoted(false);
+      setShowVotingWindow(false); // Force close voting window
+      if (interval) clearInterval(interval);
     }
   }, [gameState?.hostDisconnectedWarning, gameState?.electionStartsIn]);
 
