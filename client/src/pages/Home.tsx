@@ -100,28 +100,40 @@ export default function Home() {
   }, [toast, setLocation]);
 
   const createRoomMutation = useMutation({
-    mutationFn: async ({ hostNickname, streamingMode }: { hostNickname: string; streamingMode: boolean }) => {
-      const response = await apiRequest("POST", "/api/rooms", { 
-        hostNickname, 
+    mutationFn: async ({ hostNickname, streamingMode }: { hostNickname?: string; streamingMode: boolean }) => {
+      const payload: { hostNickname?: string; isStreamingMode: boolean } = { 
         isStreamingMode: streamingMode 
-      });
+      };
+      // Only include hostNickname for normal mode
+      if (!streamingMode && hostNickname) {
+        payload.hostNickname = hostNickname;
+      }
+      const response = await apiRequest("POST", "/api/rooms", payload);
       return response.json();
     },
     onSuccess: (data) => {
-      // STREAMING MODE: Redirect to LOBBY first (Stream Page URL is for OBS display)
+      // STREAMING MODE: Create room and redirect to Stream Lobby (view-only for OBS)
       if (data.isStreamingMode) {
         setShowHostPopup(false);
         setIsStreamingMode(false);
-        // Store player info (host is created in streaming mode now)
-        localStorage.setItem("playerId", data.player.id);
-        localStorage.setItem("playerNickname", data.hostNickname || popupNickname);
+        // Don't store player info - no player created yet for streaming mode
+        // First joiner will become host
         localStorage.setItem("currentRoomId", data.room.id);
-        // Store stream page URL for display in lobby
-        localStorage.setItem("streamPageUrl", data.streamPageUrl);
-        // Save selected avatar
-        localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
-        // Go to the lobby where host can manage spectators
-        setLocation(`/room/${data.room.id}?code=${data.room.code}&streaming=true`);
+        // Clear any stale IDs
+        localStorage.removeItem("playerId");
+        localStorage.removeItem("playerNickname");
+        localStorage.removeItem("streamHostPlayerId");
+        localStorage.removeItem("streamPlayerPlayerId");
+        
+        // Show the Stream Lobby (OBS view) - first joiner will become host
+        setLocation(`/stream/${data.room.id}/lobby?code=${data.room.code}`);
+        
+        // Show toast with instructions
+        toast({
+          title: "Streaming Room Created!",
+          description: "Use QR code or share the link. First person to join becomes host!",
+          duration: 5000,
+        });
         return;
       }
       
@@ -176,6 +188,29 @@ export default function Home() {
       
       console.log("Successfully joined room:", data);
       
+      // STREAMING MODE: Check if this is a streaming room and redirect accordingly
+      if (data.room.isStreamingMode) {
+        // Clear any stale streaming IDs from previous sessions
+        localStorage.removeItem("streamHostPlayerId");
+        localStorage.removeItem("streamPlayerPlayerId");
+        
+        // First joiner becomes host - check if we're the first
+        if (data.isStreamingHost) {
+          localStorage.setItem("streamHostPlayerId", data.player.id);
+          setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
+        } else if (data.player.position !== null && data.player.position !== undefined) {
+          // Player has been assigned a slot - always go to their dedicated player page
+          const slot = data.player.position + 1;
+          localStorage.setItem("streamPlayerPlayerId", data.player.id);
+          setLocation(`/stream/${data.room.id}/player/${slot}?code=${data.room.code}`);
+        } else {
+          // Spectator - redirect to host page (they'll see spectator view there)
+          setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
+        }
+        return;
+      }
+      
+      // NORMAL MODE
       if (data.room.status === "waiting") {
         setLocation(`/room/${data.room.id}`);
       } else {
@@ -208,6 +243,29 @@ export default function Home() {
       
       console.log("Successfully joined room via link:", data);
       
+      // STREAMING MODE: Check if this is a streaming room and redirect accordingly
+      if (data.room.isStreamingMode) {
+        // Clear any stale streaming IDs from previous sessions
+        localStorage.removeItem("streamHostPlayerId");
+        localStorage.removeItem("streamPlayerPlayerId");
+        
+        // First joiner becomes host - check if we're the first
+        if (data.isStreamingHost) {
+          localStorage.setItem("streamHostPlayerId", data.player.id);
+          setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
+        } else if (data.player.position !== null && data.player.position !== undefined) {
+          // Player has been assigned a slot - always go to their dedicated player page
+          const slot = data.player.position + 1;
+          localStorage.setItem("streamPlayerPlayerId", data.player.id);
+          setLocation(`/stream/${data.room.id}/player/${slot}?code=${data.room.code}`);
+        } else {
+          // Spectator - redirect to host page (they'll see spectator view there)
+          setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
+        }
+        return;
+      }
+      
+      // NORMAL MODE
       if (data.room.status === "waiting") {
         setLocation(`/room/${data.room.id}`);
       } else {
@@ -290,11 +348,17 @@ export default function Home() {
         setPopupNickname(data.guruUser.playerName);
         
         if (pendingAction === 'create') {
-          // Use guru user's playerName instead of entered nickname
           // Guru users use the tab selection for streaming mode
           const streamingMode = selectedModeTab === 'streaming';
           setIsGuruUserLoggedIn(true);
-          createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode });
+          if (streamingMode) {
+            // Streaming mode - no nickname needed, just create the room
+            setShowHostPopup(false);
+            createRoomMutation.mutate({ streamingMode: true });
+          } else {
+            // Normal mode - use guru user's playerName
+            createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode: false });
+          }
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
             // Use guru user's playerName instead of entered nickname
@@ -338,7 +402,14 @@ export default function Home() {
     
     // Determine streaming mode based on user type
     const streamingMode = isGuruUserLoggedIn ? (selectedModeTab === 'streaming') : isStreamingMode;
-    createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode });
+    
+    if (streamingMode) {
+      // Streaming mode - no nickname needed (this shouldn't normally be reached as streaming confirm dialog handles it)
+      createRoomMutation.mutate({ streamingMode: true });
+    } else {
+      // Normal mode - use nickname
+      createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: false });
+    }
   };
 
   const handleJoinRoom = async () => {
@@ -881,7 +952,9 @@ export default function Home() {
               <Button
                 onClick={() => {
                   setShowStreamingConfirm(false);
-                  setIsStreamingMode(true);
+                  setShowHostPopup(false);
+                  // Create streaming room directly - no nickname needed
+                  createRoomMutation.mutate({ streamingMode: true });
                 }}
                 className="flex-1 bg-purple-600 hover:bg-purple-700"
               >

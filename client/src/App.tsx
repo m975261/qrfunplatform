@@ -9,6 +9,10 @@ import RoomLobby from "@/pages/RoomLobby";
 import Game from "@/pages/GameFixed";
 import BotGame from "@/pages/BotGame";
 import StreamPage from "@/pages/StreamPage";
+import StreamLobbyPage from "@/pages/StreamLobbyPage";
+import StreamHostPage from "@/pages/StreamHostPage";
+import StreamGamePage from "@/pages/StreamGamePage";
+import StreamPlayerPage from "@/pages/StreamPlayerPage";
 import XOPlaceholder from "@/pages/XOPlaceholder";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -24,6 +28,12 @@ function Router() {
       <Route path="/xo" component={XOPlaceholder} />
       <Route path="/room/:roomId" component={RoomLobby} />
       <Route path="/game/:roomId" component={Game} />
+      {/* Streaming Mode Routes */}
+      <Route path="/stream/:roomId/lobby" component={StreamLobbyPage} />
+      <Route path="/stream/:roomId/game" component={StreamGamePage} />
+      <Route path="/stream/:roomId/host" component={StreamHostPage} />
+      <Route path="/stream/:roomId/host/game" component={StreamPlayerPage} />
+      <Route path="/stream/:roomId/player/:slot" component={StreamPlayerPage} />
       <Route path="/stream/:roomId" component={StreamPage} />
       <Route path="/man" component={AdminLogin} />
       <Route path="/man/dashboard" component={AdminDashboard} />

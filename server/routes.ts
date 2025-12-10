@@ -670,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/rooms", async (req, res) => {
     try {
       const { hostNickname, isStreamingMode } = z.object({
-        hostNickname: z.string().min(1).max(20),
+        hostNickname: z.string().min(1).max(20).optional(),
         isStreamingMode: z.boolean().optional().default(false)
       }).parse(req.body);
 
@@ -679,25 +679,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the room first
       const room = await storage.createRoom({
         code,
-        hostId: "", // Will be set when host joins (or later for streaming mode)
+        hostId: "", // Will be set when first player joins (streaming mode) or host joins (normal mode)
         status: "waiting",
         isStreamingMode: isStreamingMode
       });
 
-      // STREAMING MODE: Create host player so they can manage the lobby
+      // STREAMING MODE: Create room without any players - first joiner becomes host
       if (isStreamingMode) {
-        console.log(`[STREAMING MODE] Room ${code} created with host`);
-        
-        // Create the host player for streaming mode
-        const hostPlayer = await storage.createPlayer({
-          nickname: hostNickname,
-          roomId: room.id,
-          isSpectator: false,
-          position: 0
-        });
-        
-        // Update room with host ID
-        const updatedRoom = await storage.updateRoom(room.id, { hostId: hostPlayer.id });
+        console.log(`[STREAMING MODE] Room ${code} created - waiting for first joiner to become host`);
         
         // Generate QR code for streaming mode room
         let domain;
@@ -720,15 +709,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           color: { dark: '#000000', light: '#FFFFFF' }
         });
         
-        // Return room with player - creator goes to lobby first
+        // Return room without player - first joiner will become host
         return res.json({ 
-          room: updatedRoom || room, 
+          room, 
           qrCode,
-          hostNickname,
-          player: hostPlayer,
           isStreamingMode: true,
-          streamPageUrl: `/stream/${room.id}?code=${code}`
+          streamPageUrl: `/stream/${room.id}/lobby?code=${code}`
         });
+      }
+      
+      // NORMAL MODE: Require hostNickname
+      if (!hostNickname) {
+        return res.status(400).json({ error: "Host nickname is required for normal mode" });
       }
 
       // NORMAL MODE: Create the host player immediately (existing behavior)
@@ -824,12 +816,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let playerHand: any[] = [];
       let isSpectator = true; // NEW SPECTATOR SYSTEM: All new joiners start as spectators
 
+      // Track if this player becomes the streaming host
+      let isStreamingHost = false;
+      
       // STREAMING MODE: Only first joiner becomes host, everyone else is a spectator
       if (room.isStreamingMode) {
         if (existingPlayers.length === 0) {
           // First joiner in streaming mode becomes host at position 0
           isSpectator = false;
           playerPosition = 0;
+          isStreamingHost = true;
           console.log(`[STREAMING MODE] First joiner ${nickname} becomes host at position 0`);
         } else {
           // All subsequent joiners in streaming mode are forced to be spectators
@@ -868,7 +864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (updatedRoom) room = updatedRoom;
       }
 
-      res.json({ player, room });
+      res.json({ player, room, isStreamingHost });
     } catch (error) {
       console.error("Join room error:", error);
       res.status(400).json({ error: "Failed to join room" });
