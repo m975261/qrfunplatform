@@ -50,7 +50,7 @@ export default function StreamGamePage() {
   
   const gamePlayers = players.filter((p: any) => 
     !p.isSpectator && p.position !== null && p.position !== undefined
-  );
+  ).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
 
   const handleQRDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -104,6 +104,23 @@ export default function StreamGamePage() {
     }
   };
 
+  const getPlayerAtPosition = (position: number) => {
+    return gamePlayers.find((player: any) => player.position === position) || null;
+  };
+
+  const getPlayerAvatar = (id: string, nickname: string) => {
+    const savedAvatar = localStorage.getItem(`avatar_${id}`);
+    if (savedAvatar === 'male') return '👨';
+    if (savedAvatar === 'female') return '👩';
+    return '👨';
+  };
+
+  const isPlayerOnline = (player: any) => {
+    if (!player) return false;
+    const playerData = players.find((p: any) => p.id === player.id);
+    return playerData?.isOnline !== false;
+  };
+
   if (!room) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
@@ -118,19 +135,20 @@ export default function StreamGamePage() {
     );
   }
 
-  const topCard = room.topCard || room.discardPile?.[room.discardPile?.length - 1];
-  const currentPlayerIndex = room.currentPlayerIndex;
+  const topCard = room?.topCard || room?.discardPile?.[room?.discardPile?.length - 1];
+  const currentPlayerIndex = room?.currentPlayerIndex;
   const currentGamePlayer = gamePlayers.find((p: any) => p.position === currentPlayerIndex);
+  const currentColor = room?.currentColor;
+  const pendingDraw = room?.pendingDraw ?? 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Header Bar */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-sm border-b border-slate-700">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-3">
             <div className="bg-purple-600 px-3 py-1 rounded-full flex items-center gap-2">
               <Tv className="w-4 h-4 text-white" />
-              <span className="text-white text-sm font-bold">STREAM GAME</span>
+              <span className="text-white text-sm font-bold">OBS VIEW</span>
             </div>
             {isConnected && (
               <div className="bg-green-500 px-3 py-1 rounded-full animate-pulse">
@@ -170,92 +188,201 @@ export default function StreamGamePage() {
         </div>
       </div>
 
-      {/* Turn Indicator Banner */}
       {currentGamePlayer && (
-        <div className="fixed top-14 left-0 right-0 z-30 flex justify-center pointer-events-none">
-          <div className="bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white px-6 py-2 rounded-full shadow-lg">
-            <span className="font-bold">{currentGamePlayer.nickname}'s Turn</span>
+        <div className={`fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full shadow-lg border-2 transition-all ${
+          pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse'
+        }`}>
+          <div className="text-white font-bold text-sm text-center flex items-center gap-2">
+            {pendingDraw > 0 ? (
+              <span>⚠️ {currentGamePlayer.nickname} must draw {pendingDraw} cards</span>
+            ) : (
+              <span>🎮 {currentGamePlayer.nickname}'s turn</span>
+            )}
           </div>
         </div>
       )}
 
-      {/* === STREAM GAME VIEW - ONLY DISCARD PILE VISIBLE === */}
-      <section className="relative w-full h-screen flex items-center justify-center bg-transparent pt-16">
-        <div className="relative flex flex-col items-center justify-center">
-          {/* Large Center Play Area - ONLY the discard pile card */}
-          <div className="relative">
-            {/* Background Circle */}
-            <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border-4 border-slate-600 shadow-2xl flex items-center justify-center">
-              {topCard ? (
-                <div className="flex flex-col items-center">
-                  {/* Large Played Card */}
-                  <div className="transform scale-150">
-                    <GameCard card={topCard} size="large" interactive={false} />
+      <section className="relative w-full h-full flex items-center justify-center bg-transparent p-4 pt-24 pb-16">
+        <div
+          className="relative aspect-square w-[min(80vmin,500px)]"
+          style={{
+            ['--r' as any]: 'calc(var(--center) / 2 + var(--avatar) / 2 + 12px)',
+            ['--avatar' as any]: 'clamp(70px, 12vmin, 90px)',
+            ['--center' as any]: 'clamp(120px, 22vmin, 180px)',
+            ['--gap' as any]: 'clamp(8px, 2vmin, 16px)',
+          }}
+        >
+          <div className="absolute inset-0 grid place-items-center z-10">
+            <div className="relative">
+              <div
+                className="absolute -z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-slate-600 shadow-2xl bg-gradient-to-br from-slate-700 to-slate-800"
+                style={{ width: 'var(--center)', height: 'var(--center)' }}
+              />
+              <div className="flex flex-col items-center space-y-2">
+                {topCard ? (
+                  <div className="flex flex-col items-center">
+                    <div className="transform scale-125">
+                      <GameCard card={topCard} size="large" interactive={false} onClick={() => {}} />
+                    </div>
+                    {currentColor && (topCard.type === 'wild' || topCard.type === 'wild4') && (
+                      <div className="flex flex-col items-center mt-4">
+                        <div
+                          className={`w-8 h-8 rounded-full border-3 border-white ${
+                            currentColor === 'red'
+                              ? 'bg-red-500'
+                              : currentColor === 'yellow'
+                              ? 'bg-yellow-500'
+                              : currentColor === 'blue'
+                              ? 'bg-blue-500'
+                              : currentColor === 'green'
+                              ? 'bg-green-500'
+                              : 'bg-gray-500'
+                          }`}
+                        />
+                        <span className="text-sm text-white font-bold mt-1 uppercase">
+                          {currentColor}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  {/* Current Color Indicator for Wild Cards */}
-                  {room?.currentColor && (topCard.type === 'wild' || topCard.type === 'wild4') && (
-                    <div className="flex items-center gap-2 mt-8 bg-black/60 px-4 py-2 rounded-full">
+                ) : (
+                  <div className="w-20 h-28 bg-gradient-to-br from-red-500 to-red-700 rounded-xl border-3 border-red-300 shadow-xl flex items-center justify-center">
+                    <div className="text-white font-bold text-xl">UNO</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {[0, 1, 2, 3].map((position) => {
+            const player = getPlayerAtPosition(position);
+            const isOnline = player ? isPlayerOnline(player) : false;
+            const isPlayerTurn = currentGamePlayer?.id === player?.id;
+
+            const posClass =
+              position === 0
+                ? 'top-[calc(50%-var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
+                : position === 1
+                ? 'left-[calc(50%+var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2'
+                : position === 2
+                ? 'top-[calc(50%+var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
+                : 'left-[calc(50%-var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2';
+
+            return (
+              <div key={position} className={`absolute ${posClass} z-20`}>
+                <div className="relative">
+                  {player ? (
+                    <div className="relative">
                       <div
-                        className={`w-6 h-6 rounded-full border-2 border-white ${
-                          room.currentColor === 'red'
-                            ? 'bg-red-500'
-                            : room.currentColor === 'yellow'
-                            ? 'bg-yellow-500'
-                            : room.currentColor === 'blue'
-                            ? 'bg-blue-500'
-                            : room.currentColor === 'green'
-                            ? 'bg-green-500'
-                            : 'bg-gray-500'
+                        className={`rounded-full flex items-center justify-center text-white font-bold shadow-lg border-4 bg-gradient-to-br from-uno-blue to-uno-purple transition-all ${
+                          isPlayerTurn ? 'border-green-400 ring-4 ring-green-400/50 scale-110' : 'border-white/20'
+                        }`}
+                        style={{ width: 'var(--avatar)', height: 'var(--avatar)' }}
+                        title={player.nickname}
+                      >
+                        <div className="text-3xl">{getPlayerAvatar(player.id, player.nickname)}</div>
+                      </div>
+
+                      <div
+                        className={`absolute text-sm font-bold text-white bg-black/80 px-3 py-1.5 rounded-full whitespace-nowrap shadow-lg ${
+                          position === 0 ? 'left-full top-1/2 -translate-y-1/2 ml-3'
+                          : position === 1 ? 'top-full left-1/2 -translate-x-1/2 mt-3'
+                          : position === 2 ? 'right-3/4 top-full mt-3'
+                          : 'right-1/4 bottom-full -translate-x-1/2 mb-3'
+                        } ${isPlayerTurn ? 'bg-green-600' : ''}`}
+                      >
+                        {player.nickname} {isPlayerTurn && '⭐'}
+                      </div>
+
+                      <div
+                        className={`absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 border-white ${
+                          isOnline ? 'bg-green-500' : 'bg-red-500'
                         }`}
                       />
-                      <span className="text-lg text-white font-bold uppercase">
-                        {room.currentColor}
-                      </span>
+
+                      {player.id === room?.hostId && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-xl">👑</div>
+                      )}
+
+                      {player.finishPosition && (
+                        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-sm px-3 py-1 rounded-full font-bold shadow-lg">
+                          {player.finishPosition === 1
+                            ? '1ST'
+                            : player.finishPosition === 2
+                            ? '2ND'
+                            : player.finishPosition === 3
+                            ? '3RD'
+                            : `${player.finishPosition}TH`}
+                        </div>
+                      )}
+
+                      {!player.finishPosition && (
+                        <div className="absolute -left-3 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-sm px-3 py-1.5 rounded-full font-bold shadow-lg border-2 border-slate-600">
+                          {player.hand?.length || player.cardCount || 0}
+                        </div>
+                      )}
+
+                      {player.hasCalledUno && (
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-red-500 text-white text-sm px-3 py-1 rounded-full font-bold shadow-lg animate-pulse">
+                          UNO!
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      className="rounded-full flex items-center justify-center border-4 border-white/20 bg-gray-500/30"
+                      style={{ width: 'var(--avatar)', height: 'var(--avatar)' }}
+                    >
+                      <div className="text-center">
+                        <div className="w-10 h-10 rounded-full bg-gray-400 mx-auto" />
+                        <div className="text-xs text-gray-400 mt-1">Empty</div>
+                      </div>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="w-24 h-36 bg-gradient-to-br from-red-500 to-red-700 rounded-xl border-4 border-red-300 shadow-xl flex items-center justify-center">
-                  <div className="text-white font-bold text-2xl">UNO</div>
-                </div>
-              )}
-            </div>
+              </div>
+            );
+          })}
 
-            {/* Direction Indicator */}
-            <div className="absolute -top-4 -left-4 w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex flex-col items-center justify-center border-2 border-yellow-300 shadow-lg">
-              <span className="text-xl">{room.direction === 'clockwise' ? '↻' : '↺'}</span>
-              <span className="text-[8px] font-bold text-black">DIR</span>
-            </div>
-          </div>
-
-          {/* Player Names Around (No cards shown) */}
-          <div className="mt-8 flex flex-wrap justify-center gap-4 max-w-md">
-            {gamePlayers.map((player: any, index: number) => {
-              const isPlayerTurn = currentGamePlayer?.id === player?.id;
-              return (
-                <div 
-                  key={player.id}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-                    isPlayerTurn 
-                      ? 'bg-green-500 text-white ring-2 ring-green-300' 
-                      : 'bg-slate-700 text-gray-300'
-                  }`}
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-uno-blue to-uno-purple flex items-center justify-center text-white font-bold text-sm">
-                    {player.nickname[0].toUpperCase()}
-                  </div>
-                  <span className="font-medium">{player.nickname}</span>
-                  {isPlayerTurn && (
-                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">TURN</span>
+          {room?.direction && room?.status === 'playing' && (
+            <div className="absolute z-20 top-4 left-4">
+              <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full border-3 border-yellow-300 shadow-lg w-16 h-16 flex items-center justify-center animate-pulse">
+                <div className="text-white text-[10px] font-bold text-center leading-tight">
+                  {room.direction === 'clockwise' ? (
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg">↻</span>
+                      <span>GAME</span>
+                      <span>DIR</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg">↺</span>
+                      <span>GAME</span>
+                      <span>DIR</span>
+                    </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* QR Code Floating Panel */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-900/95 to-slate-900/80 backdrop-blur-md">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-center">
+            <div className="bg-purple-700/80 px-6 py-3 rounded-lg border border-purple-500">
+              <div className="text-center">
+                <div className="text-white text-sm font-semibold mb-1">📺 OBS Streaming View</div>
+                <div className="text-purple-200 text-xs">
+                  Current turn: <span className="text-green-400 font-medium">{currentGamePlayer?.nickname || 'Unknown'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {showQRCode && qrCodeData && (
         <div
           ref={qrPanelRef}
