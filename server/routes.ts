@@ -4049,7 +4049,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       room,
       players: playersWithStatus,
       messages,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      // Explicitly include election state so clients sync properly when host reconnects
+      hostDisconnectedWarning: room?.hostDisconnectedAt ? `Host disconnected` : null,
+      hostElectionActive: room?.hostElectionActive || false
     };
     
     console.log(`Broadcasting room state to ${roomId}:`, {
