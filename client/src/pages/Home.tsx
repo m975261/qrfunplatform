@@ -108,14 +108,16 @@ export default function Home() {
       return response.json();
     },
     onSuccess: (data) => {
-      // STREAMING MODE: Redirect to stream page (no player created)
+      // STREAMING MODE: Redirect to LOBBY first (Stream Page URL is for OBS display)
       if (data.isStreamingMode) {
         setShowHostPopup(false);
         setIsStreamingMode(false);
-        // Store room info for later joining
+        // Store room info and stream page URL for display in lobby
         localStorage.setItem("streamingRoomId", data.room.id);
         localStorage.setItem("streamingRoomCode", data.room.code);
-        setLocation(data.streamPageUrl);
+        localStorage.setItem("streamPageUrl", data.streamPageUrl);
+        // Go to the lobby where host can manage spectators
+        setLocation(`/room/${data.room.id}?code=${data.room.code}&streaming=true`);
         return;
       }
       
