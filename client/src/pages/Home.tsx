@@ -623,13 +623,11 @@ export default function Home() {
                   onChange={(e) => setRoomCode(e.target.value)}
                   maxLength={5}
                   className="flex-1 text-center font-mono font-medium"
-                  data-testid="input-room-code"
                 />
                 <Button
                   onClick={handleJoinRoom}
                   disabled={joinRoomMutation.isPending}
                   className="bg-uno-blue hover:bg-blue-600 shadow-lg"
-                  data-testid="button-join-room"
                 >
                   Join
                 </Button>
@@ -637,32 +635,27 @@ export default function Home() {
 
               <div className="text-center text-gray-500 text-sm">or</div>
 
-              {/* Join with QR Image Upload */}
-              <Label className="w-full flex items-center justify-center bg-gradient-to-r from-uno-purple to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-3 px-6 rounded-xl font-medium cursor-pointer transition-all shadow-lg hover:shadow-xl hover:scale-105"
-                data-testid="button-join-qr-image"
-              >
-                <Upload className="mr-2 h-5 w-5" />
-                Join with QR Image
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleQRUpload}
-                  className="hidden"
-                />
-              </Label>
-
-              <div className="text-center text-gray-500 text-sm">or scan live</div>
-
-              {/* Live QR Scanner */}
-              <Button
-                onClick={() => setShowQRScanner(true)}
-                variant="outline"
-                className="w-full bg-uno-blue/10 hover:bg-uno-blue/20 text-gray-700 border-uno-blue/30 py-3"
-                data-testid="button-live-scan"
-              >
-                <Camera className="mr-2 h-5 w-5" />
-                Scan QR with Camera
-              </Button>
+              {/* QR Code Options */}
+              <div className="flex space-x-2">
+                <Label className="flex-1 bg-uno-yellow/20 hover:bg-uno-yellow/30 text-gray-700 py-3 px-4 rounded-xl font-medium cursor-pointer transition-all text-center border-2 border-dashed border-uno-yellow/50 hover:border-uno-yellow">
+                  <Upload className="inline mr-2 h-4 w-4" />
+                  Upload QR Photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleQRUpload}
+                    className="hidden"
+                  />
+                </Label>
+                <Button
+                  onClick={() => setShowQRScanner(true)}
+                  variant="outline"
+                  className="flex-1 bg-uno-blue/10 hover:bg-uno-blue/20 text-gray-700 border-uno-blue/30"
+                >
+                  <Camera className="mr-2 h-4 w-4" />
+                  Live Scan
+                </Button>
+              </div>
             </div>
 
           </div>

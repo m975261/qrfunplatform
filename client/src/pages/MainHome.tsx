@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Play, Users, Bot, LogIn } from "lucide-react";
+import { Play, Users, Bot, LogIn, Upload } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import QrScanner from 'qr-scanner';
 
 export default function MainHome() {
   const [, setLocation] = useLocation();
@@ -13,6 +16,68 @@ export default function MainHome() {
   const [roomCode, setRoomCode] = useState("");
   const [joinError, setJoinError] = useState("");
   const [isJoining, setIsJoining] = useState(false);
+  const { toast } = useToast();
+
+  const handleQRImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      try {
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const loadImage = () => new Promise<void>((resolve, reject) => {
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx?.drawImage(img, 0, 0);
+            resolve();
+          };
+          img.onerror = reject;
+        });
+        
+        img.src = URL.createObjectURL(file);
+        await loadImage();
+        
+        const result = await QrScanner.scanImage(canvas);
+        
+        let extractedCode = '';
+        if (result.includes('/r/')) {
+          const match = result.match(/\/r\/([0-9]{5})/);
+          extractedCode = match ? match[1] : '';
+        } else if (result.includes('code=')) {
+          const match = result.match(/code=([0-9]{5})/);
+          extractedCode = match ? match[1] : '';
+        } else if (result.includes('room=')) {
+          const match = result.match(/room=([0-9]{5})/);
+          extractedCode = match ? match[1] : '';
+        } else if (/^[0-9]{5}$/.test(result)) {
+          extractedCode = result;
+        }
+        
+        if (extractedCode) {
+          setLocation(`/uno?room=${extractedCode}`);
+        } else {
+          toast({
+            title: "Invalid QR Code",
+            description: "This QR code doesn't contain a valid room code.",
+            variant: "destructive",
+          });
+        }
+        
+        URL.revokeObjectURL(img.src);
+        
+      } catch (error) {
+        console.error('QR code scan error:', error);
+        toast({
+          title: "Scan Failed",
+          description: "Could not read QR code from this image. Make sure it's clear and valid.",
+          variant: "destructive",
+        });
+      }
+    }
+    event.target.value = '';
+  };
 
   const handleJoinWithCode = async () => {
     const code = roomCode.trim();
@@ -170,6 +235,25 @@ export default function MainHome() {
               )}
             </div>
           </Card>
+
+          {/* Join with QR Image */}
+          <Label className="mt-4 w-full flex items-center justify-center bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white py-4 px-6 rounded-xl font-semibold cursor-pointer transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] gap-3"
+            data-testid="button-join-qr-image"
+          >
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+              <Upload className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <div className="text-lg">Join with QR Image</div>
+              <div className="text-white/80 text-sm font-normal">Upload a QR code to join instantly</div>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleQRImageUpload}
+              className="hidden"
+            />
+          </Label>
         </div>
 
         {/* Games Grid - Centered */}
