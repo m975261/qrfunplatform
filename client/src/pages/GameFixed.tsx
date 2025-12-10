@@ -526,8 +526,10 @@ export default function Game() {
   };
 
   // Host spectator assignment for active games - with robust player state handling
+  // Also allows self-assignment during election (for old host to return)
   const handleHostAssignSpectatorToGame = async (spectatorId: string) => {
-    if (!isHost || !roomId) return;
+    const isSelfDuringElection = spectatorId === playerId && hostDisconnectedWarning;
+    if ((!isHost && !isSelfDuringElection) || !roomId) return;
     
     try {
       const spectator = players.find((p: any) => p.id === spectatorId);
@@ -1187,7 +1189,7 @@ export default function Game() {
                 }}
                 data-testid="button-end-game"
               >
-                End Game
+                End Gameplay
               </Button>
             )}
             
