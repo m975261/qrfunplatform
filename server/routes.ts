@@ -714,7 +714,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           room, 
           qrCode,
           isStreamingMode: true,
-          streamPageUrl: `/stream/${room.id}/lobby?code=${code}`
+          streamJoinUrl: `/stream/${room.id}/join?code=${code}`,
+          streamLobbyUrl: `/stream/${room.id}/lobby?code=${code}`
         });
       }
       
@@ -772,6 +773,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Room creation error:", error);
       res.status(400).json({ error: "Failed to create room", details: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  // Stream mode join - explicitly for streaming rooms
+  app.post("/api/stream/join", async (req, res) => {
+    try {
+      const { roomId, nickname } = z.object({
+        roomId: z.string().min(1),
+        nickname: z.string().min(2).max(20)
+      }).parse(req.body);
+
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      if (!room.isStreamingMode) {
+        return res.status(400).json({ error: "This is not a streaming room" });
+      }
+
+      const existingPlayers = await storage.getPlayersByRoom(room.id);
+      const hasHost = room.hostId && room.hostId.length > 0;
+      
+      let isHost = false;
+      let playerPosition = null;
+      let isSpectator = true;
+      
+      // First joiner becomes host at position 0
+      if (!hasHost && existingPlayers.length === 0) {
+        isHost = true;
+        isSpectator = false;
+        playerPosition = 0;
+        console.log(`[STREAM JOIN] ${nickname} is the FIRST joiner - becomes HOST at position 0`);
+      } else {
+        // All other joiners are spectators
+        isSpectator = true;
+        playerPosition = null;
+        console.log(`[STREAM JOIN] ${nickname} joining as SPECTATOR (room already has host)`);
+      }
+
+      // Create the player
+      const player = await storage.createPlayer({
+        nickname,
+        roomId: room.id,
+        isSpectator,
+        position: playerPosition
+      });
+
+      // If this is the first joiner, set them as host
+      if (isHost) {
+        await storage.updateRoom(room.id, { hostId: player.id });
+        console.log(`[STREAM JOIN] Room ${room.code} now has host: ${player.id}`);
+      }
+
+      res.json({
+        playerId: player.id,
+        isHost,
+        isSpectator,
+        position: playerPosition,
+        room: {
+          id: room.id,
+          code: room.code
+        }
+      });
+    } catch (error) {
+      console.error("Stream join error:", error);
+      res.status(400).json({ error: "Failed to join streaming room" });
     }
   });
 

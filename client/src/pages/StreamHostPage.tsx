@@ -83,6 +83,14 @@ export default function StreamHostPage() {
   const spectators = players.filter((p: any) => p.isSpectator && p.isOnline);
   const isHost = room?.hostId === playerId;
 
+  useEffect(() => {
+    if (room && playerId && !isHost) {
+      console.log("[StreamHostPage] User is not host, redirecting to spectator page");
+      const code = room.code || roomCode;
+      setLocation(`/stream/${roomId}/spectator?code=${code}`);
+    }
+  }, [room, playerId, isHost, roomId, roomCode, setLocation]);
+
   // Redirect based on role when game starts or player is assigned to a slot
   useEffect(() => {
     const myPlayer = gameState?.players?.find((p: any) => p.id === playerId);

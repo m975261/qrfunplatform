@@ -13,6 +13,8 @@ import StreamLobbyPage from "@/pages/StreamLobbyPage";
 import StreamHostPage from "@/pages/StreamHostPage";
 import StreamGamePage from "@/pages/StreamGamePage";
 import StreamPlayerPage from "@/pages/StreamPlayerPage";
+import StreamJoinPage from "@/pages/StreamJoinPage";
+import StreamSpectatorPage from "@/pages/StreamSpectatorPage";
 import XOPlaceholder from "@/pages/XOPlaceholder";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -29,6 +31,8 @@ function Router() {
       <Route path="/room/:roomId" component={RoomLobby} />
       <Route path="/game/:roomId" component={Game} />
       {/* Streaming Mode Routes */}
+      <Route path="/stream/:roomId/join" component={StreamJoinPage} />
+      <Route path="/stream/:roomId/spectator" component={StreamSpectatorPage} />
       <Route path="/stream/:roomId/lobby" component={StreamLobbyPage} />
       <Route path="/stream/:roomId/game" component={StreamGamePage} />
       <Route path="/stream/:roomId/host" component={StreamHostPage} />
