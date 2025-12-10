@@ -733,6 +733,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Lookup room by code (for universal join feature)
+  app.get("/api/rooms/code/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const room = await storage.getRoomByCode(code.toUpperCase());
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      res.json({ room });
+    } catch (error) {
+      console.error("Room lookup error:", error);
+      res.status(400).json({ error: "Failed to lookup room" });
+    }
+  });
+
   // Join room by code
   app.post("/api/rooms/:code/join", async (req, res) => {
     try {
