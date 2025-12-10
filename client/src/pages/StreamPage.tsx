@@ -208,14 +208,14 @@ export default function StreamPage() {
                 className="absolute -z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-slate-600 shadow-2xl bg-gradient-to-br from-slate-700 to-slate-800"
                 style={{ width: 'var(--center)', height: 'var(--center)' }}
               />
-              <div className="flex flex-col items-center space-y-2">
+              <div className="flex flex-col items-center">
                 {topCard ? (
-                  <div className="flex flex-col items-center">
-                    <GameCard card={topCard} size="small" interactive={false} />
+                  <div className="flex flex-col items-center z-20">
+                    <GameCard card={topCard} size="large" interactive={false} />
                     {room?.currentColor && (topCard.type === 'wild' || topCard.type === 'wild4') && (
-                      <div className="flex flex-col items-center mt-2">
+                      <div className="flex items-center gap-2 mt-2 bg-black/60 px-3 py-1 rounded-full">
                         <div
-                          className={`w-6 h-6 rounded-full border-2 border-white ${
+                          className={`w-5 h-5 rounded-full border-2 border-white ${
                             room.currentColor === 'red'
                               ? 'bg-red-500'
                               : room.currentColor === 'yellow'
@@ -227,15 +227,15 @@ export default function StreamPage() {
                               : 'bg-gray-500'
                           }`}
                         />
-                        <span className="text-xs text-white font-bold mt-1">
-                          Active: {room.currentColor}
+                        <span className="text-sm text-white font-bold uppercase">
+                          {room.currentColor}
                         </span>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="w-16 h-24 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-red-300 shadow-xl flex items-center justify-center">
-                    <div className="text-white font-bold text-lg">UNO</div>
+                  <div className="w-20 h-28 bg-gradient-to-br from-red-500 to-red-700 rounded-xl border-3 border-red-300 shadow-xl flex items-center justify-center z-20">
+                    <div className="text-white font-bold text-xl">UNO</div>
                   </div>
                 )}
               </div>
