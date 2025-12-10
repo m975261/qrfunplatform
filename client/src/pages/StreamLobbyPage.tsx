@@ -128,12 +128,12 @@ export default function StreamLobbyPage() {
 
   if (!room) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700 text-white p-8">
+      <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center">
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl p-8">
           <div className="text-center">
-            <Tv className="w-16 h-16 mx-auto mb-4 text-purple-400" />
-            <h2 className="text-2xl font-bold mb-2">Stream Lobby Loading...</h2>
-            <p className="text-gray-400">Waiting for room connection...</p>
+            <Tv className="w-16 h-16 mx-auto mb-4 text-purple-600" />
+            <h2 className="text-2xl font-bold mb-2 text-gray-800">Stream Lobby Loading...</h2>
+            <p className="text-gray-600">Waiting for room connection...</p>
           </div>
         </Card>
       </div>
@@ -141,71 +141,81 @@ export default function StreamLobbyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Header Bar */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-sm border-b border-slate-700">
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-3">
-            <div className="bg-purple-600 px-3 py-1 rounded-full flex items-center gap-2">
-              <Tv className="w-4 h-4 text-white" />
-              <span className="text-white text-sm font-bold">STREAM LOBBY</span>
-            </div>
-            {isConnected && (
-              <div className="bg-green-500 px-3 py-1 rounded-full animate-pulse">
-                <span className="text-white text-sm font-bold">LIVE</span>
+    <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Room Header - Same style as normal lobby */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Room <span className="font-mono text-uno-blue">{room?.code}</span>
+                  </h2>
+                  <span className="bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                    <Tv className="w-3 h-3" />
+                    STREAM VIEW
+                  </span>
+                  {isConnected && (
+                    <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                      LIVE
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-600">Waiting for players to join...</p>
               </div>
-            )}
-            <span className="text-white font-mono text-lg">{room?.code}</span>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={handleCopyLink}
-              variant="outline"
-              size="sm"
-              className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-            >
-              <Link2 className="mr-1 h-4 w-4" />
-              Link
-            </Button>
-            <Button
-              ref={qrButtonRef}
-              onClick={() => {
-                if (!showQRCode && qrButtonRef.current) {
-                  const rect = qrButtonRef.current.getBoundingClientRect();
-                  setQrPosition({ x: rect.left - 200, y: rect.bottom + 8 });
-                }
-                setShowQRCode(!showQRCode);
-              }}
-              variant="outline"
-              size="sm"
-              className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-            >
-              <QrCode className="mr-1 h-4 w-4" />
-              QR
-            </Button>
-          </div>
-        </div>
-      </div>
+              <div className="flex items-center space-x-3">
+                <Button
+                  onClick={handleCopyLink}
+                  variant="outline"
+                  size="sm"
+                  className="bg-uno-blue text-white hover:bg-blue-600"
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Link
+                </Button>
+                <Button
+                  ref={qrButtonRef}
+                  onClick={() => {
+                    if (!showQRCode && qrButtonRef.current) {
+                      const rect = qrButtonRef.current.getBoundingClientRect();
+                      setQrPosition({ x: rect.left - 200, y: rect.bottom + 8 });
+                    }
+                    setShowQRCode(!showQRCode);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="bg-uno-green text-white hover:bg-green-600"
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  QR Code
+                </Button>
+              </div>
+            </div>
+            
+            <div className="text-sm text-gray-600">
+              {gamePlayers.length}/4 players joined
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Central Lobby Area - View Only (No Controls) */}
-      <div className="pt-20 flex items-center justify-center min-h-screen">
-        <div className="relative w-80 h-80 mx-auto bg-slate-800/30 backdrop-blur-sm rounded-full border-2 border-slate-600">
+        {/* "Waiting for Host" Message - Positioned above the circle */}
+        {gamePlayers.length === 0 && (
+          <div className="text-center mb-4">
+            <div className="inline-block bg-purple-600 text-white px-6 py-3 rounded-full text-lg font-bold animate-pulse shadow-lg">
+              Waiting for Host to Join...
+            </div>
+          </div>
+        )}
+
+        {/* Central Game Area with 4 Fixed Avatar Positions - Same style as normal lobby */}
+        <div className="relative w-80 h-80 mx-auto mb-8 bg-white/10 backdrop-blur-sm rounded-full border-2 border-white/20">
           {/* UNO Logo in Center */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-yellow-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/20">
-              <span className="text-white font-bold text-2xl">UNO</span>
+            <div className="w-20 h-20 bg-gradient-to-br from-uno-red to-uno-yellow rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-lg">UNO</span>
             </div>
           </div>
-
-          {/* "Waiting for Host" Message */}
-          {gamePlayers.length === 0 && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-16 text-center">
-              <div className="bg-purple-600/80 text-white px-4 py-2 rounded-full text-sm font-bold animate-pulse">
-                Waiting for Host to Join...
-              </div>
-            </div>
-          )}
 
           {/* 4 Fixed Avatar Positions (View Only) */}
           {[0, 1, 2, 3].map((position) => {
@@ -217,62 +227,45 @@ export default function StreamLobbyPage() {
                 className={`absolute ${getPositionClass(position)} w-20 h-20`}
               >
                 {player ? (
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-uno-blue to-uno-purple flex items-center justify-center text-white font-bold shadow-lg border-4 border-white/20">
-                      <span className="text-2xl">{player.nickname[0].toUpperCase()}</span>
-                    </div>
-                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                      <span className="bg-black/70 text-white text-xs px-2 py-1 rounded-full">
-                        {player.nickname}
-                      </span>
-                    </div>
-                    {player.isOnline && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
-                    )}
+                  <div className="w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 border-white/20">
+                    <div className="text-lg">{player.nickname[0].toUpperCase()}</div>
+                    <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
+                    {/* Online indicator */}
+                    <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
+                      player.isOnline ? 'bg-green-500' : 'bg-red-500'
+                    }`} />
                   </div>
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-slate-700/50 border-4 border-dashed border-slate-600 flex items-center justify-center">
-                    <span className="text-slate-500 text-xs">Slot {position + 1}</span>
+                  <div className="w-20 h-20 rounded-full bg-gray-300/50 border-4 border-white/30 flex items-center justify-center">
+                    <span className="text-gray-600 text-xs">Slot {position + 1}</span>
                   </div>
                 )}
               </div>
             );
           })}
         </div>
-      </div>
 
-      {/* Spectators Panel - Right Side */}
-      <div className="fixed z-20" style={{
-        top: '5rem',
-        bottom: '2rem',
-        right: '0.5rem',
-        width: 'min(16rem, 20vw)'
-      }}>
-        <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl p-3 shadow-lg h-full flex flex-col border border-slate-700">
-          <div className="text-xs font-semibold text-gray-300 mb-3 flex-shrink-0">
-            Spectators ({spectators.length})
-          </div>
-          <div className="space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
-            {spectators.length > 0 ? (
-              spectators.map((spectator: any) => (
-                <div key={spectator.id} className="flex items-center space-x-2 p-2 rounded-lg bg-slate-700/50">
-                  <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                    {spectator.nickname?.[0]?.toUpperCase()}
-                  </div>
-                  <span className="text-xs text-gray-300 truncate flex-1">{spectator.nickname}</span>
-                  <div className={`w-2 h-2 rounded-full ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-                </div>
-              ))
-            ) : (
-              <div className="text-xs text-slate-500 text-center py-4">
-                Waiting for players to join...
+        {/* Spectators Card - Same style as normal lobby */}
+        {spectators.length > 0 && (
+          <Card className="bg-white/95 backdrop-blur-sm shadow-xl mt-6">
+            <CardContent className="p-4">
+              <div className="text-sm font-semibold text-gray-700 mb-3">
+                Spectators ({spectators.length})
               </div>
-            )}
-          </div>
-          <div className="text-[10px] text-slate-500 text-center mt-2 pt-2 border-t border-slate-700">
-            {gamePlayers.length}/4 Players
-          </div>
-        </div>
+              <div className="flex flex-wrap gap-2">
+                {spectators.map((spectator: any) => (
+                  <div key={spectator.id} className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full">
+                    <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                      {spectator.nickname?.[0]?.toUpperCase()}
+                    </div>
+                    <span className="text-sm text-gray-700">{spectator.nickname}</span>
+                    <div className={`w-2 h-2 rounded-full ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* QR Code Floating Panel */}
@@ -286,7 +279,7 @@ export default function StreamLobbyPage() {
             cursor: isDraggingQR ? 'grabbing' : 'default'
           }}
         >
-          <Card className="w-64 shadow-2xl border-2 border-purple-500/50 bg-slate-800/98 backdrop-blur-sm">
+          <Card className="w-64 shadow-2xl border-2 border-uno-blue bg-white">
             <CardContent className="p-4">
               <div
                 className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing"
@@ -295,25 +288,25 @@ export default function StreamLobbyPage() {
               >
                 <div className="flex items-center gap-2">
                   <GripVertical className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-white">Scan to Join</span>
+                  <span className="text-sm font-medium text-gray-800">Scan to Join</span>
                 </div>
                 <button
                   onClick={() => setShowQRCode(false)}
-                  className="p-1 hover:bg-slate-700 rounded"
+                  className="p-1 hover:bg-gray-100 rounded"
                 >
-                  <X className="w-4 h-4 text-gray-400" />
+                  <X className="w-4 h-4 text-gray-500" />
                 </button>
               </div>
-              <div className="bg-white p-3 rounded-lg flex justify-center">
+              <div className="bg-white p-3 rounded-lg flex justify-center border border-gray-200">
                 <img src={qrCodeData} alt="QR Code" className="w-full h-auto" />
               </div>
               <div className="mt-3 flex items-center justify-between">
-                <span className="font-mono text-lg font-bold text-white">{room?.code}</span>
+                <span className="font-mono text-lg font-bold text-gray-800">{room?.code}</span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={handleCopyCode}
-                  className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                  className="bg-uno-blue text-white hover:bg-blue-600"
                 >
                   <Copy className="w-4 h-4 mr-1" />
                   Copy
