@@ -426,6 +426,16 @@ export default function StreamGamePage() {
                   Copy
                 </Button>
               </div>
+              <div className="mt-2 text-center">
+                <a 
+                  href="https://qrfun.net" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-purple-400 hover:text-purple-300 text-sm font-medium underline"
+                >
+                  qrfun.net
+                </a>
+              </div>
             </CardContent>
           </Card>
         </div>
