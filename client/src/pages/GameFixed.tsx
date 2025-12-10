@@ -1006,6 +1006,31 @@ export default function Game() {
           }
         };
         
+        // After voting, show only timer; when countdown reaches 0, hide everything
+        if (electionCountdown <= 0) {
+          return null; // Timer finished, hide window completely
+        }
+        
+        // If already voted, show only the timer
+        if (hasVoted) {
+          return (
+            <div 
+              className={`fixed ${getBannerPosition()} z-50 select-none`}
+            >
+              <div className="bg-slate-800/95 backdrop-blur-sm rounded-lg border-2 border-green-500 px-4 py-2 shadow-2xl">
+                <div className="text-center">
+                  <div className="text-xs font-bold text-green-400">✓ Vote Submitted</div>
+                  <div className="text-lg font-bold text-yellow-400">
+                    {electionCountdown}s
+                  </div>
+                  <div className="text-[10px] text-slate-400">Waiting for results...</div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
+        // Not voted yet - show full voting window
         return (
           <div 
             className={`fixed ${getBannerPosition()} z-50 w-72 select-none`}
@@ -1016,11 +1041,7 @@ export default function Game() {
                 <div className="flex-1 text-center">
                   <div className="text-xs font-bold text-orange-400">⚠️ Host Left - Vote!</div>
                   <div className="text-sm font-bold text-white">
-                    {electionCountdown > 0 ? (
-                      <span className="text-yellow-400">{electionCountdown}s remaining</span>
-                    ) : (
-                      <span className="text-red-400">Closed!</span>
-                    )}
+                    <span className="text-yellow-400">{electionCountdown}s remaining</span>
                   </div>
                 </div>
                 <button
@@ -1040,12 +1061,7 @@ export default function Game() {
                   <button
                     key={candidate.id}
                     onClick={(e) => { e.stopPropagation(); handleVoteForHost(candidate.id); }}
-                    disabled={hasVoted}
-                    className={`w-full px-2 py-1.5 rounded text-xs font-semibold transition-all flex items-center justify-between ${
-                      hasVoted
-                        ? 'bg-slate-600 cursor-not-allowed opacity-50'
-                        : 'bg-blue-600 hover:bg-blue-500 cursor-pointer'
-                    } text-white`}
+                    className="w-full px-2 py-1.5 rounded text-xs font-semibold transition-all flex items-center justify-between bg-blue-600 hover:bg-blue-500 cursor-pointer text-white"
                     data-testid={`button-vote-${candidate.id}`}
                   >
                     <span className="font-bold">{candidate.nickname}</span>
@@ -1057,24 +1073,13 @@ export default function Game() {
                 {/* Continue without host button - two lines format */}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleVoteForHost('NO_HOST'); }}
-                  disabled={hasVoted}
-                  className={`w-full px-2 py-1.5 rounded text-xs font-semibold transition-all border border-dashed flex flex-col items-center justify-center gap-0.5 ${
-                    hasVoted
-                      ? 'bg-slate-600 border-slate-500 cursor-not-allowed opacity-50'
-                      : 'bg-green-700 border-green-400 hover:bg-green-600 cursor-pointer'
-                  } text-white`}
+                  className="w-full px-2 py-1.5 rounded text-xs font-semibold transition-all border border-dashed flex flex-col items-center justify-center gap-0.5 bg-green-700 border-green-400 hover:bg-green-600 cursor-pointer text-white"
                   data-testid="button-vote-no-host"
                 >
                   <span>Continue without host</span>
                   <span className="text-[10px] font-bold">👆 Click Here ({electionVotes['NO_HOST'] || 0})</span>
                 </button>
               </div>
-              
-              {hasVoted && (
-                <div className="mt-2 text-center text-green-400 font-semibold text-[10px]">
-                  ✓ Voted!
-                </div>
-              )}
             </div>
           </div>
         );
