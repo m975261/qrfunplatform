@@ -264,6 +264,40 @@ export function useSocket(autoConnect: boolean = true) {
               }
             }));
             break;
+          // STREAMING MODE - Host disconnect/reconnect events
+          case 'streaming_host_disconnected':
+            console.log("[Streaming] Host disconnected:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              streamingHostDisconnected: true,
+              streamingHostDeadlineMs: message.deadlineMs,
+              streamingHostName: message.hostName,
+              streamingHostMessage: message.message
+            }));
+            break;
+          case 'streaming_host_reconnected':
+            console.log("[Streaming] Host reconnected:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              streamingHostDisconnected: false,
+              streamingHostDeadlineMs: null,
+              streamingHostName: null,
+              streamingHostMessage: null,
+              streamingHostTimeout: false // Clear timeout flag on reconnection
+            }));
+            break;
+          case 'streaming_host_timeout':
+            console.log("[Streaming] Host timeout - redirecting:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              streamingHostTimeout: true,
+              streamingHostMessage: message.message
+            }));
+            // Redirect to home after brief delay
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 1500);
+            break;
           case 'uno_called':
             // Remove notification - just log silently
             console.log("UNO called by:", message.player);

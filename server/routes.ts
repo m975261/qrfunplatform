@@ -3014,6 +3014,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await broadcastRoomState(connection.roomId);
   }
 
+  // Track host disconnection timers - declared before functions that use them
+  const hostDisconnectTimers: Map<string, NodeJS.Timeout> = new Map();
+  const streamingHostTimers: Map<string, NodeJS.Timeout> = new Map();
+
   async function handleExitGame(connection: SocketConnection, message: any) {
     if (!connection.roomId || !connection.playerId) return;
     
@@ -3046,46 +3050,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hand: [] // Clear hand since cards are saved to positionHands
     });
     
-    // If host is leaving and there are other players, start host election with voting during countdown
+    // If host is leaving and there are other players, handle disconnect
     if (isHost && activePlayersBefore.length > 0) {
-      console.log(`Host ${player.nickname} is leaving the game - starting host election with voting`);
+      // STREAMING MODE: Simple countdown, no election - redirect all if host doesn't return
+      if (room.isStreamingMode) {
+        console.log(`[Streaming] Host ${player.nickname} disconnected - starting 30s countdown`);
+        
+        const deadlineMs = Date.now() + 30000; // 30 seconds from now
+        
+        await storage.updateRoom(connection.roomId, { 
+          hostDisconnectedAt: new Date(),
+          hostElectionActive: false // No election in streaming mode
+        });
+        
+        // Notify all players about host disconnect with deadline
+        broadcastToRoom(connection.roomId, {
+          type: 'streaming_host_disconnected',
+          hostName: player.nickname,
+          deadlineMs,
+          message: `Host ${player.nickname} disconnected. Returning to main page in 30 seconds if host doesn't reconnect...`
+        });
+        
+        // Start 30-second timer - redirect all if host doesn't return
+        const roomId = connection.roomId;
+        const timer = setTimeout(async () => {
+          const currentRoom = await storage.getRoom(roomId);
+          if (!currentRoom) return;
+          
+          // Check if host reconnected
+          if (!currentRoom.hostDisconnectedAt) {
+            console.log(`[Streaming] Host reconnected, canceling redirect`);
+            streamingHostTimers.delete(roomId);
+            return;
+          }
+          
+          console.log(`[Streaming] Host timeout - redirecting all players to main page`);
+          
+          // Broadcast redirect to all players
+          broadcastToRoom(roomId, {
+            type: 'streaming_host_timeout',
+            message: 'Host did not return. Returning to main page...'
+          });
+          
+          // Clean up room - mark as finished
+          await storage.updateRoom(roomId, { 
+            status: 'finished',
+            hostDisconnectedAt: null
+          });
+          
+          streamingHostTimers.delete(roomId);
+        }, 30000);
+        
+        streamingHostTimers.set(roomId, timer);
+        
+      } else {
+        // NORMAL MODE: Start host election with voting during countdown
+        console.log(`Host ${player.nickname} is leaving the game - starting host election with voting`);
+        
+        // Get candidates for voting
+        const candidates = [
+          ...activePlayersBefore.map(p => ({ id: p.id, nickname: p.nickname })),
+          { id: 'NO_HOST', nickname: 'Continue without host' }
+        ];
+        const eligibleVoterIds = activePlayersBefore.map(p => p.id);
+        
+        // Record host disconnection time and enable voting during countdown
+        // Keep hostId so host can return by clicking their slot or rejoining via link
+        await storage.updateRoom(connection.roomId, { 
+          hostDisconnectedAt: new Date(),
+          hostElectionActive: true,
+          hostElectionStartTime: new Date(),
+          hostElectionVotes: {},
+          hostElectionEligibleVoters: eligibleVoterIds,
+          hostPreviousPosition: player.position
+        });
+        
+        // Notify players with candidates - voting is available immediately
+        // Host can return by clicking their slot or rejoining via link
+        broadcastToRoom(connection.roomId, {
+          type: 'host_disconnected_warning',
+          hostName: player.nickname,
+          hostId: connection.playerId,
+          hostPreviousPosition: player.position,
+          electionStartsIn: 30,
+          candidates,
+          eligibleVoterIds,
+          canVoteNow: true,
+          hostCanReturn: true,
+          message: `Host ${player.nickname} left. Vote now or host can return within 30 seconds...`
+        });
       
-      // Get candidates for voting
-      const candidates = [
-        ...activePlayersBefore.map(p => ({ id: p.id, nickname: p.nickname })),
-        { id: 'NO_HOST', nickname: 'Continue without host' }
-      ];
-      const eligibleVoterIds = activePlayersBefore.map(p => p.id);
-      
-      // Record host disconnection time and enable voting during countdown
-      // Keep hostId so host can return by clicking their slot or rejoining via link
-      await storage.updateRoom(connection.roomId, { 
-        hostDisconnectedAt: new Date(),
-        hostElectionActive: true,
-        hostElectionStartTime: new Date(),
-        hostElectionVotes: {},
-        hostElectionEligibleVoters: eligibleVoterIds,
-        hostPreviousPosition: player.position
-      });
-      
-      // Notify players with candidates - voting is available immediately
-      // Host can return by clicking their slot or rejoining via link
-      broadcastToRoom(connection.roomId, {
-        type: 'host_disconnected_warning',
-        hostName: player.nickname,
-        hostId: connection.playerId,
-        hostPreviousPosition: player.position,
-        electionStartsIn: 30,
-        candidates,
-        eligibleVoterIds,
-        canVoteNow: true,
-        hostCanReturn: true,
-        message: `Host ${player.nickname} left. Vote now or host can return within 30 seconds...`
-      });
-      
-      // Start 30-second timer - when it ends, tally votes
-      const roomId = connection.roomId;
-      const timer = setTimeout(async () => {
+        // Start 30-second timer - when it ends, tally votes (NORMAL MODE ONLY)
+        const roomId = connection.roomId;
+        const timer = setTimeout(async () => {
         const currentRoom = await storage.getRoom(roomId);
         if (!currentRoom) return;
         
@@ -3245,7 +3302,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, 30000); // 30 seconds
       
       hostDisconnectTimers.set(connection.roomId, timer);
-    }
+      } // Close else block (normal mode)
+    } // Close if (isHost && activePlayersBefore.length > 0)
     
     // If game is in progress
     if (room.status === "playing") {
@@ -4157,9 +4215,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await broadcastRoomState(connection.roomId);
   }
 
-  // Track host disconnection timers to cancel if host reconnects
-  const hostDisconnectTimers: Map<string, NodeJS.Timeout> = new Map();
-  
   async function handlePlayerDisconnect(playerId: string, roomId: string) {
     const room = await storage.getRoom(roomId);
     const players = await storage.getPlayersByRoom(roomId);
@@ -4198,7 +4253,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
       
-      // Get candidates for voting
+      // STREAMING MODE: Simple countdown, no election - redirect all if host doesn't return
+      if (room.isStreamingMode) {
+        console.log(`[Streaming] Host ${disconnectedPlayer.nickname} disconnected - starting 30s countdown`);
+        
+        const deadlineMs = Date.now() + 30000; // 30 seconds from now
+        
+        await storage.updateRoom(roomId, { 
+          hostDisconnectedAt: new Date(),
+          hostElectionActive: false // No election in streaming mode
+        });
+        
+        // Notify all players about host disconnect with deadline
+        broadcastToRoom(roomId, {
+          type: 'streaming_host_disconnected',
+          hostName: disconnectedPlayer.nickname,
+          deadlineMs,
+          message: `Host ${disconnectedPlayer.nickname} disconnected. Returning to main page in 30 seconds if host doesn't reconnect...`
+        });
+        
+        // Start 30-second timer - redirect all if host doesn't return
+        const timer = setTimeout(async () => {
+          const currentRoom = await storage.getRoom(roomId);
+          if (!currentRoom) return;
+          
+          // Check if host reconnected
+          if (!currentRoom.hostDisconnectedAt) {
+            console.log(`[Streaming] Host reconnected, canceling redirect`);
+            streamingHostTimers.delete(roomId);
+            return;
+          }
+          
+          console.log(`[Streaming] Host timeout - redirecting all players to main page`);
+          
+          // Broadcast redirect to all players
+          broadcastToRoom(roomId, {
+            type: 'streaming_host_timeout',
+            message: 'Host did not return. Returning to main page...'
+          });
+          
+          // Clean up room - mark as finished
+          await storage.updateRoom(roomId, { 
+            status: 'finished',
+            hostDisconnectedAt: null
+          });
+          
+          streamingHostTimers.delete(roomId);
+        }, 30000);
+        
+        streamingHostTimers.set(roomId, timer);
+        await broadcastRoomState(roomId);
+        return;
+      }
+      
+      // NORMAL MODE: Get candidates for voting
       const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft && p.id !== playerId);
       const candidates = [
         ...activePlayers.map(p => ({ id: p.id, nickname: p.nickname })),
@@ -4433,11 +4541,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Cancel host election timer if host reconnects
   async function cancelHostElectionIfNeeded(roomId: string) {
-    // Clear any pending timer
+    // Clear any pending timer (normal mode)
     const timer = hostDisconnectTimers.get(roomId);
     if (timer) {
       clearTimeout(timer);
       hostDisconnectTimers.delete(roomId);
+    }
+    
+    // Clear streaming mode timer
+    const streamingTimer = streamingHostTimers.get(roomId);
+    if (streamingTimer) {
+      clearTimeout(streamingTimer);
+      streamingHostTimers.delete(roomId);
     }
     
     // Always check and clear election state, even if timer already fired
@@ -4451,11 +4566,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hostElectionEligibleVoters: []
       });
       
-      // Notify players that election is cancelled (after state is reset)
-      broadcastToRoom(roomId, {
-        type: 'host_reconnected',
-        message: 'Host has reconnected. Election cancelled.'
-      });
+      // Notify players that host is back
+      // Use appropriate message type for streaming vs normal mode
+      if (room.isStreamingMode) {
+        broadcastToRoom(roomId, {
+          type: 'streaming_host_reconnected',
+          message: 'Host has reconnected!'
+        });
+      } else {
+        broadcastToRoom(roomId, {
+          type: 'host_reconnected',
+          message: 'Host has reconnected. Election cancelled.'
+        });
+      }
       
       // Broadcast updated room state so clients sync properly
       await broadcastRoomState(roomId);

@@ -1,9 +1,33 @@
 import { useEffect, useState } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tv, Crown, Users, Clock } from "lucide-react";
+import { Tv, Crown, Users, Clock, AlertTriangle } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
+
+// Host disconnect countdown component for streaming mode
+function StreamingHostDisconnectBanner({ deadlineMs, hostName }: { deadlineMs: number, hostName: string }) {
+  const [secondsLeft, setSecondsLeft] = useState(30);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [deadlineMs]);
+  
+  return (
+    <div className="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white p-4 shadow-lg animate-pulse">
+      <div className="max-w-4xl mx-auto flex items-center justify-center gap-3">
+        <AlertTriangle className="w-6 h-6" />
+        <span className="font-bold text-lg">
+          Host "{hostName}" disconnected! Redirecting in {secondsLeft}s...
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function StreamSpectatorPage() {
   const [, params] = useRoute("/stream/:roomId/spectator");
@@ -82,9 +106,20 @@ export default function StreamSpectatorPage() {
     );
   }
 
+  // Handle streaming host disconnect
+  const streamingHostDisconnected = gameState?.streamingHostDisconnected;
+  const streamingHostDeadlineMs = gameState?.streamingHostDeadlineMs;
+  const streamingHostName = gameState?.streamingHostName;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red p-4">
-      <div className="max-w-4xl mx-auto">
+      {streamingHostDisconnected && streamingHostDeadlineMs && (
+        <StreamingHostDisconnectBanner 
+          deadlineMs={streamingHostDeadlineMs} 
+          hostName={streamingHostName || "Host"} 
+        />
+      )}
+      <div className={`max-w-4xl mx-auto ${streamingHostDisconnected ? 'pt-16' : ''}`}>
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">

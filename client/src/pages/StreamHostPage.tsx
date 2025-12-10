@@ -2,11 +2,35 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation, useRoute, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv } from "lucide-react";
+import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/hooks/useSocket";
 import NicknameEditor from "@/components/NicknameEditor";
+
+// Host disconnect countdown component for streaming mode
+function StreamingHostDisconnectBanner({ deadlineMs, hostName }: { deadlineMs: number, hostName: string }) {
+  const [secondsLeft, setSecondsLeft] = useState(30);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [deadlineMs]);
+  
+  return (
+    <div className="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white p-4 shadow-lg animate-pulse">
+      <div className="max-w-4xl mx-auto flex items-center justify-center gap-3">
+        <AlertTriangle className="w-6 h-6" />
+        <span className="font-bold text-lg">
+          Host "{hostName}" disconnected! Redirecting in {secondsLeft}s...
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function StreamHostPage() {
   const [, params] = useRoute("/stream/:roomId/host");

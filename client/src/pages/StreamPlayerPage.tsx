@@ -2,11 +2,35 @@ import { useEffect, useState } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tv, Home } from "lucide-react";
+import { Tv, Home, AlertTriangle } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import GameCard from "@/components/game/Card";
 import ColorPickerModal from "@/components/game/ColorPickerModal";
+
+// Host disconnect countdown component for streaming mode
+function StreamingHostDisconnectBanner({ deadlineMs, hostName }: { deadlineMs: number, hostName: string }) {
+  const [secondsLeft, setSecondsLeft] = useState(30);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [deadlineMs]);
+  
+  return (
+    <div className="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white p-4 shadow-lg animate-pulse">
+      <div className="max-w-4xl mx-auto flex items-center justify-center gap-3">
+        <AlertTriangle className="w-6 h-6" />
+        <span className="font-bold text-lg">
+          Host "{hostName}" disconnected! Redirecting in {secondsLeft}s...
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function StreamPlayerPage() {
   const [, playerParams] = useRoute("/stream/:roomId/player/:slot");
@@ -146,8 +170,19 @@ export default function StreamPlayerPage() {
     }
   };
 
+  // Handle streaming host disconnect
+  const streamingHostDisconnected = gameState?.streamingHostDisconnected;
+  const streamingHostDeadlineMs = gameState?.streamingHostDeadlineMs;
+  const streamingHostName = gameState?.streamingHostName;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red relative overflow-hidden">
+      {streamingHostDisconnected && streamingHostDeadlineMs && (
+        <StreamingHostDisconnectBanner 
+          deadlineMs={streamingHostDeadlineMs} 
+          hostName={streamingHostName || "Host"} 
+        />
+      )}
       <style>{`
         :root {
           --r: min(35vw, 35vh, 180px);
@@ -156,7 +191,7 @@ export default function StreamPlayerPage() {
       `}</style>
       
       {/* Header - Same style as GameFixed */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-sm shadow-lg">
+      <div className={`fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-sm shadow-lg ${streamingHostDisconnected ? 'top-16' : ''}`}>
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-3">
             <Button
