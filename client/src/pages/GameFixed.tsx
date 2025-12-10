@@ -27,7 +27,6 @@ export default function Game() {
   const {
     gameState,
     setGameState,
-    floatingEmojis,
     avatarMessages,
     joinRoom,
     playCard,
@@ -847,16 +846,6 @@ export default function Game() {
         .animate-card-draw-player { animation: cardDrawPlayer 0.35s ease-out forwards; }
       `}</style>
       
-      {/* Floating emojis */}
-      {floatingEmojis.map((emoji) => (
-        <div
-          key={emoji.id}
-          className="fixed z-50 pointer-events-none animate-bounce text-xl sm:text-2xl"
-          style={{ left: emoji.x, top: emoji.y }}
-        >
-          {emoji.emoji}
-        </div>
-      ))}
 
       {/* Turn Indicator Banner - Shows whose turn it is to all players */}
       {room.status === "playing" && currentGamePlayer && (
@@ -1347,10 +1336,9 @@ export default function Game() {
                         <div
                           key={msg.id}
                           className={`absolute z-50 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
-                            position === 0 ? 'bottom-full left-1/2 -translate-x-1/2 mb-4'
-                            : position === 1 ? 'right-full top-1/2 -translate-y-1/2 mr-4'
-                            : position === 2 ? 'top-full left-1/2 -translate-x-1/2 mt-4'
-                            : 'left-full top-1/2 -translate-y-1/2 ml-4'
+                            position === 3 
+                              ? 'right-full top-1/2 -translate-y-1/2 mr-4'
+                              : 'left-full top-1/2 -translate-y-1/2 ml-4'
                           }`}
                         >
                           <div className="bg-white/95 dark:bg-gray-800/95 rounded-xl px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-600 max-w-[150px]">
@@ -1363,10 +1351,9 @@ export default function Game() {
                           </div>
                           {/* Speech bubble pointer */}
                           <div className={`absolute w-0 h-0 ${
-                            position === 0 ? 'top-full left-1/2 -translate-x-1/2 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white/95 dark:border-t-gray-800/95'
-                            : position === 1 ? 'left-full top-1/2 -translate-y-1/2 border-t-8 border-b-8 border-l-8 border-t-transparent border-b-transparent border-l-white/95 dark:border-l-gray-800/95'
-                            : position === 2 ? 'bottom-full left-1/2 -translate-x-1/2 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-white/95 dark:border-b-gray-800/95'
-                            : 'right-full top-1/2 -translate-y-1/2 border-t-8 border-b-8 border-r-8 border-t-transparent border-b-transparent border-r-white/95 dark:border-r-gray-800/95'
+                            position === 3 
+                              ? 'left-full top-1/2 -translate-y-1/2 border-t-8 border-b-8 border-l-8 border-t-transparent border-b-transparent border-l-white/95 dark:border-l-gray-800/95'
+                              : 'right-full top-1/2 -translate-y-1/2 border-t-8 border-b-8 border-r-8 border-t-transparent border-b-transparent border-r-white/95 dark:border-r-gray-800/95'
                           }`} />
                         </div>
                       ))}
