@@ -537,7 +537,7 @@ export default function RoomLobby() {
               <CardContent className="p-4">
                 {/* Drag handle with fixed background */}
                 <div
-                  className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing bg-uno-blue rounded-lg px-3 py-2"
+                  className="flex items-center justify-between mb-2 cursor-grab active:cursor-grabbing bg-uno-blue rounded-lg px-3 py-2"
                   onMouseDown={handleQRDragStart}
                   onTouchStart={handleQRDragStart}
                 >
@@ -556,16 +556,7 @@ export default function RoomLobby() {
                   </button>
                 </div>
                 
-                {/* QR Code */}
-                <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 mb-3">
-                  <img 
-                    src={qrCodeData} 
-                    alt={`QR Code for room ${room?.code}`}
-                    className="w-full h-auto"
-                  />
-                </div>
-                
-                {/* Copy Code Button */}
+                {/* Copy Code Button - directly under room code */}
                 <Button
                   onClick={() => {
                     if (room?.code) {
@@ -574,11 +565,20 @@ export default function RoomLobby() {
                   }}
                   variant="outline"
                   size="sm"
-                  className="w-full bg-uno-blue text-white hover:bg-blue-600"
+                  className="w-full mb-3 bg-uno-green text-white hover:bg-green-600"
                 >
                   <Copy className="mr-2 h-4 w-4" />
                   Copy Code
                 </Button>
+                
+                {/* QR Code */}
+                <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100">
+                  <img 
+                    src={qrCodeData} 
+                    alt={`QR Code for room ${room?.code}`}
+                    className="w-full h-auto"
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>
