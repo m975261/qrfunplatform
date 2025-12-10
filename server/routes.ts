@@ -794,6 +794,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const existingPlayers = await storage.getPlayersByRoom(room.id);
+      
+      // Check for duplicate nickname (case-insensitive, exclude players who have left)
+      const duplicateNickname = existingPlayers.find(p => 
+        p.nickname.toLowerCase() === nickname.toLowerCase() && !p.hasLeft
+      );
+      
+      if (duplicateNickname) {
+        return res.status(409).json({ 
+          error: "Nickname already taken",
+          message: "This nickname is already in use. Please choose a different one."
+        });
+      }
+      
       const hasHost = room.hostId && room.hostId.length > 0;
       
       let isHost = false;

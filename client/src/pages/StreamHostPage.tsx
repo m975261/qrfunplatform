@@ -84,12 +84,14 @@ export default function StreamHostPage() {
   const isHost = room?.hostId === playerId;
 
   useEffect(() => {
-    if (room && playerId && !isHost) {
+    // Only redirect if we have confirmed that hostId is set AND this user is NOT the host
+    // Wait until room.hostId is populated to avoid race conditions
+    if (room && playerId && room.hostId && room.hostId.length > 0 && room.hostId !== playerId) {
       console.log("[StreamHostPage] User is not host, redirecting to spectator page");
       const code = room.code || roomCode;
       setLocation(`/stream/${roomId}/spectator?code=${code}`);
     }
-  }, [room, playerId, isHost, roomId, roomCode, setLocation]);
+  }, [room, playerId, room?.hostId, roomId, roomCode, setLocation]);
 
   // Redirect based on role when game starts or player is assigned to a slot
   useEffect(() => {

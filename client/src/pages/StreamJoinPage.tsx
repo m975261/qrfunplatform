@@ -78,6 +78,15 @@ export default function StreamJoinPage() {
 
       if (!response.ok) {
         const error = await response.json();
+        if (response.status === 409) {
+          toast({
+            title: "Nickname Taken",
+            description: error.message || "This nickname is already in use. Please choose a different one.",
+            variant: "destructive",
+          });
+          setIsJoining(false);
+          return;
+        }
         throw new Error(error.message || "Failed to join room");
       }
 
