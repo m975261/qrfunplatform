@@ -1,31 +1,31 @@
 import { useEffect, useState } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
-import { Card } from "@/components/ui/card";
-import { Tv } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tv, Home } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import GameCard from "@/components/game/Card";
-import { Button } from "@/components/ui/button";
+import ColorPickerModal from "@/components/game/ColorPickerModal";
 
 export default function StreamPlayerPage() {
-  // Try both player slot route and host game route
   const [, playerParams] = useRoute("/stream/:roomId/player/:slot");
   const [, hostParams] = useRoute("/stream/:roomId/host/game");
   const search = useSearch();
   const [, setLocation] = useLocation();
   
-  // Determine roomId and slot from either route
   const roomId = playerParams?.roomId || hostParams?.roomId;
-  const slot = playerParams?.slot ? parseInt(playerParams.slot) : 1; // Host is slot 1 (position 0)
+  const slot = playerParams?.slot ? parseInt(playerParams.slot) : 1;
   const isHostGame = !!hostParams?.roomId;
   const roomCode = new URLSearchParams(search).get('code') || undefined;
   
-  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
-  const [colorChoiceRequested, setColorChoiceRequested] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [handRefreshKey, setHandRefreshKey] = useState(0);
   const { toast } = useToast();
   
   const { 
     gameState, 
+    setGameState,
     joinRoom, 
     playCard, 
     drawCard, 
@@ -34,8 +34,6 @@ export default function StreamPlayerPage() {
     isConnected 
   } = useSocket();
 
-  // Use the generic playerId as the source of truth - it's always set fresh on join
-  // All players joining a streaming room get a fresh playerId in localStorage
   const playerId = localStorage.getItem("playerId");
 
   useEffect(() => {
@@ -43,6 +41,12 @@ export default function StreamPlayerPage() {
       joinRoom(playerId, roomId);
     }
   }, [isConnected, roomId, playerId, joinRoom]);
+
+  useEffect(() => {
+    if (gameState?.colorChoiceRequested || (gameState?.room?.waitingForColorChoice === playerId)) {
+      setShowColorPicker(true);
+    }
+  }, [gameState?.colorChoiceRequested, gameState?.room?.waitingForColorChoice, playerId]);
 
   const room = gameState?.room;
   const players = gameState?.players || [];
@@ -63,29 +67,37 @@ export default function StreamPlayerPage() {
     if (card.type === 'wild' || card.type === 'wild4') return true;
     if (card.color === currentColor) return true;
     if (card.color === topCard.color) return true;
-    if (card.value === topCard.value) return true;
+    if (card.type === 'number' && topCard.type === 'number' && card.number === topCard.number) return true;
+    if (card.type === topCard.type && card.type !== 'number') return true;
     return false;
   };
 
   const handlePlayCard = (cardIndex: number) => {
     const card = myHand[cardIndex];
     if (!card || !canPlayCard(card)) return;
-    
-    if (card.type === 'wild' || card.type === 'wild4') {
-      setSelectedCardIndex(cardIndex);
-      setColorChoiceRequested(true);
-    } else {
-      playCard(cardIndex);
-    }
+    playCard(cardIndex);
   };
 
-  const handleChooseColor = (color: string) => {
-    if (selectedCardIndex !== null) {
-      chooseColor(color as 'red' | 'yellow' | 'green' | 'blue');
-      playCard(selectedCardIndex);
-      setSelectedCardIndex(null);
-      setColorChoiceRequested(false);
-    }
+  const handleColorChoice = (color: string) => {
+    chooseColor(color as 'red' | 'yellow' | 'green' | 'blue');
+    setShowColorPicker(false);
+    
+    setGameState((prev: any) => ({
+      ...prev,
+      colorChoiceRequested: false,
+      selectedColor: color,
+      room: {
+        ...prev?.room,
+        currentColor: color,
+        waitingForColorChoice: null
+      },
+      forceRefresh: Math.random(),
+    }));
+    
+    setHandRefreshKey(prev => prev + 1);
+    setTimeout(() => setHandRefreshKey(prev => prev + 1), 1);
+    setTimeout(() => setHandRefreshKey(prev => prev + 1), 5);
+    setTimeout(() => setHandRefreshKey(prev => prev + 1), 10);
   };
 
   const handleDrawCard = () => {
@@ -95,16 +107,25 @@ export default function StreamPlayerPage() {
   };
 
   const handleCallUno = () => {
-    callUno();
-    toast({ title: "UNO!", duration: 1500 });
+    if (!myPlayer?.hasCalledUno) {
+      callUno();
+      toast({ title: "UNO!", duration: 1500 });
+    }
+  };
+
+  const getPlayerAvatar = (id: string, nickname: string) => {
+    const avatarKey = `avatar_${id}`;
+    const savedAvatar = localStorage.getItem(avatarKey);
+    if (savedAvatar) return savedAvatar;
+    return nickname?.[0]?.toUpperCase() || '?';
   };
 
   if (!room || room.status !== 'playing') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center p-4">
-        <Card className="bg-white/95 p-8 text-center">
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl p-8 text-center">
           <Tv className="w-16 h-16 mx-auto mb-4 text-purple-600" />
-          <h2 className="text-2xl font-bold mb-2">Waiting for Game to Start</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Waiting for Game to Start</h2>
           <p className="text-gray-600">You are {isHostGame ? 'the Host' : `Player ${slot}`}</p>
           <p className="text-sm text-gray-500 mt-2">The host will start the game soon...</p>
         </Card>
@@ -115,28 +136,49 @@ export default function StreamPlayerPage() {
   const currentPlayerIndex = room.currentPlayerIndex;
   const currentGamePlayer = gamePlayers.find((p: any) => p.position === currentPlayerIndex);
 
+  const getColorClass = (color: string) => {
+    switch (color) {
+      case 'red': return 'bg-uno-red';
+      case 'yellow': return 'bg-uno-yellow';
+      case 'green': return 'bg-uno-green';
+      case 'blue': return 'bg-uno-blue';
+      default: return 'bg-gray-500';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-sm border-b border-slate-700">
+    <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red relative overflow-hidden">
+      <style>{`
+        :root {
+          --r: min(35vw, 35vh, 180px);
+          --avatar: clamp(48px, 8vw, 80px);
+        }
+      `}</style>
+      
+      {/* Header - Same style as GameFixed */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-sm shadow-lg">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-3">
-            <div className="bg-purple-600 px-3 py-1 rounded-full flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/")}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              <Home className="w-5 h-5" />
+            </Button>
+            <div className="bg-gradient-to-r from-uno-red to-uno-purple px-3 py-1 rounded-full flex items-center gap-2">
               <Tv className="w-4 h-4 text-white" />
               <span className="text-white text-sm font-bold">{isHostGame ? 'HOST' : `PLAYER ${slot}`}</span>
             </div>
-            <span className="text-white font-mono">{room?.code}</span>
+            <span className="font-mono text-gray-700 font-bold">{room?.code}</span>
           </div>
           <div className="flex items-center gap-2">
-            {myHand.length === 2 && (
-              <Button
-                onClick={handleCallUno}
-                className="bg-uno-red text-white font-bold animate-pulse"
-              >
-                UNO!
-              </Button>
-            )}
-            <span className={`px-3 py-1 rounded-full text-sm font-bold ${isMyTurn ? 'bg-green-500 text-white' : 'bg-gray-600 text-gray-300'}`}>
+            <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+              isMyTurn 
+                ? 'bg-green-500 text-white animate-pulse' 
+                : 'bg-gray-200 text-gray-600'
+            }`}>
               {isMyTurn ? "YOUR TURN" : `${currentGamePlayer?.nickname}'s Turn`}
             </span>
           </div>
@@ -146,130 +188,226 @@ export default function StreamPlayerPage() {
       {/* Turn Banner */}
       {isMyTurn && (
         <div className="fixed top-14 left-0 right-0 z-30 flex justify-center pointer-events-none">
-          <div className="bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white px-6 py-2 rounded-full shadow-lg animate-pulse">
-            <span className="font-bold">It's Your Turn!</span>
+          <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-2 rounded-full shadow-lg animate-pulse">
+            <span className="font-bold">It's Your Turn! Play a card or draw</span>
           </div>
         </div>
       )}
 
-      {/* Game Area */}
-      <section className="relative w-full min-h-screen pt-24 pb-48 flex flex-col items-center justify-center">
-        {/* Discard Pile */}
-        <div className="relative mb-8">
-          <div className="w-40 h-40 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border-4 border-slate-600 shadow-2xl flex items-center justify-center">
-            {topCard ? (
-              <GameCard card={topCard} size="large" interactive={false} />
-            ) : (
-              <div className="w-20 h-28 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold">UNO</span>
+      {/* Main Game Area - 12x12 CSS Grid like GameFixed */}
+      <section 
+        className="relative w-full min-h-screen pt-20 pb-40"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(12, 1fr)',
+          gridTemplateRows: 'repeat(12, 1fr)',
+          gap: '0.5rem',
+          padding: '1rem'
+        }}
+      >
+        {/* Center Circle with Discard Pile */}
+        <div 
+          className="flex items-center justify-center"
+          style={{
+            gridColumn: '5 / 9',
+            gridRow: '4 / 8'
+          }}
+        >
+          <div className="relative">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-sm border-4 border-white/40 shadow-2xl flex items-center justify-center">
+              {topCard ? (
+                <GameCard card={topCard} size="medium" interactive={false} />
+              ) : (
+                <div className="w-16 h-24 bg-gradient-to-br from-uno-red to-red-700 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">UNO</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Current Color Indicator */}
+            {currentColor && (
+              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 px-4 py-2 rounded-full shadow-lg">
+                <div className={`w-6 h-6 rounded-full border-2 border-white shadow-md ${getColorClass(currentColor)}`} />
+                <span className="text-sm font-bold text-gray-700 uppercase">{currentColor}</span>
               </div>
             )}
-          </div>
-          
-          {/* Current Color */}
-          {currentColor && (
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 px-3 py-1 rounded-full">
-              <div
-                className={`w-5 h-5 rounded-full border-2 border-white ${
-                  currentColor === 'red' ? 'bg-red-500'
-                  : currentColor === 'yellow' ? 'bg-yellow-500'
-                  : currentColor === 'blue' ? 'bg-blue-500'
-                  : currentColor === 'green' ? 'bg-green-500'
-                  : 'bg-gray-500'
-                }`}
-              />
-              <span className="text-sm text-white font-bold uppercase">{currentColor}</span>
-            </div>
-          )}
 
-          {/* Direction */}
-          <div className="absolute -top-2 -left-2 w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center border-2 border-yellow-300">
-            <span className="text-lg">{room.direction === 'clockwise' ? '↻' : '↺'}</span>
+            {/* Direction Indicator */}
+            <div className="absolute -top-2 -left-2 w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center border-2 border-white shadow-lg">
+              <span className="text-xl">{room.direction === 'clockwise' ? '↻' : '↺'}</span>
+            </div>
           </div>
         </div>
 
         {/* Draw Button */}
         {isMyTurn && (
-          <Button
-            onClick={handleDrawCard}
-            className="mb-8 bg-gradient-to-br from-red-600 to-red-800 text-white font-bold px-6 py-3 rounded-xl"
+          <div 
+            className="flex items-center justify-center"
+            style={{
+              gridColumn: '10 / 12',
+              gridRow: '5 / 7'
+            }}
           >
-            Draw Card
-          </Button>
+            <div className="relative cursor-pointer group" onClick={handleDrawCard}>
+              <div className="bg-gradient-to-br from-blue-700 to-blue-900 rounded-xl border-4 border-blue-500 shadow-xl group-hover:shadow-blue-500/50 transition-all w-16 h-24">
+                <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-lg absolute -top-1 -left-1 w-16 h-24"></div>
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-white font-bold text-xs">DRAW</span>
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Other Players */}
-        <div className="flex flex-wrap justify-center gap-4 mb-8 px-4">
+        {/* Other Players Display */}
+        <div 
+          className="flex flex-wrap items-center justify-center gap-3"
+          style={{
+            gridColumn: '2 / 12',
+            gridRow: '2 / 4'
+          }}
+        >
           {gamePlayers.filter((p: any) => p.id !== playerId).map((player: any) => {
             const isPlayerTurn = currentPlayerIndex === player.position;
             const cardCount = player.cardCount || player.hand?.length || 0;
             return (
-              <div
+              <Card
                 key={player.id}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-                  isPlayerTurn
-                    ? 'bg-green-500 text-white ring-2 ring-green-300'
-                    : 'bg-slate-700 text-gray-300'
+                className={`bg-white/95 backdrop-blur-sm shadow-lg transition-all ${
+                  isPlayerTurn ? 'ring-4 ring-green-500 scale-105' : ''
                 }`}
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-uno-blue to-uno-purple flex items-center justify-center text-white font-bold text-sm">
-                  {player.nickname[0].toUpperCase()}
-                </div>
-                <span className="font-medium">{player.nickname}</span>
-                <span className="text-xs bg-black/30 px-2 py-0.5 rounded-full">{cardCount} 🎴</span>
-              </div>
+                <CardContent className="p-3 flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                    isPlayerTurn 
+                      ? 'bg-gradient-to-br from-green-400 to-green-600' 
+                      : 'bg-gradient-to-br from-uno-blue to-uno-purple'
+                  }`}>
+                    {getPlayerAvatar(player.id, player.nickname)}
+                  </div>
+                  <div>
+                    <div className={`font-semibold ${isPlayerTurn ? 'text-green-600' : 'text-gray-800'}`}>
+                      {player.nickname} {isPlayerTurn && '⭐'}
+                    </div>
+                    <div className="text-xs text-gray-500">{cardCount} cards</div>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
       </section>
 
-      {/* My Hand - Fixed at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 p-4">
-        <div className="flex justify-center gap-2 overflow-x-auto pb-2">
-          {myHand.map((card: any, index: number) => {
-            const isPlayable = canPlayCard(card);
-            return (
-              <button
-                key={index}
-                onClick={() => isPlayable && handlePlayCard(index)}
-                className={`flex-shrink-0 transition-transform ${
-                  isPlayable && isMyTurn
-                    ? 'hover:scale-110 hover:-translate-y-2 cursor-pointer'
-                    : 'opacity-60 cursor-not-allowed'
-                }`}
-                disabled={!isPlayable || !isMyTurn}
-              >
-                <GameCard card={card} size="medium" interactive={isPlayable && isMyTurn} />
-              </button>
-            );
-          })}
-        </div>
-        <div className="text-center text-xs text-gray-400 mt-2">
-          {myHand.length} cards in hand
-        </div>
-      </div>
-
-      {/* Color Choice Modal */}
-      {colorChoiceRequested && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
-          <Card className="bg-white p-6 rounded-2xl shadow-2xl">
-            <h3 className="text-xl font-bold text-center mb-4">Choose a Color</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {['red', 'yellow', 'green', 'blue'].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => handleChooseColor(color)}
-                  className={`w-20 h-20 rounded-xl border-4 border-white shadow-lg transition-transform hover:scale-110 ${
-                    color === 'red' ? 'bg-red-500'
-                    : color === 'yellow' ? 'bg-yellow-500'
-                    : color === 'green' ? 'bg-green-500'
-                    : 'bg-blue-500'
-                  }`}
-                />
-              ))}
+      {/* Player Hand Area - Fixed at bottom, same style as GameFixed */}
+      {myPlayer && !myPlayer.isSpectator && (
+        <div className="fixed bottom-0 left-0 right-0 z-30">
+          <div className="bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md px-2 pb-10" style={{
+            height: 'max(22vh, 140px)'
+          }}>
+            
+            {/* Player Info Header */}
+            <div className="flex items-center justify-between mb-2 px-2">
+              <div className="flex items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 ${
+                  isMyTurn ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' : 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
+                }`}>
+                  {getPlayerAvatar(myPlayer.id, myPlayer.nickname)}
+                </div>
+                <div className="ml-2">
+                  <div className={`font-semibold text-white text-sm ${isMyTurn ? 'text-green-400' : ''}`}>
+                    {myPlayer.nickname}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {myHand.length} cards
+                  </div>
+                </div>
+                {isMyTurn && (
+                  <div className="ml-3">
+                    <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-bold border border-green-500/30">
+                      YOUR TURN ⭐
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </Card>
+
+            {/* UNO Button */}
+            {myHand.length <= 2 && (
+              <div className="absolute top-2 right-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-bold border-2 transition-all bg-red-600 border-red-500 text-white hover:bg-red-700 animate-pulse text-xs px-3 py-1"
+                  onClick={handleCallUno}
+                >
+                  🔥 UNO! 🔥
+                </Button>
+              </div>
+            )}
+
+            {/* Player Cards */}
+            <div className="overflow-x-auto overflow-y-visible px-1">
+              {myHand && myHand.length > 0 ? (
+                <div key={`hand-${handRefreshKey}`} className="flex space-x-1 min-w-max h-full items-center py-1 justify-center">
+                  {myHand.map((card: any, index: number) => {
+                    const isPlayable = canPlayCard(card);
+                    return (
+                      <div 
+                        key={index} 
+                        className={`transition-all duration-200 flex-shrink-0 ${
+                          isMyTurn && isPlayable 
+                            ? 'hover:scale-110 hover:-translate-y-3 cursor-pointer' 
+                            : 'opacity-60'
+                        }`}
+                        onClick={() => {
+                          if (!isMyTurn || !isPlayable) return;
+                          handlePlayCard(index);
+                        }}
+                      >
+                        <GameCard
+                          card={card}
+                          size="extra-small"
+                          selected={false}
+                          disabled={!isMyTurn || !isPlayable}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-slate-400 text-lg">No cards in hand</div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Spectator View */}
+      {myPlayer && myPlayer.isSpectator && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-800/95 to-slate-800/90 backdrop-blur-md">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-center">
+              <div className="bg-slate-700/80 px-6 py-3 rounded-lg border border-slate-600">
+                <div className="text-center">
+                  <div className="text-slate-300 text-sm mb-2">You are watching as a spectator</div>
+                  <div className="text-xs text-slate-400">
+                    Current turn: <span className="text-green-400 font-medium">{currentGamePlayer?.nickname || 'Unknown'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Color Picker Modal */}
+      {showColorPicker && (
+        <ColorPickerModal
+          onChooseColor={handleColorChoice}
+          onClose={() => setShowColorPicker(false)}
+        />
       )}
     </div>
   );
