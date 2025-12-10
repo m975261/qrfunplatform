@@ -549,6 +549,9 @@ export default function RoomLobby() {
                     alt={`QR Code for room ${room?.code}`}
                     className="w-full h-auto"
                   />
+                  <div className="text-center mt-2 pt-2 border-t border-gray-100">
+                    <span className="text-sm font-bold text-uno-blue">QrFun.net/uno</span>
+                  </div>
                 </div>
                 
                 {/* Copy Link Button */}
