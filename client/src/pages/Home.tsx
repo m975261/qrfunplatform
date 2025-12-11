@@ -127,13 +127,6 @@ export default function Home() {
         
         // Show the Stream Lobby (OBS view) - first joiner will become host
         setLocation(`/stream/${data.room.id}/lobby?code=${data.room.code}`);
-        
-        // Show toast with instructions
-        toast({
-          title: "Streaming Room Created!",
-          description: "Use QR code or share the link. First person to join becomes host!",
-          duration: 5000,
-        });
         return;
       }
       
