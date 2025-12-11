@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import GameCard from "@/components/game/Card";
 
 interface StreamGameBoardProps {
@@ -12,6 +12,17 @@ interface StreamGameBoardProps {
   isSpectator?: boolean;
   colorChoiceRequested?: boolean;
   cardAnimation?: { type: string; playerId?: string } | null;
+}
+
+interface FlyingCard {
+  id: string;
+  card: any;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  type: 'play' | 'draw';
+  animating: boolean;
 }
 
 export default function StreamGameBoard({
@@ -28,6 +39,10 @@ export default function StreamGameBoard({
 }: StreamGameBoardProps) {
   const [playingCardIndex, setPlayingCardIndex] = useState<number | null>(null);
   const [drawingCard, setDrawingCard] = useState(false);
+  const [flyingCards, setFlyingCards] = useState<FlyingCard[]>([]);
+  const [prevHandLength, setPrevHandLength] = useState(0);
+  const deckRef = useRef<HTMLDivElement>(null);
+  const handContainerRef = useRef<HTMLDivElement>(null);
 
   const gamePlayers = players
     .filter((p: any) => !p.isSpectator && p.position !== null && p.position !== undefined)
@@ -42,6 +57,41 @@ export default function StreamGameBoard({
   const pendingDraw = room?.pendingDraw ?? 0;
 
   const isMyTurn = currentGamePlayer?.id === myPlayer?.id && room?.status === "playing";
+
+  // Detect when a card is drawn (hand increases)
+  useEffect(() => {
+    if (myHand.length > prevHandLength && prevHandLength > 0) {
+      const newCard = myHand[myHand.length - 1];
+      if (deckRef.current && handContainerRef.current) {
+        const deckRect = deckRef.current.getBoundingClientRect();
+        const handRect = handContainerRef.current.getBoundingClientRect();
+        
+        const cardId = `draw-${Date.now()}`;
+        const flyingCard: FlyingCard = {
+          id: cardId,
+          card: newCard,
+          startX: deckRect.left + deckRect.width / 2,
+          startY: deckRect.top + deckRect.height / 2,
+          endX: handRect.left + handRect.width / 2,
+          endY: handRect.top + 20,
+          type: 'draw',
+          animating: false
+        };
+        
+        setFlyingCards(prev => [...prev, flyingCard]);
+        
+        // Start animation after mounting
+        requestAnimationFrame(() => {
+          setFlyingCards(prev => prev.map(c => c.id === cardId ? { ...c, animating: true } : c));
+        });
+        
+        setTimeout(() => {
+          setFlyingCards(prev => prev.filter(c => c.id !== cardId));
+        }, 450);
+      }
+    }
+    setPrevHandLength(myHand.length);
+  }, [myHand.length, prevHandLength, myHand]);
 
   const getPlayerAtPosition = (position: number) => {
     return gamePlayers.find((player: any) => player.position === position) || null;
@@ -65,14 +115,45 @@ export default function StreamGameBoard({
     return false;
   };
 
-  const handleCardClick = (cardIndex: number, card: any) => {
+  const handleCardClick = (cardIndex: number, card: any, cardElement?: HTMLDivElement) => {
     if (!isCardPlayable(card) || !onPlayCard) return;
     
     setPlayingCardIndex(cardIndex);
+    
+    // Create flying card animation
+    if (cardElement) {
+      const cardRect = cardElement.getBoundingClientRect();
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2 - 50;
+      
+      const cardId = `play-${Date.now()}`;
+      const flyingCard: FlyingCard = {
+        id: cardId,
+        card: card,
+        startX: cardRect.left + cardRect.width / 2,
+        startY: cardRect.top,
+        endX: centerX,
+        endY: centerY,
+        type: 'play',
+        animating: false
+      };
+      
+      setFlyingCards(prev => [...prev, flyingCard]);
+      
+      // Start animation after mounting
+      requestAnimationFrame(() => {
+        setFlyingCards(prev => prev.map(c => c.id === cardId ? { ...c, animating: true } : c));
+      });
+      
+      setTimeout(() => {
+        setFlyingCards(prev => prev.filter(c => c.id !== cardId));
+      }, 400);
+    }
+    
     setTimeout(() => {
       onPlayCard(cardIndex);
       setPlayingCardIndex(null);
-    }, 300);
+    }, 350);
   };
 
   const handleDraw = () => {
@@ -252,9 +333,46 @@ export default function StreamGameBoard({
           0% { transform: translateY(-30px) scale(0.8); opacity: 0; }
           100% { transform: translateY(0) scale(1); opacity: 1; }
         }
+        @keyframes flyToCenter {
+          0% { opacity: 1; }
+          100% { opacity: 0.8; }
+        }
+        @keyframes flyToHand {
+          0% { opacity: 0.5; }
+          100% { opacity: 1; }
+        }
         .animate-card-play { animation: cardPlayUp 0.35s ease-out forwards; }
         .animate-card-draw { animation: cardDraw 0.3s ease-out forwards; }
+        .flying-card { 
+          position: fixed;
+          pointer-events: none;
+          z-index: 100;
+          transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
       `}</style>
+
+      {/* Flying Cards Animation Overlay */}
+      {flyingCards.map((fc) => {
+        const x = fc.animating ? fc.endX : fc.startX;
+        const y = fc.animating ? fc.endY : fc.startY;
+        const scale = fc.animating ? (fc.type === 'play' ? 0.9 : 0.7) : (fc.type === 'play' ? 0.7 : 0.5);
+        
+        return (
+          <div
+            key={fc.id}
+            className="fixed pointer-events-none z-[100]"
+            style={{
+              left: x,
+              top: y,
+              transform: `translate(-50%, -50%) scale(${scale})`,
+              opacity: fc.animating ? 1 : 0.7,
+              transition: 'all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            }}
+          >
+            <GameCard card={fc.card} size="medium" interactive={false} onClick={() => {}} />
+          </div>
+        );
+      })}
 
       {room?.status === "playing" && currentGamePlayer && (
         <div className={`fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1 md:px-4 md:py-1.5 rounded-full shadow-lg border-2 transition-all ${
@@ -296,8 +414,9 @@ export default function StreamGameBoard({
           <div className="absolute inset-0 flex items-center justify-center z-20">
             <div className="flex items-center gap-2 md:gap-3">
               <div
+                ref={deckRef}
                 className={`w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center cursor-pointer hover:scale-105 transition-transform ${
-                  drawingCard ? "animate-card-draw" : ""
+                  drawingCard ? "animate-pulse scale-95" : ""
                 } ${isMyTurn && !isSpectator ? "ring-2 ring-green-400" : ""}`}
                 onClick={handleDraw}
               >
@@ -355,7 +474,7 @@ export default function StreamGameBoard({
               </div>
             )}
 
-            <div className="flex justify-center overflow-x-auto pb-1 scrollbar-hide">
+            <div className="flex justify-center overflow-x-auto pb-1 scrollbar-hide" ref={handContainerRef}>
               <div className="flex items-end gap-0.5 px-2">
                 {myHand.map((card: any, index: number) => {
                   const playable = isCardPlayable(card);
@@ -364,13 +483,14 @@ export default function StreamGameBoard({
                     <div
                       key={index}
                       className={`flex-shrink-0 transition-all duration-200 ${
-                        playable ? "hover:-translate-y-2 cursor-pointer" : "opacity-50"
-                      } ${isPlaying ? "animate-card-play" : ""}`}
+                        playable ? "hover:-translate-y-3 cursor-pointer hover:z-50" : "opacity-50"
+                      } ${isPlaying ? "scale-110 opacity-0 -translate-y-8" : ""}`}
                       style={{
                         marginLeft: index > 0 ? "-0.75rem" : "0",
-                        zIndex: index,
+                        zIndex: isPlaying ? 100 : index,
+                        transition: isPlaying ? 'all 0.3s ease-out' : 'all 0.2s ease',
                       }}
-                      onClick={() => handleCardClick(index, card)}
+                      onClick={(e) => handleCardClick(index, card, e.currentTarget as HTMLDivElement)}
                     >
                       <div className="transform scale-[0.6] md:scale-75 lg:scale-90 origin-bottom">
                         <GameCard
