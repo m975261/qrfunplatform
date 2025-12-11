@@ -483,11 +483,8 @@ export default function StreamPage() {
                     {(position === 1 || position === 2) && renderCardFan()}
                   </div>
                 ) : (
-                  <div
-                    className="rounded-full flex items-center justify-center border-4 bg-slate-700/50 border-slate-600"
-                    style={{ width: 'clamp(50px, 10vmin, 70px)', height: 'clamp(50px, 10vmin, 70px)' }}
-                  >
-                    <div className="text-slate-500 text-xs font-medium">Empty</div>
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700/50 border-2 border-dashed border-gray-500 flex items-center justify-center">
+                    <span className="text-gray-400 text-[10px]">Empty</span>
                   </div>
                 )}
               </div>
