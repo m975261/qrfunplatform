@@ -124,27 +124,32 @@ export default function StreamGamePage() {
     !p.isSpectator && p.position !== null && p.position !== undefined
   ).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
   
-  // Detect card plays for animation (for spectator view)
+  // Detect turn changes for animation (for spectator view)
+  // When turn changes, animate the player who just finished their turn (previous player)
   useEffect(() => {
-    const topCard = room?.topCard || room?.discardPile?.[0];
     const currentPlayerIdx = room?.currentPlayerIndex ?? null;
     const prev = prevGameStateRef.current;
     
-    // Check if a card was played (topCard changed)
-    if (topCard && prev.topCard && 
-        (topCard.color !== prev.topCard.color || topCard.value !== prev.topCard.value || topCard.type !== prev.topCard.type)) {
-      // Find who played - it was the player at the previous index (before turn changed)
-      const prevPlayer = gamePlayers[prev.currentPlayerIndex ?? 0];
-      if (prevPlayer) {
-        setCardAnimation({ type: 'play', playerId: prevPlayer.id });
+    // If turn index changed, the previous player just acted (played or drew)
+    if (prev.currentPlayerIndex !== null && 
+        currentPlayerIdx !== null && 
+        prev.currentPlayerIndex !== currentPlayerIdx && 
+        room?.status === 'playing') {
+      // Find the player who just acted (at the previous index)
+      const actingPlayer = gamePlayers[prev.currentPlayerIndex];
+      if (actingPlayer) {
+        setCardAnimation({ type: 'play', playerId: actingPlayer.id });
         // Clear animation after 600ms
         setTimeout(() => setCardAnimation(null), 600);
       }
     }
     
     // Update ref with current values
-    prevGameStateRef.current = { topCard, currentPlayerIndex: currentPlayerIdx };
-  }, [room?.topCard, room?.discardPile, room?.currentPlayerIndex, gamePlayers]);
+    prevGameStateRef.current = { 
+      topCard: room?.topCard || room?.discardPile?.[0], 
+      currentPlayerIndex: currentPlayerIdx 
+    };
+  }, [room?.currentPlayerIndex, room?.status, gamePlayers, room?.topCard, room?.discardPile]);
   
   // Get current player for turn highlighting
   const currentPlayerIndex = room?.currentPlayerIndex ?? 0;
