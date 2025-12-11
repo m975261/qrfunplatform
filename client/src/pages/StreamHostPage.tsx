@@ -44,9 +44,9 @@ export default function StreamHostPage() {
   const [editingSpectatorId, setEditingSpectatorId] = useState<string | null>(null);
   const [editingSpectatorNickname, setEditingSpectatorNickname] = useState<string>("");
   const [showViewersPanel, setShowViewersPanel] = useState(true);
-  const [viewersPanelWidth, setViewersPanelWidth] = useState(400);
-  const [viewersPanelHeight, setViewersPanelHeight] = useState(300);
-  const [viewersPanelPosition, setViewersPanelPosition] = useState({ x: window.innerWidth - 420, y: 100 });
+  const [viewersPanelWidth, setViewersPanelWidth] = useState(250);
+  const [viewersPanelHeight, setViewersPanelHeight] = useState(200);
+  const [viewersPanelPosition, setViewersPanelPosition] = useState({ x: window.innerWidth - 270, y: 80 });
   const [isResizingPanel, setIsResizingPanel] = useState(false);
   const [isDraggingPanel, setIsDraggingPanel] = useState(false);
   const resizeStartX = useRef(0);
