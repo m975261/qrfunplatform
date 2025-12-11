@@ -386,13 +386,13 @@ export default function StreamPlayerPage() {
       <StreamGameBoard
         room={room}
         players={players}
-        currentPlayerId={playerId || undefined}
+        currentPlayerId={effectivePlayerId || undefined}
         onPlayCard={handlePlayCard}
         onDrawCard={handleDrawCard}
         onCallUno={handleCallUno}
         onChooseColor={handleColorChoice}
         isSpectator={isSpectator}
-        colorChoiceRequested={gameState?.colorChoiceRequested || room?.waitingForColorChoice === playerId}
+        colorChoiceRequested={gameState?.colorChoiceRequested || room?.waitingForColorChoice === effectivePlayerId}
         isHost={isHost}
         onKickPlayer={handleKickPlayer}
         onEditPlayer={(pid, nickname) => {
