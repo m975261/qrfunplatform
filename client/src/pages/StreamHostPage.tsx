@@ -103,7 +103,11 @@ export default function StreamHostPage() {
   );
   
   const spectators = players.filter((p: any) => p.isSpectator);
-  const isHost = room?.hostId === playerId;
+  
+  // Find the current player to check their isHost property
+  const currentPlayer = players.find((p: any) => p.id === playerId);
+  // Use both isHost property and hostId comparison like RoomLobby does
+  const isHost = currentPlayer?.isHost || room?.hostId === playerId;
 
   useEffect(() => {
     // Only redirect if we have confirmed that hostId is set AND this user is NOT the host
@@ -335,13 +339,14 @@ export default function StreamHostPage() {
                       {player.isOnline && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
                       )}
-                      {/* Host Controls - Kick & Edit buttons */}
+                      {/* Host Controls - Kick & Edit buttons for other players */}
                       {isHost && player.id !== playerId && (
                         <>
                           <button
                             onClick={() => handleKickPlayer(player.id)}
-                            className="absolute -bottom-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600"
+                            className="absolute -bottom-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 shadow-lg border border-white"
                             title="Kick"
+                            data-testid={`kick-player-${player.id}`}
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -350,12 +355,27 @@ export default function StreamHostPage() {
                               setEditingSpectatorId(player.id);
                               setEditingSpectatorNickname(player.nickname);
                             }}
-                            className="absolute -bottom-1 -left-1 w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white hover:bg-gray-600"
+                            className="absolute -bottom-1 -left-1 w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white hover:bg-gray-600 shadow-lg border border-white"
                             title="Edit nickname"
+                            data-testid={`edit-player-${player.id}`}
                           >
                             <Pencil className="w-3 h-3" />
                           </button>
                         </>
+                      )}
+                      {/* Edit button for host's own avatar */}
+                      {player.id === playerId && (
+                        <button
+                          onClick={() => {
+                            setEditingSpectatorId(player.id);
+                            setEditingSpectatorNickname(player.nickname);
+                          }}
+                          className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 shadow-lg border border-white"
+                          title="Edit my nickname"
+                          data-testid="edit-my-nickname"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
                       )}
                     </div>
                   ) : (
