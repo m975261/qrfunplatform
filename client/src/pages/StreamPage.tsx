@@ -391,53 +391,59 @@ export default function StreamPage() {
             ['--gap' as any]: 'clamp(8px, 2vmin, 16px)',
           }}
         >
-          {/* === CENTER AREA with Draw Pile and Played Card === */}
+          {/* === CENTER AREA with Draw Pile and Played Card - Matching Game.tsx === */}
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <div className="relative">
-              {/* Background circle */}
-              <div
-                className="absolute -z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-slate-600 shadow-2xl bg-gradient-to-br from-slate-700 to-slate-800"
-                style={{ width: 'clamp(140px, 28vmin, 200px)', height: 'clamp(140px, 28vmin, 200px)' }}
-              />
-              
-              {/* Draw pile and played card side by side */}
-              <div className="flex items-center gap-2 md:gap-3 z-20">
-                {/* Draw Pile */}
-                <div className="w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center">
-                  <div className="text-white text-[8px] md:text-xs font-bold text-center">
-                    DRAW
+              {/* Main Game Circle - Same styling as Game.tsx */}
+              <div className="w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 rounded-full bg-gradient-to-br from-yellow-300 via-orange-400 to-red-500 shadow-2xl flex items-center justify-center relative border-4 border-white/30">
+                
+                {/* Inner Circle */}
+                <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-yellow-200 to-orange-300 shadow-inner flex items-center justify-center relative border-2 border-white/50">
+                  
+                  {/* Draw Pile - Left Side */}
+                  <div className="absolute -left-6 sm:-left-8 md:-left-12 top-1/2 transform -translate-y-1/2">
+                    <div className="relative">
+                      <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-white shadow-xl"></div>
+                      <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-white shadow-xl absolute -top-0.5 -left-0.5"></div>
+                      <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg border-2 border-white shadow-xl absolute -top-1 -left-1"></div>
+                    </div>
+                    <div className="text-xs text-center mt-1 text-white font-bold">DRAW</div>
                   </div>
-                </div>
 
-                {/* Played Card */}
-                {topCard ? (
+                  {/* Current Card - Center */}
                   <div className="flex flex-col items-center">
-                    <div className="transform scale-75 md:scale-100">
-                      <GameCard card={topCard} size="large" interactive={false} />
+                    {topCard ? (
+                      <GameCard card={topCard} size="small" interactive={false} />
+                    ) : (
+                      <div className="w-10 h-14 sm:w-12 sm:h-16 md:w-14 md:h-20 bg-gradient-to-br from-red-500 to-red-700 rounded-lg border-2 border-white shadow-xl flex items-center justify-center">
+                        <div className="text-white font-bold text-xs">UNO</div>
+                      </div>
+                    )}
+                    {/* Active Color Indicator */}
+                    {room?.currentColor && topCard && (topCard.type === 'wild' || topCard.type === 'wild4') && (
+                      <div className="mt-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg shadow-sm">
+                        <div className="text-xs font-bold text-gray-700">
+                          Active: <span className={`${room.currentColor === 'red' ? 'text-red-500' : room.currentColor === 'blue' ? 'text-blue-500' : room.currentColor === 'green' ? 'text-green-500' : 'text-yellow-500'}`}>
+                            {room.currentColor?.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Direction Indicator - Right Side */}
+                  <div className="absolute -right-6 sm:-right-8 md:-right-12 top-1/2 transform -translate-y-1/2">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-white text-xs font-bold">
+                        {room?.direction === "clockwise" ? "↻" : "↺"}
+                      </span>
+                    </div>
+                    <div className="text-xs text-center mt-1 text-white font-bold">
+                      {room?.direction === "clockwise" ? "CW" : "CCW"}
                     </div>
                   </div>
-                ) : (
-                  <div className="w-14 h-20 md:w-20 md:h-28 bg-gradient-to-br from-red-500 to-red-700 rounded-xl border-3 border-red-300 shadow-xl flex items-center justify-center">
-                    <div className="text-white font-bold text-lg md:text-xl">UNO</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Current color indicator for wild cards */}
-              {room?.currentColor && topCard && (topCard.type === 'wild' || topCard.type === 'wild4') && (
-                <div className="absolute -bottom-6 md:-bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                  <div
-                    className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-white shadow-lg ${
-                      room.currentColor === 'red' ? 'bg-red-500'
-                      : room.currentColor === 'yellow' ? 'bg-yellow-500'
-                      : room.currentColor === 'blue' ? 'bg-blue-500'
-                      : room.currentColor === 'green' ? 'bg-green-500'
-                      : 'bg-gray-500'
-                    }`}
-                  />
-                  <span className="text-[8px] md:text-[10px] text-white font-bold mt-0.5 uppercase">{room.currentColor}</span>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
