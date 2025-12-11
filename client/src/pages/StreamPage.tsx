@@ -380,22 +380,22 @@ export default function StreamPage() {
         </div>
       )}
 
-      {/* === UNO TABLE (Centered + Responsive) - Same as GameFixed === */}
-      <section className="relative w-full h-screen flex items-center justify-center bg-transparent pt-16">
-        <div
-          className="relative aspect-square w-[min(80vmin,450px)]"
+      {/* === UNO TABLE - EXACT COPY OF StreamGameBoard STRUCTURE === */}
+      <div className="absolute inset-0 flex items-center justify-center p-2 pt-16 pb-28 md:pb-36">
+        <div 
+          className="relative w-full max-w-sm md:max-w-lg aspect-square"
           style={{
-            ['--r' as any]: 'calc(var(--center) / 2 + var(--avatar) / 2 + 8px)',
+            ['--r' as any]: 'calc(50% - 30px)',
             ['--avatar' as any]: 'clamp(60px, 11vmin, 76px)',
             ['--center' as any]: 'clamp(90px, 16vmin, 130px)',
             ['--gap' as any]: 'clamp(8px, 2vmin, 16px)',
           }}
         >
-          {/* === CENTER CIRCLE BACKGROUND - Same as StreamGameBoard === */}
+          {/* === CENTER CIRCLE BACKGROUND === */}
           <div className="absolute inset-[20%] rounded-full bg-gradient-to-br from-slate-700 to-slate-800 shadow-2xl border-4 border-slate-600" />
 
-          {/* === CENTER CONTENT (Draw Pile + Played Card) === */}
-          <div className="absolute inset-0 flex items-center justify-center z-30">
+          {/* === CENTER CONTENT (Draw Pile + Played Card) - z-20 like StreamGameBoard === */}
+          <div className="absolute inset-0 flex items-center justify-center z-20">
             <div className="flex items-center gap-2 md:gap-3">
               {/* Draw Pile */}
               <div className="w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center">
@@ -558,7 +558,7 @@ export default function StreamPage() {
             <div className="text-center text-xs text-slate-400 mt-1">DECK</div>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Viewers Area - Right Side */}
       <div className="fixed z-20" style={{
