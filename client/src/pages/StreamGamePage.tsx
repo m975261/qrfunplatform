@@ -2,11 +2,12 @@ import { useEffect, useState, useRef } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, QrCode, X, Link2, ChevronLeft, ChevronRight, Users, GripVertical } from "lucide-react";
+import { Copy, QrCode, X, Link2, ChevronLeft, ChevronRight, Users, GripVertical, MessageCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import StreamGameBoard from "@/components/game/StreamGameBoard";
 import GameEndModal from "@/components/game/GameEndModal";
+import ChatPanel from "@/components/game/ChatPanel";
 
 export default function StreamGamePage() {
   const [, params] = useRoute("/stream/:roomId/game");
@@ -25,10 +26,11 @@ export default function StreamGamePage() {
   const [unoMessage, setUnoMessage] = useState<string | null>(null);
   const [oneCardMessage, setOneCardMessage] = useState<string | null>(null);
   const [showSpectators, setShowSpectators] = useState(true);
+  const [showChat, setShowChat] = useState(false);
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
   
-  const { gameState, floatingEmojis, avatarMessages, isConnected, streamSubscribe, playAgain } = useSocket();
+  const { gameState, floatingEmojis, avatarMessages, isConnected, streamSubscribe, playAgain, sendChatMessage, sendEmoji } = useSocket();
 
   useEffect(() => {
     if (isConnected && roomId && !hasSubscribed) {
@@ -250,18 +252,6 @@ export default function StreamGamePage() {
         </div>
       )}
 
-      {/* Current Player Turn Indicator - Top center with blinking animation */}
-      {room?.status === 'playing' && currentGamePlayer && (
-        <div className="fixed top-16 md:top-14 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="turn-indicator">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
-            <div className="flex items-center space-x-1 md:space-x-2">
-              <span>⭐</span>
-              <span>{currentGamePlayer.nickname}'s Turn</span>
-              <span>⭐</span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* False UNO Penalty Message */}
       {gameState?.falseUnoMessage && (
@@ -303,6 +293,16 @@ export default function StreamGamePage() {
                 Enter Code Here: <span className="text-uno-red font-bold underline">QrFun.net</span>
               </div>
             </div>
+            {/* Turn Indicator - Directly attached below room code */}
+            {room?.status === 'playing' && currentGamePlayer && (
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-1.5 md:py-2 rounded-lg shadow-xl border-2 border-white animate-pulse" data-testid="turn-indicator">
+                <div className="flex items-center space-x-1">
+                  <span>⭐</span>
+                  <span>{currentGamePlayer.nickname}'s Turn</span>
+                  <span>⭐</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex space-x-1">
@@ -446,6 +446,28 @@ export default function StreamGamePage() {
             </CardContent>
           </UICard>
         </div>
+      )}
+
+      {/* Chat Toggle Button - Bottom left corner */}
+      <Button
+        onClick={() => setShowChat(!showChat)}
+        className="fixed bottom-4 left-4 z-40 bg-white/95 hover:bg-white text-gray-800 shadow-lg"
+        size="sm"
+        data-testid="chat-toggle"
+      >
+        <MessageCircle className="h-4 w-4 mr-1" />
+        Chat
+      </Button>
+
+      {/* Chat Panel - Spectator view (read-only visible) */}
+      {showChat && (
+        <ChatPanel
+          messages={gameState?.messages || []}
+          players={players}
+          onSendMessage={sendChatMessage}
+          onSendEmoji={sendEmoji}
+          onClose={() => setShowChat(false)}
+        />
       )}
 
       {/* Game End Modal */}
