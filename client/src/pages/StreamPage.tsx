@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useRoute, useSearch } from "wouter";
+import { useRoute, useSearch, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, QrCode, Tv, X, GripVertical, Link2, Crown } from "lucide-react";
@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import GameCard from "@/components/game/Card";
+import GameEndModal from "@/components/game/GameEndModal";
 
 interface FlyingCard {
   id: string;
@@ -31,9 +32,12 @@ export default function StreamPage() {
   const [prevTopCardId, setPrevTopCardId] = useState<string | null>(null);
   const [prevPlayerCards, setPrevPlayerCards] = useState<{[key: string]: number}>({});
   const [prevCurrentPlayerIndex, setPrevCurrentPlayerIndex] = useState<number | null>(null);
+  const [showGameEnd, setShowGameEnd] = useState(false);
+  const [gameEndData, setGameEndData] = useState<{ winner: string; rankings?: any[] } | null>(null);
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   
   const { gameState, isConnected, streamSubscribe } = useSocket();
 
@@ -223,6 +227,33 @@ export default function StreamPage() {
       document.removeEventListener('touchend', handleMouseUp);
     };
   }, [isDraggingQR, dragStartPos]);
+
+  // Game end detection - same logic as normal mode
+  useEffect(() => {
+    if (room?.status === "finished") {
+      setShowGameEnd(true);
+    }
+    
+    if (gameState?.gameEndData) {
+      setGameEndData(gameState.gameEndData);
+      setShowGameEnd(true);
+    }
+  }, [room?.status, gameState?.gameEndData]);
+
+  const handlePlayAgain = () => {
+    setShowGameEnd(false);
+    setGameEndData(null);
+    // Stream page goes back to lobby view
+    if (roomId) {
+      setLocation(`/stream/${roomId}/lobby?code=${room?.code}`);
+    }
+  };
+
+  const handleBackToLobby = () => {
+    setShowGameEnd(false);
+    setGameEndData(null);
+    setLocation('/');
+  };
 
   const handleCopyCode = () => {
     if (room?.code) {
@@ -622,6 +653,16 @@ export default function StreamPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Game End Modal - Same as normal mode */}
+      {showGameEnd && gameEndData && (
+        <GameEndModal
+          winner={gameEndData.winner}
+          rankings={gameEndData.rankings}
+          onPlayAgain={handlePlayAgain}
+          onBackToLobby={handleBackToLobby}
+        />
       )}
     </div>
   );
