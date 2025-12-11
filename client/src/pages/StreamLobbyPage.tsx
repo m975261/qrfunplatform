@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Copy, QrCode, Tv, X, GripVertical, Link2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
-import { useToast } from "@/hooks/use-toast";
 
 export default function StreamLobbyPage() {
   const [, params] = useRoute("/stream/:roomId/lobby");
@@ -21,7 +20,6 @@ export default function StreamLobbyPage() {
   const [hasSubscribed, setHasSubscribed] = useState(false);
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
-  const { toast } = useToast();
   
   const { gameState, isConnected, streamSubscribe } = useSocket();
 
@@ -103,7 +101,6 @@ export default function StreamLobbyPage() {
   const handleCopyCode = () => {
     if (room?.code) {
       navigator.clipboard.writeText(room.code);
-      toast({ title: "Room code copied!", duration: 1500 });
     }
   };
 
@@ -112,7 +109,6 @@ export default function StreamLobbyPage() {
       const baseUrl = window.location.origin;
       const joinLink = `${baseUrl}/?room=${room.code}`;
       navigator.clipboard.writeText(joinLink);
-      toast({ title: "Join link copied!", description: "Share this link with players", duration: 2000 });
     }
   };
 

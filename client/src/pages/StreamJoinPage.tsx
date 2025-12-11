@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tv, User, Loader2 } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
-import { useToast } from "@/hooks/use-toast";
-import { nanoid } from "nanoid";
 
 export default function StreamJoinPage() {
   const [, params] = useRoute("/stream/:roomId/join");
@@ -19,7 +17,7 @@ export default function StreamJoinPage() {
   const [isJoining, setIsJoining] = useState(false);
   const [roomInfo, setRoomInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
   
   const { gameState, joinRoom, isConnected } = useSocket();
 
@@ -56,15 +54,12 @@ export default function StreamJoinPage() {
 
   const handleJoin = async () => {
     if (!nickname.trim() || nickname.length < 2) {
-      toast({
-        title: "Invalid Nickname",
-        description: "Please enter a nickname with at least 2 characters.",
-        variant: "destructive",
-      });
+      setError("Please enter a nickname with at least 2 characters.");
       return;
     }
 
     setIsJoining(true);
+    setError(null);
     
     try {
       const response = await fetch("/api/stream/join", {
@@ -79,11 +74,7 @@ export default function StreamJoinPage() {
       if (!response.ok) {
         const error = await response.json();
         if (response.status === 409) {
-          toast({
-            title: "Nickname Taken",
-            description: error.message || "This nickname is already in use. Please choose a different one.",
-            variant: "destructive",
-          });
+          setError(error.message || "This nickname is already in use. Please choose a different one.");
           setIsJoining(false);
           return;
         }
@@ -109,11 +100,7 @@ export default function StreamJoinPage() {
         setLocation(`/stream/${roomId}/spectator?code=${code}`);
       }
     } catch (error: any) {
-      toast({
-        title: "Failed to Join",
-        description: error.message || "Could not join the streaming room.",
-        variant: "destructive",
-      });
+      setError(error.message || "Could not join the streaming room.");
       setIsJoining(false);
     }
   };
@@ -204,6 +191,12 @@ export default function StreamJoinPage() {
                 />
               </div>
             </div>
+
+            {error && (
+              <div className="p-3 bg-red-100 border border-red-300 rounded-lg text-red-700 text-sm">
+                {error}
+              </div>
+            )}
 
             <Button
               onClick={handleJoin}

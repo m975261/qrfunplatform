@@ -4,7 +4,6 @@ import { Card as UICard } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tv, Home, Users, Share2 } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
-import { useToast } from "@/hooks/use-toast";
 import StreamGameBoard from "@/components/game/StreamGameBoard";
 
 export default function StreamPlayerPage() {
@@ -17,8 +16,6 @@ export default function StreamPlayerPage() {
   const slot = playerParams?.slot ? parseInt(playerParams.slot) : 1;
   const isHostGame = !!hostParams?.roomId;
   const roomCode = new URLSearchParams(search).get('code') || undefined;
-  
-  const { toast } = useToast();
   
   const { 
     gameState, 
@@ -69,7 +66,6 @@ export default function StreamPlayerPage() {
   const handleCallUno = () => {
     if (!myPlayer?.hasCalledUno) {
       callUno();
-      toast({ title: "UNO!", duration: 1500 });
     }
   };
 
@@ -116,12 +112,7 @@ export default function StreamPlayerPage() {
               onClick={() => {
                 const baseUrl = window.location.origin;
                 const joinUrl = `${baseUrl}?room=${room.code}`;
-                navigator.clipboard.writeText(joinUrl).then(() => {
-                  toast({
-                    title: "Link Copied!",
-                    description: "Room join link copied to clipboard",
-                  });
-                });
+                navigator.clipboard.writeText(joinUrl);
               }}
             >
               <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />

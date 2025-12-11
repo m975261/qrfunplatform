@@ -3,7 +3,6 @@ import { useRoute, useSearch, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tv, Crown, Users, Clock, AlertTriangle, CheckCircle } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
-import { useToast } from "@/hooks/use-toast";
 
 // Host disconnect countdown component for streaming mode
 function StreamingHostDisconnectBanner({ deadlineMs, hostName }: { deadlineMs: number, hostName: string }) {
@@ -35,7 +34,6 @@ export default function StreamSpectatorPage() {
   const [, setLocation] = useLocation();
   const roomId = params?.roomId;
   const roomCode = new URLSearchParams(search).get('code') || undefined;
-  const { toast } = useToast();
   const hasShownAssignedToast = useRef(false);
   const [assignedSlot, setAssignedSlot] = useState<number | null>(null);
   
@@ -63,13 +61,6 @@ export default function StreamSpectatorPage() {
       setLocation(`/stream/${roomId}/player/${slot}?code=${code}`);
     } else if (hasPosition && !isPlaying) {
       setAssignedSlot(myPlayer.position + 1);
-      if (!hasShownAssignedToast.current) {
-        hasShownAssignedToast.current = true;
-        toast({
-          title: "You've been assigned!",
-          description: `You're now in slot ${myPlayer.position + 1}. Waiting for game to start.`,
-        });
-      }
     } else if (!hasPosition) {
       // Player was unassigned - reset state
       if (assignedSlot !== null) {
@@ -77,7 +68,7 @@ export default function StreamSpectatorPage() {
         hasShownAssignedToast.current = false;
       }
     }
-  }, [gameState?.players, gameState?.room?.status, gameState?.room?.code, playerId, roomId, setLocation, roomCode, toast, assignedSlot]);
+  }, [gameState?.players, gameState?.room?.status, gameState?.room?.code, playerId, roomId, setLocation, roomCode, assignedSlot]);
 
   const room = gameState?.room;
   const players = gameState?.players || [];

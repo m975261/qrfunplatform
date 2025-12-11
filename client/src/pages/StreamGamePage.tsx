@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Copy, QrCode, Tv, X, GripVertical, Link2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
-import { useToast } from "@/hooks/use-toast";
 import GameCard from "@/components/game/Card";
 
 export default function StreamGamePage() {
@@ -21,7 +20,6 @@ export default function StreamGamePage() {
   const [hasSubscribed, setHasSubscribed] = useState(false);
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
-  const { toast } = useToast();
   
   const { gameState, isConnected, streamSubscribe } = useSocket();
 
@@ -91,7 +89,6 @@ export default function StreamGamePage() {
   const handleCopyCode = () => {
     if (room?.code) {
       navigator.clipboard.writeText(room.code);
-      toast({ title: "Room code copied!", duration: 1500 });
     }
   };
 
@@ -100,7 +97,6 @@ export default function StreamGamePage() {
       const baseUrl = window.location.origin;
       const joinLink = `${baseUrl}/?room=${room.code}`;
       navigator.clipboard.writeText(joinLink);
-      toast({ title: "Join link copied!", duration: 2000 });
     }
   };
 

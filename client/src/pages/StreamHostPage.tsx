@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/hooks/useSocket";
 import NicknameEditor from "@/components/NicknameEditor";
 
@@ -50,7 +49,6 @@ export default function StreamHostPage() {
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
-  const { toast } = useToast();
   
   const { 
     gameState, 
@@ -140,26 +138,15 @@ export default function StreamHostPage() {
   const handleCopyLink = () => {
     const roomLink = `${window.location.origin}/?room=${room?.code}`;
     navigator.clipboard.writeText(roomLink);
-    toast({ title: "Link copied!", duration: 1500 });
   };
 
   const handleCopyStreamUrl = () => {
     const streamUrl = `${window.location.origin}/stream/${roomId}/lobby?code=${room?.code}`;
     navigator.clipboard.writeText(streamUrl);
-    toast({
-      title: "Stream URL Copied!",
-      description: "Use this URL in OBS or your streaming software",
-      duration: 2000,
-    });
   };
 
   const handleStartGame = () => {
     if (gamePlayers.length < 2) {
-      toast({
-        title: "Not Enough Players",
-        description: "Need at least 2 players to start the game.",
-        variant: "destructive",
-      });
       return;
     }
     startGame();
@@ -479,7 +466,6 @@ export default function StreamHostPage() {
                     variant="outline"
                     onClick={() => {
                       navigator.clipboard.writeText(room?.code || '');
-                      toast({ title: "Code copied!", duration: 1500 });
                     }}
                   >
                     <Copy className="w-4 h-4 mr-1" />
