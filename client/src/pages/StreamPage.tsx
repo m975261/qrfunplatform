@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, QrCode, Tv, X, GripVertical, Link2, Crown } from "lucide-react";
+import { Copy, QrCode, X, GripVertical, Link2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import GameCard from "@/components/game/Card";
@@ -269,12 +269,11 @@ export default function StreamPage() {
 
   if (!room) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700 text-white p-8">
+      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center">
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl p-8">
           <div className="text-center">
-            <Tv className="w-16 h-16 mx-auto mb-4 text-purple-400" />
-            <h2 className="text-2xl font-bold mb-2">Stream Page Loading...</h2>
-            <p className="text-gray-400">Connecting to room...</p>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading...</h2>
+            <p className="text-gray-600">Connecting to room...</p>
           </div>
         </Card>
       </div>
@@ -286,7 +285,7 @@ export default function StreamPage() {
   const currentGamePlayer = gamePlayers[currentPlayerIndex];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 relative overflow-hidden">
       {/* Flying Cards Animation Overlay */}
       {flyingCards.map((fc) => {
         const playerCoords = getPositionCoords(fc.fromPosition);
@@ -339,7 +338,7 @@ export default function StreamPage() {
         <div className="relative w-full max-w-sm md:max-w-lg aspect-square">
           {/* === CENTER CIRCLE BACKGROUND === */}
           <div 
-            className="absolute rounded-full bg-gradient-to-br from-slate-700 to-slate-800 shadow-2xl border-4 border-slate-600"
+            className="absolute rounded-full bg-gradient-to-br from-yellow-300 via-orange-400 to-red-500 shadow-2xl border-4 border-white/30"
             style={{ top: '20%', left: '20%', right: '20%', bottom: '20%' }}
           />
 
@@ -428,42 +427,40 @@ export default function StreamPage() {
 
             const renderAvatar = () => (
               <div className="relative flex flex-col items-center">
-                <div
-                  className={`rounded-full flex items-center justify-center text-white font-bold shadow-lg border-3 bg-gradient-to-br from-uno-blue to-uno-purple transition-all ${
-                    isPlayerTurn ? 'border-green-400 ring-2 ring-green-400/50 scale-105' : 'border-white/20'
-                  }`}
-                  style={{ width: 'clamp(50px, 10vmin, 70px)', height: 'clamp(50px, 10vmin, 70px)' }}
-                >
-                  <div className="text-2xl md:text-3xl">{player ? getPlayerAvatar(player.id) : ''}</div>
-                </div>
-                {player && (
-                  <>
+                <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-lg">
+                  <div className="flex items-center space-x-2 mb-1">
                     <div
-                      className={`mt-0.5 px-1.5 py-0.5 rounded-full text-[8px] md:text-[10px] font-bold shadow-lg max-w-[60px] truncate ${
-                        isPlayerTurn ? 'bg-green-500 text-white' : 'bg-black/70 text-white'
+                      className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-sm md:text-base shadow-lg border-2 transition-all ${
+                        isPlayerTurn 
+                          ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300 animate-pulse' 
+                          : 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
                       }`}
                     >
-                      {player.nickname} {isPlayerTurn && '⭐'}
+                      {player ? getPlayerAvatar(player.id) : ''}
                     </div>
-                    <div
-                      className={`absolute top-0 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white ${
-                        isOnline ? 'bg-green-500' : 'bg-red-500'
-                      }`}
-                    />
-                    {player.id === room?.hostId && (
-                      <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-                        <Crown className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                    <div>
+                      <div
+                        className={`font-semibold text-xs md:text-sm text-gray-800 ${
+                          isPlayerTurn ? 'text-red-600 animate-pulse' : ''
+                        }`}
+                      >
+                        {player?.nickname} {isPlayerTurn && '⭐'}
                       </div>
-                    )}
-                    <div className="absolute -bottom-1 -left-1 bg-slate-800 text-white text-[7px] md:text-[8px] px-1 py-0.5 rounded-full font-bold shadow border border-slate-600">
-                      {cardCount}
+                      <div className="text-xs text-gray-500">{cardCount} cards</div>
                     </div>
-                    {player.hasCalledUno && cardCount <= 1 && (
-                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[6px] px-1 py-0.5 rounded-full font-bold animate-pulse whitespace-nowrap">
-                        UNO!
-                      </div>
-                    )}
-                  </>
+                  </div>
+                </div>
+                {/* Online status indicator */}
+                <div
+                  className={`absolute top-0 right-0 w-2 h-2 md:w-2.5 md:h-2.5 rounded-full border border-white ${
+                    isOnline ? 'bg-green-500' : 'bg-red-500'
+                  }`}
+                />
+                {/* UNO badge */}
+                {player?.hasCalledUno && cardCount <= 1 && (
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[6px] px-1 py-0.5 rounded-full font-bold animate-pulse whitespace-nowrap">
+                    UNO!
+                  </div>
                 )}
               </div>
             );
@@ -477,8 +474,8 @@ export default function StreamPage() {
                     {(position === 1 || position === 2) && renderCardFan()}
                   </div>
                 ) : (
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700/50 border-2 border-dashed border-gray-500 flex items-center justify-center">
-                    <span className="text-gray-400 text-[10px]">Empty</span>
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/50 border-2 border-dashed border-gray-400 flex items-center justify-center">
+                    <span className="text-gray-500 text-[10px]">Empty</span>
                   </div>
                 )}
               </div>
