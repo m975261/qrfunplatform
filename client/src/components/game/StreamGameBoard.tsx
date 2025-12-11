@@ -106,7 +106,18 @@ export default function StreamGameBoard({
 
   const isCardPlayable = (card: any) => {
     if (!isMyTurn || !topCard || isSpectator) return false;
-    if (pendingDraw > 0) return false;
+    
+    // If there's a pending draw effect, only allow stacking cards (same as server logic)
+    if (pendingDraw > 0) {
+      // Can only play +2 on +2, or +4 on either +2 or +4
+      if (topCard.type === "draw2" && card.type === "draw2") return true;
+      if (topCard.type === "wild4" && card.type === "wild4") return true;
+      if (topCard.type === "draw2" && card.type === "wild4") return true;
+      // Cannot play +2 on +4, or any other card when facing a draw penalty
+      return false;
+    }
+    
+    // Normal playability rules (no pending draw)
     if (card.type === "wild" || card.type === "wild4") return true;
     if (currentColor && card.color === currentColor) return true;
     if (card.color === topCard.color) return true;
@@ -290,10 +301,20 @@ export default function StreamGameBoard({
             UNO!
           </div>
         )}
-        {/* Finish position badge */}
+        {/* Finish position badge - PROMINENT for spectators */}
         {player.finishPosition && (
-          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-[6px] px-1 py-0.5 rounded-full font-bold whitespace-nowrap">
-            {player.finishPosition === 1 ? "1ST" : player.finishPosition === 2 ? "2ND" : player.finishPosition === 3 ? "3RD" : `${player.finishPosition}TH`}
+          <div 
+            data-testid={`finish-badge-${player.finishPosition}`}
+            className={`absolute -bottom-5 md:-bottom-6 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg font-bold whitespace-nowrap shadow-lg border-2 ${
+            player.finishPosition === 1 
+              ? "bg-gradient-to-r from-yellow-400 to-yellow-600 border-yellow-300 text-white text-sm md:text-base animate-pulse" 
+              : player.finishPosition === 2 
+                ? "bg-gradient-to-r from-gray-300 to-gray-400 border-gray-200 text-gray-800 text-xs md:text-sm"
+                : player.finishPosition === 3
+                  ? "bg-gradient-to-r from-orange-400 to-orange-600 border-orange-300 text-white text-xs md:text-sm"
+                  : "bg-gray-500 border-gray-400 text-white text-[10px] md:text-xs"
+          }`}>
+            {player.finishPosition === 1 ? "🥇 1ST" : player.finishPosition === 2 ? "🥈 2ND" : player.finishPosition === 3 ? "🥉 3RD" : `${player.finishPosition}TH`}
           </div>
         )}
       </div>
@@ -404,11 +425,28 @@ export default function StreamGameBoard({
           })}
 
           <div className="absolute inset-0 flex items-center justify-center z-20">
-            {/* Played Card - Centered */}
+            {/* Played Card - Centered with Current Color Indicator below */}
             <div className="flex flex-col items-center">
               {topCard && (
                 <div className="transform scale-75 md:scale-100">
                   <GameCard card={topCard} size="large" interactive={false} onClick={() => {}} />
+                </div>
+              )}
+              {/* Current Color Indicator - directly under played card */}
+              {currentColor && (
+                <div className="flex flex-col items-center mt-1 md:mt-2" data-testid="color-indicator-container">
+                  <span className="text-[8px] md:text-[10px] text-white font-bold uppercase opacity-80">Played Color</span>
+                  <div
+                    data-testid={`color-indicator-${currentColor}`}
+                    className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-white shadow-lg ${
+                      currentColor === "red" ? "bg-red-500"
+                      : currentColor === "yellow" ? "bg-yellow-500"
+                      : currentColor === "blue" ? "bg-blue-500"
+                      : currentColor === "green" ? "bg-green-500"
+                      : "bg-gray-500"
+                    }`}
+                  />
+                  <span className="text-[10px] md:text-xs text-white font-bold mt-0.5 uppercase">{currentColor}</span>
                 </div>
               )}
             </div>
@@ -433,20 +471,6 @@ export default function StreamGameBoard({
               </div>
             </div>
 
-            {currentColor && (topCard?.type === "wild" || topCard?.type === "wild4") && (
-              <div className="absolute -bottom-6 md:-bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <div
-                  className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-white shadow-lg ${
-                    currentColor === "red" ? "bg-red-500"
-                    : currentColor === "yellow" ? "bg-yellow-500"
-                    : currentColor === "blue" ? "bg-blue-500"
-                    : currentColor === "green" ? "bg-green-500"
-                    : "bg-gray-500"
-                  }`}
-                />
-                <span className="text-[8px] md:text-[10px] text-white font-bold mt-0.5 uppercase">{currentColor}</span>
-              </div>
-            )}
           </div>
 
           {room?.direction && room?.status === "playing" && (
