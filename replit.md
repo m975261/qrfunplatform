@@ -42,6 +42,18 @@ Preferred communication style: Simple, everyday language.
 - **Implementation**: Simple UI button approach after SVG circle positioning failed
 - **Status**: FROZEN - Working design saved as fallback, do not modify positioning or container approach
 
+**CRITICAL - DO NOT MODIFY**: Stream Game Page Design (December 2024)
+- **Files**: `StreamGamePage.tsx`, `StreamGameBoard.tsx`
+- **Draw Pile Position**: `left: '28%', bottom: '28%'` with `transform: 'translate(-50%, 50%)'` - closer to circle between slot 3 (bottom) and slot 4 (left)
+- **OBS View Button**: REMOVED from header - no purple badge
+- **Spectators Panel**: Collapsible panel on right side with toggle button
+  - Uses `showSpectators` state (default: true)
+  - Toggle shows ChevronRight when expanded, Users icon + count + ChevronLeft when collapsed
+  - Fixed position: `top-20 right-0` with flex layout
+- **Turn Indicator**: OBS/spectator view passes `currentPlayerId={undefined}` so `isMyTurn` is always false, showing yellow "{player name}'s turn" instead of green "YOUR TURN"
+- **Color Indicator**: Horizontal layout with "Color:" label + color circle only (no color name text below)
+- **Status**: FROZEN - This is the approved design, revert to this exact implementation if broken
+
 ## System Architecture
 
 ### Core Design Principles
