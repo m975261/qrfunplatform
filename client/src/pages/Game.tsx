@@ -498,16 +498,14 @@ export default function Game() {
               </div>
 
               {/* Direction Indicator - Right Side */}
-              <div className="absolute -right-6 sm:-right-8 md:-right-12 top-1/2 transform -translate-y-1/2">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center shadow-lg">
-                  {room.direction === "clockwise" ? (
-                    <ArrowRight className="text-white h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 animate-pulse" />
-                  ) : (
-                    <ArrowLeft className="text-white h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 animate-pulse" />
-                  )}
+              <div className="absolute -right-6 sm:-right-8 md:-right-12 top-1/2 transform -translate-y-1/2 flex flex-col items-center">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg border-2 border-yellow-300">
+                  <span className="text-white text-xs sm:text-sm md:text-base">
+                    {room.direction === "clockwise" ? "↻" : "↺"}
+                  </span>
                 </div>
-                <div className="text-xs text-center mt-1 text-white font-bold">
-                  {room.direction === "clockwise" ? "CW" : "CCW"}
+                <div className="text-[8px] sm:text-[10px] text-center mt-1 text-white font-bold bg-black/40 px-1 py-0.5 rounded whitespace-nowrap">
+                  Game Direction
                 </div>
               </div>
             </div>

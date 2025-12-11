@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation, useRoute, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, AlertTriangle, Eye, EyeOff, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import NicknameEditor from "@/components/NicknameEditor";
@@ -238,20 +238,18 @@ export default function StreamHostPage() {
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
       
       if (isDraggingPanel) {
-        // Clamp to keep at least 50px of panel visible in viewport
+        // No limitations - fully free movement
         const newX = clientX - panelDragStart.current.x;
         const newY = clientY - panelDragStart.current.y;
-        setViewersPanelPosition({
-          x: Math.max(-viewersPanelWidth + 50, Math.min(window.innerWidth - 50, newX)),
-          y: Math.max(-viewersPanelHeight + 50, Math.min(window.innerHeight - 50, newY))
-        });
+        setViewersPanelPosition({ x: newX, y: newY });
       }
       
       if (isResizingPanel) {
+        // No limitations - use show/hide button for recovery if needed
         const deltaX = clientX - resizeStartX.current;
         const deltaY = clientY - resizeStartY.current;
-        setViewersPanelWidth(Math.max(100, resizeStartWidth.current + deltaX));
-        setViewersPanelHeight(Math.max(80, resizeStartHeight.current + deltaY));
+        setViewersPanelWidth(resizeStartWidth.current + deltaX);
+        setViewersPanelHeight(resizeStartHeight.current + deltaY);
       }
     };
 
@@ -446,54 +444,68 @@ export default function StreamHostPage() {
             <Card className="bg-white/95 backdrop-blur-sm shadow-xl h-full flex flex-col">
               {/* Draggable Header */}
               <div 
-                className="bg-gradient-to-r from-purple-100 to-purple-200 px-4 py-3 cursor-grab active:cursor-grabbing flex items-center justify-between rounded-t-lg border-b"
+                className="bg-gradient-to-r from-gray-100 to-gray-200 px-4 py-3 cursor-grab active:cursor-grabbing flex items-center justify-between rounded-t-lg border-b"
                 onMouseDown={handlePanelDragStart}
                 onTouchStart={handlePanelDragStart}
               >
                 <div className="flex items-center gap-2">
-                  <GripVertical className="w-5 h-5 text-purple-400" />
+                  <GripVertical className="w-5 h-5 text-gray-400" />
                   <h3 className="text-lg font-bold text-gray-800">
                     Viewers ({spectators.length})
                   </h3>
                 </div>
                 <button
                   onClick={() => setShowViewersPanel(false)}
-                  className="p-1 hover:bg-purple-300 rounded"
-                  data-testid="close-viewers-panel"
+                  className="p-1 hover:bg-gray-300 rounded"
+                  data-testid="hide-viewers-panel"
+                  title="Minimize panel"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <ChevronRight className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
               
-              {/* Content */}
+              {/* Content - Viewers Table */}
               <CardContent className="p-4 flex-1 overflow-auto">
                 {spectators.length > 0 ? (
-                  <div className="space-y-3">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500 border-b">
+                        <th className="pb-2">Viewer</th>
+                        <th className="pb-2 text-center">Status</th>
+                        <th className="pb-2 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
                     {spectators.map((spectator: any) => (
-                      <div key={spectator.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {spectator.nickname?.[0]?.toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{spectator.nickname}</span>
-                              <button
-                                onClick={() => {
-                                  setEditingSpectatorId(spectator.id);
-                                  setEditingSpectatorNickname(spectator.nickname);
-                                }}
-                                className="p-1 hover:bg-gray-200 rounded"
-                              >
-                                <Pencil className="w-3 h-3 text-gray-500" />
-                              </button>
+                      <tr key={spectator.id} className="border-b border-gray-100">
+                        <td className="py-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white font-bold">
+                              {spectator.nickname?.[0]?.toUpperCase()}
                             </div>
-                            <div className={`text-xs ${spectator.isOnline ? 'text-green-500' : 'text-red-500'}`}>
-                              {spectator.isOnline ? 'Online' : 'Offline'}
+                            <div>
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">{spectator.nickname}</span>
+                                <button
+                                  onClick={() => {
+                                    setEditingSpectatorId(spectator.id);
+                                    setEditingSpectatorNickname(spectator.nickname);
+                                  }}
+                                  className="p-0.5 hover:bg-gray-200 rounded"
+                                >
+                                  <Pencil className="w-3 h-3 text-gray-500" />
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
+                        </td>
+                        <td className="py-2 text-center">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${spectator.isOnline ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                            {spectator.isOnline ? 'Online' : 'Offline'}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                        <div className="flex items-center gap-1 justify-end flex-wrap">
                           {/* Assign to Slot Buttons */}
                           {getAvailablePositions().map((pos) => (
                             <Button
@@ -501,7 +513,7 @@ export default function StreamHostPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleAssignToSlot(spectator.id, pos)}
-                              className="bg-uno-green text-white hover:bg-green-600"
+                              className="bg-uno-green text-white hover:bg-green-600 text-xs px-2 py-1"
                             >
                               <Plus className="w-3 h-3 mr-1" />
                               Slot {pos + 1}
@@ -518,9 +530,11 @@ export default function StreamHostPage() {
                             <X className="w-3 h-3" />
                           </Button>
                         </div>
-                      </div>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
+                    </tbody>
+                  </table>
                 ) : (
                   <div className="text-center text-gray-400 py-4 italic">
                     No viewers yet
@@ -535,28 +549,25 @@ export default function StreamHostPage() {
                 className="absolute bottom-0 right-0 w-5 h-5 cursor-nwse-resize"
                 style={{ touchAction: 'none' }}
               >
-                <div className="w-0 h-0 border-l-[20px] border-l-transparent border-b-[20px] border-b-purple-400/50 hover:border-b-purple-600/50 transition-colors" />
+                <div className="w-0 h-0 border-l-[20px] border-l-transparent border-b-[20px] border-b-gray-400/50 hover:border-b-uno-blue/50 transition-colors" />
               </div>
             </Card>
           </div>
         )}
         
-        {/* Fixed Toggle/Reset Button - always visible at fixed position */}
-        <button
-          onClick={() => {
-            setShowViewersPanel(true);
-            // Reset position to default (within viewport)
-            setViewersPanelPosition({ x: Math.min(window.innerWidth - 420, window.innerWidth - 100), y: 100 });
-            setViewersPanelWidth(400);
-            setViewersPanelHeight(300);
-          }}
-          className="fixed bottom-4 right-4 z-50 bg-purple-600 text-white shadow-lg rounded-full p-4 hover:bg-purple-700 transition-colors flex items-center gap-2"
-          data-testid="toggle-viewers-panel"
-          title="Show/Reset Viewers Panel"
-        >
-          <Eye className="w-6 h-6" />
-          <span className="text-lg font-bold">{spectators.length}</span>
-        </button>
+        {/* Show Viewers Button - appears when panel is hidden */}
+        {!showViewersPanel && (
+          <button
+            onClick={() => setShowViewersPanel(true)}
+            className="fixed top-20 right-4 z-20 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg px-4 py-2 hover:bg-gray-100 transition-colors flex items-center gap-2"
+            data-testid="toggle-viewers-panel"
+            title="Show Viewers Panel"
+          >
+            <Users className="w-5 h-5 text-gray-600" />
+            <span className="font-medium text-gray-600">Viewers ({spectators.length})</span>
+            <ChevronLeft className="w-4 h-4 text-gray-400" />
+          </button>
+        )}
 
         {/* Start Game Button */}
         {isHost && gamePlayers.length >= 2 && (

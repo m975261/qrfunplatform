@@ -479,12 +479,15 @@ export default function StreamGameBoard({
           </div>
 
           {room?.direction && room?.status === "playing" && (
-            <div className="absolute top-2 left-2 z-30">
+            <div className="absolute top-2 left-2 z-30 flex flex-col items-center">
               <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg w-8 h-8 md:w-10 md:h-10 flex items-center justify-center">
                 <span className="text-white text-sm md:text-lg">
                   {room.direction === "clockwise" ? "↻" : "↺"}
                 </span>
               </div>
+              <span className="text-white text-[8px] md:text-[10px] font-bold mt-1 bg-black/40 px-1.5 py-0.5 rounded whitespace-nowrap">
+                Game Direction
+              </span>
             </div>
           )}
         </div>

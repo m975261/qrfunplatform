@@ -165,20 +165,18 @@ export default function StreamGamePage() {
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
       
       if (isDraggingPanel) {
-        // Clamp to keep at least 50px of panel visible in viewport
+        // No limitations - fully free movement
         const newX = clientX - panelDragStart.current.x;
         const newY = clientY - panelDragStart.current.y;
-        setViewersPanelPosition({
-          x: Math.max(-viewersPanelWidth + 50, Math.min(window.innerWidth - 50, newX)),
-          y: Math.max(-viewersPanelHeight + 50, Math.min(window.innerHeight - 50, newY))
-        });
+        setViewersPanelPosition({ x: newX, y: newY });
       }
       
       if (isResizingPanel) {
+        // No limitations - use show/hide button for recovery if needed
         const deltaX = clientX - resizeStartX.current;
         const deltaY = clientY - resizeStartY.current;
-        setViewersPanelWidth(Math.max(80, resizeStartWidth.current + deltaX));
-        setViewersPanelHeight(Math.max(60, resizeStartHeight.current + deltaY));
+        setViewersPanelWidth(resizeStartWidth.current + deltaX);
+        setViewersPanelHeight(resizeStartHeight.current + deltaY);
       }
     };
 
@@ -359,7 +357,7 @@ export default function StreamGamePage() {
         </div>
       </div>
 
-      {/* Floating Draggable & Resizable Viewers Panel */}
+      {/* Floating Draggable & Resizable Viewers Panel - NO CLOSE BUTTON */}
       {showSpectators && (
         <div 
           className="fixed z-20 select-none"
@@ -371,7 +369,7 @@ export default function StreamGamePage() {
           }}
         >
           <UICard className="bg-white/95 backdrop-blur-sm shadow-xl h-full flex flex-col">
-            {/* Draggable Header */}
+            {/* Draggable Header - No X button, only hide/minimize */}
             <div 
               className="bg-gradient-to-r from-gray-100 to-gray-200 px-3 py-2 cursor-grab active:cursor-grabbing flex items-center justify-between rounded-t-lg border-b"
               onMouseDown={handlePanelDragStart}
@@ -384,31 +382,49 @@ export default function StreamGamePage() {
               <button
                 onClick={() => setShowSpectators(false)}
                 className="p-1 hover:bg-gray-300 rounded"
-                data-testid="close-spectators"
+                data-testid="hide-spectators"
+                title="Minimize panel"
               >
-                <X className="w-4 h-4 text-gray-500" />
+                <ChevronRight className="w-4 h-4 text-gray-500" />
               </button>
             </div>
             
-            {/* Content */}
+            {/* Content - Viewers Table */}
             <CardContent className="p-3 flex-1 overflow-auto">
               {spectators.length === 0 ? (
                 <div className="text-sm text-gray-400 italic">No viewers yet</div>
               ) : (
-                <div className="space-y-2">
-                  {spectators.map((spectator: any) => (
-                    <div key={spectator.id} className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {spectator.nickname[0].toUpperCase()}
-                      </div>
-                      <span className="text-sm text-gray-600 truncate">{spectator.nickname}</span>
-                    </div>
-                  ))}
-                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500 border-b">
+                      <th className="pb-2">Viewer</th>
+                      <th className="pb-2 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {spectators.map((spectator: any) => (
+                      <tr key={spectator.id} className="border-b border-gray-100">
+                        <td className="py-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white text-xs font-bold">
+                              {spectator.nickname[0].toUpperCase()}
+                            </div>
+                            <span className="text-gray-700 truncate">{spectator.nickname}</span>
+                          </div>
+                        </td>
+                        <td className="py-2 text-center">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${spectator.isOnline ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                            {spectator.isOnline ? 'Online' : 'Offline'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </CardContent>
             
-            {/* Resize Handle (bottom-right corner) */}
+            {/* Resize Handle (bottom-right corner) - no size limits */}
             <div
               onMouseDown={handleResizeStart}
               onTouchStart={handleResizeStart}
@@ -421,22 +437,19 @@ export default function StreamGamePage() {
         </div>
       )}
       
-      {/* Fixed Toggle/Reset Button - always visible at fixed position */}
-      <button
-        onClick={() => {
-          setShowSpectators(true);
-          // Reset position to default (top-right, within viewport)
-          setViewersPanelPosition({ x: Math.min(window.innerWidth - 270, window.innerWidth - 100), y: 80 });
-          setViewersPanelWidth(250);
-          setViewersPanelHeight(200);
-        }}
-        className="fixed bottom-4 right-4 z-50 bg-purple-600 text-white shadow-lg rounded-full p-3 hover:bg-purple-700 transition-colors flex items-center gap-2"
-        data-testid="toggle-spectators"
-        title="Show/Reset Viewers Panel"
-      >
-        <Users className="w-5 h-5" />
-        <span className="text-sm font-bold">{spectators.length}</span>
-      </button>
+      {/* Show/Hide Viewers Button - next to QR button */}
+      {!showSpectators && (
+        <button
+          onClick={() => setShowSpectators(true)}
+          className="fixed top-16 right-2 z-20 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors flex items-center gap-2"
+          data-testid="toggle-spectators"
+          title="Show Viewers Panel"
+        >
+          <Users className="w-4 h-4 text-gray-600" />
+          <span className="text-sm font-medium text-gray-600">Viewers ({spectators.length})</span>
+          <ChevronLeft className="w-4 h-4 text-gray-400" />
+        </button>
+      )}
 
       {/* Game Board - Using StreamGameBoard with isSpectator=true for OBS view */}
       {/* For spectator/OBS view, pass undefined for currentPlayerId so isMyTurn is always false */}

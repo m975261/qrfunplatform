@@ -254,7 +254,7 @@ export default function StreamLobbyPage() {
           })}
         </div>
 
-        {/* Spectators Card - Always shown */}
+        {/* Viewers Table - Under player slots */}
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl mt-6">
           <CardContent className="p-4">
             <div className="text-sm font-semibold text-gray-700 mb-3">
@@ -263,17 +263,33 @@ export default function StreamLobbyPage() {
             {spectators.length === 0 ? (
               <div className="text-sm text-gray-400 italic py-2">No viewers yet</div>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {spectators.map((spectator: any) => (
-                  <div key={spectator.id} className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full">
-                    <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                      {spectator.nickname?.[0]?.toUpperCase()}
-                    </div>
-                    <span className="text-sm text-gray-700">{spectator.nickname}</span>
-                    <div className={`w-2 h-2 rounded-full ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-                  </div>
-                ))}
-              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-500 border-b">
+                    <th className="pb-2">Viewer</th>
+                    <th className="pb-2 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {spectators.map((spectator: any) => (
+                    <tr key={spectator.id} className="border-b border-gray-100">
+                      <td className="py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {spectator.nickname?.[0]?.toUpperCase()}
+                          </div>
+                          <span className="text-gray-700">{spectator.nickname}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${spectator.isOnline ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                          {spectator.isOnline ? 'Online' : 'Offline'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </CardContent>
         </Card>
