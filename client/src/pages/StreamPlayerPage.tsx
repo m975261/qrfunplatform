@@ -36,6 +36,7 @@ export default function StreamPlayerPage() {
     playAgain,
     kickPlayer: kickPlayerWS,
     assignSpectator,
+    assignHost,
     isConnected 
   } = useSocket();
 
@@ -237,25 +238,32 @@ export default function StreamPlayerPage() {
         </div>
       )}
 
-      {/* Header - Same style as Game.tsx */}
+      {/* Header - Same style as Game.tsx with Chat on left */}
       <div className="absolute top-2 md:top-4 left-2 md:left-4 right-2 md:right-4 z-10">
         <div className="flex items-center justify-between">
-          <div className="bg-white/95 backdrop-blur-sm px-2 md:px-4 py-2 rounded-xl shadow-lg">
-            <div className="text-xs md:text-sm font-medium text-gray-800">
-              Room <span className="font-mono text-uno-blue">{room.code}</span>
-            </div>
-          </div>
-
+          {/* Left side - Chat button */}
           <div className="flex space-x-1">
             <Button
               variant="outline"
               size="sm"
               className="bg-white/95 backdrop-blur-sm p-2"
               onClick={() => setShowChat(!showChat)}
+              data-testid="chat-button"
             >
               <Menu className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="ml-1 text-xs">Chat</span>
             </Button>
-            
+          </div>
+
+          {/* Center - Room code */}
+          <div className="bg-white/95 backdrop-blur-sm px-2 md:px-4 py-2 rounded-xl shadow-lg">
+            <div className="text-xs md:text-sm font-medium text-gray-800">
+              Room <span className="font-mono text-uno-blue">{room?.code}</span>
+            </div>
+          </div>
+
+          {/* Right side - Exit button */}
+          <div className="flex space-x-1">
             <Button
               variant="outline"
               size="sm"
@@ -367,6 +375,7 @@ export default function StreamPlayerPage() {
           setEditingPlayerId(pid);
           setEditingPlayerNickname(nickname);
         }}
+        onMakeHost={assignHost}
       />
 
       {/* Chat Panel - Same as Game.tsx */}
