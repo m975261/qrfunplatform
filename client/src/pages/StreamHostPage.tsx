@@ -44,6 +44,10 @@ export default function StreamHostPage() {
   const [editingSpectatorId, setEditingSpectatorId] = useState<string | null>(null);
   const [editingSpectatorNickname, setEditingSpectatorNickname] = useState<string>("");
   const [showViewersPanel, setShowViewersPanel] = useState(true);
+  const [viewersPanelWidth, setViewersPanelWidth] = useState(400);
+  const [isResizingPanel, setIsResizingPanel] = useState(false);
+  const resizeStartX = useRef(0);
+  const resizeStartWidth = useRef(400);
   
   const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
   const [isDraggingQR, setIsDraggingQR] = useState(false);
@@ -199,6 +203,35 @@ export default function StreamHostPage() {
       document.removeEventListener('touchend', handleMouseUp);
     };
   }, [isDraggingQR, dragStartPos]);
+
+  // Panel resize handler
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingPanel(true);
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = viewersPanelWidth;
+  };
+
+  useEffect(() => {
+    const handleResizeMove = (e: MouseEvent) => {
+      if (!isResizingPanel) return;
+      const delta = e.clientX - resizeStartX.current;
+      const newWidth = Math.max(200, Math.min(800, resizeStartWidth.current + delta));
+      setViewersPanelWidth(newWidth);
+    };
+
+    const handleResizeEnd = () => setIsResizingPanel(false);
+
+    if (isResizingPanel) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+    };
+  }, [isResizingPanel]);
 
   const getPositionClass = (position: number) => {
     const positions = [
@@ -357,13 +390,25 @@ export default function StreamHostPage() {
           })}
         </div>
 
-        {/* Viewers Panel - Host Can Assign to Slots & Kick - With Toggle */}
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6">
+        {/* Viewers Panel - Host Can Assign to Slots & Kick - With Toggle & Resize */}
+        <Card 
+          className="bg-white/95 backdrop-blur-sm shadow-xl mb-6 relative"
+          style={{ width: viewersPanelWidth, maxWidth: '100%' }}
+        >
+          {/* Resize Handle */}
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-uno-blue/20 transition-colors"
+            style={{ touchAction: 'none' }}
+          />
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-800">
-                Viewers ({spectators.length})
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-800">
+                  Viewers ({spectators.length})
+                </h3>
+                <span className="text-xs text-gray-400">← drag edge to resize →</span>
+              </div>
               <Button
                 variant="outline"
                 size="sm"

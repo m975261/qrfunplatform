@@ -25,6 +25,10 @@ export default function StreamGamePage() {
   const [unoMessage, setUnoMessage] = useState<string | null>(null);
   const [oneCardMessage, setOneCardMessage] = useState<string | null>(null);
   const [showSpectators, setShowSpectators] = useState(true);
+  const [viewersPanelWidth, setViewersPanelWidth] = useState(200);
+  const [isResizingPanel, setIsResizingPanel] = useState(false);
+  const resizeStartX = useRef(0);
+  const resizeStartWidth = useRef(200);
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
   
@@ -126,6 +130,35 @@ export default function StreamGamePage() {
       document.removeEventListener('touchend', handleMouseUp);
     };
   }, [isDraggingQR, dragStartPos]);
+
+  // Panel resize handler
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingPanel(true);
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = viewersPanelWidth;
+  };
+
+  useEffect(() => {
+    const handleResizeMove = (e: MouseEvent) => {
+      if (!isResizingPanel) return;
+      const delta = resizeStartX.current - e.clientX;
+      const newWidth = Math.max(150, Math.min(400, resizeStartWidth.current + delta));
+      setViewersPanelWidth(newWidth);
+    };
+
+    const handleResizeEnd = () => setIsResizingPanel(false);
+
+    if (isResizingPanel) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+    };
+  }, [isResizingPanel]);
 
   const handleCopyCode = () => {
     if (room?.code) {
@@ -243,9 +276,16 @@ export default function StreamGamePage() {
       {/* Header with Room Code and Controls - Same as Game.tsx */}
       <div className="absolute top-2 md:top-4 left-2 md:left-4 right-2 md:right-4 z-10">
         <div className="flex items-center justify-between">
-          <div className="bg-white/95 backdrop-blur-sm px-2 md:px-4 py-2 rounded-xl shadow-lg">
-            <div className="text-xs md:text-sm font-medium text-gray-800">
-              Room <span className="font-mono text-uno-blue">{room.code}</span>
+          <div className="flex flex-col gap-1">
+            <div className="bg-white/95 backdrop-blur-sm px-2 md:px-4 py-2 rounded-xl shadow-lg">
+              <div className="text-xs md:text-sm font-medium text-gray-800">
+                Room <span className="font-mono text-uno-blue">{room.code}</span>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 px-3 py-1.5 rounded-lg shadow-lg">
+              <div className="text-xs md:text-sm font-bold text-white text-center">
+                Enter Code Here: <span className="underline">QrFun.net</span>
+              </div>
             </div>
           </div>
 
@@ -277,7 +317,7 @@ export default function StreamGamePage() {
         </div>
       </div>
 
-      {/* Collapsible Viewers Panel - Always shown */}
+      {/* Collapsible & Resizable Viewers Panel - Always shown */}
       <div className="fixed top-20 right-0 z-20 flex items-start">
         {/* Toggle Button */}
         <button
@@ -296,30 +336,42 @@ export default function StreamGamePage() {
           )}
         </button>
         
-        {/* Panel Content */}
+        {/* Panel Content - Resizable */}
         {showSpectators && (
-          <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0">
-            <CardContent className="p-3">
-              <div className="text-sm font-medium text-gray-700 mb-2">
-                Viewers ({spectators.length})
-              </div>
-              
-              {spectators.length === 0 ? (
-                <div className="text-sm text-gray-400 italic">No viewers yet</div>
-              ) : (
-                <div className="space-y-2">
-                  {spectators.map((spectator: any) => (
-                    <div key={spectator.id} className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {spectator.nickname[0].toUpperCase()}
-                      </div>
-                      <span className="text-sm text-gray-600">{spectator.nickname}</span>
-                    </div>
-                  ))}
+          <div className="relative flex">
+            {/* Resize Handle */}
+            <div
+              onMouseDown={handleResizeStart}
+              className="w-2 cursor-ew-resize hover:bg-uno-blue/30 bg-gray-200/50 transition-colors"
+              style={{ touchAction: 'none' }}
+            />
+            <UICard 
+              className="bg-white/95 backdrop-blur-sm shadow-lg rounded-none rounded-r-none mr-0"
+              style={{ width: viewersPanelWidth }}
+            >
+              <CardContent className="p-3">
+                <div className="text-sm font-medium text-gray-700 mb-2 flex items-center justify-between">
+                  <span>Viewers ({spectators.length})</span>
+                  <span className="text-xs text-gray-400">← drag</span>
                 </div>
-              )}
-            </CardContent>
-          </UICard>
+                
+                {spectators.length === 0 ? (
+                  <div className="text-sm text-gray-400 italic">No viewers yet</div>
+                ) : (
+                  <div className="space-y-2">
+                    {spectators.map((spectator: any) => (
+                      <div key={spectator.id} className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          {spectator.nickname[0].toUpperCase()}
+                        </div>
+                        <span className="text-sm text-gray-600 truncate">{spectator.nickname}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </UICard>
+          </div>
         )}
       </div>
 
