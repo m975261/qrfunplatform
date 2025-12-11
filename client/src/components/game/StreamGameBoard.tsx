@@ -457,15 +457,15 @@ export default function StreamGameBoard({
             </div>
           </div>
 
-          {/* Draw Pile - Positioned between players 3 (left) and 2 (bottom), on the circle line */}
+          {/* Draw Pile - Positioned between slot 3 (bottom) and slot 4 (left), closer to circle */}
           <div 
             ref={deckRef}
             className={`absolute z-20 cursor-pointer hover:scale-105 transition-transform ${
               drawingCard ? "animate-pulse scale-95" : ""
             } ${isMyTurn && !isSpectator ? "ring-2 ring-green-400 rounded-lg" : ""}`}
             style={{ 
-              left: '15%', 
-              bottom: '15%',
+              left: '28%', 
+              bottom: '28%',
               transform: 'translate(-50%, 50%)'
             }}
             onClick={handleDraw}
