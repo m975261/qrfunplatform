@@ -137,7 +137,10 @@ export default function StreamPlayerPage() {
     }
   };
 
-  if (!room || room.status !== 'playing') {
+  // Derive game end state from gameState directly for reliable rendering
+  const shouldShowGameEnd = showGameEnd || gameState?.gameEndData || gameState?.room?.status === 'finished';
+  
+  if (!room || (room.status !== 'playing' && room.status !== 'finished' && !shouldShowGameEnd)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center p-4">
         <UICard className="bg-white/95 backdrop-blur-sm shadow-xl p-8 text-center">
@@ -292,10 +295,10 @@ export default function StreamPlayerPage() {
       )}
 
       {/* Game End Modal */}
-      {showGameEnd && (
+      {shouldShowGameEnd && (
         <GameEndModal
-          winner={gameEndData?.winner || gamePlayers.find((p: any) => (p.hand?.length || 0) === 0)?.nickname || "Someone"}
-          rankings={gameEndData?.rankings}
+          winner={gameEndData?.winner || gameState?.gameEndData?.winner || gamePlayers.find((p: any) => (p.hand?.length || 0) === 0)?.nickname || "Someone"}
+          rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings}
           onPlayAgain={() => {
             playAgain();
             setShowGameEnd(false);

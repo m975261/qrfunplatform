@@ -389,13 +389,25 @@ export default function StreamGameBoard({
 
       {room?.status === "playing" && currentGamePlayer && (
         <div className={`fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1 md:px-4 md:py-1.5 rounded-full shadow-lg border-2 transition-all ${
-          pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-yellow-600/90 border-yellow-400'
+          pendingDraw > 0 
+            ? 'bg-red-600 border-red-400 animate-pulse' 
+            : (isMyTurn && !isSpectator 
+                ? 'bg-green-600 border-green-400 animate-pulse' 
+                : 'bg-yellow-600/90 border-yellow-400')
         }`}>
           <div className="text-white font-bold text-[10px] md:text-xs text-center flex items-center gap-1">
             {pendingDraw > 0 ? (
-              <span>⚠️ {currentGamePlayer.nickname} must DRAW {pendingDraw}!</span>
+              isMyTurn && !isSpectator ? (
+                <span>⚠️ You must DRAW {pendingDraw}!</span>
+              ) : (
+                <span>⚠️ {currentGamePlayer.nickname} must DRAW {pendingDraw}!</span>
+              )
             ) : (
-              <span>🎮 {currentGamePlayer.nickname}'s turn</span>
+              isMyTurn && !isSpectator ? (
+                <span>⭐ YOUR TURN</span>
+              ) : (
+                <span>🎮 {currentGamePlayer.nickname}'s turn</span>
+              )
             )}
           </div>
         </div>
@@ -428,11 +440,11 @@ export default function StreamGameBoard({
               )}
               {/* Current Color Indicator - directly under played card */}
               {currentColor && (
-                <div className="flex flex-col items-center mt-1 md:mt-2" data-testid="color-indicator-container">
-                  <span className="text-[8px] md:text-[10px] text-white font-bold uppercase opacity-80">Played Color</span>
+                <div className="flex items-center gap-1 md:gap-2 mt-1 md:mt-2" data-testid="color-indicator-container">
+                  <span className="text-[8px] md:text-[10px] text-white font-bold uppercase opacity-80">Color:</span>
                   <div
                     data-testid={`color-indicator-${currentColor}`}
-                    className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-white shadow-lg ${
+                    className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-white shadow-lg ${
                       currentColor === "red" ? "bg-red-500"
                       : currentColor === "yellow" ? "bg-yellow-500"
                       : currentColor === "blue" ? "bg-blue-500"
@@ -440,7 +452,6 @@ export default function StreamGameBoard({
                       : "bg-gray-500"
                     }`}
                   />
-                  <span className="text-[10px] md:text-xs text-white font-bold mt-0.5 uppercase">{currentColor}</span>
                 </div>
               )}
             </div>

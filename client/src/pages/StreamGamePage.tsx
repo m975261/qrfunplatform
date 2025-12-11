@@ -155,7 +155,10 @@ export default function StreamGamePage() {
     setLocation('/');
   };
 
-  if (!room) {
+  // Derive game end state from gameState directly for reliable rendering
+  const shouldShowGameEnd = showGameEnd || gameState?.gameEndData || gameState?.room?.status === 'finished';
+  
+  if (!room && !shouldShowGameEnd) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center">
         <UICard className="bg-white/95 backdrop-blur-sm shadow-xl p-8">
@@ -164,6 +167,20 @@ export default function StreamGamePage() {
             <p className="text-gray-600">Connecting to game...</p>
           </div>
         </UICard>
+      </div>
+    );
+  }
+
+  // Show Game End Modal even if room became null
+  if (!room && shouldShowGameEnd) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center">
+        <GameEndModal
+          winner={gameEndData?.winner || gameState?.gameEndData?.winner || "Someone"}
+          rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings}
+          onPlayAgain={handlePlayAgain}
+          onBackToLobby={handleBackToLobby}
+        />
       </div>
     );
   }
@@ -287,10 +304,11 @@ export default function StreamGamePage() {
       )}
 
       {/* Game Board - Using StreamGameBoard with isSpectator=true for OBS view */}
+      {/* For spectator/OBS view, pass undefined for currentPlayerId so isMyTurn is always false */}
       <StreamGameBoard
         room={room}
         players={players}
-        currentPlayerId={currentGamePlayer?.id}
+        currentPlayerId={undefined}
         isSpectator={true}
         colorChoiceRequested={false}
       />
@@ -354,10 +372,10 @@ export default function StreamGamePage() {
       )}
 
       {/* Game End Modal */}
-      {showGameEnd && (
+      {shouldShowGameEnd && (
         <GameEndModal
-          winner={gameEndData?.winner || gamePlayers.find((p: any) => (p.hand?.length || 0) === 0)?.nickname || "Someone"}
-          rankings={gameEndData?.rankings}
+          winner={gameEndData?.winner || gameState?.gameEndData?.winner || gamePlayers.find((p: any) => (p.hand?.length || 0) === 0)?.nickname || "Someone"}
+          rankings={gameEndData?.rankings || gameState?.gameEndData?.rankings}
           onPlayAgain={handlePlayAgain}
           onBackToLobby={handleBackToLobby}
         />
