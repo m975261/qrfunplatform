@@ -392,7 +392,7 @@ export default function StreamPage() {
             const positionStyles: { [key: number]: string } = {
               0: "top-4 left-1/2 -translate-x-1/2",
               1: "right-4 top-1/2 -translate-y-1/2",
-              2: "bottom-20 left-1/2 -translate-x-1/2",
+              2: "bottom-4 left-1/2 -translate-x-1/2",
               3: "left-4 top-1/2 -translate-y-1/2",
             };
             const posClass = positionStyles[position];
