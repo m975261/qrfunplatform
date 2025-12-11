@@ -36,9 +36,9 @@ export default function ChatPanel({ messages, players, onSendMessage, onSendEmoj
   };
 
   return (
-    <div className="fixed bottom-32 md:bottom-40 left-2 md:left-4 z-40">
-      <Card className="bg-white/95 backdrop-blur-sm shadow-xl w-56 md:w-64 max-h-48 md:max-h-56">
-        <CardContent className="p-3">
+    <div className="fixed bottom-28 md:bottom-36 left-2 md:left-4 z-40">
+      <Card className="bg-white/95 backdrop-blur-sm shadow-xl w-52 md:w-60 max-h-40 md:max-h-48">
+        <CardContent className="p-2">
           {/* Chat Header */}
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-800">Chat</h3>

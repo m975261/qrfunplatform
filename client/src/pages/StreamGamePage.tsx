@@ -80,6 +80,29 @@ export default function StreamGamePage() {
   const room = gameState?.room || (roomData as any)?.room;
   const players = gameState?.players || [];
   
+  // Check if current user is the host - if so, redirect to host game page
+  const playerId = localStorage.getItem("playerId");
+  const isHost = room?.hostId === playerId;
+  
+  useEffect(() => {
+    if (isHost && roomId && room?.code) {
+      console.log("[StreamGamePage] User is host, redirecting to host game page");
+      setLocation(`/stream/${roomId}/host/game?code=${room.code}`);
+    }
+  }, [isHost, roomId, room?.code, setLocation]);
+  
+  // Check if current user is a player (not spectator) - redirect to their player page
+  const myPlayer = players.find((p: any) => p.id === playerId);
+  const hasPosition = myPlayer && myPlayer.position !== null && myPlayer.position !== undefined && !myPlayer.isSpectator;
+  
+  useEffect(() => {
+    if (hasPosition && roomId && room?.code && !isHost) {
+      console.log("[StreamGamePage] User is a player, redirecting to player page");
+      const slot = myPlayer.position + 1;
+      setLocation(`/stream/${roomId}/player/${slot}?code=${room.code}`);
+    }
+  }, [hasPosition, roomId, room?.code, isHost, myPlayer?.position, setLocation]);
+  
   const gamePlayers = players.filter((p: any) => 
     !p.isSpectator && p.position !== null && p.position !== undefined
   ).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
