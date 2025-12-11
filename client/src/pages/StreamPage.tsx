@@ -325,63 +325,17 @@ export default function StreamPage() {
         );
       })}
 
-      {/* Header Bar - Similar to GameFixed */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-sm border-b border-slate-700">
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-3">
-            <div className="bg-purple-600 px-3 py-1 rounded-full flex items-center gap-2">
-              <Tv className="w-4 h-4 text-white" />
-              <span className="text-white text-sm font-bold">STREAM</span>
-            </div>
-            {isConnected && (
-              <div className="bg-green-500 px-3 py-1 rounded-full animate-pulse">
-                <span className="text-white text-sm font-bold">LIVE</span>
-              </div>
-            )}
-            <span className="text-white font-mono text-lg">{room?.code}</span>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={handleCopyLink}
-              variant="outline"
-              size="sm"
-              className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-            >
-              <Link2 className="mr-1 h-4 w-4" />
-              Link
-            </Button>
-            <Button
-              ref={qrButtonRef}
-              onClick={() => {
-                if (!showQRCode && qrButtonRef.current) {
-                  const rect = qrButtonRef.current.getBoundingClientRect();
-                  setQrPosition({ x: rect.left - 200, y: rect.bottom + 8 });
-                }
-                setShowQRCode(!showQRCode);
-              }}
-              variant="outline"
-              size="sm"
-              className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-            >
-              <QrCode className="mr-1 h-4 w-4" />
-              QR
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Turn Indicator Banner */}
+      {/* Turn Indicator Banner - Like StreamGameBoard */}
       {isPlaying && currentGamePlayer && (
-        <div className="fixed top-14 left-0 right-0 z-30 flex justify-center pointer-events-none">
-          <div className="bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white px-6 py-2 rounded-full shadow-lg">
-            <span className="font-bold">{currentGamePlayer.nickname}'s Turn</span>
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1 md:px-4 md:py-1.5 rounded-full shadow-lg border-2 bg-yellow-600/90 border-yellow-400">
+          <div className="text-white font-bold text-[10px] md:text-xs text-center flex items-center gap-1">
+            <span>🎮 {currentGamePlayer.nickname}'s turn</span>
           </div>
         </div>
       )}
 
       {/* === UNO TABLE - EXACT COPY OF StreamGameBoard STRUCTURE === */}
-      <div className="absolute inset-0 flex items-center justify-center p-2 pt-16 pb-28 md:pb-36">
+      <div className="absolute inset-0 flex items-center justify-center p-2 pt-10 pb-28 md:pb-36">
         <div 
           className="relative w-full max-w-sm md:max-w-lg aspect-square"
           style={{
@@ -521,7 +475,7 @@ export default function StreamPage() {
             );
 
             return (
-              <div key={position} className={`absolute ${posClass} z-20`}>
+              <div key={position} className={`absolute ${posClass} z-10`}>
                 {player ? (
                   <div className={`${getSlotLayout(position)} transition-all duration-300 ${isPlayerTurn ? 'scale-105' : ''}`}>
                     {(position === 0 || position === 3) && renderCardFan()}
@@ -540,57 +494,16 @@ export default function StreamPage() {
             );
           })}
 
-          {/* Direction Indicator */}
-          {isPlaying && (
-            <div className="absolute top-12 left-12 z-20">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex flex-col items-center justify-center border-2 border-yellow-300 shadow-lg">
-                <span className="text-xl">{room.direction === 'clockwise' ? '↻' : '↺'}</span>
-                <span className="text-[8px] font-bold text-black">DIR</span>
+          {/* Direction Indicator - Same position as StreamGameBoard */}
+          {room?.direction && isPlaying && (
+            <div className="absolute top-2 left-2 z-30">
+              <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full border-2 border-yellow-300 shadow-lg w-8 h-8 md:w-10 md:h-10 flex items-center justify-center">
+                <span className="text-white text-sm md:text-lg">
+                  {room.direction === "clockwise" ? "↻" : "↺"}
+                </span>
               </div>
             </div>
           )}
-
-          {/* Draw Pile (Read-only, no interaction) */}
-          <div className="absolute z-20 bottom-2 left-2">
-            <div className="w-14 h-20 bg-gradient-to-br from-red-600 via-red-500 to-red-700 rounded-xl border-3 border-red-800 shadow-2xl flex items-center justify-center cursor-default">
-              <span className="text-white font-bold text-sm transform -rotate-12">UNO</span>
-            </div>
-            <div className="text-center text-xs text-slate-400 mt-1">DECK</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Viewers Area - Right Side */}
-      <div className="fixed z-20" style={{
-        top: '5rem',
-        bottom: '2rem',
-        right: '0.5rem',
-        width: 'min(16rem, 20vw)'
-      }}>
-        <div className="bg-slate-800/90 backdrop-blur-sm rounded-xl p-3 shadow-lg h-full flex flex-col border border-slate-700">
-          <div className="text-xs font-semibold text-gray-300 mb-3 flex-shrink-0">
-            Viewers ({spectators.length})
-          </div>
-          <div className="space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
-            {spectators.length > 0 ? (
-              spectators.map((spectator: any) => (
-                <div key={spectator.id} className="flex items-center space-x-2 p-2 rounded-lg bg-slate-700/50">
-                  <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                    {spectator.nickname?.[0]?.toUpperCase()}
-                  </div>
-                  <span className="text-xs text-gray-300 truncate flex-1">{spectator.nickname}</span>
-                  <div className={`w-2 h-2 rounded-full ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-                </div>
-              ))
-            ) : (
-              <div className="text-xs text-slate-500 text-center py-4">
-                Waiting for viewers...
-              </div>
-            )}
-          </div>
-          <div className="text-[10px] text-slate-500 text-center mt-2 pt-2 border-t border-slate-700">
-            {gamePlayers.length}/4 Players • {room.status === 'playing' ? 'Game Active' : 'Waiting'}
-          </div>
         </div>
       </div>
 
