@@ -15,13 +15,15 @@ import { generateImage, generateGameAssets, checkApiStatus } from "./leonardo";
 
 interface SocketConnection {
   ws: WebSocket;
-  playerId?: string;
+  playerId?: string | null;
   roomId?: string;
   lastSeen?: number;
   tabVisible?: boolean;
   lastActivity?: number;
   userFingerprint?: string;
   sessionId?: string;
+  isStreamViewer?: boolean;
+  streamViewerId?: string;
 }
 
 const connections = new Map<string, SocketConnection>();
@@ -4649,6 +4651,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
     });
     
+    // Count stream viewers for this room (connections with isStreamViewer=true)
+    const streamViewerConnections = Array.from(connections.values()).filter(conn => 
+      conn.roomId === roomId && 
+      conn.isStreamViewer === true && 
+      conn.ws.readyState === WebSocket.OPEN
+    );
+    const streamViewerCount = streamViewerConnections.length;
+    
     const gameState = {
       room,
       players: playersWithStatus,
@@ -4656,7 +4666,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: Date.now(),
       // Explicitly include election state so clients sync properly when host reconnects
       hostDisconnectedWarning: room?.hostDisconnectedAt ? `Host disconnected` : null,
-      hostElectionActive: room?.hostElectionActive || false
+      hostElectionActive: room?.hostElectionActive || false,
+      // Stream viewer count for OBS/stream display
+      streamViewerCount
     };
     
     console.log(`Broadcasting room state to ${roomId}:`, {

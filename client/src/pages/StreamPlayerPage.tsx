@@ -223,8 +223,8 @@ export default function StreamPlayerPage() {
         </div>
       </div>
 
-      {/* Collapsible Spectators Panel */}
-      {spectators.length > 0 && (
+      {/* Collapsible Viewers Panel - Shows spectators AND stream viewer count */}
+      {(spectators.length > 0 || (gameState?.streamViewerCount ?? 0) > 0) && (
         <div className="fixed top-20 right-0 z-20 flex items-start">
           {/* Toggle Button */}
           <button
@@ -237,7 +237,7 @@ export default function StreamPlayerPage() {
             ) : (
               <div className="flex items-center gap-1">
                 <Users className="w-4 h-4 text-gray-600" />
-                <span className="text-xs font-medium text-gray-600">{spectators.length}</span>
+                <span className="text-xs font-medium text-gray-600">{spectators.length + (gameState?.streamViewerCount ?? 0)}</span>
                 <ChevronLeft className="w-4 h-4 text-gray-600" />
               </div>
             )}
@@ -247,17 +247,35 @@ export default function StreamPlayerPage() {
           {showSpectators && (
             <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0">
               <CardContent className="p-3">
-                <div className="text-sm font-medium text-gray-700 mb-2">Spectators ({spectators.length})</div>
-                <div className="space-y-2">
-                  {spectators.map((spectator: any) => (
-                    <div key={spectator.id} className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {spectator.nickname[0].toUpperCase()}
-                      </div>
-                      <span className="text-sm text-gray-600">{spectator.nickname}</span>
-                    </div>
-                  ))}
+                <div className="text-sm font-medium text-gray-700 mb-2">
+                  Viewers ({spectators.length + (gameState?.streamViewerCount ?? 0)})
                 </div>
+                
+                {/* Stream Viewers */}
+                {(gameState?.streamViewerCount ?? 0) > 0 && (
+                  <div className="flex items-center space-x-2 mb-2 pb-2 border-b border-gray-200">
+                    <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs">
+                      📺
+                    </div>
+                    <span className="text-sm text-purple-600 font-medium">
+                      {gameState?.streamViewerCount} watching stream
+                    </span>
+                  </div>
+                )}
+                
+                {/* Game Spectators */}
+                {spectators.length > 0 && (
+                  <div className="space-y-2">
+                    {spectators.map((spectator: any) => (
+                      <div key={spectator.id} className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          {spectator.nickname[0].toUpperCase()}
+                        </div>
+                        <span className="text-sm text-gray-600">{spectator.nickname}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </UICard>
           )}
