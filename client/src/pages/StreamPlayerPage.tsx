@@ -41,7 +41,10 @@ export default function StreamPlayerPage() {
     isConnected 
   } = useSocket();
 
+  // Check multiple localStorage keys since stream mode uses different keys
   const playerId = localStorage.getItem("playerId");
+  const streamHostPlayerId = localStorage.getItem("streamHostPlayerId");
+  const effectivePlayerId = streamHostPlayerId || playerId;
   
   // State matching normal Game.tsx
   const [showChat, setShowChat] = useState(false);
@@ -57,15 +60,15 @@ export default function StreamPlayerPage() {
   const [editingPlayerNickname, setEditingPlayerNickname] = useState<string>("");
 
   useEffect(() => {
-    if (isConnected && roomId && playerId) {
-      joinRoom(playerId, roomId);
+    if (isConnected && roomId && effectivePlayerId) {
+      joinRoom(effectivePlayerId, roomId);
     }
-  }, [isConnected, roomId, playerId, joinRoom]);
+  }, [isConnected, roomId, effectivePlayerId, joinRoom]);
 
   const room = gameState?.room;
   const players = gameState?.players || [];
   
-  const myPlayer = players.find((p: any) => p.id === playerId);
+  const myPlayer = players.find((p: any) => p.id === effectivePlayerId);
   const isSpectator = myPlayer?.isSpectator === true || myPlayer?.position == null;
   
   const gamePlayers = players.filter((p: any) => 
@@ -79,13 +82,16 @@ export default function StreamPlayerPage() {
   const currentPlayer = gamePlayers[currentPlayerIndex];
   const isMyTurn = currentPlayer?.id === myPlayer?.id;
   // Check host status - use both room.hostId and player.isHost for robustness
-  const myPlayerData = players.find((p: any) => p.id === playerId);
-  const isHost = room?.hostId === playerId || myPlayerData?.isHost === true;
+  // Use effectivePlayerId which checks both regular and stream host IDs
+  const myPlayerData = players.find((p: any) => p.id === effectivePlayerId);
+  const isHost = room?.hostId === effectivePlayerId || myPlayerData?.isHost === true;
   
   // Debug logging for host controls
   console.log('StreamPlayerPage - isHost check:', { 
     roomHostId: room?.hostId, 
-    playerId, 
+    playerId,
+    streamHostPlayerId,
+    effectivePlayerId,
     isHost,
     myPlayerIsHost: myPlayerData?.isHost,
     roomStatus: room?.status,

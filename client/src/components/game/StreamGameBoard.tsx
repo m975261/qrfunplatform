@@ -389,13 +389,19 @@ export default function StreamGameBoard({
         )}
         
         {/* Floating chat/emoji message bubble - position based on slot */}
+        {/* Slot 1 (pos 0): TOP - show LEFT of avatar */}
+        {/* Slot 2 (pos 1): RIGHT - show BELOW avatar */}
+        {/* Slot 3 (pos 2): BOTTOM - show LEFT of avatar */}
+        {/* Slot 4 (pos 3): LEFT - show ABOVE avatar */}
         {avatarMessages?.filter((m: any) => m.playerId === player.id).slice(-1).map((msg: any) => (
           <div
             key={msg.id}
             className={`absolute z-50 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
               position === 0 || position === 2 
                 ? 'left-full top-1/2 -translate-y-1/2 ml-2'  // Slots 1 and 3: LEFT of avatar
-                : 'top-full left-1/2 -translate-x-1/2 mt-2'   // Slots 2 and 4: BELOW avatar
+                : position === 3
+                  ? 'bottom-full left-1/2 -translate-x-1/2 mb-2'  // Slot 4: ABOVE avatar
+                  : 'top-full left-1/2 -translate-x-1/2 mt-2'   // Slot 2: BELOW avatar
             }`}
           >
             <div className="bg-white/95 rounded-xl px-3 py-2 shadow-lg border border-gray-200 max-w-[120px]">
@@ -410,7 +416,9 @@ export default function StreamGameBoard({
             <div className={`absolute w-0 h-0 ${
               position === 0 || position === 2
                 ? 'right-full top-1/2 -translate-y-1/2 border-t-6 border-b-6 border-r-6 border-t-transparent border-b-transparent border-r-white/95'
-                : 'bottom-full left-1/2 -translate-x-1/2 border-l-6 border-r-6 border-b-6 border-l-transparent border-r-transparent border-b-white/95'
+                : position === 3
+                  ? 'top-full left-1/2 -translate-x-1/2 border-l-6 border-r-6 border-t-6 border-l-transparent border-r-transparent border-t-white/95'
+                  : 'bottom-full left-1/2 -translate-x-1/2 border-l-6 border-r-6 border-b-6 border-l-transparent border-r-transparent border-b-white/95'
             }`} />
           </div>
         ))}

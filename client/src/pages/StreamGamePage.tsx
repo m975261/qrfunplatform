@@ -81,27 +81,40 @@ export default function StreamGamePage() {
   const players = gameState?.players || [];
   
   // Check if current user is the host - if so, redirect to host game page
+  // Check multiple localStorage keys since stream mode uses different keys
   const playerId = localStorage.getItem("playerId");
-  const isHost = room?.hostId === playerId;
+  const streamHostPlayerId = localStorage.getItem("streamHostPlayerId");
+  const effectivePlayerId = streamHostPlayerId || playerId;
+  const isHost = room?.hostId === effectivePlayerId;
+  const effectiveCode = room?.code || roomCode;
+  
+  // Debug logging
+  console.log("[StreamGamePage] Host check:", { 
+    roomHostId: room?.hostId, 
+    playerId, 
+    streamHostPlayerId, 
+    effectivePlayerId,
+    isHost 
+  });
   
   useEffect(() => {
-    if (isHost && roomId && room?.code) {
-      console.log("[StreamGamePage] User is host, redirecting to host game page");
-      setLocation(`/stream/${roomId}/host/game?code=${room.code}`);
+    if (isHost && roomId && effectiveCode && effectivePlayerId) {
+      console.log("[StreamGamePage] User is host, redirecting to host game page", { isHost, roomId, effectiveCode, effectivePlayerId, roomHostId: room?.hostId });
+      setLocation(`/stream/${roomId}/host/game?code=${effectiveCode}`);
     }
-  }, [isHost, roomId, room?.code, setLocation]);
+  }, [isHost, roomId, effectiveCode, effectivePlayerId, setLocation]);
   
   // Check if current user is a player (not spectator) - redirect to their player page
-  const myPlayer = players.find((p: any) => p.id === playerId);
+  const myPlayer = players.find((p: any) => p.id === effectivePlayerId);
   const hasPosition = myPlayer && myPlayer.position !== null && myPlayer.position !== undefined && !myPlayer.isSpectator;
   
   useEffect(() => {
-    if (hasPosition && roomId && room?.code && !isHost) {
-      console.log("[StreamGamePage] User is a player, redirecting to player page");
+    if (hasPosition && roomId && effectiveCode && !isHost) {
+      console.log("[StreamGamePage] User is a player, redirecting to player page", { slot: myPlayer.position + 1, effectivePlayerId });
       const slot = myPlayer.position + 1;
-      setLocation(`/stream/${roomId}/player/${slot}?code=${room.code}`);
+      setLocation(`/stream/${roomId}/player/${slot}?code=${effectiveCode}`);
     }
-  }, [hasPosition, roomId, room?.code, isHost, myPlayer?.position, setLocation]);
+  }, [hasPosition, roomId, effectiveCode, isHost, myPlayer?.position, setLocation]);
   
   const gamePlayers = players.filter((p: any) => 
     !p.isSpectator && p.position !== null && p.position !== undefined
