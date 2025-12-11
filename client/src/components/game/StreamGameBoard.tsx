@@ -175,12 +175,12 @@ export default function StreamGameBoard({
     const isAnimating = cardAnimation?.playerId === player?.id;
     const displayCardCount = Math.min(cardCount, 10);
 
-    // All 4 positions equidistant from center - using same offset distance
+    // All 4 positions equidistant from center - increased spacing to prevent overlap
     const positionStyles: { [key: number]: string } = {
-      0: "top-2 md:top-3 left-1/2 -translate-x-1/2",
-      1: "right-2 md:right-3 top-1/2 -translate-y-1/2",
-      2: "bottom-2 md:bottom-3 left-1/2 -translate-x-1/2",
-      3: "left-2 md:left-3 top-1/2 -translate-y-1/2",
+      0: "top-0 md:top-1 left-1/2 -translate-x-1/2",
+      1: "right-0 md:right-1 top-1/2 -translate-y-1/2",
+      2: "bottom-0 md:bottom-1 left-1/2 -translate-x-1/2",
+      3: "left-0 md:left-1 top-1/2 -translate-y-1/2",
     };
 
     const getCardFanStyle = (pos: number, cardIndex: number, totalCards: number) => {
@@ -404,19 +404,24 @@ export default function StreamGameBoard({
           })}
 
           <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="flex items-center gap-2 md:gap-3">
-              <div
-                ref={deckRef}
-                className={`w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center cursor-pointer hover:scale-105 transition-transform ${
-                  drawingCard ? "animate-pulse scale-95" : ""
-                } ${isMyTurn && !isSpectator ? "ring-2 ring-green-400" : ""}`}
-                onClick={handleDraw}
-              >
+            {/* Draw Pile - Positioned absolutely to the left like Game.tsx */}
+            <div 
+              ref={deckRef}
+              className={`absolute left-1/2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-105 transition-transform ${
+                drawingCard ? "animate-pulse scale-95" : ""
+              } ${isMyTurn && !isSpectator ? "ring-2 ring-green-400 rounded-lg" : ""}`}
+              style={{ marginLeft: '-55px' }}
+              onClick={handleDraw}
+            >
+              <div className="w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center">
                 <div className="text-white text-[8px] md:text-xs font-bold text-center">
-                  DRAW
+                  {pendingDraw > 0 ? `+${pendingDraw}` : 'DRAW'}
                 </div>
               </div>
+            </div>
 
+            {/* Played Card - Centered */}
+            <div className="flex flex-col items-center">
               {topCard && (
                 <div className="transform scale-75 md:scale-100">
                   <GameCard card={topCard} size="large" interactive={false} onClick={() => {}} />

@@ -283,6 +283,7 @@ export default function StreamPage() {
   const isPlaying = room.status === 'playing';
   const currentPlayerIndex = room.currentPlayerIndex;
   const currentGamePlayer = gamePlayers[currentPlayerIndex];
+  const pendingDraw = room?.pendingDraw ?? 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 relative overflow-hidden">
@@ -324,11 +325,17 @@ export default function StreamPage() {
         );
       })}
 
-      {/* Turn Indicator Banner - Like StreamGameBoard */}
+      {/* Turn Indicator Banner - Like StreamGameBoard with penalty indicator */}
       {isPlaying && currentGamePlayer && (
-        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1 md:px-4 md:py-1.5 rounded-full shadow-lg border-2 bg-yellow-600/90 border-yellow-400">
+        <div className={`fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1 md:px-4 md:py-1.5 rounded-full shadow-lg border-2 transition-all ${
+          pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-yellow-600/90 border-yellow-400'
+        }`}>
           <div className="text-white font-bold text-[10px] md:text-xs text-center flex items-center gap-1">
-            <span>🎮 {currentGamePlayer.nickname}'s turn</span>
+            {pendingDraw > 0 ? (
+              <span>⚠️ {currentGamePlayer.nickname} must DRAW {pendingDraw}!</span>
+            ) : (
+              <span>🎮 {currentGamePlayer.nickname}'s turn</span>
+            )}
           </div>
         </div>
       )}
@@ -344,15 +351,22 @@ export default function StreamPage() {
 
           {/* === CENTER CONTENT (Draw Pile + Played Card) - z-20 like StreamGameBoard === */}
           <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="flex items-center gap-2 md:gap-3">
-              {/* Draw Pile */}
-              <div className="w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center">
+            {/* Draw Pile - Positioned absolutely to the left */}
+            <div 
+              className="absolute left-1/2 top-1/2 -translate-y-1/2"
+              style={{ marginLeft: '-55px' }}
+            >
+              <div className={`w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br ${
+                pendingDraw > 0 ? 'from-red-600 to-red-800 border-red-400 animate-pulse' : 'from-blue-600 to-blue-800 border-blue-400'
+              } rounded-lg border-2 shadow-xl flex items-center justify-center`}>
                 <div className="text-white text-[8px] md:text-xs font-bold text-center">
-                  DRAW
+                  {pendingDraw > 0 ? `+${pendingDraw}` : 'DRAW'}
                 </div>
               </div>
+            </div>
 
-              {/* Played Card */}
+            {/* Played Card - Centered */}
+            <div className="flex flex-col items-center">
               {topCard ? (
                 <div className="transform scale-75 md:scale-100">
                   <GameCard card={topCard} size="large" interactive={false} />
@@ -388,12 +402,12 @@ export default function StreamPage() {
             const isPlayerTurn = currentGamePlayer?.id === player?.id;
             const cardCount = player ? (player.cardCount || player.hand?.length || 0) : 0;
 
-            // All 4 positions equidistant from center - using same offset distance
+            // All 4 positions equidistant from center - increased spacing to prevent overlap
             const positionStyles: { [key: number]: string } = {
-              0: "top-2 md:top-3 left-1/2 -translate-x-1/2",
-              1: "right-2 md:right-3 top-1/2 -translate-y-1/2",
-              2: "bottom-2 md:bottom-3 left-1/2 -translate-x-1/2",
-              3: "left-2 md:left-3 top-1/2 -translate-y-1/2",
+              0: "top-0 md:top-1 left-1/2 -translate-x-1/2",
+              1: "right-0 md:right-1 top-1/2 -translate-y-1/2",
+              2: "bottom-0 md:bottom-1 left-1/2 -translate-x-1/2",
+              3: "left-0 md:left-1 top-1/2 -translate-y-1/2",
             };
             const posClass = positionStyles[position];
 
