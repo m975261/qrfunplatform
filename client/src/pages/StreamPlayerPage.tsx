@@ -23,6 +23,7 @@ export default function StreamPlayerPage() {
   const { 
     gameState, 
     floatingEmojis,
+    avatarMessages,
     joinRoom, 
     playCard, 
     drawCard, 
@@ -376,6 +377,7 @@ export default function StreamPlayerPage() {
           setEditingPlayerNickname(nickname);
         }}
         onMakeHost={assignHost}
+        avatarMessages={avatarMessages}
       />
 
       {/* Chat Panel - Same as Game.tsx */}

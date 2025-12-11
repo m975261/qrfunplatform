@@ -28,7 +28,7 @@ export default function StreamGamePage() {
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
   
-  const { gameState, floatingEmojis, isConnected, streamSubscribe, playAgain } = useSocket();
+  const { gameState, floatingEmojis, avatarMessages, isConnected, streamSubscribe, playAgain } = useSocket();
 
   useEffect(() => {
     if (isConnected && roomId && !hasSubscribed) {
@@ -351,6 +351,7 @@ export default function StreamGamePage() {
         currentPlayerId={undefined}
         isSpectator={true}
         colorChoiceRequested={false}
+        avatarMessages={avatarMessages}
       />
 
       {/* QR Code Floating Panel */}

@@ -16,6 +16,7 @@ interface StreamGameBoardProps {
   onKickPlayer?: (playerId: string) => void;
   onEditPlayer?: (playerId: string, nickname: string) => void;
   onMakeHost?: (playerId: string) => void;
+  avatarMessages?: any[];
 }
 
 interface FlyingCard {
@@ -44,6 +45,7 @@ export default function StreamGameBoard({
   onKickPlayer,
   onEditPlayer,
   onMakeHost,
+  avatarMessages = [],
 }: StreamGameBoardProps) {
   const [playingCardIndex, setPlayingCardIndex] = useState<number | null>(null);
   const [drawingCard, setDrawingCard] = useState(false);
@@ -357,6 +359,33 @@ export default function StreamGameBoard({
             {player.finishPosition === 1 ? "🥇 1ST" : player.finishPosition === 2 ? "🥈 2ND" : player.finishPosition === 3 ? "🥉 3RD" : `${player.finishPosition}TH`}
           </div>
         )}
+        
+        {/* Floating chat/emoji message bubble - position based on slot */}
+        {avatarMessages?.filter((m: any) => m.playerId === player.id).slice(-1).map((msg: any) => (
+          <div
+            key={msg.id}
+            className={`absolute z-50 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+              position === 0 || position === 2 
+                ? 'left-full top-1/2 -translate-y-1/2 ml-2'  // Slots 1 and 3: LEFT of avatar
+                : 'top-full left-1/2 -translate-x-1/2 mt-2'   // Slots 2 and 4: BELOW avatar
+            }`}
+          >
+            <div className="bg-white/95 rounded-xl px-3 py-2 shadow-lg border border-gray-200 max-w-[120px]">
+              <div className="text-[10px] text-gray-500 font-medium truncate">
+                {msg.playerNickname}
+              </div>
+              <div className={`${msg.contentType === 'emoji' ? 'text-2xl text-center' : 'text-sm text-gray-800 break-words'}`}>
+                {msg.content}
+              </div>
+            </div>
+            {/* Speech bubble pointer */}
+            <div className={`absolute w-0 h-0 ${
+              position === 0 || position === 2
+                ? 'right-full top-1/2 -translate-y-1/2 border-t-6 border-b-6 border-r-6 border-t-transparent border-b-transparent border-r-white/95'
+                : 'bottom-full left-1/2 -translate-x-1/2 border-l-6 border-r-6 border-b-6 border-l-transparent border-r-transparent border-b-white/95'
+            }`} />
+          </div>
+        ))}
       </div>
     );
 
