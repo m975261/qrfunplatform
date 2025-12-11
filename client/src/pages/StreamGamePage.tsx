@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, QrCode, X, GripVertical, Link2, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { Copy, QrCode, X, Link2, ChevronLeft, ChevronRight, Users, GripVertical } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import StreamGameBoard from "@/components/game/StreamGameBoard";
@@ -25,16 +25,6 @@ export default function StreamGamePage() {
   const [unoMessage, setUnoMessage] = useState<string | null>(null);
   const [oneCardMessage, setOneCardMessage] = useState<string | null>(null);
   const [showSpectators, setShowSpectators] = useState(true);
-  const [viewersPanelWidth, setViewersPanelWidth] = useState(250);
-  const [viewersPanelHeight, setViewersPanelHeight] = useState(200);
-  const [viewersPanelPosition, setViewersPanelPosition] = useState({ x: window.innerWidth - 270, y: 80 });
-  const [isResizingPanel, setIsResizingPanel] = useState(false);
-  const [isDraggingPanel, setIsDraggingPanel] = useState(false);
-  const resizeStartX = useRef(0);
-  const resizeStartY = useRef(0);
-  const resizeStartWidth = useRef(250);
-  const resizeStartHeight = useRef(200);
-  const panelDragStart = useRef({ x: 0, y: 0 });
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
   
@@ -136,69 +126,6 @@ export default function StreamGamePage() {
       document.removeEventListener('touchend', handleMouseUp);
     };
   }, [isDraggingQR, dragStartPos]);
-
-  // Panel drag handler
-  const handlePanelDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    setIsDraggingPanel(true);
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    panelDragStart.current = { x: clientX - viewersPanelPosition.x, y: clientY - viewersPanelPosition.y };
-  };
-
-  // Panel resize handler (bottom-right corner)
-  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsResizingPanel(true);
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    resizeStartX.current = clientX;
-    resizeStartY.current = clientY;
-    resizeStartWidth.current = viewersPanelWidth;
-    resizeStartHeight.current = viewersPanelHeight;
-  };
-
-  useEffect(() => {
-    const handlePanelMove = (e: MouseEvent | TouchEvent) => {
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      
-      if (isDraggingPanel) {
-        // No limitations - fully free movement
-        const newX = clientX - panelDragStart.current.x;
-        const newY = clientY - panelDragStart.current.y;
-        setViewersPanelPosition({ x: newX, y: newY });
-      }
-      
-      if (isResizingPanel) {
-        // No limitations - use show/hide button for recovery if needed
-        const deltaX = clientX - resizeStartX.current;
-        const deltaY = clientY - resizeStartY.current;
-        setViewersPanelWidth(resizeStartWidth.current + deltaX);
-        setViewersPanelHeight(resizeStartHeight.current + deltaY);
-      }
-    };
-
-    const handlePanelEnd = () => {
-      setIsDraggingPanel(false);
-      setIsResizingPanel(false);
-    };
-
-    if (isDraggingPanel || isResizingPanel) {
-      document.addEventListener('mousemove', handlePanelMove);
-      document.addEventListener('mouseup', handlePanelEnd);
-      document.addEventListener('touchmove', handlePanelMove);
-      document.addEventListener('touchend', handlePanelEnd);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handlePanelMove);
-      document.removeEventListener('mouseup', handlePanelEnd);
-      document.removeEventListener('touchmove', handlePanelMove);
-      document.removeEventListener('touchend', handlePanelEnd);
-    };
-  }, [isDraggingPanel, isResizingPanel, viewersPanelWidth, viewersPanelHeight]);
 
   const handleCopyCode = () => {
     if (room?.code) {
@@ -357,99 +284,51 @@ export default function StreamGamePage() {
         </div>
       </div>
 
-      {/* Floating Draggable & Resizable Viewers Panel - NO CLOSE BUTTON */}
-      {showSpectators && (
-        <div 
-          className="fixed z-20 select-none"
-          style={{
-            left: viewersPanelPosition.x,
-            top: viewersPanelPosition.y,
-            width: viewersPanelWidth,
-            height: viewersPanelHeight
-          }}
+      {/* Simple Viewers Panel - Fixed position like StreamPlayerPage */}
+      <div className="fixed top-20 right-0 z-20 flex items-start">
+        {/* Toggle Button */}
+        <button
+          onClick={() => setShowSpectators(!showSpectators)}
+          className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg p-2 hover:bg-gray-100 transition-colors border-r-0"
+          data-testid="toggle-spectators"
         >
-          <UICard className="bg-white/95 backdrop-blur-sm shadow-xl h-full flex flex-col">
-            {/* Draggable Header - No X button, only hide/minimize */}
-            <div 
-              className="bg-gradient-to-r from-gray-100 to-gray-200 px-3 py-2 cursor-grab active:cursor-grabbing flex items-center justify-between rounded-t-lg border-b"
-              onMouseDown={handlePanelDragStart}
-              onTouchStart={handlePanelDragStart}
-            >
-              <div className="flex items-center gap-2">
-                <GripVertical className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700">Viewers ({spectators.length})</span>
-              </div>
-              <button
-                onClick={() => setShowSpectators(false)}
-                className="p-1 hover:bg-gray-300 rounded"
-                data-testid="hide-spectators"
-                title="Minimize panel"
-              >
-                <ChevronRight className="w-4 h-4 text-gray-500" />
-              </button>
+          {showSpectators ? (
+            <ChevronRight className="w-4 h-4 text-gray-600" />
+          ) : (
+            <div className="flex items-center gap-1">
+              <Users className="w-4 h-4 text-gray-600" />
+              <span className="text-xs font-medium text-gray-600">{spectators.length}</span>
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
             </div>
-            
-            {/* Content - Viewers Table */}
-            <CardContent className="p-3 flex-1 overflow-auto">
+          )}
+        </button>
+        
+        {/* Panel Content - Just names, no status */}
+        {showSpectators && (
+          <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0 max-w-xs">
+            <CardContent className="p-3">
+              <div className="text-sm font-medium text-gray-700 mb-2">
+                Viewers ({spectators.length})
+              </div>
+              
               {spectators.length === 0 ? (
                 <div className="text-sm text-gray-400 italic">No viewers yet</div>
               ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-500 border-b">
-                      <th className="pb-2">Viewer</th>
-                      <th className="pb-2 text-center">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {spectators.map((spectator: any) => (
-                      <tr key={spectator.id} className="border-b border-gray-100">
-                        <td className="py-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white text-xs font-bold">
-                              {spectator.nickname[0].toUpperCase()}
-                            </div>
-                            <span className="text-gray-700 truncate">{spectator.nickname}</span>
-                          </div>
-                        </td>
-                        <td className="py-2 text-center">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${spectator.isOnline ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                            {spectator.isOnline ? 'Online' : 'Offline'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="space-y-2" data-testid="viewers-list">
+                  {spectators.map((spectator: any) => (
+                    <div key={spectator.id} className="flex items-center gap-2" data-testid={`viewer-${spectator.id}`}>
+                      <div className="w-6 h-6 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        {spectator.nickname?.[0]?.toUpperCase()}
+                      </div>
+                      <span className="text-sm text-gray-600 truncate" data-testid={`viewer-name-${spectator.id}`}>{spectator.nickname}</span>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
-            
-            {/* Resize Handle (bottom-right corner) - no size limits */}
-            <div
-              onMouseDown={handleResizeStart}
-              onTouchStart={handleResizeStart}
-              className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize"
-              style={{ touchAction: 'none' }}
-            >
-              <div className="w-0 h-0 border-l-[16px] border-l-transparent border-b-[16px] border-b-gray-400/50 hover:border-b-uno-blue/50 transition-colors" />
-            </div>
           </UICard>
-        </div>
-      )}
-      
-      {/* Show/Hide Viewers Button - next to QR button */}
-      {!showSpectators && (
-        <button
-          onClick={() => setShowSpectators(true)}
-          className="fixed top-16 right-2 z-20 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors flex items-center gap-2"
-          data-testid="toggle-spectators"
-          title="Show Viewers Panel"
-        >
-          <Users className="w-4 h-4 text-gray-600" />
-          <span className="text-sm font-medium text-gray-600">Viewers ({spectators.length})</span>
-          <ChevronLeft className="w-4 h-4 text-gray-400" />
-        </button>
-      )}
+        )}
+      </div>
 
       {/* Game Board - Using StreamGameBoard with isSpectator=true for OBS view */}
       {/* For spectator/OBS view, pass undefined for currentPlayerId so isMyTurn is always false */}

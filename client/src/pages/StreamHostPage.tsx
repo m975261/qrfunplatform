@@ -44,16 +44,6 @@ export default function StreamHostPage() {
   const [editingSpectatorId, setEditingSpectatorId] = useState<string | null>(null);
   const [editingSpectatorNickname, setEditingSpectatorNickname] = useState<string>("");
   const [showViewersPanel, setShowViewersPanel] = useState(true);
-  const [viewersPanelWidth, setViewersPanelWidth] = useState(250);
-  const [viewersPanelHeight, setViewersPanelHeight] = useState(200);
-  const [viewersPanelPosition, setViewersPanelPosition] = useState({ x: window.innerWidth - 270, y: 80 });
-  const [isResizingPanel, setIsResizingPanel] = useState(false);
-  const [isDraggingPanel, setIsDraggingPanel] = useState(false);
-  const resizeStartX = useRef(0);
-  const resizeStartY = useRef(0);
-  const resizeStartWidth = useRef(400);
-  const resizeStartHeight = useRef(300);
-  const panelDragStart = useRef({ x: 0, y: 0 });
   
   const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
   const [isDraggingQR, setIsDraggingQR] = useState(false);
@@ -113,7 +103,7 @@ export default function StreamHostPage() {
     !p.isSpectator && p.position !== null && p.position !== undefined
   );
   
-  const spectators = players.filter((p: any) => p.isSpectator && p.isOnline);
+  const spectators = players.filter((p: any) => p.isSpectator);
   const isHost = room?.hostId === playerId;
 
   useEffect(() => {
@@ -209,69 +199,6 @@ export default function StreamHostPage() {
       document.removeEventListener('touchend', handleMouseUp);
     };
   }, [isDraggingQR, dragStartPos]);
-
-  // Panel drag handler
-  const handlePanelDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    setIsDraggingPanel(true);
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    panelDragStart.current = { x: clientX - viewersPanelPosition.x, y: clientY - viewersPanelPosition.y };
-  };
-
-  // Panel resize handler (bottom-right corner)
-  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsResizingPanel(true);
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    resizeStartX.current = clientX;
-    resizeStartY.current = clientY;
-    resizeStartWidth.current = viewersPanelWidth;
-    resizeStartHeight.current = viewersPanelHeight;
-  };
-
-  useEffect(() => {
-    const handlePanelMove = (e: MouseEvent | TouchEvent) => {
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      
-      if (isDraggingPanel) {
-        // No limitations - fully free movement
-        const newX = clientX - panelDragStart.current.x;
-        const newY = clientY - panelDragStart.current.y;
-        setViewersPanelPosition({ x: newX, y: newY });
-      }
-      
-      if (isResizingPanel) {
-        // No limitations - use show/hide button for recovery if needed
-        const deltaX = clientX - resizeStartX.current;
-        const deltaY = clientY - resizeStartY.current;
-        setViewersPanelWidth(resizeStartWidth.current + deltaX);
-        setViewersPanelHeight(resizeStartHeight.current + deltaY);
-      }
-    };
-
-    const handlePanelEnd = () => {
-      setIsDraggingPanel(false);
-      setIsResizingPanel(false);
-    };
-
-    if (isDraggingPanel || isResizingPanel) {
-      document.addEventListener('mousemove', handlePanelMove);
-      document.addEventListener('mouseup', handlePanelEnd);
-      document.addEventListener('touchmove', handlePanelMove);
-      document.addEventListener('touchend', handlePanelEnd);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handlePanelMove);
-      document.removeEventListener('mouseup', handlePanelEnd);
-      document.removeEventListener('touchmove', handlePanelMove);
-      document.removeEventListener('touchend', handlePanelEnd);
-    };
-  }, [isDraggingPanel, isResizingPanel, viewersPanelWidth, viewersPanelHeight]);
 
   const getPositionClass = (position: number) => {
     const positions = [
@@ -409,14 +336,27 @@ export default function StreamHostPage() {
                       {player.isOnline && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
                       )}
-                      {/* Kick Button (Host Only) */}
+                      {/* Host Controls - Kick & Edit buttons */}
                       {isHost && player.id !== playerId && (
-                        <button
-                          onClick={() => handleKickPlayer(player.id)}
-                          className="absolute -bottom-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleKickPlayer(player.id)}
+                            className="absolute -bottom-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600"
+                            title="Kick"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingSpectatorId(player.id);
+                              setEditingSpectatorNickname(player.nickname);
+                            }}
+                            className="absolute -bottom-1 -left-1 w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white hover:bg-gray-600"
+                            title="Edit nickname"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        </>
                       )}
                     </div>
                   ) : (
@@ -430,144 +370,91 @@ export default function StreamHostPage() {
           })}
         </div>
 
-        {/* Floating Draggable & Resizable Viewers Panel */}
-        {showViewersPanel && (
-          <div 
-            className="fixed z-30 select-none"
-            style={{
-              left: viewersPanelPosition.x,
-              top: viewersPanelPosition.y,
-              width: viewersPanelWidth,
-              height: viewersPanelHeight
-            }}
+        {/* Simple Viewers Panel - Fixed position like StreamPlayerPage */}
+        <div className="fixed top-20 right-0 z-20 flex items-start">
+          {/* Toggle Button */}
+          <button
+            onClick={() => setShowViewersPanel(!showViewersPanel)}
+            className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg p-2 hover:bg-gray-100 transition-colors border-r-0"
+            data-testid="toggle-viewers-panel"
           >
-            <Card className="bg-white/95 backdrop-blur-sm shadow-xl h-full flex flex-col">
-              {/* Draggable Header */}
-              <div 
-                className="bg-gradient-to-r from-gray-100 to-gray-200 px-4 py-3 cursor-grab active:cursor-grabbing flex items-center justify-between rounded-t-lg border-b"
-                onMouseDown={handlePanelDragStart}
-                onTouchStart={handlePanelDragStart}
-              >
-                <div className="flex items-center gap-2">
-                  <GripVertical className="w-5 h-5 text-gray-400" />
-                  <h3 className="text-lg font-bold text-gray-800">
-                    Viewers ({spectators.length})
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setShowViewersPanel(false)}
-                  className="p-1 hover:bg-gray-300 rounded"
-                  data-testid="hide-viewers-panel"
-                  title="Minimize panel"
-                >
-                  <ChevronRight className="w-5 h-5 text-gray-500" />
-                </button>
+            {showViewersPanel ? (
+              <ChevronRight className="w-4 h-4 text-gray-600" />
+            ) : (
+              <div className="flex items-center gap-1">
+                <Users className="w-4 h-4 text-gray-600" />
+                <span className="text-xs font-medium text-gray-600">{spectators.length}</span>
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
               </div>
-              
-              {/* Content - Viewers Table */}
-              <CardContent className="p-4 flex-1 overflow-auto">
-                {spectators.length > 0 ? (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-gray-500 border-b">
-                        <th className="pb-2">Viewer</th>
-                        <th className="pb-2 text-center">Status</th>
-                        <th className="pb-2 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                    {spectators.map((spectator: any) => (
-                      <tr key={spectator.id} className="border-b border-gray-100">
-                        <td className="py-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white font-bold">
-                              {spectator.nickname?.[0]?.toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1">
-                                <span className="font-medium">{spectator.nickname}</span>
-                                <button
-                                  onClick={() => {
-                                    setEditingSpectatorId(spectator.id);
-                                    setEditingSpectatorNickname(spectator.nickname);
-                                  }}
-                                  className="p-0.5 hover:bg-gray-200 rounded"
-                                >
-                                  <Pencil className="w-3 h-3 text-gray-500" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-2 text-center">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${spectator.isOnline ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                            {spectator.isOnline ? 'Online' : 'Offline'}
-                          </span>
-                        </td>
-                        <td className="py-2">
-                        <div className="flex items-center gap-1 justify-end flex-wrap">
-                          {/* Assign to Slot Buttons */}
-                          {getAvailablePositions().map((pos) => (
-                            <Button
-                              key={pos}
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleAssignToSlot(spectator.id, pos)}
-                              className="bg-uno-green text-white hover:bg-green-600 text-xs px-2 py-1"
-                            >
-                              <Plus className="w-3 h-3 mr-1" />
-                              Slot {pos + 1}
-                            </Button>
-                          ))}
-                          {/* Kick Button */}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleKickPlayer(spectator.id)}
-                            className="bg-red-500 text-white hover:bg-red-600"
-                            data-testid={`kick-spectator-${spectator.id}`}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                        </td>
-                      </tr>
-                    ))}
-                    </tbody>
-                  </table>
+            )}
+          </button>
+          
+          {/* Panel Content - Names with slot dropdown */}
+          {showViewersPanel && (
+            <Card className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0 max-w-xs">
+              <CardContent className="p-3">
+                <div className="text-sm font-medium text-gray-700 mb-2">
+                  Viewers ({spectators.length})
+                </div>
+                
+                {spectators.length === 0 ? (
+                  <div className="text-sm text-gray-400 italic">No viewers yet</div>
                 ) : (
-                  <div className="text-center text-gray-400 py-4 italic">
-                    No viewers yet
+                  <div className="space-y-2" data-testid="viewers-list">
+                    {spectators.map((spectator: any) => (
+                      <div key={spectator.id} className="flex flex-col gap-1" data-testid={`viewer-${spectator.id}`}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {spectator.nickname?.[0]?.toUpperCase()}
+                          </div>
+                          <span className="text-sm text-gray-600 truncate max-w-[80px]" data-testid={`viewer-name-${spectator.id}`}>{spectator.nickname}</span>
+                          <button
+                            onClick={() => {
+                              setEditingSpectatorId(spectator.id);
+                              setEditingSpectatorNickname(spectator.nickname);
+                            }}
+                            className="p-0.5 hover:bg-gray-200 rounded"
+                            title="Edit nickname"
+                            data-testid={`edit-viewer-${spectator.id}`}
+                          >
+                            <Pencil className="w-3 h-3 text-gray-500" />
+                          </button>
+                          <button
+                            onClick={() => handleKickPlayer(spectator.id)}
+                            className="p-0.5 hover:bg-red-100 rounded"
+                            title="Kick"
+                            data-testid={`kick-viewer-${spectator.id}`}
+                          >
+                            <X className="w-3 h-3 text-red-500" />
+                          </button>
+                        </div>
+                        {/* Slot dropdown under name */}
+                        {getAvailablePositions().length > 0 && (
+                          <select 
+                            className="text-xs border rounded px-1 py-0.5 bg-green-50 ml-8"
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                handleAssignToSlot(spectator.id, parseInt(e.target.value));
+                                e.target.value = '';
+                              }
+                            }}
+                            defaultValue=""
+                            data-testid={`assign-viewer-${spectator.id}`}
+                          >
+                            <option value="" disabled>+ Add to slot</option>
+                            {getAvailablePositions().map((pos) => (
+                              <option key={pos} value={pos}>Slot {pos + 1}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
-              
-              {/* Resize Handle (bottom-right corner) */}
-              <div
-                onMouseDown={handleResizeStart}
-                onTouchStart={handleResizeStart}
-                className="absolute bottom-0 right-0 w-5 h-5 cursor-nwse-resize"
-                style={{ touchAction: 'none' }}
-              >
-                <div className="w-0 h-0 border-l-[20px] border-l-transparent border-b-[20px] border-b-gray-400/50 hover:border-b-uno-blue/50 transition-colors" />
-              </div>
             </Card>
-          </div>
-        )}
-        
-        {/* Show Viewers Button - appears when panel is hidden */}
-        {!showViewersPanel && (
-          <button
-            onClick={() => setShowViewersPanel(true)}
-            className="fixed top-20 right-4 z-20 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg px-4 py-2 hover:bg-gray-100 transition-colors flex items-center gap-2"
-            data-testid="toggle-viewers-panel"
-            title="Show Viewers Panel"
-          >
-            <Users className="w-5 h-5 text-gray-600" />
-            <span className="font-medium text-gray-600">Viewers ({spectators.length})</span>
-            <ChevronLeft className="w-4 h-4 text-gray-400" />
-          </button>
-        )}
+          )}
+        </div>
 
         {/* Start Game Button */}
         {isHost && gamePlayers.length >= 2 && (
