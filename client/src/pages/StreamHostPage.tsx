@@ -529,6 +529,24 @@ export default function StreamHostPage() {
             </Card>
           </div>
         )}
+
+        {/* Nickname Editor Modal */}
+        {editingSpectatorId && (
+          <NicknameEditor
+            currentNickname={editingSpectatorNickname}
+            playerId={editingSpectatorId}
+            isOpen={!!editingSpectatorId}
+            onClose={() => {
+              setEditingSpectatorId(null);
+              setEditingSpectatorNickname("");
+            }}
+            onNicknameChanged={(newNickname) => {
+              // The socket will propagate the change to all clients
+              setEditingSpectatorId(null);
+              setEditingSpectatorNickname("");
+            }}
+          />
+        )}
       </div>
     </div>
   );
