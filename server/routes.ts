@@ -2037,8 +2037,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
   // Handle stream viewer subscription - they get room updates without being a player
+  // IMPORTANT: Stream viewers must NOT affect existing player connections
   async function handleStreamSubscribe(connection: any, message: any, connectionId: string) {
-    const { roomId, roomCode } = message;
+    const { roomId, roomCode, streamViewerId } = message;
     
     let room;
     if (roomId) {
@@ -2055,12 +2056,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
     
-    console.log(`📺 Stream viewer ${connectionId} subscribing to room ${room.code}`);
+    console.log(`📺 Stream viewer ${connectionId} (${streamViewerId || 'no-id'}) subscribing to room ${room.code}`);
+    
+    // If this connection already has a playerId, this is a player who navigated to stream page
+    // Keep their player identity intact - just add stream viewer capability
+    const hadExistingPlayerId = !!connection.playerId;
     
     // Register this connection to the room (for broadcasts) but mark as stream viewer
     connection.roomId = room.id;
     connection.isStreamViewer = true;
-    connection.playerId = null; // No player, just a viewer
+    connection.streamViewerId = streamViewerId; // Track unique stream viewer ID
+    
+    // CRITICAL: Only null out playerId if this was never a player connection
+    // This prevents breaking the player's connection state when they open stream page
+    if (!hadExistingPlayerId) {
+      connection.playerId = null; // Pure stream viewer, no player
+    } else {
+      console.log(`📺 Stream viewer ${connectionId} was already player ${connection.playerId}, keeping player identity`);
+    }
+    
     connections.set(connectionId, connection);
     
     // Send current room state to stream viewer

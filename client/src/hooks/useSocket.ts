@@ -923,13 +923,18 @@ export function useSocket(autoConnect: boolean = true) {
   }, []);
 
   // Stream subscribe - for read-only stream viewers (no player needed)
+  // Uses a unique stream viewer ID to avoid conflicting with player connections
   const streamSubscribe = useCallback((roomId: string, roomCode?: string) => {
+    // Generate a unique stream viewer ID (separate from player session)
+    const streamViewerId = `stream_${Math.random().toString(36).substring(7)}_${Date.now()}`;
+    
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      console.log("📺 Subscribing to room stream:", { roomId, roomCode });
+      console.log("📺 Subscribing to room stream:", { roomId, roomCode, streamViewerId });
       socketRef.current.send(JSON.stringify({
         type: 'stream_subscribe',
         roomId,
-        roomCode
+        roomCode,
+        streamViewerId // Unique ID to distinguish from player sessions
       }));
     } else {
       console.log("📺 WebSocket not ready, will subscribe when connected");
@@ -940,7 +945,8 @@ export function useSocket(autoConnect: boolean = true) {
           socketRef.current.send(JSON.stringify({
             type: 'stream_subscribe',
             roomId,
-            roomCode
+            roomCode,
+            streamViewerId
           }));
         }
       }, 500);

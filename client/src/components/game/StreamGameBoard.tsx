@@ -228,7 +228,7 @@ export default function StreamGameBoard({
         {Array.from({ length: displayCardCount }).map((_, i) => (
           <div
             key={i}
-            className={`w-5 h-7 md:w-6 md:h-9 bg-gradient-to-br from-red-600 to-red-800 rounded-sm border border-red-400 shadow-md transition-all ${
+            className={`w-7 h-10 md:w-10 md:h-14 bg-gradient-to-br from-red-600 to-red-800 rounded-sm border border-red-400 shadow-md transition-all ${
               isAnimating && cardAnimation?.type === 'play' ? 'animate-pulse scale-90' : ''
             }`}
             style={{
@@ -237,12 +237,12 @@ export default function StreamGameBoard({
             }}
           >
             <div className="w-full h-full flex items-center justify-center">
-              <span className="text-yellow-300 text-[5px] md:text-[6px] font-bold">UNO</span>
+              <span className="text-yellow-300 text-[6px] md:text-[8px] font-bold">UNO</span>
             </div>
           </div>
         ))}
         {cardCount > 10 && (
-          <div className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[6px] px-1 rounded-full font-bold z-20">
+          <div className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[7px] px-1 rounded-full font-bold z-20">
             +{cardCount - 10}
           </div>
         )}
@@ -404,22 +404,6 @@ export default function StreamGameBoard({
           })}
 
           <div className="absolute inset-0 flex items-center justify-center z-20">
-            {/* Draw Pile - Positioned absolutely to the left like Game.tsx */}
-            <div 
-              ref={deckRef}
-              className={`absolute left-1/2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-105 transition-transform ${
-                drawingCard ? "animate-pulse scale-95" : ""
-              } ${isMyTurn && !isSpectator ? "ring-2 ring-green-400 rounded-lg" : ""}`}
-              style={{ marginLeft: '-55px' }}
-              onClick={handleDraw}
-            >
-              <div className="w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center">
-                <div className="text-white text-[8px] md:text-xs font-bold text-center">
-                  {pendingDraw > 0 ? `+${pendingDraw}` : 'DRAW'}
-                </div>
-              </div>
-            </div>
-
             {/* Played Card - Centered */}
             <div className="flex flex-col items-center">
               {topCard && (
@@ -427,6 +411,26 @@ export default function StreamGameBoard({
                   <GameCard card={topCard} size="large" interactive={false} onClick={() => {}} />
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Draw Pile - Positioned between players 3 (left) and 2 (bottom), on the circle line */}
+          <div 
+            ref={deckRef}
+            className={`absolute z-20 cursor-pointer hover:scale-105 transition-transform ${
+              drawingCard ? "animate-pulse scale-95" : ""
+            } ${isMyTurn && !isSpectator ? "ring-2 ring-green-400 rounded-lg" : ""}`}
+            style={{ 
+              left: '15%', 
+              bottom: '15%',
+              transform: 'translate(-50%, 50%)'
+            }}
+            onClick={handleDraw}
+          >
+            <div className="w-12 h-16 md:w-16 md:h-24 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center">
+              <div className="text-white text-[9px] md:text-sm font-bold text-center">
+                {pendingDraw > 0 ? `+${pendingDraw}` : 'DRAW'}
+              </div>
             </div>
 
             {currentColor && (topCard?.type === "wild" || topCard?.type === "wild4") && (
