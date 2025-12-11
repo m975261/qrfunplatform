@@ -7,6 +7,7 @@ import { useSocket } from "@/hooks/useSocket";
 import StreamGameBoard from "@/components/game/StreamGameBoard";
 import ChatPanel from "@/components/game/ChatPanel";
 import GameEndModal from "@/components/game/GameEndModal";
+import NicknameEditor from "@/components/NicknameEditor";
 
 export default function StreamPlayerPage() {
   const [, playerParams] = useRoute("/stream/:roomId/player/:slot");
@@ -48,6 +49,10 @@ export default function StreamPlayerPage() {
   const [oneCardMessage, setOneCardMessage] = useState<string | null>(null);
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
   const [showSpectators, setShowSpectators] = useState(true);
+  
+  // Host controls state for editing nicknames
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [editingPlayerNickname, setEditingPlayerNickname] = useState<string>("");
 
   useEffect(() => {
     if (isConnected && roomId && playerId) {
@@ -209,16 +214,26 @@ export default function StreamPlayerPage() {
         </div>
       )}
 
-      {/* YOUR TURN Indicator - Top center with blinking animation */}
-      {isMyTurn && !isSpectator && room?.status === 'playing' && (
-        <div className="fixed top-16 md:top-14 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="your-turn-indicator">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
-            <div className="flex items-center space-x-1 md:space-x-2">
-              <span>⭐</span>
-              <span>YOUR TURN!</span>
-              <span>⭐</span>
+      {/* Turn Indicator - Shows YOUR TURN or {player}'s Turn */}
+      {room?.status === 'playing' && currentPlayer && !isSpectator && (
+        <div className="fixed top-16 md:top-14 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="turn-indicator">
+          {isMyTurn ? (
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
+              <div className="flex items-center space-x-1 md:space-x-2">
+                <span>⭐</span>
+                <span>YOUR TURN!</span>
+                <span>⭐</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
+              <div className="flex items-center space-x-1 md:space-x-2">
+                <span>🎯</span>
+                <span>{currentPlayer.nickname}'s Turn</span>
+                <span>🎯</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -346,6 +361,12 @@ export default function StreamPlayerPage() {
         onChooseColor={handleColorChoice}
         isSpectator={isSpectator}
         colorChoiceRequested={gameState?.colorChoiceRequested || room?.waitingForColorChoice === playerId}
+        isHost={isHost}
+        onKickPlayer={handleKickPlayer}
+        onEditPlayer={(pid, nickname) => {
+          setEditingPlayerId(pid);
+          setEditingPlayerNickname(nickname);
+        }}
       />
 
       {/* Chat Panel - Same as Game.tsx */}
@@ -433,6 +454,23 @@ export default function StreamPlayerPage() {
             </CardContent>
           </UICard>
         </div>
+      )}
+
+      {/* Nickname Editor Modal for host editing player names */}
+      {editingPlayerId && (
+        <NicknameEditor
+          playerId={editingPlayerId}
+          currentNickname={editingPlayerNickname}
+          isOpen={!!editingPlayerId}
+          onClose={() => {
+            setEditingPlayerId(null);
+            setEditingPlayerNickname("");
+          }}
+          onNicknameChanged={() => {
+            setEditingPlayerId(null);
+            setEditingPlayerNickname("");
+          }}
+        />
       )}
     </div>
   );

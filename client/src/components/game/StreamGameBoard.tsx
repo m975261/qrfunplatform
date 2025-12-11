@@ -12,6 +12,9 @@ interface StreamGameBoardProps {
   isSpectator?: boolean;
   colorChoiceRequested?: boolean;
   cardAnimation?: { type: string; playerId?: string } | null;
+  isHost?: boolean;
+  onKickPlayer?: (playerId: string) => void;
+  onEditPlayer?: (playerId: string, nickname: string) => void;
 }
 
 interface FlyingCard {
@@ -36,6 +39,9 @@ export default function StreamGameBoard({
   isSpectator = false,
   colorChoiceRequested = false,
   cardAnimation = null,
+  isHost = false,
+  onKickPlayer,
+  onEditPlayer,
 }: StreamGameBoardProps) {
   const [playingCardIndex, setPlayingCardIndex] = useState<number | null>(null);
   const [drawingCard, setDrawingCard] = useState(false);
@@ -294,6 +300,27 @@ export default function StreamGameBoard({
         {/* Host crown */}
         {player.id === room?.hostId && (
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px]">👑</div>
+        )}
+        {/* Host Controls - Kick & Edit buttons */}
+        {isHost && player.id !== currentPlayerId && onKickPlayer && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onKickPlayer(player.id); }}
+            className="absolute -bottom-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 shadow-lg border border-white text-xs"
+            title="Kick"
+            data-testid={`kick-player-${player.id}`}
+          >
+            ✕
+          </button>
+        )}
+        {isHost && onEditPlayer && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEditPlayer(player.id, player.nickname); }}
+            className="absolute -bottom-1 -left-1 w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center text-white hover:bg-gray-600 shadow-lg border border-white text-[8px]"
+            title="Edit nickname"
+            data-testid={`edit-player-${player.id}`}
+          >
+            ✎
+          </button>
         )}
         {/* UNO badge */}
         {cardCount <= 1 && player.hasCalledUno && (

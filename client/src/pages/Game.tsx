@@ -342,16 +342,26 @@ export default function Game() {
 
 
 
-      {/* Your Turn Message - Positioned above player hand cards */}
-      {isMyTurn && (
-        <div className="hidden md:flex fixed bottom-32 lg:bottom-36 xl:bottom-40 left-1/2 transform -translate-x-1/2 pointer-events-none z-30">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg lg:text-xl font-bold px-6 py-3 rounded-full shadow-xl border-3 border-white animate-pulse">
-            <div className="flex items-center space-x-2">
-              <span>⭐</span>
-              <span>YOUR TURN!</span>
-              <span>⭐</span>
+      {/* Turn Indicator - Shows YOUR TURN or {player}'s Turn */}
+      {room?.status === 'playing' && currentGamePlayer && (
+        <div className="fixed top-16 md:top-14 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="turn-indicator">
+          {isMyTurn ? (
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
+              <div className="flex items-center space-x-1 md:space-x-2">
+                <span>⭐</span>
+                <span>YOUR TURN!</span>
+                <span>⭐</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
+              <div className="flex items-center space-x-1 md:space-x-2">
+                <span>🎯</span>
+                <span>{currentGamePlayer.nickname}'s Turn</span>
+                <span>🎯</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -538,11 +548,6 @@ export default function Game() {
                   </div>
                   <div className="text-xs text-gray-500">
                     {currentPlayer.hand?.length || 0} cards
-                    {isMyTurn && (
-                      <span className="ml-2 text-uno-red font-bold">
-                        • Your Turn! ({timer}s)
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
