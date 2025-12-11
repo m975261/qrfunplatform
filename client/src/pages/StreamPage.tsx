@@ -129,7 +129,7 @@ export default function StreamPage() {
   }
 
   const isPlaying = room.status === 'playing';
-  const topCard = room.topCard || room.discardPile?.[room.discardPile?.length - 1];
+  const topCard = room.topCard || room.discardPile?.[0];
   const currentPlayerIndex = room.currentPlayerIndex;
   const currentGamePlayer = gamePlayers.find((p: any) => p.position === currentPlayerIndex);
 

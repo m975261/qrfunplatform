@@ -220,24 +220,37 @@ export default function StreamLobbyPage() {
           {/* 4 Fixed Avatar Positions (View Only) */}
           {[0, 1, 2, 3].map((position) => {
             const player = getPlayerAtPosition(position);
+            const savedAvatar = player ? localStorage.getItem(`avatar_${player.id}`) : null;
+            const avatarEmoji = savedAvatar === 'male' ? '👨' : savedAvatar === 'female' ? '👩' : '👨';
             
             return (
               <div
                 key={position}
-                className={`absolute ${getPositionClass(position)} w-20 h-20`}
+                className={`absolute ${getPositionClass(position)}`}
               >
                 {player ? (
-                  <div className="w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 border-white/20">
-                    <div className="text-lg">{player.nickname[0].toUpperCase()}</div>
-                    <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
-                    {/* Online indicator */}
-                    <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
-                      player.isOnline ? 'bg-green-500' : 'bg-red-500'
-                    }`} />
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex items-center justify-center text-2xl shadow-lg border-3 border-white/30 relative">
+                      {avatarEmoji}
+                      <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                        player.isOnline ? 'bg-green-500' : 'bg-red-500'
+                      }`} />
+                      {player.position === 0 && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-sm">👑</div>
+                      )}
+                    </div>
+                    <div className="mt-1 px-2 py-0.5 bg-black/70 text-white text-xs font-bold rounded-full truncate max-w-[70px]">
+                      {player.nickname}
+                    </div>
                   </div>
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gray-300/50 border-4 border-white/30 flex items-center justify-center">
-                    <span className="text-gray-600 text-xs">Slot {position + 1}</span>
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-full bg-gray-300/50 border-3 border-white/30 flex items-center justify-center">
+                      <span className="text-gray-500 text-[10px]">Empty</span>
+                    </div>
+                    <div className="mt-1 px-2 py-0.5 bg-gray-500/50 text-gray-300 text-[10px] font-bold rounded-full">
+                      Slot {position + 1}
+                    </div>
                   </div>
                 )}
               </div>

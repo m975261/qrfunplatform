@@ -37,7 +37,7 @@ export default function StreamGameBoard({
   const myHand = myPlayer?.hand || [];
   const currentPlayerIndex = room?.currentPlayerIndex;
   const currentGamePlayer = gamePlayers.find((p: any) => p.position === currentPlayerIndex);
-  const topCard = room?.topCard || room?.discardPile?.[room?.discardPile?.length - 1];
+  const topCard = room?.topCard || room?.discardPile?.[0];
   const currentColor = room?.currentColor;
   const pendingDraw = room?.pendingDraw ?? 0;
 
@@ -92,105 +92,150 @@ export default function StreamGameBoard({
     const cardCount = player?.hand?.length || player?.cardCount || 0;
     const isOnline = player?.isOnline !== false;
     const isAnimating = cardAnimation?.playerId === player?.id;
+    const displayCardCount = Math.min(cardCount, 10);
 
     const positionStyles: { [key: number]: string } = {
-      0: "top-0 left-1/2 -translate-x-1/2",
-      1: "right-0 top-1/2 -translate-y-1/2",
-      2: "bottom-16 left-1/2 -translate-x-1/2",
-      3: "left-0 top-1/2 -translate-y-1/2",
+      0: "top-4 left-1/2 -translate-x-1/2",
+      1: "right-4 top-1/2 -translate-y-1/2",
+      2: "bottom-20 left-1/2 -translate-x-1/2",
+      3: "left-4 top-1/2 -translate-y-1/2",
     };
 
-    const cardRotations: { [key: number]: string } = {
-      0: "rotate-180",
-      1: "-rotate-90",
-      2: "",
-      3: "rotate-90",
+    const getCardFanStyle = (pos: number, cardIndex: number, totalCards: number) => {
+      const fanSpread = totalCards > 1 ? 8 : 0;
+      const centerOffset = (totalCards - 1) / 2;
+      const rotation = (cardIndex - centerOffset) * fanSpread;
+      
+      if (pos === 0) {
+        return { transform: `rotate(${rotation}deg) translateY(-2px)`, marginLeft: cardIndex > 0 ? '-8px' : '0' };
+      } else if (pos === 1) {
+        return { transform: `rotate(${rotation + 90}deg)`, marginTop: cardIndex > 0 ? '-8px' : '0' };
+      } else if (pos === 2) {
+        return { transform: `rotate(${rotation + 180}deg) translateY(2px)`, marginLeft: cardIndex > 0 ? '-8px' : '0' };
+      } else {
+        return { transform: `rotate(${rotation - 90}deg)`, marginTop: cardIndex > 0 ? '-8px' : '0' };
+      }
+    };
+
+    const getContainerLayout = (pos: number) => {
+      if (pos === 0 || pos === 2) {
+        return "flex flex-row items-center";
+      }
+      return "flex flex-col items-center";
+    };
+
+    const getSlotLayout = (pos: number) => {
+      if (pos === 0) return "flex flex-col items-center";
+      if (pos === 1) return "flex flex-row items-center";
+      if (pos === 2) return "flex flex-col-reverse items-center";
+      return "flex flex-row-reverse items-center";
     };
 
     if (!player) {
       return (
         <div className={`absolute ${positionStyles[position]} z-10`}>
-          <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-700/50 border-2 border-dashed border-gray-500 flex items-center justify-center">
-            <span className="text-gray-400 text-xs">Empty</span>
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700/50 border-2 border-dashed border-gray-500 flex items-center justify-center">
+            <span className="text-gray-400 text-[10px]">Empty</span>
           </div>
         </div>
       );
     }
 
+    const renderCardFan = () => (
+      <div className={`relative ${getContainerLayout(position)}`}>
+        {Array.from({ length: displayCardCount }).map((_, i) => (
+          <div
+            key={i}
+            className={`w-5 h-7 md:w-6 md:h-9 bg-gradient-to-br from-red-600 to-red-800 rounded-sm border border-red-400 shadow-md transition-all ${
+              isAnimating && cardAnimation?.type === 'play' ? 'animate-pulse scale-90' : ''
+            }`}
+            style={{
+              ...getCardFanStyle(position, i, displayCardCount),
+              zIndex: i,
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-yellow-300 text-[5px] md:text-[6px] font-bold">UNO</span>
+            </div>
+          </div>
+        ))}
+        {cardCount > 10 && (
+          <div className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[6px] px-1 rounded-full font-bold z-20">
+            +{cardCount - 10}
+          </div>
+        )}
+      </div>
+    );
+
+    const renderAvatar = () => (
+      <div className="relative flex flex-col items-center">
+        <div
+          className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-lg md:text-xl shadow-lg border-2 transition-all ${
+            isCurrentTurn
+              ? "bg-gradient-to-br from-green-400 to-green-600 border-green-300 ring-2 ring-green-400/50 animate-pulse"
+              : "bg-gradient-to-br from-blue-500 to-blue-700 border-blue-400"
+          }`}
+        >
+          {getPlayerAvatar(player.id)}
+        </div>
+        <div
+          className={`mt-0.5 px-1.5 py-0.5 rounded-full text-[8px] md:text-[10px] font-bold shadow-lg transition-all max-w-[60px] truncate ${
+            isCurrentTurn ? "bg-green-500 text-white" : "bg-black/70 text-white"
+          }`}
+        >
+          {player.nickname}
+        </div>
+        <div
+          className={`absolute top-0 -right-0.5 w-2 h-2 md:w-2.5 md:h-2.5 rounded-full border border-white ${
+            isOnline ? "bg-green-500" : "bg-red-500"
+          }`}
+        />
+        {player.id === room?.hostId && (
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px]">👑</div>
+        )}
+        <div className="absolute -bottom-1 -left-1 bg-slate-800 text-white text-[7px] md:text-[8px] px-1 py-0.5 rounded-full font-bold shadow border border-slate-600">
+          {cardCount}
+        </div>
+        {cardCount <= 1 && player.hasCalledUno && (
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[6px] px-1 py-0.5 rounded-full font-bold animate-pulse whitespace-nowrap">
+            UNO!
+          </div>
+        )}
+        {player.finishPosition && (
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-[6px] px-1 py-0.5 rounded-full font-bold whitespace-nowrap">
+            {player.finishPosition === 1 ? "1ST" : player.finishPosition === 2 ? "2ND" : player.finishPosition === 3 ? "3RD" : `${player.finishPosition}TH`}
+          </div>
+        )}
+      </div>
+    );
+
     return (
       <div className={`absolute ${positionStyles[position]} z-10`}>
-        <div className={`relative flex flex-col items-center transition-all duration-300 ${isCurrentTurn ? "scale-105" : ""}`}>
-          <div className={`relative ${cardRotations[position]}`}>
-            <div className="flex -space-x-4 md:-space-x-5">
-              {Array.from({ length: Math.min(cardCount, 5) }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-6 h-9 md:w-8 md:h-11 bg-gradient-to-br from-blue-600 to-blue-800 rounded border border-blue-400 shadow-md transform transition-all ${
-                    isAnimating && cardAnimation?.type === 'play' ? 'animate-pulse' : ''
-                  }`}
-                  style={{
-                    transform: `rotate(${(i - Math.min(cardCount, 5) / 2) * 6}deg)`,
-                    zIndex: i,
-                  }}
-                >
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-white text-[6px] md:text-[8px] font-bold">U</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {cardCount > 5 && (
-              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1 rounded-full font-bold">
-                +{cardCount - 5}
-              </div>
-            )}
-          </div>
-
-          <div
-            className={`mt-1 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xl md:text-2xl shadow-lg border-3 transition-all ${
-              isCurrentTurn
-                ? "bg-gradient-to-br from-green-400 to-green-600 border-green-300 ring-2 ring-green-400/50 animate-pulse"
-                : "bg-gradient-to-br from-blue-500 to-blue-700 border-blue-400"
-            }`}
-          >
-            {getPlayerAvatar(player.id)}
-          </div>
-
-          <div
-            className={`mt-1 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold shadow-lg transition-all max-w-[80px] truncate ${
-              isCurrentTurn
-                ? "bg-green-500 text-white"
-                : "bg-black/70 text-white"
-            }`}
-          >
-            {player.nickname}
-          </div>
-
-          <div
-            className={`absolute top-6 -right-1 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border border-white ${
-              isOnline ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-
-          {player.id === room?.hostId && (
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs">👑</div>
+        <div className={`${getSlotLayout(position)} gap-1 transition-all duration-300 ${isCurrentTurn ? "scale-105" : ""}`}>
+          {position === 0 && (
+            <>
+              {renderCardFan()}
+              {renderAvatar()}
+            </>
           )}
-
-          {cardCount <= 1 && player.hasCalledUno && (
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold animate-pulse whitespace-nowrap">
-              UNO!
-            </div>
+          {position === 1 && (
+            <>
+              {renderAvatar()}
+              {renderCardFan()}
+            </>
           )}
-
-          {player.finishPosition && (
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-[8px] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap">
-              {player.finishPosition === 1 ? "1ST" : player.finishPosition === 2 ? "2ND" : player.finishPosition === 3 ? "3RD" : `${player.finishPosition}TH`}
-            </div>
+          {position === 2 && (
+            <>
+              {renderAvatar()}
+              {renderCardFan()}
+            </>
           )}
-
-          <div className="absolute -left-2 top-8 bg-slate-800 text-white text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow border border-slate-600">
-            {cardCount}
-          </div>
+          {position === 3 && (
+            <>
+              {renderCardFan()}
+              {renderAvatar()}
+            </>
+          )}
         </div>
       </div>
     );
