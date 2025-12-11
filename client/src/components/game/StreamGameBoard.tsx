@@ -47,6 +47,16 @@ export default function StreamGameBoard({
   onMakeHost,
   avatarMessages = [],
 }: StreamGameBoardProps) {
+  // Debug logging for host controls
+  console.log('StreamGameBoard - host controls:', { 
+    isHost, 
+    currentPlayerId,
+    hasKickHandler: !!onKickPlayer,
+    hasEditHandler: !!onEditPlayer,
+    hasMakeHostHandler: !!onMakeHost,
+    roomHostId: room?.hostId
+  });
+  
   const [playingCardIndex, setPlayingCardIndex] = useState<number | null>(null);
   const [drawingCard, setDrawingCard] = useState(false);
   const [flyingCards, setFlyingCards] = useState<FlyingCard[]>([]);
@@ -308,8 +318,13 @@ export default function StreamGameBoard({
         {/* Host Controls - Kick, Edit, Make Host buttons - high z-index for clickability */}
         {isHost && player.id !== currentPlayerId && onKickPlayer && (
           <button
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onKickPlayer(player.id); }}
-            className="absolute -bottom-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 shadow-lg border border-white text-xs z-50 cursor-pointer"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              e.preventDefault(); 
+              console.log('Kick clicked for player:', player.id);
+              onKickPlayer(player.id); 
+            }}
+            className="absolute -bottom-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 shadow-lg border-2 border-white text-xs z-[100] cursor-pointer pointer-events-auto"
             title="Kick"
             data-testid={`kick-player-${player.id}`}
           >
@@ -318,8 +333,13 @@ export default function StreamGameBoard({
         )}
         {isHost && onEditPlayer && (
           <button
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onEditPlayer(player.id, player.nickname); }}
-            className="absolute -bottom-1 -left-1 w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center text-white hover:bg-gray-600 shadow-lg border border-white text-[8px] z-50 cursor-pointer"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              e.preventDefault(); 
+              console.log('Edit clicked for player:', player.id, player.nickname);
+              onEditPlayer(player.id, player.nickname); 
+            }}
+            className="absolute -bottom-1 -left-1 w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white hover:bg-gray-600 shadow-lg border-2 border-white text-[8px] z-[100] cursor-pointer pointer-events-auto"
             title="Edit nickname"
             data-testid={`edit-player-${player.id}`}
           >
@@ -329,8 +349,13 @@ export default function StreamGameBoard({
         {/* Make Host button - only show if host can transfer and player is not current host */}
         {isHost && player.id !== currentPlayerId && player.id !== room?.hostId && onMakeHost && (
           <button
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onMakeHost(player.id); }}
-            className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center text-white hover:bg-yellow-600 shadow-lg border border-white text-[8px] z-50 cursor-pointer"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              e.preventDefault(); 
+              console.log('Make Host clicked for player:', player.id);
+              onMakeHost(player.id); 
+            }}
+            className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white hover:bg-yellow-600 shadow-lg border-2 border-white text-[8px] z-[100] cursor-pointer pointer-events-auto"
             title="Make Host"
             data-testid={`make-host-${player.id}`}
           >

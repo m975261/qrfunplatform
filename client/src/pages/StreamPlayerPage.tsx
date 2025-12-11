@@ -80,6 +80,14 @@ export default function StreamPlayerPage() {
   const isMyTurn = currentPlayer?.id === myPlayer?.id;
   const isHost = room?.hostId === playerId;
   
+  // Debug logging for host controls
+  console.log('StreamPlayerPage - isHost check:', { 
+    roomHostId: room?.hostId, 
+    playerId, 
+    isHost,
+    roomStatus: room?.status 
+  });
+  
   // Get available positions for host controls
   const getAvailablePositions = () => {
     const occupied = gamePlayers.map((p: any) => p.position);
