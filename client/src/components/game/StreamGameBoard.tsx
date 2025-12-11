@@ -48,14 +48,17 @@ export default function StreamGameBoard({
   avatarMessages = [],
 }: StreamGameBoardProps) {
   // Debug logging for host controls
-  console.log('StreamGameBoard - host controls:', { 
-    isHost, 
-    currentPlayerId,
-    hasKickHandler: !!onKickPlayer,
-    hasEditHandler: !!onEditPlayer,
-    hasMakeHostHandler: !!onMakeHost,
-    roomHostId: room?.hostId
-  });
+  useEffect(() => {
+    console.log('StreamGameBoard - host controls:', { 
+      isHost, 
+      currentPlayerId,
+      hasKickHandler: !!onKickPlayer,
+      hasEditHandler: !!onEditPlayer,
+      hasMakeHostHandler: !!onMakeHost,
+      roomHostId: room?.hostId,
+      pathname: window.location.pathname
+    });
+  }, [isHost, currentPlayerId, onKickPlayer, onEditPlayer, onMakeHost, room?.hostId]);
   
   const [playingCardIndex, setPlayingCardIndex] = useState<number | null>(null);
   const [drawingCard, setDrawingCard] = useState(false);

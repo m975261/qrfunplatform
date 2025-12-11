@@ -78,14 +78,19 @@ export default function StreamPlayerPage() {
   const currentPlayerIndex = room?.currentPlayerIndex || 0;
   const currentPlayer = gamePlayers[currentPlayerIndex];
   const isMyTurn = currentPlayer?.id === myPlayer?.id;
-  const isHost = room?.hostId === playerId;
+  // Check host status - use both room.hostId and player.isHost for robustness
+  const myPlayerData = players.find((p: any) => p.id === playerId);
+  const isHost = room?.hostId === playerId || myPlayerData?.isHost === true;
   
   // Debug logging for host controls
   console.log('StreamPlayerPage - isHost check:', { 
     roomHostId: room?.hostId, 
     playerId, 
     isHost,
-    roomStatus: room?.status 
+    myPlayerIsHost: myPlayerData?.isHost,
+    roomStatus: room?.status,
+    isHostGame,
+    currentPath: window.location.pathname
   });
   
   // Get available positions for host controls
@@ -228,9 +233,9 @@ export default function StreamPlayerPage() {
         </div>
       )}
 
-      {/* Turn Indicator - Shows YOUR TURN or {player}'s Turn */}
+      {/* Turn Indicator - Shows YOUR TURN or {player}'s Turn - positioned below room code */}
       {room?.status === 'playing' && currentPlayer && !isSpectator && (
-        <div className="fixed top-16 md:top-14 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="turn-indicator">
+        <div className="fixed top-14 md:top-16 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="turn-indicator">
           {isMyTurn ? (
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
               <div className="flex items-center space-x-1 md:space-x-2">
