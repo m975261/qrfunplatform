@@ -395,7 +395,7 @@ export default function StreamPage() {
           <div className="absolute inset-[20%] rounded-full bg-gradient-to-br from-slate-700 to-slate-800 shadow-2xl border-4 border-slate-600" />
 
           {/* === CENTER CONTENT (Draw Pile + Played Card) === */}
-          <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="absolute inset-0 flex items-center justify-center z-30">
             <div className="flex items-center gap-2 md:gap-3">
               {/* Draw Pile */}
               <div className="w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center">
