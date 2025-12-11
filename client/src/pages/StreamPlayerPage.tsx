@@ -209,6 +209,19 @@ export default function StreamPlayerPage() {
         </div>
       )}
 
+      {/* YOUR TURN Indicator - Top center with blinking animation */}
+      {isMyTurn && !isSpectator && room?.status === 'playing' && (
+        <div className="fixed top-16 md:top-14 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="your-turn-indicator">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
+            <div className="flex items-center space-x-1 md:space-x-2">
+              <span>⭐</span>
+              <span>YOUR TURN!</span>
+              <span>⭐</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header - Same style as Game.tsx */}
       <div className="absolute top-2 md:top-4 left-2 md:left-4 right-2 md:right-4 z-10">
         <div className="flex items-center justify-between">

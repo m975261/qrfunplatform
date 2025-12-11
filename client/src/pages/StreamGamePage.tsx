@@ -214,6 +214,19 @@ export default function StreamGamePage() {
         </div>
       )}
 
+      {/* Current Player Turn Indicator - Top center with blinking animation */}
+      {room?.status === 'playing' && currentGamePlayer && (
+        <div className="fixed top-16 md:top-14 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="turn-indicator">
+          <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
+            <div className="flex items-center space-x-1 md:space-x-2">
+              <span>🎯</span>
+              <span>{currentGamePlayer.nickname}'s Turn</span>
+              <span>🎯</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* False UNO Penalty Message */}
       {gameState?.falseUnoMessage && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">

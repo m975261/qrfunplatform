@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation, useRoute, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, AlertTriangle, Eye, EyeOff, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, AlertTriangle, Eye, EyeOff, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import NicknameEditor from "@/components/NicknameEditor";
@@ -43,7 +43,6 @@ export default function StreamHostPage() {
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
   const [editingSpectatorId, setEditingSpectatorId] = useState<string | null>(null);
   const [editingSpectatorNickname, setEditingSpectatorNickname] = useState<string>("");
-  const [showViewersPanel, setShowViewersPanel] = useState(true);
   
   const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
   const [isDraggingQR, setIsDraggingQR] = useState(false);
@@ -370,91 +369,72 @@ export default function StreamHostPage() {
           })}
         </div>
 
-        {/* Simple Viewers Panel - Fixed position like StreamPlayerPage */}
-        <div className="fixed top-20 right-0 z-20 flex items-start">
-          {/* Toggle Button */}
-          <button
-            onClick={() => setShowViewersPanel(!showViewersPanel)}
-            className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg p-2 hover:bg-gray-100 transition-colors border-r-0"
-            data-testid="toggle-viewers-panel"
-          >
-            {showViewersPanel ? (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
+        {/* Viewers Panel - Below circle, full width like other stream pages */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-lg w-full" data-testid="viewers-panel">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Users className="w-5 h-5 text-purple-600" />
+                Viewers ({spectators.length})
+              </div>
+            </div>
+            
+            {spectators.length === 0 ? (
+              <div className="text-sm text-gray-400 italic text-center py-4">No viewers yet</div>
             ) : (
-              <div className="flex items-center gap-1">
-                <Users className="w-4 h-4 text-gray-600" />
-                <span className="text-xs font-medium text-gray-600">{spectators.length}</span>
-                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" data-testid="viewers-list">
+                {spectators.map((spectator: any) => (
+                  <div key={spectator.id} className="bg-gray-50 rounded-lg p-3 flex flex-col gap-2" data-testid={`viewer-${spectator.id}`}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white text-sm font-bold">
+                        {spectator.nickname?.[0]?.toUpperCase()}
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 truncate flex-1" data-testid={`viewer-name-${spectator.id}`}>{spectator.nickname}</span>
+                      <button
+                        onClick={() => {
+                          setEditingSpectatorId(spectator.id);
+                          setEditingSpectatorNickname(spectator.nickname);
+                        }}
+                        className="p-1 hover:bg-gray-200 rounded"
+                        title="Edit nickname"
+                        data-testid={`edit-viewer-${spectator.id}`}
+                      >
+                        <Pencil className="w-3 h-3 text-gray-500" />
+                      </button>
+                      <button
+                        onClick={() => handleKickPlayer(spectator.id)}
+                        className="p-1 hover:bg-red-100 rounded"
+                        title="Kick"
+                        data-testid={`kick-viewer-${spectator.id}`}
+                      >
+                        <X className="w-3 h-3 text-red-500" />
+                      </button>
+                    </div>
+                    {/* Slot dropdown */}
+                    {getAvailablePositions().length > 0 && (
+                      <select 
+                        className="text-xs border rounded px-2 py-1 bg-green-50 w-full"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleAssignToSlot(spectator.id, parseInt(e.target.value));
+                            e.target.value = '';
+                          }
+                        }}
+                        defaultValue=""
+                        data-testid={`assign-viewer-${spectator.id}`}
+                      >
+                        <option value="" disabled>+ Add to slot</option>
+                        {getAvailablePositions().map((pos) => (
+                          <option key={pos} value={pos}>Slot {pos + 1}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
-          </button>
-          
-          {/* Panel Content - Names with slot dropdown */}
-          {showViewersPanel && (
-            <Card className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0 max-w-xs">
-              <CardContent className="p-3">
-                <div className="text-sm font-medium text-gray-700 mb-2">
-                  Viewers ({spectators.length})
-                </div>
-                
-                {spectators.length === 0 ? (
-                  <div className="text-sm text-gray-400 italic">No viewers yet</div>
-                ) : (
-                  <div className="space-y-2" data-testid="viewers-list">
-                    {spectators.map((spectator: any) => (
-                      <div key={spectator.id} className="flex flex-col gap-1" data-testid={`viewer-${spectator.id}`}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white text-xs font-bold">
-                            {spectator.nickname?.[0]?.toUpperCase()}
-                          </div>
-                          <span className="text-sm text-gray-600 truncate max-w-[80px]" data-testid={`viewer-name-${spectator.id}`}>{spectator.nickname}</span>
-                          <button
-                            onClick={() => {
-                              setEditingSpectatorId(spectator.id);
-                              setEditingSpectatorNickname(spectator.nickname);
-                            }}
-                            className="p-0.5 hover:bg-gray-200 rounded"
-                            title="Edit nickname"
-                            data-testid={`edit-viewer-${spectator.id}`}
-                          >
-                            <Pencil className="w-3 h-3 text-gray-500" />
-                          </button>
-                          <button
-                            onClick={() => handleKickPlayer(spectator.id)}
-                            className="p-0.5 hover:bg-red-100 rounded"
-                            title="Kick"
-                            data-testid={`kick-viewer-${spectator.id}`}
-                          >
-                            <X className="w-3 h-3 text-red-500" />
-                          </button>
-                        </div>
-                        {/* Slot dropdown under name */}
-                        {getAvailablePositions().length > 0 && (
-                          <select 
-                            className="text-xs border rounded px-1 py-0.5 bg-green-50 ml-8"
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                handleAssignToSlot(spectator.id, parseInt(e.target.value));
-                                e.target.value = '';
-                              }
-                            }}
-                            defaultValue=""
-                            data-testid={`assign-viewer-${spectator.id}`}
-                          >
-                            <option value="" disabled>+ Add to slot</option>
-                            {getAvailablePositions().map((pos) => (
-                              <option key={pos} value={pos}>Slot {pos + 1}</option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Start Game Button */}
         {isHost && gamePlayers.length >= 2 && (
