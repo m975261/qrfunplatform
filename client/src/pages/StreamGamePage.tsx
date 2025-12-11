@@ -27,6 +27,8 @@ export default function StreamGamePage() {
   const [oneCardMessage, setOneCardMessage] = useState<string | null>(null);
   const [showSpectators, setShowSpectators] = useState(true);
   const [showChat, setShowChat] = useState(false);
+  const [cardAnimation, setCardAnimation] = useState<{ type: string; playerId?: string } | null>(null);
+  const prevGameStateRef = useRef<{ topCard: any; currentPlayerIndex: number | null }>({ topCard: null, currentPlayerIndex: null });
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
   
@@ -121,6 +123,28 @@ export default function StreamGamePage() {
   const gamePlayers = players.filter((p: any) => 
     !p.isSpectator && p.position !== null && p.position !== undefined
   ).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
+  
+  // Detect card plays for animation (for spectator view)
+  useEffect(() => {
+    const topCard = room?.topCard || room?.discardPile?.[0];
+    const currentPlayerIdx = room?.currentPlayerIndex ?? null;
+    const prev = prevGameStateRef.current;
+    
+    // Check if a card was played (topCard changed)
+    if (topCard && prev.topCard && 
+        (topCard.color !== prev.topCard.color || topCard.value !== prev.topCard.value || topCard.type !== prev.topCard.type)) {
+      // Find who played - it was the player at the previous index (before turn changed)
+      const prevPlayer = gamePlayers[prev.currentPlayerIndex ?? 0];
+      if (prevPlayer) {
+        setCardAnimation({ type: 'play', playerId: prevPlayer.id });
+        // Clear animation after 600ms
+        setTimeout(() => setCardAnimation(null), 600);
+      }
+    }
+    
+    // Update ref with current values
+    prevGameStateRef.current = { topCard, currentPlayerIndex: currentPlayerIdx };
+  }, [room?.topCard, room?.discardPile, room?.currentPlayerIndex, gamePlayers]);
   
   // Get current player for turn highlighting
   const currentPlayerIndex = room?.currentPlayerIndex ?? 0;
@@ -387,6 +411,7 @@ export default function StreamGamePage() {
         currentPlayerId={undefined}
         isSpectator={true}
         colorChoiceRequested={false}
+        cardAnimation={cardAnimation}
         avatarMessages={avatarMessages}
       />
 
