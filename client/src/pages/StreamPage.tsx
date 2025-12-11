@@ -336,15 +336,7 @@ export default function StreamPage() {
 
       {/* === UNO TABLE - EXACT COPY OF StreamGameBoard STRUCTURE === */}
       <div className="absolute inset-0 flex items-center justify-center p-2 pt-10 pb-28 md:pb-36">
-        <div 
-          className="relative w-full max-w-sm md:max-w-lg aspect-square"
-          style={{
-            ['--r' as any]: 'calc(50% - 30px)',
-            ['--avatar' as any]: 'clamp(60px, 11vmin, 76px)',
-            ['--center' as any]: 'clamp(90px, 16vmin, 130px)',
-            ['--gap' as any]: 'clamp(8px, 2vmin, 16px)',
-          }}
-        >
+        <div className="relative w-full max-w-sm md:max-w-lg aspect-square">
           {/* === CENTER CIRCLE BACKGROUND === */}
           <div className="absolute inset-[20%] rounded-full bg-gradient-to-br from-slate-700 to-slate-800 shadow-2xl border-4 border-slate-600" />
 
@@ -394,14 +386,13 @@ export default function StreamPage() {
             const isPlayerTurn = currentGamePlayer?.id === player?.id;
             const cardCount = player ? (player.cardCount || player.hand?.length || 0) : 0;
 
-            const posClass =
-              position === 0
-                ? 'top-[calc(50%-var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
-                : position === 1
-                ? 'left-[calc(50%+var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2'
-                : position === 2
-                ? 'top-[calc(50%+var(--r))] left-1/2 -translate-x-1/2 -translate-y-1/2'
-                : 'left-[calc(50%-var(--r))] top-1/2 -translate-x-1/2 -translate-y-1/2';
+            const positionStyles: { [key: number]: string } = {
+              0: "top-4 left-1/2 -translate-x-1/2",
+              1: "right-4 top-1/2 -translate-y-1/2",
+              2: "bottom-20 left-1/2 -translate-x-1/2",
+              3: "left-4 top-1/2 -translate-y-1/2",
+            };
+            const posClass = positionStyles[position];
 
             const displayCardCount = Math.min(cardCount, 10);
 
