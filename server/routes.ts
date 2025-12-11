@@ -3527,13 +3527,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     // Convert spectator to player at specified position
+    // Initialize empty hand - will be populated when game starts via startGame
     await storage.updatePlayer(spectatorId, {
       isSpectator: false,
       position: position,
       hasLeft: false,
       leftAt: null,
-      finishPosition: null
+      finishPosition: null,
+      hand: [], // Initialize empty hand for the assigned player
+      hasCalledUno: false
     });
+    
+    // If game is already in progress, give the assigned player cards from positionHands or deal new ones
+    if (room.status === "playing" || room.status === "paused") {
+      let newHand: Card[] = [];
+      
+      // Check if there are saved cards for this position
+      if (room.positionHands && room.positionHands[position.toString()]) {
+        newHand = room.positionHands[position.toString()];
+        console.log(`🃏 Restoring ${newHand.length} saved cards for assigned spectator at position ${position}`);
+      } else if (room.deck && room.deck.length >= 7) {
+        // Deal 7 new cards from the deck
+        newHand = room.deck.slice(0, 7);
+        const updatedDeck = room.deck.slice(7);
+        
+        // Update room deck and save cards for this position
+        const updatedPositionHands = { ...(room.positionHands || {}), [position.toString()]: newHand };
+        await storage.updateRoom(connection.roomId, {
+          deck: updatedDeck,
+          positionHands: updatedPositionHands
+        });
+        console.log(`🃏 Dealt 7 new cards for assigned spectator at position ${position}`);
+      }
+      
+      // Update the player with their hand
+      if (newHand.length > 0) {
+        await storage.updatePlayer(spectatorId, { hand: newHand });
+      }
+      
+      // Also add this position to activePositions if not already there
+      const currentActivePositions = room.activePositions || [];
+      if (!currentActivePositions.includes(position)) {
+        const updatedActivePositions = [...currentActivePositions, position].sort((a, b) => a - b);
+        await storage.updateRoom(connection.roomId, { activePositions: updatedActivePositions });
+        console.log(`📍 Added position ${position} to activePositions: [${updatedActivePositions.join(', ')}]`);
+      }
+    }
     
     console.log(`✅ WebSocket assigned spectator ${spectator.nickname} to position ${position}`);
     await broadcastRoomState(connection.roomId);
