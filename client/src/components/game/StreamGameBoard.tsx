@@ -389,17 +389,11 @@ export default function StreamGameBoard({
 
       {room?.status === "playing" && currentGamePlayer && (
         <div className={`fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1 md:px-4 md:py-1.5 rounded-full shadow-lg border-2 transition-all ${
-          isMyTurn 
-            ? (pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
-            : 'bg-yellow-600/90 border-yellow-400'
+          pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-yellow-600/90 border-yellow-400'
         }`}>
           <div className="text-white font-bold text-[10px] md:text-xs text-center flex items-center gap-1">
-            {isMyTurn ? (
-              pendingDraw > 0 ? (
-                <span>⚠️ DRAW {pendingDraw}!</span>
-              ) : (
-                <span>⭐ YOUR TURN</span>
-              )
+            {pendingDraw > 0 ? (
+              <span>⚠️ {currentGamePlayer.nickname} must DRAW {pendingDraw}!</span>
             ) : (
               <span>🎮 {currentGamePlayer.nickname}'s turn</span>
             )}
@@ -492,7 +486,7 @@ export default function StreamGameBoard({
             <div className="text-center mb-2">
               <div className="font-semibold text-xs sm:text-sm text-gray-800">
                 {myPlayer?.nickname} (You) - {myHand.length} cards
-                {isMyTurn && <span className="ml-2 text-uno-red font-bold">• Your Turn!</span>}
+                {isMyTurn && !isSpectator && <span className="ml-2 text-uno-red font-bold">• Your Turn!</span>}
               </div>
             </div>
             {onCallUno && (
