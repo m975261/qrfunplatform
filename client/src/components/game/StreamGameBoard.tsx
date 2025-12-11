@@ -175,11 +175,12 @@ export default function StreamGameBoard({
     const isAnimating = cardAnimation?.playerId === player?.id;
     const displayCardCount = Math.min(cardCount, 10);
 
+    // Equal spacing from center - all avatars positioned at 8% from edges
     const positionStyles: { [key: number]: string } = {
-      0: "top-4 left-1/2 -translate-x-1/2",
-      1: "right-4 top-1/2 -translate-y-1/2",
-      2: "bottom-4 left-1/2 -translate-x-1/2",
-      3: "left-4 top-1/2 -translate-y-1/2",
+      0: "top-[8%] left-1/2 -translate-x-1/2",
+      1: "right-[8%] top-1/2 -translate-y-1/2",
+      2: "bottom-[8%] left-1/2 -translate-x-1/2",
+      3: "left-[8%] top-1/2 -translate-y-1/2",
     };
 
     const getCardFanStyle = (pos: number, cardIndex: number, totalCards: number) => {
@@ -206,10 +207,10 @@ export default function StreamGameBoard({
     };
 
     const getSlotLayout = (pos: number) => {
-      if (pos === 0) return "flex flex-col items-center";
-      if (pos === 1) return "flex flex-row items-center";
-      if (pos === 2) return "flex flex-col-reverse items-center";
-      return "flex flex-row-reverse items-center";
+      if (pos === 0) return "flex flex-col items-center gap-1"; // Cards first = above
+      if (pos === 1) return "flex flex-row items-center gap-1"; // Cards after with normal row = cards on right
+      if (pos === 2) return "flex flex-col items-center gap-1"; // Cards after = below
+      return "flex flex-row items-center gap-1"; // Cards first = cards on left
     };
 
     if (!player) {
@@ -301,30 +302,13 @@ export default function StreamGameBoard({
     return (
       <div className={`absolute ${positionStyles[position]} z-10`}>
         <div className={`${getSlotLayout(position)} gap-1 transition-all duration-300 ${isCurrentTurn ? "scale-105" : ""}`}>
-          {position === 0 && (
-            <>
-              {renderCardFan()}
-              {renderAvatar()}
-            </>
-          )}
-          {position === 1 && (
-            <>
-              {renderAvatar()}
-              {renderCardFan()}
-            </>
-          )}
-          {position === 2 && (
-            <>
-              {renderAvatar()}
-              {renderCardFan()}
-            </>
-          )}
-          {position === 3 && (
-            <>
-              {renderCardFan()}
-              {renderAvatar()}
-            </>
-          )}
+          {/* Pos 0: cards above (flex-col, cards first = top) */}
+          {/* Pos 1: cards right/outside (flex-row-reverse, cards after = right) */}
+          {/* Pos 2: cards below (flex-col-reverse, cards after = bottom) */}
+          {/* Pos 3: cards left/outside (flex-row, cards first = left) */}
+          {(position === 0 || position === 3) && renderCardFan()}
+          {renderAvatar()}
+          {(position === 1 || position === 2) && renderCardFan()}
         </div>
       </div>
     );

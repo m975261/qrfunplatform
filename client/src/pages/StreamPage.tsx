@@ -105,10 +105,10 @@ export default function StreamPage() {
   };
 
   const getSlotLayout = (pos: number) => {
-    if (pos === 0) return "flex flex-col items-center";
-    if (pos === 1) return "flex flex-row items-center gap-1";
-    if (pos === 2) return "flex flex-col-reverse items-center";
-    return "flex flex-row-reverse items-center gap-1";
+    if (pos === 0) return "flex flex-col items-center gap-1"; // Cards first = above
+    if (pos === 1) return "flex flex-row items-center gap-1"; // Cards after with normal row = cards on right
+    if (pos === 2) return "flex flex-col items-center gap-1"; // Cards after = below (no reverse needed)
+    return "flex flex-row items-center gap-1"; // Cards first = cards on left
   };
 
   // Detect card plays and draws to trigger animations
@@ -388,11 +388,12 @@ export default function StreamPage() {
             const isPlayerTurn = currentGamePlayer?.id === player?.id;
             const cardCount = player ? (player.cardCount || player.hand?.length || 0) : 0;
 
+            // Equal spacing from center - all avatars positioned at 15% from edges
             const positionStyles: { [key: number]: string } = {
-              0: "top-4 left-1/2 -translate-x-1/2",
-              1: "right-4 top-1/2 -translate-y-1/2",
-              2: "bottom-4 left-1/2 -translate-x-1/2",
-              3: "left-4 top-1/2 -translate-y-1/2",
+              0: "top-[8%] left-1/2 -translate-x-1/2",
+              1: "right-[8%] top-1/2 -translate-y-1/2",
+              2: "bottom-[8%] left-1/2 -translate-x-1/2",
+              3: "left-[8%] top-1/2 -translate-y-1/2",
             };
             const posClass = positionStyles[position];
 
@@ -469,6 +470,10 @@ export default function StreamPage() {
               <div key={position} className={`absolute ${posClass} z-10`}>
                 {player ? (
                   <div className={`${getSlotLayout(position)} transition-all duration-300 ${isPlayerTurn ? 'scale-105' : ''}`}>
+                    {/* Pos 0: cards above (flex-col, cards first = top) */}
+                    {/* Pos 1: cards right/outside (flex-row-reverse, cards after = right) */}
+                    {/* Pos 2: cards below (flex-col-reverse, cards after = bottom) */}
+                    {/* Pos 3: cards left/outside (flex-row, cards first = left) */}
                     {(position === 0 || position === 3) && renderCardFan()}
                     {renderAvatar()}
                     {(position === 1 || position === 2) && renderCardFan()}
@@ -494,6 +499,27 @@ export default function StreamPage() {
           )}
         </div>
       </div>
+
+      {/* Spectators Panel - Same as Game.tsx */}
+      {spectators.length > 0 && (
+        <div className="absolute top-20 right-4 z-20">
+          <Card className="bg-white/95 backdrop-blur-sm shadow-lg">
+            <CardContent className="p-3">
+              <div className="text-sm font-medium text-gray-700 mb-2">Spectators ({spectators.length})</div>
+              <div className="space-y-2">
+                {spectators.map((spectator: any) => (
+                  <div key={spectator.id} className="flex items-center space-x-2">
+                    <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      {spectator.nickname[0].toUpperCase()}
+                    </div>
+                    <span className="text-sm text-gray-600">{spectator.nickname}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* QR Code Floating Panel */}
       {showQRCode && qrCodeData && (

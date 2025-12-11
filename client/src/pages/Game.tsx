@@ -199,9 +199,8 @@ export default function Game() {
       const interval = setInterval(() => {
         setTimer(prev => {
           if (prev <= 1) {
-            // Auto draw card and pass turn when timer expires
-            drawCard();
-            return 30;
+            // Timer expired - no auto-play, host can kick player if needed
+            return 0;
           }
           return prev - 1;
         });
