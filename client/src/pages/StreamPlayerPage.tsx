@@ -95,8 +95,12 @@ export default function StreamPlayerPage() {
   };
   
   const handleKickPlayer = (targetPlayerId: string) => {
+    console.log('handleKickPlayer called:', { targetPlayerId, isHost, playerId });
     if (isHost) {
+      console.log('Kicking player via WebSocket:', targetPlayerId);
       kickPlayerWS(targetPlayerId);
+    } else {
+      console.log('Not host, cannot kick player');
     }
   };
   
@@ -384,7 +388,10 @@ export default function StreamPlayerPage() {
           setEditingPlayerId(pid);
           setEditingPlayerNickname(nickname);
         }}
-        onMakeHost={assignHost}
+        onMakeHost={(targetPlayerId) => {
+          console.log('Make Host clicked in StreamPlayerPage:', targetPlayerId);
+          assignHost(targetPlayerId);
+        }}
         avatarMessages={avatarMessages}
       />
 
