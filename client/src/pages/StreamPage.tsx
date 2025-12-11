@@ -338,7 +338,10 @@ export default function StreamPage() {
       <div className="absolute inset-0 flex items-center justify-center p-2 pt-10 pb-28 md:pb-36">
         <div className="relative w-full max-w-sm md:max-w-lg aspect-square">
           {/* === CENTER CIRCLE BACKGROUND === */}
-          <div className="absolute inset-[20%] rounded-full bg-gradient-to-br from-slate-700 to-slate-800 shadow-2xl border-4 border-slate-600 z-0" />
+          <div 
+            className="absolute rounded-full bg-gradient-to-br from-slate-700 to-slate-800 shadow-2xl border-4 border-slate-600"
+            style={{ top: '20%', left: '20%', right: '20%', bottom: '20%' }}
+          />
 
           {/* === CENTER CONTENT (Draw Pile + Played Card) - z-20 like StreamGameBoard === */}
           <div className="absolute inset-0 flex items-center justify-center z-20">
