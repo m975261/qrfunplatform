@@ -424,10 +424,10 @@ export default function Game() {
         </div>
       )}
 
-      {/* Left Player */}
+      {/* Left Player - positioned outside circle but attached (at ~20% from left edge) */}
       {arrangedPlayers.length > 2 && (
-        <div className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 z-20">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-lg max-w-xs">
+        <div className="absolute left-[2%] sm:left-[5%] md:left-[8%] lg:left-[12%] top-1/2 transform -translate-y-1/2 z-20">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 md:p-2 shadow-lg max-w-[100px] md:max-w-[120px]">
             <div className="flex items-center space-x-2 mb-2">
               <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm">
                 {arrangedPlayers[arrangedPlayers.length - 3]?.nickname?.[0]?.toUpperCase()}
@@ -448,10 +448,10 @@ export default function Game() {
         </div>
       )}
 
-      {/* Right Player */}
+      {/* Right Player - positioned outside circle but attached (at ~20% from right edge) */}
       {arrangedPlayers.length > 3 && (
-        <div className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 z-20">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-lg max-w-xs">
+        <div className="absolute right-[2%] sm:right-[5%] md:right-[8%] lg:right-[12%] top-1/2 transform -translate-y-1/2 z-20">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 md:p-2 shadow-lg max-w-[100px] md:max-w-[120px]">
             <div className="flex items-center space-x-2 mb-2">
               <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm">
                 {arrangedPlayers[arrangedPlayers.length - 4]?.nickname?.[0]?.toUpperCase()}
