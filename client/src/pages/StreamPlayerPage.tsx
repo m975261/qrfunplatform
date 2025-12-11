@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Menu, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu, Users, ChevronLeft, ChevronRight, Plus, X, Eye, EyeOff } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import StreamGameBoard from "@/components/game/StreamGameBoard";
 import ChatPanel from "@/components/game/ChatPanel";
@@ -33,6 +33,8 @@ export default function StreamPlayerPage() {
     continueGame,
     replacePlayer,
     playAgain,
+    kickPlayer: kickPlayerWS,
+    assignSpectator,
     isConnected 
   } = useSocket();
 
@@ -69,6 +71,25 @@ export default function StreamPlayerPage() {
   const currentPlayerIndex = room?.currentPlayerIndex || 0;
   const currentPlayer = gamePlayers[currentPlayerIndex];
   const isMyTurn = currentPlayer?.id === myPlayer?.id;
+  const isHost = room?.hostId === playerId;
+  
+  // Get available positions for host controls
+  const getAvailablePositions = () => {
+    const occupied = gamePlayers.map((p: any) => p.position);
+    return [0, 1, 2, 3].filter(pos => !occupied.includes(pos));
+  };
+  
+  const handleKickPlayer = (targetPlayerId: string) => {
+    if (isHost) {
+      kickPlayerWS(targetPlayerId);
+    }
+  };
+  
+  const handleAssignToSlot = (spectatorId: string, position: number) => {
+    if (isHost) {
+      assignSpectator(spectatorId, position);
+    }
+  };
 
   // UNO message animation
   useEffect(() => {
@@ -223,7 +244,7 @@ export default function StreamPlayerPage() {
         </div>
       </div>
 
-      {/* Collapsible Viewers Panel - Always shown */}
+      {/* Collapsible Viewers Panel - Always shown, with host controls */}
       <div className="fixed top-20 right-0 z-20 flex items-start">
         {/* Toggle Button */}
         <button
@@ -244,7 +265,7 @@ export default function StreamPlayerPage() {
         
         {/* Panel Content */}
         {showSpectators && (
-          <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0">
+          <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0 max-w-xs">
             <CardContent className="p-3">
               <div className="text-sm font-medium text-gray-700 mb-2">
                 Viewers ({spectators.length})
@@ -255,11 +276,43 @@ export default function StreamPlayerPage() {
               ) : (
                 <div className="space-y-2">
                   {spectators.map((spectator: any) => (
-                    <div key={spectator.id} className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {spectator.nickname[0].toUpperCase()}
+                    <div key={spectator.id} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          {spectator.nickname?.[0]?.toUpperCase()}
+                        </div>
+                        <span className="text-sm text-gray-600 truncate max-w-[80px]">{spectator.nickname}</span>
                       </div>
-                      <span className="text-sm text-gray-600">{spectator.nickname}</span>
+                      
+                      {/* Host Controls */}
+                      {isHost && (
+                        <div className="flex items-center gap-1">
+                          {getAvailablePositions().length > 0 && (
+                            <select 
+                              className="text-xs border rounded px-1 py-0.5 bg-green-50"
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  handleAssignToSlot(spectator.id, parseInt(e.target.value));
+                                  e.target.value = '';
+                                }
+                              }}
+                              defaultValue=""
+                            >
+                              <option value="" disabled>+ Add</option>
+                              {getAvailablePositions().map((pos) => (
+                                <option key={pos} value={pos}>Slot {pos + 1}</option>
+                              ))}
+                            </select>
+                          )}
+                          <button
+                            onClick={() => handleKickPlayer(spectator.id)}
+                            className="w-5 h-5 bg-red-500 rounded flex items-center justify-center text-white hover:bg-red-600"
+                            title="Kick"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

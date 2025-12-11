@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation, useRoute, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, AlertTriangle } from "lucide-react";
+import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import NicknameEditor from "@/components/NicknameEditor";
@@ -43,6 +43,7 @@ export default function StreamHostPage() {
   const [showNicknameEditor, setShowNicknameEditor] = useState(false);
   const [editingSpectatorId, setEditingSpectatorId] = useState<string | null>(null);
   const [editingSpectatorNickname, setEditingSpectatorNickname] = useState<string>("");
+  const [showViewersPanel, setShowViewersPanel] = useState(true);
   
   const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
   const [isDraggingQR, setIsDraggingQR] = useState(false);
@@ -356,59 +357,87 @@ export default function StreamHostPage() {
           })}
         </div>
 
-        {/* Spectators Panel - Host Can Assign to Slots */}
+        {/* Viewers Panel - Host Can Assign to Slots & Kick - With Toggle */}
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl mb-6">
           <CardContent className="p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">
-              Spectators ({spectators.length})
-            </h3>
-            {spectators.length > 0 ? (
-              <div className="space-y-3">
-                {spectators.map((spectator: any) => (
-                  <div key={spectator.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {spectator.nickname?.[0]?.toUpperCase()}
-                      </div>
-                      <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800">
+                Viewers ({spectators.length})
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowViewersPanel(!showViewersPanel)}
+                className="text-gray-600"
+                data-testid="toggle-viewers-panel"
+              >
+                {showViewersPanel ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
+                {showViewersPanel ? 'Hide' : 'Show'}
+              </Button>
+            </div>
+            
+            {showViewersPanel && (
+              <>
+                {spectators.length > 0 ? (
+                  <div className="space-y-3">
+                    {spectators.map((spectator: any) => (
+                      <div key={spectator.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                            {spectator.nickname?.[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{spectator.nickname}</span>
+                              <button
+                                onClick={() => {
+                                  setEditingSpectatorId(spectator.id);
+                                  setEditingSpectatorNickname(spectator.nickname);
+                                }}
+                                className="p-1 hover:bg-gray-200 rounded"
+                              >
+                                <Pencil className="w-3 h-3 text-gray-500" />
+                              </button>
+                            </div>
+                            <div className={`text-xs ${spectator.isOnline ? 'text-green-500' : 'text-red-500'}`}>
+                              {spectator.isOnline ? 'Online' : 'Offline'}
+                            </div>
+                          </div>
+                        </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{spectator.nickname}</span>
-                          <button
-                            onClick={() => {
-                              setEditingSpectatorId(spectator.id);
-                              setEditingSpectatorNickname(spectator.nickname);
-                            }}
-                            className="p-1 hover:bg-gray-200 rounded"
+                          {/* Assign to Slot Buttons */}
+                          {getAvailablePositions().map((pos) => (
+                            <Button
+                              key={pos}
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAssignToSlot(spectator.id, pos)}
+                              className="bg-uno-green text-white hover:bg-green-600"
+                            >
+                              <Plus className="w-3 h-3 mr-1" />
+                              Slot {pos + 1}
+                            </Button>
+                          ))}
+                          {/* Kick Button */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleKickPlayer(spectator.id)}
+                            className="bg-red-500 text-white hover:bg-red-600"
+                            data-testid={`kick-spectator-${spectator.id}`}
                           >
-                            <Pencil className="w-3 h-3 text-gray-500" />
-                          </button>
-                        </div>
-                        <div className={`text-xs ${spectator.isOnline ? 'text-green-500' : 'text-red-500'}`}>
-                          {spectator.isOnline ? 'Online' : 'Offline'}
+                            <X className="w-3 h-3" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getAvailablePositions().map((pos) => (
-                        <Button
-                          key={pos}
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAssignToSlot(spectator.id, pos)}
-                          className="bg-uno-green text-white hover:bg-green-600"
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Slot {pos + 1}
-                        </Button>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-gray-500 py-8">
-                Waiting for players to join...
-              </div>
+                ) : (
+                  <div className="text-center text-gray-400 py-4 italic">
+                    No viewers yet
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

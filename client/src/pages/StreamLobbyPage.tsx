@@ -254,13 +254,15 @@ export default function StreamLobbyPage() {
           })}
         </div>
 
-        {/* Spectators Card - Same style as normal lobby */}
-        {spectators.length > 0 && (
-          <Card className="bg-white/95 backdrop-blur-sm shadow-xl mt-6">
-            <CardContent className="p-4">
-              <div className="text-sm font-semibold text-gray-700 mb-3">
-                Spectators ({spectators.length})
-              </div>
+        {/* Spectators Card - Always shown */}
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl mt-6">
+          <CardContent className="p-4">
+            <div className="text-sm font-semibold text-gray-700 mb-3">
+              Viewers ({spectators.length})
+            </div>
+            {spectators.length === 0 ? (
+              <div className="text-sm text-gray-400 italic py-2">No viewers yet</div>
+            ) : (
               <div className="flex flex-wrap gap-2">
                 {spectators.map((spectator: any) => (
                   <div key={spectator.id} className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full">
@@ -272,9 +274,9 @@ export default function StreamLobbyPage() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* QR Code Floating Panel */}
