@@ -8,6 +8,14 @@ import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import GameCard from "@/components/game/Card";
 
+interface FlyingCard {
+  id: string;
+  card: any;
+  fromPosition: number;
+  type: 'play' | 'draw';
+  animating: boolean;
+}
+
 export default function StreamPage() {
   const [, params] = useRoute("/stream/:roomId");
   const search = useSearch();
@@ -19,6 +27,10 @@ export default function StreamPage() {
   const [isDraggingQR, setIsDraggingQR] = useState(false);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [hasSubscribed, setHasSubscribed] = useState(false);
+  const [flyingCards, setFlyingCards] = useState<FlyingCard[]>([]);
+  const [prevTopCardId, setPrevTopCardId] = useState<string | null>(null);
+  const [prevPlayerCards, setPrevPlayerCards] = useState<{[key: string]: number}>({});
+  const [prevCurrentPlayerIndex, setPrevCurrentPlayerIndex] = useState<number | null>(null);
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrButtonRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
@@ -97,6 +109,85 @@ export default function StreamPage() {
     return "flex flex-row-reverse items-center gap-1";
   };
 
+  // Detect card plays and draws to trigger animations
+  const topCard = room?.topCard || room?.discardPile?.[0];
+  const topCardId = topCard ? `${topCard.color}-${topCard.type}-${topCard.number}` : null;
+
+  useEffect(() => {
+    if (!room || room.status !== 'playing') return;
+
+    const currentIdx = room.currentPlayerIndex ?? 0;
+
+    // Detect card played (top card changed)
+    if (topCardId && prevTopCardId && topCardId !== prevTopCardId) {
+      // Use the previous player index to know who played the card
+      const playingPlayerIdx = prevCurrentPlayerIndex ?? currentIdx;
+      const playingPlayer = gamePlayers[playingPlayerIdx];
+      const playerPosition = playingPlayer?.position ?? 0;
+      
+      const cardId = `play-${Date.now()}`;
+      setFlyingCards(prev => [...prev, {
+        id: cardId,
+        card: topCard,
+        fromPosition: playerPosition,
+        type: 'play',
+        animating: false
+      }]);
+      
+      requestAnimationFrame(() => {
+        setFlyingCards(prev => prev.map(c => c.id === cardId ? { ...c, animating: true } : c));
+      });
+      
+      setTimeout(() => {
+        setFlyingCards(prev => prev.filter(c => c.id !== cardId));
+      }, 400);
+    }
+    setPrevTopCardId(topCardId);
+    setPrevCurrentPlayerIndex(currentIdx);
+
+    // Detect card draws (player card count increased)
+    const newPlayerCards: {[key: string]: number} = {};
+    gamePlayers.forEach((p: any) => {
+      const count = p.cardCount || p.hand?.length || 0;
+      newPlayerCards[p.id] = count;
+      
+      if (prevPlayerCards[p.id] !== undefined && count > prevPlayerCards[p.id]) {
+        const cardId = `draw-${Date.now()}-${p.id}`;
+        setFlyingCards(prev => [...prev, {
+          id: cardId,
+          card: { color: 'back', type: 'back' },
+          fromPosition: p.position,
+          type: 'draw',
+          animating: false
+        }]);
+        
+        requestAnimationFrame(() => {
+          setFlyingCards(prev => prev.map(c => c.id === cardId ? { ...c, animating: true } : c));
+        });
+        
+        setTimeout(() => {
+          setFlyingCards(prev => prev.filter(c => c.id !== cardId));
+        }, 400);
+      }
+    });
+    setPrevPlayerCards(newPlayerCards);
+  }, [topCardId, gamePlayers, room?.status, prevTopCardId, prevPlayerCards, topCard, prevCurrentPlayerIndex, room?.currentPlayerIndex]);
+
+  // Position helpers for flying card animations
+  const getPositionCoords = (pos: number) => {
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const radius = Math.min(window.innerWidth, window.innerHeight) * 0.25;
+    
+    switch (pos) {
+      case 0: return { x: centerX, y: centerY - radius };
+      case 1: return { x: centerX + radius, y: centerY };
+      case 2: return { x: centerX, y: centerY + radius };
+      case 3: return { x: centerX - radius, y: centerY };
+      default: return { x: centerX, y: centerY };
+    }
+  };
+
   const handleQRDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     setIsDraggingQR(true);
@@ -164,12 +255,49 @@ export default function StreamPage() {
   }
 
   const isPlaying = room.status === 'playing';
-  const topCard = room.topCard || room.discardPile?.[0];
   const currentPlayerIndex = room.currentPlayerIndex;
   const currentGamePlayer = gamePlayers[currentPlayerIndex];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+      {/* Flying Cards Animation Overlay */}
+      {flyingCards.map((fc) => {
+        const playerCoords = getPositionCoords(fc.fromPosition);
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2 - 50;
+        
+        const startX = fc.type === 'play' ? playerCoords.x : centerX;
+        const startY = fc.type === 'play' ? playerCoords.y : centerY;
+        const endX = fc.type === 'play' ? centerX : playerCoords.x;
+        const endY = fc.type === 'play' ? centerY : playerCoords.y;
+        
+        const x = fc.animating ? endX : startX;
+        const y = fc.animating ? endY : startY;
+        const scale = fc.animating ? 0.9 : 0.6;
+        
+        return (
+          <div
+            key={fc.id}
+            className="fixed pointer-events-none z-[100]"
+            style={{
+              left: x,
+              top: y,
+              transform: `translate(-50%, -50%) scale(${scale})`,
+              opacity: fc.animating ? 1 : 0.7,
+              transition: 'all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            }}
+          >
+            {fc.type === 'play' && fc.card ? (
+              <GameCard card={fc.card} size="medium" interactive={false} />
+            ) : (
+              <div className="w-12 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-lg border-2 border-red-400 shadow-xl flex items-center justify-center">
+                <span className="text-yellow-300 text-[8px] font-bold">UNO</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
       {/* Header Bar - Similar to GameFixed */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-sm border-b border-slate-700">
         <div className="flex items-center justify-between px-4 py-2">
@@ -236,44 +364,53 @@ export default function StreamPage() {
             ['--gap' as any]: 'clamp(8px, 2vmin, 16px)',
           }}
         >
-          {/* === CENTER AREA === */}
-          <div className="absolute inset-0 grid place-items-center z-10">
+          {/* === CENTER AREA with Draw Pile and Played Card === */}
+          <div className="absolute inset-0 flex items-center justify-center z-10">
             <div className="relative">
+              {/* Background circle */}
               <div
                 className="absolute -z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-slate-600 shadow-2xl bg-gradient-to-br from-slate-700 to-slate-800"
-                style={{ width: 'var(--center)', height: 'var(--center)' }}
+                style={{ width: 'clamp(140px, 28vmin, 200px)', height: 'clamp(140px, 28vmin, 200px)' }}
               />
-              <div className="flex flex-col items-center">
+              
+              {/* Draw pile and played card side by side */}
+              <div className="flex items-center gap-2 md:gap-3 z-20">
+                {/* Draw Pile */}
+                <div className="w-10 h-14 md:w-14 md:h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg border-2 border-blue-400 shadow-xl flex items-center justify-center">
+                  <div className="text-white text-[8px] md:text-xs font-bold text-center">
+                    DRAW
+                  </div>
+                </div>
+
+                {/* Played Card */}
                 {topCard ? (
-                  <div className="flex flex-col items-center z-20">
-                    <GameCard card={topCard} size="large" interactive={false} />
-                    {room?.currentColor && (topCard.type === 'wild' || topCard.type === 'wild4') && (
-                      <div className="flex items-center gap-2 mt-2 bg-black/60 px-3 py-1 rounded-full">
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 border-white ${
-                            room.currentColor === 'red'
-                              ? 'bg-red-500'
-                              : room.currentColor === 'yellow'
-                              ? 'bg-yellow-500'
-                              : room.currentColor === 'blue'
-                              ? 'bg-blue-500'
-                              : room.currentColor === 'green'
-                              ? 'bg-green-500'
-                              : 'bg-gray-500'
-                          }`}
-                        />
-                        <span className="text-sm text-white font-bold uppercase">
-                          {room.currentColor}
-                        </span>
-                      </div>
-                    )}
+                  <div className="flex flex-col items-center">
+                    <div className="transform scale-75 md:scale-100">
+                      <GameCard card={topCard} size="large" interactive={false} />
+                    </div>
                   </div>
                 ) : (
-                  <div className="w-20 h-28 bg-gradient-to-br from-red-500 to-red-700 rounded-xl border-3 border-red-300 shadow-xl flex items-center justify-center z-20">
-                    <div className="text-white font-bold text-xl">UNO</div>
+                  <div className="w-14 h-20 md:w-20 md:h-28 bg-gradient-to-br from-red-500 to-red-700 rounded-xl border-3 border-red-300 shadow-xl flex items-center justify-center">
+                    <div className="text-white font-bold text-lg md:text-xl">UNO</div>
                   </div>
                 )}
               </div>
+
+              {/* Current color indicator for wild cards */}
+              {room?.currentColor && topCard && (topCard.type === 'wild' || topCard.type === 'wild4') && (
+                <div className="absolute -bottom-6 md:-bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                  <div
+                    className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-white shadow-lg ${
+                      room.currentColor === 'red' ? 'bg-red-500'
+                      : room.currentColor === 'yellow' ? 'bg-yellow-500'
+                      : room.currentColor === 'blue' ? 'bg-blue-500'
+                      : room.currentColor === 'green' ? 'bg-green-500'
+                      : 'bg-gray-500'
+                    }`}
+                  />
+                  <span className="text-[8px] md:text-[10px] text-white font-bold mt-0.5 uppercase">{room.currentColor}</span>
+                </div>
+              )}
             </div>
           </div>
 

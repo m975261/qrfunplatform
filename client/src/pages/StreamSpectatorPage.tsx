@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tv, Crown, Users, Clock, AlertTriangle } from "lucide-react";
+import { Tv, Crown, Users, Clock, AlertTriangle, CheckCircle } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,6 +36,8 @@ export default function StreamSpectatorPage() {
   const roomId = params?.roomId;
   const roomCode = new URLSearchParams(search).get('code') || undefined;
   const { toast } = useToast();
+  const hasShownAssignedToast = useRef(false);
+  const [assignedSlot, setAssignedSlot] = useState<number | null>(null);
   
   const { gameState, joinRoom, isConnected } = useSocket();
   const playerId = localStorage.getItem("playerId");
@@ -60,12 +62,22 @@ export default function StreamSpectatorPage() {
       localStorage.setItem("streamPlayerPlayerId", playerId || "");
       setLocation(`/stream/${roomId}/player/${slot}?code=${code}`);
     } else if (hasPosition && !isPlaying) {
-      toast({
-        title: "You've been assigned!",
-        description: `You're now in slot ${myPlayer.position + 1}. Waiting for game to start.`,
-      });
+      setAssignedSlot(myPlayer.position + 1);
+      if (!hasShownAssignedToast.current) {
+        hasShownAssignedToast.current = true;
+        toast({
+          title: "You've been assigned!",
+          description: `You're now in slot ${myPlayer.position + 1}. Waiting for game to start.`,
+        });
+      }
+    } else if (!hasPosition) {
+      // Player was unassigned - reset state
+      if (assignedSlot !== null) {
+        setAssignedSlot(null);
+        hasShownAssignedToast.current = false;
+      }
     }
-  }, [gameState?.players, gameState?.room?.status, gameState?.room?.code, playerId, roomId, setLocation, roomCode, toast]);
+  }, [gameState?.players, gameState?.room?.status, gameState?.room?.code, playerId, roomId, setLocation, roomCode, toast, assignedSlot]);
 
   const room = gameState?.room;
   const players = gameState?.players || [];
@@ -144,15 +156,27 @@ export default function StreamSpectatorPage() {
               </div>
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-2 text-yellow-800">
-                <Clock className="w-5 h-5" />
-                <span className="font-semibold">Waiting for Host to Assign You</span>
+            {assignedSlot ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center gap-2 text-green-800">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-semibold">You've Been Assigned to Slot {assignedSlot}!</span>
+                </div>
+                <p className="text-green-700 text-sm mt-1">
+                  Waiting for the host to start the game. You'll automatically join when it begins.
+                </p>
               </div>
-              <p className="text-yellow-700 text-sm mt-1">
-                The host ({hostPlayer?.nickname || "waiting..."}) will assign you to a player slot when ready.
-              </p>
-            </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center gap-2 text-yellow-800">
+                  <Clock className="w-5 h-5" />
+                  <span className="font-semibold">Waiting for Host to Assign You</span>
+                </div>
+                <p className="text-yellow-700 text-sm mt-1">
+                  The host ({hostPlayer?.nickname || "waiting..."}) will assign you to a player slot when ready.
+                </p>
+              </div>
+            )}
             
             <div className="text-sm text-gray-600">
               {gamePlayers.length}/4 players assigned
