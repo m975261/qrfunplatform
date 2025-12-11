@@ -235,7 +235,7 @@ export default function StreamPlayerPage() {
 
       {/* Turn Indicator - Shows YOUR TURN or {player}'s Turn - positioned below room code */}
       {room?.status === 'playing' && currentPlayer && !isSpectator && (
-        <div className="fixed top-14 md:top-16 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="turn-indicator">
+        <div className="fixed top-20 md:top-24 left-1/2 transform -translate-x-1/2 pointer-events-none z-30" data-testid="turn-indicator">
           {isMyTurn ? (
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm md:text-lg lg:text-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-white animate-pulse">
               <div className="flex items-center space-x-1 md:space-x-2">
