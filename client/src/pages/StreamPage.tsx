@@ -131,7 +131,7 @@ export default function StreamPage() {
   const isPlaying = room.status === 'playing';
   const topCard = room.topCard || room.discardPile?.[0];
   const currentPlayerIndex = room.currentPlayerIndex;
-  const currentGamePlayer = gamePlayers.find((p: any) => p.position === currentPlayerIndex);
+  const currentGamePlayer = gamePlayers[currentPlayerIndex];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">

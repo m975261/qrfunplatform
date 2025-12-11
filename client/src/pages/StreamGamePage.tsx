@@ -137,7 +137,7 @@ export default function StreamGamePage() {
 
   const topCard = room?.topCard || room?.discardPile?.[0];
   const currentPlayerIndex = room?.currentPlayerIndex;
-  const currentGamePlayer = gamePlayers.find((p: any) => p.position === currentPlayerIndex);
+  const currentGamePlayer = gamePlayers[currentPlayerIndex];
   const currentColor = room?.currentColor;
   const pendingDraw = room?.pendingDraw ?? 0;
 

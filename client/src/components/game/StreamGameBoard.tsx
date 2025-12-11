@@ -35,13 +35,13 @@ export default function StreamGameBoard({
 
   const myPlayer = players.find((p: any) => p.id === currentPlayerId);
   const myHand = myPlayer?.hand || [];
-  const currentPlayerIndex = room?.currentPlayerIndex;
-  const currentGamePlayer = gamePlayers.find((p: any) => p.position === currentPlayerIndex);
+  const currentPlayerIndex = room?.currentPlayerIndex ?? 0;
+  const currentGamePlayer = gamePlayers[currentPlayerIndex];
   const topCard = room?.topCard || room?.discardPile?.[0];
   const currentColor = room?.currentColor;
   const pendingDraw = room?.pendingDraw ?? 0;
 
-  const isMyTurn = myPlayer?.position === currentPlayerIndex && room?.status === "playing";
+  const isMyTurn = currentGamePlayer?.id === myPlayer?.id && room?.status === "playing";
 
   const getPlayerAtPosition = (position: number) => {
     return gamePlayers.find((player: any) => player.position === position) || null;

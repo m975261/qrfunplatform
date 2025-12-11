@@ -42,12 +42,15 @@ export default function StreamPlayerPage() {
   const players = gameState?.players || [];
   
   const myPlayer = players.find((p: any) => p.id === playerId);
-  const isMyTurn = room?.currentPlayerIndex === myPlayer?.position;
   const isSpectator = myPlayer?.isSpectator === true || myPlayer?.position == null;
   
   const gamePlayers = players.filter((p: any) => 
     !p.isSpectator && p.position !== null && p.position !== undefined
-  );
+  ).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
+  
+  const currentPlayerIndex = room?.currentPlayerIndex || 0;
+  const currentPlayer = gamePlayers[currentPlayerIndex];
+  const isMyTurn = currentPlayer?.id === myPlayer?.id;
 
   const handlePlayCard = (cardIndex: number) => {
     playCard(cardIndex);
