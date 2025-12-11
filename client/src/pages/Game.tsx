@@ -424,49 +424,35 @@ export default function Game() {
         </div>
       )}
 
-      {/* Left Player - positioned outside circle but attached (at ~20% from left edge) */}
+      {/* Left Player - compact vertical layout */}
       {arrangedPlayers.length > 2 && (
-        <div className="absolute left-[2%] sm:left-[5%] md:left-[8%] lg:left-[12%] top-1/2 transform -translate-y-1/2 z-20">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 md:p-2 shadow-lg max-w-[100px] md:max-w-[120px]">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm">
+        <div className="absolute left-1 sm:left-2 md:left-3 top-1/2 transform -translate-y-1/2 z-20">
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 md:p-2 shadow-lg w-16 md:w-20">
+            <div className="flex flex-col items-center text-center">
+              <div className={`w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-base mb-1 ${currentGamePlayer?.id === arrangedPlayers[arrangedPlayers.length - 3]?.id ? 'ring-2 ring-red-500 animate-pulse' : ''}`}>
                 {arrangedPlayers[arrangedPlayers.length - 3]?.nickname?.[0]?.toUpperCase()}
               </div>
-              <div>
-                <div className={`font-semibold text-xs md:text-sm text-gray-800 ${currentGamePlayer?.id === arrangedPlayers[arrangedPlayers.length - 3]?.id ? 'text-red-600 animate-pulse' : ''}`}>
-                  {arrangedPlayers[arrangedPlayers.length - 3]?.nickname} {currentGamePlayer?.id === arrangedPlayers[arrangedPlayers.length - 3]?.id && '⭐'}
-                </div>
-                <div className="text-xs text-gray-500">{arrangedPlayers[arrangedPlayers.length - 3]?.hand?.length || 0} cards</div>
+              <div className={`text-[10px] md:text-xs font-semibold text-gray-800 truncate w-full ${currentGamePlayer?.id === arrangedPlayers[arrangedPlayers.length - 3]?.id ? 'text-red-600' : ''}`}>
+                {arrangedPlayers[arrangedPlayers.length - 3]?.nickname?.slice(0, 6)}
               </div>
-            </div>
-            <div className="flex flex-col items-center space-y-1">
-              {Array(Math.min(arrangedPlayers[arrangedPlayers.length - 3]?.hand?.length || 0, 8)).fill(null).map((_, i) => (
-                <div key={i} className="w-4 h-3 md:w-6 md:h-4 bg-gradient-to-br from-gray-700 to-gray-900 rounded border border-white shadow-sm transform rotate-90"></div>
-              ))}
+              <div className="text-[8px] md:text-[10px] text-gray-500">{arrangedPlayers[arrangedPlayers.length - 3]?.hand?.length || 0} cards</div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Right Player - positioned outside circle but attached (at ~20% from right edge) */}
+      {/* Right Player - compact vertical layout */}
       {arrangedPlayers.length > 3 && (
-        <div className="absolute right-[2%] sm:right-[5%] md:right-[8%] lg:right-[12%] top-1/2 transform -translate-y-1/2 z-20">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 md:p-2 shadow-lg max-w-[100px] md:max-w-[120px]">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm">
+        <div className="absolute right-1 sm:right-2 md:right-3 top-1/2 transform -translate-y-1/2 z-20">
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 md:p-2 shadow-lg w-16 md:w-20">
+            <div className="flex flex-col items-center text-center">
+              <div className={`w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-base mb-1 ${currentGamePlayer?.id === arrangedPlayers[arrangedPlayers.length - 4]?.id ? 'ring-2 ring-red-500 animate-pulse' : ''}`}>
                 {arrangedPlayers[arrangedPlayers.length - 4]?.nickname?.[0]?.toUpperCase()}
               </div>
-              <div>
-                <div className={`font-semibold text-xs md:text-sm text-gray-800 ${currentGamePlayer?.id === arrangedPlayers[arrangedPlayers.length - 4]?.id ? 'text-red-600 animate-pulse' : ''}`}>
-                  {arrangedPlayers[arrangedPlayers.length - 4]?.nickname} {currentGamePlayer?.id === arrangedPlayers[arrangedPlayers.length - 4]?.id && '⭐'}
-                </div>
-                <div className="text-xs text-gray-500">{arrangedPlayers[arrangedPlayers.length - 4]?.hand?.length || 0} cards</div>
+              <div className={`text-[10px] md:text-xs font-semibold text-gray-800 truncate w-full ${currentGamePlayer?.id === arrangedPlayers[arrangedPlayers.length - 4]?.id ? 'text-red-600' : ''}`}>
+                {arrangedPlayers[arrangedPlayers.length - 4]?.nickname?.slice(0, 6)}
               </div>
-            </div>
-            <div className="flex flex-col items-center space-y-1">
-              {Array(Math.min(arrangedPlayers[arrangedPlayers.length - 4]?.hand?.length || 0, 8)).fill(null).map((_, i) => (
-                <div key={i} className="w-4 h-3 md:w-6 md:h-4 bg-gradient-to-br from-gray-700 to-gray-900 rounded border border-white shadow-sm transform -rotate-90"></div>
-              ))}
+              <div className="text-[8px] md:text-[10px] text-gray-500">{arrangedPlayers[arrangedPlayers.length - 4]?.hand?.length || 0} cards</div>
             </div>
           </div>
         </div>

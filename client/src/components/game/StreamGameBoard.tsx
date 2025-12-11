@@ -175,12 +175,12 @@ export default function StreamGameBoard({
     const isAnimating = cardAnimation?.playerId === player?.id;
     const displayCardCount = Math.min(cardCount, 10);
 
-    // Avatars positioned outside circle but attached (at percentage from edges)
+    // All 4 positions equidistant from center - using same offset distance
     const positionStyles: { [key: number]: string } = {
-      0: "top-2 md:top-4 left-1/2 -translate-x-1/2",
-      1: "right-[2%] sm:right-[5%] md:right-[8%] top-1/2 -translate-y-1/2",
-      2: "bottom-2 md:bottom-4 left-1/2 -translate-x-1/2",
-      3: "left-[2%] sm:left-[5%] md:left-[8%] top-1/2 -translate-y-1/2",
+      0: "top-2 md:top-3 left-1/2 -translate-x-1/2",
+      1: "right-2 md:right-3 top-1/2 -translate-y-1/2",
+      2: "bottom-2 md:bottom-3 left-1/2 -translate-x-1/2",
+      3: "left-2 md:left-3 top-1/2 -translate-y-1/2",
     };
 
     const getCardFanStyle = (pos: number, cardIndex: number, totalCards: number) => {
