@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Menu, Users } from "lucide-react";
+import { Menu, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import StreamGameBoard from "@/components/game/StreamGameBoard";
 import ChatPanel from "@/components/game/ChatPanel";
@@ -42,10 +42,10 @@ export default function StreamPlayerPage() {
   const [showChat, setShowChat] = useState(false);
   const [showGameEnd, setShowGameEnd] = useState(false);
   const [gameEndData, setGameEndData] = useState<any>(null);
-  const [timer, setTimer] = useState(30);
   const [unoMessage, setUnoMessage] = useState<string | null>(null);
   const [oneCardMessage, setOneCardMessage] = useState<string | null>(null);
   const [showContinuePrompt, setShowContinuePrompt] = useState(false);
+  const [showSpectators, setShowSpectators] = useState(true);
 
   useEffect(() => {
     if (isConnected && roomId && playerId) {
@@ -63,7 +63,8 @@ export default function StreamPlayerPage() {
     !p.isSpectator && p.position !== null && p.position !== undefined
   ).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
   
-  const spectators = players.filter((p: any) => p.isSpectator && p.isOnline);
+  // Include all spectators for stream mode (not just online ones)
+  const spectators = players.filter((p: any) => p.isSpectator);
   
   const currentPlayerIndex = room?.currentPlayerIndex || 0;
   const currentPlayer = gamePlayers[currentPlayerIndex];
@@ -98,24 +99,6 @@ export default function StreamPlayerPage() {
       setShowContinuePrompt(true);
     }
   }, [gameState?.room?.status, gameState?.gameEndData, gameState?.needsContinue]);
-
-  // Timer countdown
-  useEffect(() => {
-    if (room?.status === "playing" && isMyTurn) {
-      const interval = setInterval(() => {
-        setTimer(prev => {
-          if (prev <= 1) {
-            // Timer expired - no auto-play, host can kick player if needed
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    } else if (!isMyTurn) {
-      setTimer(30);
-    }
-  }, [room?.status, isMyTurn, drawCard]);
 
   const handlePlayCard = (cardIndex: number) => {
     playCard(cardIndex);
@@ -214,15 +197,6 @@ export default function StreamPlayerPage() {
             </div>
           </div>
 
-          <div className="bg-white/95 backdrop-blur-sm px-2 md:px-4 py-2 rounded-xl shadow-lg">
-            <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full animate-pulse ${isMyTurn ? 'bg-green-500' : 'bg-orange-500'}`}></div>
-              <span className="font-mono font-medium text-orange-600 text-xs md:text-sm">
-                {timer}s
-              </span>
-            </div>
-          </div>
-
           <div className="flex space-x-1">
             <Button
               variant="outline"
@@ -249,24 +223,44 @@ export default function StreamPlayerPage() {
         </div>
       </div>
 
-      {/* Spectators Panel - Same as Game.tsx */}
+      {/* Collapsible Spectators Panel */}
       {spectators.length > 0 && (
-        <div className="absolute top-20 right-4 z-20">
-          <UICard className="bg-white/95 backdrop-blur-sm shadow-lg">
-            <CardContent className="p-3">
-              <div className="text-sm font-medium text-gray-700 mb-2">Spectators ({spectators.length})</div>
-              <div className="space-y-2">
-                {spectators.map((spectator: any) => (
-                  <div key={spectator.id} className="flex items-center space-x-2">
-                    <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      {spectator.nickname[0].toUpperCase()}
-                    </div>
-                    <span className="text-sm text-gray-600">{spectator.nickname}</span>
-                  </div>
-                ))}
+        <div className="fixed top-20 right-0 z-20 flex items-start">
+          {/* Toggle Button */}
+          <button
+            onClick={() => setShowSpectators(!showSpectators)}
+            className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg p-2 hover:bg-gray-100 transition-colors border-r-0"
+            data-testid="toggle-spectators"
+          >
+            {showSpectators ? (
+              <ChevronRight className="w-4 h-4 text-gray-600" />
+            ) : (
+              <div className="flex items-center gap-1">
+                <Users className="w-4 h-4 text-gray-600" />
+                <span className="text-xs font-medium text-gray-600">{spectators.length}</span>
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
               </div>
-            </CardContent>
-          </UICard>
+            )}
+          </button>
+          
+          {/* Panel Content */}
+          {showSpectators && (
+            <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0">
+              <CardContent className="p-3">
+                <div className="text-sm font-medium text-gray-700 mb-2">Spectators ({spectators.length})</div>
+                <div className="space-y-2">
+                  {spectators.map((spectator: any) => (
+                    <div key={spectator.id} className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        {spectator.nickname[0].toUpperCase()}
+                      </div>
+                      <span className="text-sm text-gray-600">{spectator.nickname}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </UICard>
+          )}
         </div>
       )}
 
