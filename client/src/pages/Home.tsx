@@ -945,10 +945,21 @@ export default function Home() {
               </Button>
               <Button
                 onClick={() => {
+                  // Validate nickname before creating streaming room
+                  if (!popupNickname.trim()) {
+                    setShowStreamingConfirm(false);
+                    toast({
+                      title: "Nickname Required",
+                      description: "Please enter a nickname first, then enable streaming mode.",
+                      variant: "destructive",
+                      duration: 2000,
+                    });
+                    return;
+                  }
                   setShowStreamingConfirm(false);
                   setShowHostPopup(false);
                   // Create streaming room with host player
-                  createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: true });
+                  createRoomMutation.mutate({ hostNickname: popupNickname.trim(), streamingMode: true });
                 }}
                 className="flex-1 bg-purple-600 hover:bg-purple-700"
               >
