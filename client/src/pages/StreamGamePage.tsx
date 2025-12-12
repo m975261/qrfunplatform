@@ -406,7 +406,9 @@ export default function StreamGamePage() {
           ) : (
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4 text-gray-600" />
-              <span className="text-xs font-medium text-gray-600">{spectators.length}</span>
+              <span className="text-xs font-medium text-gray-600">
+                {spectators.length + (gameState?.streamViewerCount ?? 0)}
+              </span>
               <ChevronLeft className="w-4 h-4 text-gray-600" />
             </div>
           )}
@@ -416,8 +418,13 @@ export default function StreamGamePage() {
         {showSpectators && (
           <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0 max-w-xs">
             <CardContent className="p-3">
-              <div className="text-sm font-medium text-gray-700 mb-2">
-                Viewers ({spectators.length})
+              <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                Spectators ({spectators.length})
+                {(gameState?.streamViewerCount ?? 0) > 0 && (
+                  <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full" data-testid="stream-viewer-count">
+                    + {gameState?.streamViewerCount} watching
+                  </span>
+                )}
               </div>
               
               {spectators.length === 0 ? (

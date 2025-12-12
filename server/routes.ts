@@ -2102,6 +2102,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     connections.set(connectionId, connection);
     
+    // Count stream viewers for this room (including the new one)
+    const streamViewerCount = Array.from(connections.values()).filter(conn => 
+      conn.roomId === room.id && 
+      conn.isStreamViewer && 
+      conn.ws.readyState === WebSocket.OPEN
+    ).length;
+    
     // Send current room state to stream viewer
     const players = await storage.getPlayersByRoom(room.id);
     
@@ -2118,15 +2125,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hasCalledUno: p.hasCalledUno,
           cardCount: room.positionHands?.[p.position ?? -1]?.length || 0
         })),
-        messages: []
+        messages: [],
+        streamViewerCount
       }
     }));
+    
+    // Broadcast updated room state to all clients so they see the new viewer count
+    await broadcastRoomState(room.id);
   }
     
     ws.on('close', (code, reason) => {
       console.log(`WebSocket connection closed: ${connectionId} (code: ${code}, reason: ${reason?.toString()})`);
       clearInterval(heartbeat);
       const connection = connections.get(connectionId);
+      const wasStreamViewer = connection?.isStreamViewer;
+      const roomIdForViewer = connection?.roomId;
+      
       if (connection?.playerId && connection?.roomId) {
         const playerNickname = connection.playerId; // Try to get nickname for better logging
         console.log(`Player connection ${playerNickname} (${connectionId}) closed with code ${code}`);
@@ -2146,6 +2160,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }, 5000);
       }
       connections.delete(connectionId);
+      
+      // If this was a stream viewer, broadcast updated viewer count
+      if (wasStreamViewer && roomIdForViewer) {
+        console.log(`📺 Stream viewer ${connectionId} disconnected from room ${roomIdForViewer}`);
+        broadcastRoomState(roomIdForViewer);
+      }
     });
     
     ws.on('error', (error) => {
@@ -4713,11 +4733,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
     });
     
+    // Count stream viewers for this room (connections with isStreamViewer: true)
+    const streamViewerCount = Array.from(connections.values()).filter(conn => 
+      conn.roomId === roomId && 
+      conn.isStreamViewer && 
+      conn.ws.readyState === WebSocket.OPEN
+    ).length;
+    
     const gameState = {
       room,
       players: playersWithStatus,
       messages,
       timestamp: Date.now(),
+      streamViewerCount,
       // Explicitly include election state so clients sync properly when host reconnects
       hostDisconnectedWarning: room?.hostDisconnectedAt ? `Host disconnected` : null,
       hostElectionActive: room?.hostElectionActive || false
