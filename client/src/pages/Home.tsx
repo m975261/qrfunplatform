@@ -104,29 +104,30 @@ export default function Home() {
       const payload: { hostNickname?: string; isStreamingMode: boolean } = { 
         isStreamingMode: streamingMode 
       };
-      // Only include hostNickname for normal mode
-      if (!streamingMode && hostNickname) {
+      // Include hostNickname for BOTH modes (streaming mode also needs host player)
+      if (hostNickname) {
         payload.hostNickname = hostNickname;
       }
       const response = await apiRequest("POST", "/api/rooms", payload);
       return response.json();
     },
     onSuccess: (data) => {
-      // STREAMING MODE: Create room and redirect to Stream Lobby (view-only for OBS)
+      // STREAMING MODE: Create room with host and redirect to Stream Host page
       if (data.isStreamingMode) {
         setShowHostPopup(false);
         setIsStreamingMode(false);
-        // Don't store player info - no player created yet for streaming mode
-        // First joiner will become host
+        // STORE HOST CREDENTIALS (same as normal mode - fixes host controls)
+        localStorage.setItem("playerId", data.player.id);
+        localStorage.setItem("playerNickname", data.hostNickname || popupNickname);
         localStorage.setItem("currentRoomId", data.room.id);
-        // Clear any stale IDs
-        localStorage.removeItem("playerId");
-        localStorage.removeItem("playerNickname");
-        localStorage.removeItem("streamHostPlayerId");
+        localStorage.setItem("streamHostPlayerId", data.player.id);
+        // Save selected avatar
+        localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
+        // Clear stale player ID (host is not a regular player)
         localStorage.removeItem("streamPlayerPlayerId");
         
-        // Show the Stream Lobby (OBS view) - first joiner will become host
-        setLocation(`/stream/${data.room.id}/lobby?code=${data.room.code}`);
+        // Navigate to Stream Host page (not lobby - host controls the game from here)
+        setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
         return;
       }
       
@@ -345,9 +346,9 @@ export default function Home() {
           const streamingMode = selectedModeTab === 'streaming';
           setIsGuruUserLoggedIn(true);
           if (streamingMode) {
-            // Streaming mode - no nickname needed, just create the room
+            // Streaming mode - include nickname to create host player
             setShowHostPopup(false);
-            createRoomMutation.mutate({ streamingMode: true });
+            createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode: true });
           } else {
             // Normal mode - use guru user's playerName
             createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode: false });
@@ -397,8 +398,8 @@ export default function Home() {
     const streamingMode = isGuruUserLoggedIn ? (selectedModeTab === 'streaming') : isStreamingMode;
     
     if (streamingMode) {
-      // Streaming mode - no nickname needed (this shouldn't normally be reached as streaming confirm dialog handles it)
-      createRoomMutation.mutate({ streamingMode: true });
+      // Streaming mode - include nickname to create host player
+      createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: true });
     } else {
       // Normal mode - use nickname
       createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: false });
@@ -946,8 +947,8 @@ export default function Home() {
                 onClick={() => {
                   setShowStreamingConfirm(false);
                   setShowHostPopup(false);
-                  // Create streaming room directly - no nickname needed
-                  createRoomMutation.mutate({ streamingMode: true });
+                  // Create streaming room with host player
+                  createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: true });
                 }}
                 className="flex-1 bg-purple-600 hover:bg-purple-700"
               >
