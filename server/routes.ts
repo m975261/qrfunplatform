@@ -684,10 +684,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isStreamingMode: isStreamingMode
       });
 
-      // STREAMING MODE: Create room without any players - first joiner becomes host
+      // STREAMING MODE: Create host player if hostNickname provided (allows host controls)
       if (isStreamingMode) {
-        console.log(`[STREAMING MODE] Room ${code} created - waiting for first joiner to become host`);
-        
         // Generate QR code for streaming mode room
         let domain;
         let roomLink;
@@ -709,7 +707,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           color: { dark: '#000000', light: '#FFFFFF' }
         });
         
-        // Return room without player - first joiner will become host
+        // If hostNickname provided, create host player (enables host controls)
+        if (hostNickname) {
+          const hostPlayer = await storage.createPlayer({
+            nickname: hostNickname,
+            roomId: room.id,
+            isSpectator: false,
+            position: 0
+          });
+          
+          // Update room with host ID
+          const updatedRoom = await storage.updateRoom(room.id, { hostId: hostPlayer.id });
+          
+          console.log(`[STREAMING MODE] Room ${code} created with host ${hostNickname} (${hostPlayer.id})`);
+          
+          return res.json({ 
+            room: updatedRoom || room, 
+            player: hostPlayer,
+            hostNickname,
+            qrCode,
+            isStreamingMode: true,
+            streamJoinUrl: `/stream/${room.id}/join?code=${code}`,
+            streamLobbyUrl: `/stream/${room.id}/lobby?code=${code}`
+          });
+        }
+        
+        // No hostNickname - first joiner will become host (legacy behavior)
+        console.log(`[STREAMING MODE] Room ${code} created - waiting for first joiner to become host`);
+        
         return res.json({ 
           room, 
           qrCode,
