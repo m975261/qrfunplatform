@@ -1,0 +1,111 @@
+Everything in Viewer Mode and the gameplay logic is working correctly.
+Now I want you to apply UI-only fixes, without modifying any game rules, socket logic, card logic, flow, or any other behavior.
+
+Important: Do NOT change anything except the items below.
+1. CENTER THE 4-PLAYER GAMEPLAY AREA
+
+During gameplay (after the host starts the game), the UI for the 4 active players should always be centered on the screen, regardless of:
+
+Phone layout
+
+Tablet layout
+
+Desktop layout
+
+Orientation
+
+This means:
+
+The 4-player board (top player, left player, right player, bottom player) must be wrapped in a responsive container that forces it to stay centered both horizontally and vertically inside the page.
+
+This must apply identically in Viewer Mode AND in the normal player gameplay view.
+
+DO NOT modify card sizes, avatars, or layout logic — only center the entire gameplay block so UI does not overlap on different devices.
+
+Use responsive flex or grid, but do not break existing sizes.
+
+2. REMOVE THE TOP-CENTER TURN NOTIFICATION
+
+Currently there are two turn indicators:
+
+The top-center floating turn notification
+
+The turn indicator on the player’s card/deck area
+
+I want to remove the top-center turn notification completely.
+
+Do NOT remove or modify any turn logic — only remove the UI element.
+
+Instead:
+
+Make the turn indicator on top of the player’s deck “shine” or animate exactly like the old top-center notification did.
+
+Use the same glow/pulse animation (or the same CSS class) that was previously used for the top notification.
+
+Do NOT change the player deck layout. Only add the animation.
+
+3. ADD A TOGGLE BUTTON TO HIDE/SHOW THE VIEWER TABLE
+
+Inside Viewer Mode gameplay:
+
+Add a small button (example: “Hide Viewers / Show Viewers”)
+
+When pressed, it toggles the viewer table visibility (display: none / block)
+
+Requirements:
+
+Default state: Viewer table visible (unchanged)
+
+Size, position, and layout of the viewer table must remain exactly the same
+
+Do NOT shrink it
+
+Do NOT move it
+
+Do NOT restyle it
+
+Just allow it to be hidden or shown
+
+Button can be small and placed in a corner or top-right of the viewer table area
+
+Do not affect any viewer logic — only visual toggle.
+
+4. DO NOT CHANGE ANYTHING ELSE
+
+Avoid modifying:
+
+Game logic
+
+Turn handling
+
+Socket behavior
+
+Card flows
+
+Animations (except the turn highlight)
+
+Player slot logic
+
+Viewer logic
+
+Host authority logic
+
+Guro mode
+
+Normal mode
+
+Stream mode
+
+Make the smallest UI changes required to achieve the three items above.
+
+Summary of Required Changes
+
+Center the full 4-player gameplay UI on all devices (responsive container).
+
+Remove the top-center turn notification.
+
+Make the turn indicator above the player deck shine just like the old top one did.
+
+Add a hide/show toggle for the viewer table, without changing size or position.
+
+Do NOT modify any gameplay logic or existing sizes/layout of other components.

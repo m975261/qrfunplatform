@@ -95,6 +95,9 @@ export default function VmodeGame() {
   // QR Code state
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
+  
+  // Viewer panel toggle state
+  const [showViewers, setShowViewers] = useState(true);
   const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
   const [isDraggingQR, setIsDraggingQR] = useState(false);
   const [dragStartPosQR, setDragStartPosQR] = useState({ x: 0, y: 0 });
@@ -940,51 +943,7 @@ export default function VmodeGame() {
       `}</style>
       
 
-      {/* Turn Indicator Banner - Shows whose turn it is to all players */}
-      {room.status === "playing" && currentGamePlayer && (
-        <div className={`fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full shadow-lg border-2 transition-all ${
-          isMyTurn 
-            ? (room.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
-            : 'bg-yellow-600 border-yellow-400'
-        }`}>
-          <div className="text-white font-bold text-sm text-center flex items-center gap-2">
-            {isMyTurn ? (
-              room.pendingDraw > 0 ? (
-                <>
-                  <span>⚠️ MUST DRAW {room.pendingDraw} CARDS! ⚠️</span>
-                  {/* Guru Response Buttons - can respond with +2 or +4 */}
-                  {isGuruUser && (
-                    <div className="flex gap-1 ml-2">
-                      <button
-                        onClick={() => handleGuruStartCard('+2')}
-                        className="px-2 py-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-xs rounded-full border-2 border-white/50 shadow-lg animate-bounce"
-                        data-testid="button-guru-response-plus2"
-                      >
-                        🧙‍♂️ +2
-                      </button>
-                      <button
-                        onClick={() => handleGuruStartCard('+4')}
-                        className="px-2 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded-full border-2 border-white/50 shadow-lg animate-bounce"
-                        data-testid="button-guru-response-plus4"
-                      >
-                        🧙‍♂️ +4
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <span>⭐ YOUR TURN - Play or Draw! ⭐</span>
-              )
-            ) : (
-              room.pendingDraw > 0 ? (
-                <span>🎮 {currentGamePlayer.nickname} must draw {room.pendingDraw} cards</span>
-              ) : (
-                <span>🎮 {currentGamePlayer.nickname}'s turn</span>
-              )
-            )}
-          </div>
-        </div>
-      )}
+      {/* Top-center turn notification removed - turn indicator is now on player deck only */}
 
       {/* Guru Wild4 Color Picker Modal */}
       {showGuruWild4ColorPicker && (
@@ -1323,9 +1282,9 @@ export default function VmodeGame() {
 
       {/* === UNO TABLE (Centered + Responsive) === */}
       <section className="relative w-full h-full flex items-center justify-center bg-transparent p-4 pb-32">
-        {/* Responsive square board centered in viewport - Slightly left-shifted to prevent overlap */}
+        {/* Responsive square board centered in viewport */}
         <div
-          className="relative aspect-square w-[min(80vmin,450px)] -ml-20 sm:-ml-12"
+          className="relative aspect-square w-[min(80vmin,450px)]"
           style={{
             // Board ring radius - Attached to circle edge with proper spacing (center radius + avatar radius + gap)
             ['--r' as any]: 'calc(var(--center) / 2 + var(--avatar) / 2 + 8px)',
@@ -1729,8 +1688,8 @@ export default function VmodeGame() {
                 </div>
                 {isMyTurn && (
                   <div className="ml-3">
-                    <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-bold border border-green-500/30">
-                      YOUR TURN ⭐
+                    <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 animate-pulse shadow-lg shadow-green-500/50">
+                      ⭐ YOUR TURN ⭐
                     </div>
                   </div>
                 )}
@@ -1864,6 +1823,17 @@ export default function VmodeGame() {
         right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
         width: 'min(18rem, 20vw)' // Original width restored
       }}>
+        {/* Toggle button - always visible */}
+        <button
+          onClick={() => setShowViewers(!showViewers)}
+          className="absolute -left-8 top-2 bg-white/90 hover:bg-white text-gray-600 hover:text-gray-800 rounded-l-lg px-1.5 py-2 shadow-md border border-r-0 border-gray-200 text-xs font-medium z-10"
+          data-testid="button-toggle-viewers"
+          title={showViewers ? "Hide Viewers" : "Show Viewers"}
+        >
+          {showViewers ? '◀' : '▶'}
+        </button>
+        
+        {showViewers && (
         <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg h-full flex flex-col">
           <div className="text-xs font-semibold text-gray-700 mb-3 flex-shrink-0">
             Viewers ({players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length})
@@ -1946,6 +1916,7 @@ export default function VmodeGame() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Chat Panel */}
