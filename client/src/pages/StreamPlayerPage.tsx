@@ -505,7 +505,7 @@ export default function StreamPlayerPage() {
       )}
 
       {/* Continue Game Prompt - Same as Game.tsx */}
-      {showContinuePrompt && room?.hostId === playerId && (
+      {showContinuePrompt && room?.hostId === effectivePlayerId && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <UICard className="max-w-md w-full mx-4">
             <CardContent className="p-6">

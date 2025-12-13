@@ -328,6 +328,19 @@ export default function Game() {
         </div>
       )}
 
+      {/* Game Paused Banner */}
+      {room?.status === 'paused' && (
+        <div className="fixed top-16 md:top-20 left-1/2 transform -translate-x-1/2 pointer-events-none z-40" data-testid="paused-indicator">
+          <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white text-sm md:text-lg font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-gray-400">
+            <div className="flex items-center space-x-1 md:space-x-2">
+              <span>⏸️</span>
+              <span>Game Paused</span>
+              <span>⏸️</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Turn Finished Message */}
       {turnFinishedMessage && (
         <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 pointer-events-none z-30">
