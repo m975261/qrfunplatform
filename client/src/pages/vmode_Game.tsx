@@ -1131,18 +1131,9 @@ export default function VmodeGame() {
 
       {/* Header */}
       <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-10">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-slate-700/50 min-w-0 mt-4">
-            <div className="text-xs sm:text-sm font-medium text-white mb-1">
-              Room <span className="font-mono text-blue-400">{room.code}</span>
-            </div>
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <Users className="h-3 w-3 text-slate-400 flex-shrink-0" />
-              <span className="text-xs text-slate-300">{players.length} players</span>
-            </div>
-          </div>
-
-          <div className="flex space-x-1 sm:space-x-2 flex-shrink-0">
+        <div className="flex flex-col gap-2">
+          {/* Row 1: Buttons */}
+          <div className="flex items-center justify-end flex-wrap gap-1 sm:gap-2">
             <Button
               ref={qrButtonRef}
               variant="outline"
@@ -1269,9 +1260,18 @@ export default function VmodeGame() {
               </Button>
             )}
           </div>
+          
+          {/* Row 2: Room info */}
+          <div className="bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-slate-700/50 w-fit">
+            <div className="text-xs sm:text-sm font-medium text-white mb-1">
+              Room <span className="font-mono text-blue-400">{room.code}</span>
+            </div>
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <Users className="h-3 w-3 text-slate-400 flex-shrink-0" />
+              <span className="text-xs text-slate-300">{players.length} players</span>
+            </div>
+          </div>
         </div>
-
-
       </div>
 
 
