@@ -696,17 +696,8 @@ export default function VmodeGame() {
     return () => clearTimeout(timer);
   }, [isConnected, gameState]);
 
-  // Enhanced loading state with connection debugging
-  if (!playerId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-white text-xl mb-4">Redirecting...</div>
-          <div className="text-white/80 text-sm mb-2">Please join the game properly</div>
-        </div>
-      </div>
-    );
-  }
+  // For Viewer Mode room creator, they have no playerId but should still see the game
+  // Only redirect if NOT the room creator in viewer mode
 
   if (!gameState || !gameState.room) {
     console.log("🚨 WHITE PAGE DEBUG:", {
