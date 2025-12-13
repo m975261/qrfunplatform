@@ -57,6 +57,7 @@ export default function StreamHostPage() {
     replacePlayer, 
     kickPlayer: kickPlayerWS,
     assignSpectator,
+    assignHost,
     isConnected 
   } = useSocket();
 
@@ -165,6 +166,12 @@ export default function StreamHostPage() {
   const handleKickPlayer = (targetPlayerId: string) => {
     if (isHost) {
       kickPlayerWS(targetPlayerId);
+    }
+  };
+
+  const handleMakeHost = (targetPlayerId: string) => {
+    if (isHost && targetPlayerId !== playerId) {
+      assignHost(targetPlayerId);
     }
   };
 
@@ -339,7 +346,7 @@ export default function StreamHostPage() {
                       {player.isOnline && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
                       )}
-                      {/* Host Controls - Kick & Edit buttons for other players */}
+                      {/* Host Controls - Kick, Edit, Make Host buttons for other players */}
                       {isHost && player.id !== playerId && (
                         <>
                           <button
@@ -360,6 +367,14 @@ export default function StreamHostPage() {
                             data-testid={`edit-player-${player.id}`}
                           >
                             <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => handleMakeHost(player.id)}
+                            className="absolute -top-1 -left-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white hover:bg-yellow-600 shadow-lg border border-white"
+                            title="Make Host"
+                            data-testid={`make-host-${player.id}`}
+                          >
+                            <Crown className="w-3 h-3" />
                           </button>
                         </>
                       )}

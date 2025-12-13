@@ -112,22 +112,20 @@ export default function Home() {
       return response.json();
     },
     onSuccess: (data) => {
-      // STREAMING MODE: Create room with host and redirect to Stream Host page
+      // STREAMING MODE: Create empty lobby - no host player, redirect to stream lobby
       if (data.isStreamingMode) {
         setShowHostPopup(false);
         setIsStreamingMode(false);
-        // STORE HOST CREDENTIALS (same as normal mode - fixes host controls)
-        localStorage.setItem("playerId", data.player.id);
-        localStorage.setItem("playerNickname", data.hostNickname || popupNickname);
+        // Store room info only - no player created yet (first joiner becomes host)
         localStorage.setItem("currentRoomId", data.room.id);
-        localStorage.setItem("streamHostPlayerId", data.player.id);
-        // Save selected avatar
-        localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
-        // Clear stale player ID (host is not a regular player)
+        // Clear any stale player IDs
+        localStorage.removeItem("playerId");
+        localStorage.removeItem("playerNickname");
+        localStorage.removeItem("streamHostPlayerId");
         localStorage.removeItem("streamPlayerPlayerId");
         
-        // Navigate to Stream Host page (not lobby - host controls the game from here)
-        setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
+        // Navigate to Stream Lobby page (empty lobby, users join via QR/link)
+        setLocation(`/stream/${data.room.id}/lobby?code=${data.room.code}`);
         return;
       }
       
@@ -346,9 +344,9 @@ export default function Home() {
           const streamingMode = selectedModeTab === 'streaming';
           setIsGuruUserLoggedIn(true);
           if (streamingMode) {
-            // Streaming mode - include nickname to create host player
+            // Streaming mode - no nickname needed, creates empty lobby
             setShowHostPopup(false);
-            createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode: true });
+            createRoomMutation.mutate({ streamingMode: true });
           } else {
             // Normal mode - use guru user's playerName
             createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode: false });
@@ -398,8 +396,8 @@ export default function Home() {
     const streamingMode = isGuruUserLoggedIn ? (selectedModeTab === 'streaming') : isStreamingMode;
     
     if (streamingMode) {
-      // Streaming mode - include nickname to create host player
-      createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: true });
+      // Streaming mode - no nickname needed, creates empty lobby
+      createRoomMutation.mutate({ streamingMode: true });
     } else {
       // Normal mode - use nickname
       createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: false });
