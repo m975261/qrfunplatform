@@ -1704,6 +1704,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Guru Color change - guru can change the current color by sacrificing a card
+  app.post("/api/rooms/:roomId/guru-color", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const playerId = req.headers.authorization?.replace('Bearer ', '');
+      const { color, sacrificeCardIndex } = z.object({
+        color: z.enum(['red', 'blue', 'green', 'yellow']),
+        sacrificeCardIndex: z.number().min(0)
+      }).parse(req.body);
+      
+      if (!playerId) {
+        return res.status(401).json({ error: 'Player ID required' });
+      }
+      
+      const room = await storage.getRoom(roomId);
+      if (!room || room.status !== 'playing') {
+        return res.status(400).json({ error: 'Game not in progress' });
+      }
+      
+      const player = await storage.getPlayer(playerId);
+      if (!player || player.roomId !== roomId) {
+        return res.status(403).json({ error: 'Not authorized for this room' });
+      }
+      
+      // Verify it's this player's turn
+      const players = await storage.getPlayersByRoom(roomId);
+      const gamePlayers = players.filter(p => !p.isSpectator).sort((a, b) => (a.position || 0) - (b.position || 0));
+      const currentPlayerIndex = room.currentPlayerIndex || 0;
+      const currentPlayer = gamePlayers[currentPlayerIndex];
+      
+      if (!currentPlayer || currentPlayer.id !== playerId) {
+        return res.status(400).json({ error: 'Not your turn' });
+      }
+      
+      // Verify player has a card to sacrifice
+      const hand = player.hand || [];
+      if (sacrificeCardIndex < 0 || sacrificeCardIndex >= hand.length) {
+        return res.status(400).json({ error: 'Invalid card index' });
+      }
+      
+      console.log(`🧙‍♂️ GURU COLOR: ${player.nickname} using guru privilege to change color to ${color} (sacrificing card at index ${sacrificeCardIndex})`);
+      
+      // Create a wild card with chosen color for the discard pile
+      const wildCard: Card = {
+        type: 'wild',
+        color: 'wild'
+      };
+      
+      // Remove the sacrificed card from hand
+      const newHand = [...hand];
+      newHand.splice(sacrificeCardIndex, 1);
+      
+      // Add the wild card to discard pile
+      const newDiscardPile = [wildCard, ...(room.discardPile || [])];
+      
+      // Get finished player indices for turn calculation
+      const finishedPlayerIndices = gamePlayers
+        .map((p, idx) => ({ player: p, index: idx }))
+        .filter(item => item.player.finishPosition)
+        .map(item => item.index);
+      
+      // Move to next player (color change ends turn)
+      const nextPlayerIndex = UnoGameLogic.getNextPlayerIndex(
+        currentPlayerIndex, 
+        gamePlayers.length, 
+        room.direction || "clockwise",
+        false,
+        false,
+        finishedPlayerIndices
+      );
+      
+      // Update player hand
+      await storage.updatePlayer(playerId, { 
+        hand: newHand,
+        hasCalledUno: newHand.length > 1 ? false : player.hasCalledUno
+      });
+      
+      // Update position hands
+      if (player.position !== null) {
+        const updatedPositionHands = { ...room.positionHands };
+        updatedPositionHands[player.position.toString()] = newHand;
+        await storage.updateRoom(roomId, { positionHands: updatedPositionHands });
+      }
+      
+      // Update room state with new color
+      await storage.updateRoom(roomId, {
+        discardPile: newDiscardPile,
+        currentColor: color,
+        currentPlayerIndex: nextPlayerIndex
+      });
+      
+      // Broadcast the guru color change
+      broadcastToRoom(roomId, {
+        type: 'guru_color',
+        player: player.nickname,
+        color: color,
+        message: `${player.nickname} used GURU POWER to change color to ${color}!`
+      });
+      
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: `Color changed to ${color}`, color, cardsRemaining: newHand.length });
+    } catch (error) {
+      console.error("Error with guru color:", error);
+      res.status(500).json({ error: 'Failed to change color' });
+    }
+  });
+
   // Host assign spectator to active game endpoint
   app.post("/api/rooms/:roomId/assign-spectator-to-game", async (req, res) => {
     try {

@@ -473,8 +473,8 @@ export default function VmodeGame() {
   // Guru Wild Draw 4 response - allows guru to instantly play +4 when facing a pending draw
   const [showGuruWild4ColorPicker, setShowGuruWild4ColorPicker] = useState(false);
   
-  // Guru +2/+4 with card sacrifice - new flow
-  const [guruCardMode, setGuruCardMode] = useState<'+2' | '+4' | null>(null);
+  // Guru +2/+4/Color with card sacrifice - new flow
+  const [guruCardMode, setGuruCardMode] = useState<'+2' | '+4' | 'color' | null>(null);
   const [guruSelectedColor, setGuruSelectedColor] = useState<string | null>(null);
   const [showGuruCardPicker, setShowGuruCardPicker] = useState(false);
   
@@ -518,8 +518,8 @@ export default function VmodeGame() {
     }
   };
 
-  // Guru +2/+4 with card sacrifice - color selection step
-  const handleGuruStartCard = (mode: '+2' | '+4') => {
+  // Guru +2/+4/Color with card sacrifice - color selection step
+  const handleGuruStartCard = (mode: '+2' | '+4' | 'color') => {
     setGuruCardMode(mode);
     setGuruSelectedColor(null);
     // Show inline color options in the buttons area
@@ -531,14 +531,19 @@ export default function VmodeGame() {
     setShowGuruCardPicker(true);
   };
 
-  // Guru card sacrifice - execute the +2 or +4
+  // Guru card sacrifice - execute the +2, +4, or color change
   const handleGuruCardSacrifice = async (sacrificeCardIndex: number) => {
     if (!roomId || !playerId || !guruSelectedColor || !guruCardMode) return;
     
     try {
-      const endpoint = guruCardMode === '+2' 
-        ? `/api/rooms/${roomId}/guru-plus2`
-        : `/api/rooms/${roomId}/guru-plus4`;
+      let endpoint: string;
+      if (guruCardMode === '+2') {
+        endpoint = `/api/rooms/${roomId}/guru-plus2`;
+      } else if (guruCardMode === '+4') {
+        endpoint = `/api/rooms/${roomId}/guru-plus4`;
+      } else {
+        endpoint = `/api/rooms/${roomId}/guru-color`;
+      }
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -555,11 +560,19 @@ export default function VmodeGame() {
       const result = await response.json();
       
       if (response.ok) {
-        console.log(`✅ Guru ${guruCardMode} successful - stacked to ${result.newPendingDraw} cards`);
-        toast({
-          title: `GURU POWER! ${guruCardMode}`,
-          description: `${guruCardMode} played! Total penalty: ${result.newPendingDraw} cards`,
-        });
+        if (guruCardMode === 'color') {
+          console.log(`✅ Guru Color change successful - new color: ${guruSelectedColor}`);
+          toast({
+            title: `GURU POWER! Color`,
+            description: `Color changed to ${guruSelectedColor}!`,
+          });
+        } else {
+          console.log(`✅ Guru ${guruCardMode} successful - stacked to ${result.newPendingDraw} cards`);
+          toast({
+            title: `GURU POWER! ${guruCardMode}`,
+            description: `${guruCardMode} played! Total penalty: ${result.newPendingDraw} cards`,
+          });
+        }
         // Reset state
         setGuruCardMode(null);
         setGuruSelectedColor(null);
@@ -1649,56 +1662,6 @@ export default function VmodeGame() {
 
           {/* === DRAW PILE (left of 6 o'clock avatar, under 9 o'clock avatar) === */}
           <div className="absolute z-20" style={{ left: '21%', bottom: '22%' }}>
-            {/* Guru +2/+4 Buttons - Above draw pile, only for guru users */}
-            {isGuruUser && isMyTurn && (
-              <div className="absolute bottom-full left-0 mb-2 flex flex-col gap-1">
-                {guruCardMode === null ? (
-                  <>
-                    <button
-                      onClick={() => handleGuruStartCard('+2')}
-                      className="px-2 py-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-xs rounded border border-white/50 shadow-lg"
-                      data-testid="button-guru-plus2"
-                    >
-                      🧙‍♂️ +2
-                    </button>
-                    <button
-                      onClick={() => handleGuruStartCard('+4')}
-                      className="px-2 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded border border-white/50 shadow-lg"
-                      data-testid="button-guru-plus4"
-                    >
-                      🧙‍♂️ +4
-                    </button>
-                  </>
-                ) : (
-                  /* Color selection after clicking +2 or +4 */
-                  <div className="bg-slate-800/95 rounded-lg p-2 border border-purple-500/50">
-                    <div className="text-white text-xs font-bold mb-1 text-center">{guruCardMode} Color:</div>
-                    <div className="grid grid-cols-2 gap-1">
-                      {['red', 'blue', 'green', 'yellow'].map(color => (
-                        <button
-                          key={color}
-                          onClick={() => handleGuruColorSelect(color)}
-                          className={`w-6 h-6 rounded shadow-sm border-2 border-white/50 ${
-                            color === 'red' ? 'bg-red-500' :
-                            color === 'blue' ? 'bg-blue-500' :
-                            color === 'green' ? 'bg-green-500' :
-                            'bg-yellow-400'
-                          }`}
-                          data-testid={`button-guru-color-${color}`}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      onClick={handleGuruCardCancel}
-                      className="mt-1 w-full text-xs text-slate-400 hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            
             <div className="relative cursor-pointer group" onClick={drawCard}>
               <div className="bg-gradient-to-br from-amber-600 to-orange-700 rounded-lg border-2 border-amber-500 shadow-xl group-hover:shadow-amber-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
               <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg border-2 border-amber-400 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
@@ -1761,6 +1724,64 @@ export default function VmodeGame() {
                 🔥 UNO! 🔥
               </Button>
             </div>
+
+            {/* Guru Power Buttons - Centered above player deck, only for guru users when it's their turn */}
+            {isGuruUser && isMyTurn && (
+              <div className="flex justify-center mb-2">
+                {guruCardMode === null ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleGuruStartCard('+2')}
+                      className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-sm rounded-lg border-2 border-white/50 shadow-lg hover:scale-105 transition-transform"
+                      data-testid="button-guru-plus2"
+                    >
+                      🧙‍♂️ +2
+                    </button>
+                    <button
+                      onClick={() => handleGuruStartCard('+4')}
+                      className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm rounded-lg border-2 border-white/50 shadow-lg hover:scale-105 transition-transform"
+                      data-testid="button-guru-plus4"
+                    >
+                      🧙‍♂️ +4
+                    </button>
+                    <button
+                      onClick={() => handleGuruStartCard('color' as any)}
+                      className="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-white font-bold text-sm rounded-lg border-2 border-white/50 shadow-lg hover:scale-105 transition-transform"
+                      data-testid="button-guru-color"
+                    >
+                      🎨 Color
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-slate-800/95 rounded-lg p-3 border-2 border-purple-500/50 shadow-xl">
+                    <div className="text-white text-sm font-bold mb-2 text-center">
+                      {guruCardMode === 'color' ? 'Choose Color:' : `${guruCardMode} - Choose Color:`}
+                    </div>
+                    <div className="flex gap-2 justify-center mb-2">
+                      {['red', 'blue', 'green', 'yellow'].map(color => (
+                        <button
+                          key={color}
+                          onClick={() => handleGuruColorSelect(color)}
+                          className={`w-10 h-10 rounded-lg shadow-lg border-2 border-white/50 hover:scale-110 transition-transform ${
+                            color === 'red' ? 'bg-red-500 hover:bg-red-400' :
+                            color === 'blue' ? 'bg-blue-500 hover:bg-blue-400' :
+                            color === 'green' ? 'bg-green-500 hover:bg-green-400' :
+                            'bg-yellow-400 hover:bg-yellow-300'
+                          }`}
+                          data-testid={`button-guru-color-${color}`}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleGuruCardCancel}
+                      className="w-full py-1 text-sm text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Player Cards - Horizontal layout centered at bottom */}
             <div className="overflow-x-auto overflow-y-visible px-1">
