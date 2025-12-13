@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Upload, Camera, ArrowRight, ArrowLeft, Radio, Tv, Eye } from "lucide-react";
+import { Plus, Upload, Camera, ArrowRight, ArrowLeft, Radio, Eye } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -29,10 +29,8 @@ export default function Home() {
   const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
   const [guruLoginError, setGuruLoginError] = useState("");
   
-  // Streaming Mode state
-  const [isStreamingMode, setIsStreamingMode] = useState(false);
-  const [showStreamingConfirm, setShowStreamingConfirm] = useState(false);
-  const [selectedModeTab, setSelectedModeTab] = useState<'normal' | 'streaming' | 'viewer'>('normal');
+  // Mode tabs for guru users (streaming removed)
+  const [selectedModeTab, setSelectedModeTab] = useState<'normal' | 'viewer'>('normal');
   const [isGuruUserLoggedIn, setIsGuruUserLoggedIn] = useState(false);
   
   // Viewer Mode state
@@ -104,11 +102,10 @@ export default function Home() {
   }, [toast, setLocation]);
 
   const createRoomMutation = useMutation({
-    mutationFn: async ({ hostNickname, streamingMode, viewerMode }: { hostNickname?: string; streamingMode: boolean; viewerMode?: boolean }) => {
+    mutationFn: async ({ hostNickname, viewerMode }: { hostNickname?: string; viewerMode?: boolean }) => {
       const payload: { hostNickname?: string; isStreamingMode: boolean; isViewerMode?: boolean } = { 
-        isStreamingMode: streamingMode 
+        isStreamingMode: false 
       };
-      // Include hostNickname for BOTH modes (streaming mode also needs host player)
       if (hostNickname) {
         payload.hostNickname = hostNickname;
       }
@@ -119,23 +116,6 @@ export default function Home() {
       return response.json();
     },
     onSuccess: (data) => {
-      // STREAMING MODE: Create empty lobby - no host player, redirect to stream lobby
-      if (data.isStreamingMode) {
-        setShowHostPopup(false);
-        setIsStreamingMode(false);
-        // Store room info only - no player created yet (first joiner becomes host)
-        localStorage.setItem("currentRoomId", data.room.id);
-        // Clear any stale player IDs
-        localStorage.removeItem("playerId");
-        localStorage.removeItem("playerNickname");
-        localStorage.removeItem("streamHostPlayerId");
-        localStorage.removeItem("streamPlayerPlayerId");
-        
-        // Navigate to Stream Lobby page (empty lobby, users join via QR/link)
-        setLocation(`/stream/${data.room.id}/lobby?code=${data.room.code}`);
-        return;
-      }
-      
       // VIEWER MODE: Create empty lobby - no host player, redirect to viewer mode lobby
       if (data.isViewerMode) {
         setShowHostPopup(false);
@@ -202,28 +182,6 @@ export default function Home() {
       
       console.log("Successfully joined room:", data);
       
-      // STREAMING MODE: Check if this is a streaming room and redirect accordingly
-      if (data.room.isStreamingMode) {
-        // Clear any stale streaming IDs from previous sessions
-        localStorage.removeItem("streamHostPlayerId");
-        localStorage.removeItem("streamPlayerPlayerId");
-        
-        // First joiner becomes host - check if we're the first
-        if (data.isStreamingHost) {
-          localStorage.setItem("streamHostPlayerId", data.player.id);
-          setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
-        } else if (data.player.position !== null && data.player.position !== undefined) {
-          // Player has been assigned a slot - always go to their dedicated player page
-          const slot = data.player.position + 1;
-          localStorage.setItem("streamPlayerPlayerId", data.player.id);
-          setLocation(`/stream/${data.room.id}/player/${slot}?code=${data.room.code}`);
-        } else {
-          // Spectator - redirect to host page (they'll see spectator view there)
-          setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
-        }
-        return;
-      }
-      
       // VIEWER MODE: Redirect to viewer mode routes
       if (data.room.isViewerMode) {
         if (data.room.status === "waiting") {
@@ -266,28 +224,6 @@ export default function Home() {
       setShowNicknamePopup(false);
       
       console.log("Successfully joined room via link:", data);
-      
-      // STREAMING MODE: Check if this is a streaming room and redirect accordingly
-      if (data.room.isStreamingMode) {
-        // Clear any stale streaming IDs from previous sessions
-        localStorage.removeItem("streamHostPlayerId");
-        localStorage.removeItem("streamPlayerPlayerId");
-        
-        // First joiner becomes host - check if we're the first
-        if (data.isStreamingHost) {
-          localStorage.setItem("streamHostPlayerId", data.player.id);
-          setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
-        } else if (data.player.position !== null && data.player.position !== undefined) {
-          // Player has been assigned a slot - always go to their dedicated player page
-          const slot = data.player.position + 1;
-          localStorage.setItem("streamPlayerPlayerId", data.player.id);
-          setLocation(`/stream/${data.room.id}/player/${slot}?code=${data.room.code}`);
-        } else {
-          // Spectator - redirect to host page (they'll see spectator view there)
-          setLocation(`/stream/${data.room.id}/host?code=${data.room.code}`);
-        }
-        return;
-      }
       
       // VIEWER MODE: Redirect to viewer mode routes
       if (data.room.isViewerMode) {
@@ -382,20 +318,15 @@ export default function Home() {
         setPopupNickname(data.guruUser.playerName);
         
         if (pendingAction === 'create') {
-          // Guru users use the tab selection for streaming/viewer mode
-          const streamingMode = selectedModeTab === 'streaming';
+          // Guru users use the tab selection for viewer mode
           const viewerMode = selectedModeTab === 'viewer';
           setIsGuruUserLoggedIn(true);
-          if (streamingMode) {
-            // Streaming mode - no nickname needed, creates empty lobby
-            setShowHostPopup(false);
-            createRoomMutation.mutate({ streamingMode: true });
-          } else if (viewerMode) {
+          if (viewerMode) {
             // Viewer mode - no nickname needed, creates empty lobby (first joiner becomes host)
-            createRoomMutation.mutate({ streamingMode: false, viewerMode: true });
+            createRoomMutation.mutate({ viewerMode: true });
           } else {
             // Normal mode - use guru user's playerName
-            createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode: false });
+            createRoomMutation.mutate({ hostNickname: data.guruUser.playerName });
           }
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
@@ -416,17 +347,11 @@ export default function Home() {
 
   const handleHostRoom = async () => {
     // Determine mode based on user type
-    const streamingMode = isGuruUserLoggedIn ? (selectedModeTab === 'streaming') : isStreamingMode;
     const viewerMode = isGuruUserLoggedIn ? (selectedModeTab === 'viewer') : isViewerMode;
     
-    // Streaming and Viewer modes don't need nickname - create empty lobby immediately
-    if (streamingMode) {
-      createRoomMutation.mutate({ streamingMode: true });
-      return;
-    }
-    
+    // Viewer mode doesn't need nickname - create empty lobby immediately
     if (viewerMode) {
-      createRoomMutation.mutate({ streamingMode: false, viewerMode: true });
+      createRoomMutation.mutate({ viewerMode: true });
       return;
     }
     
@@ -455,7 +380,7 @@ export default function Home() {
     localStorage.removeItem("guruUserData");
     
     // Normal mode - use nickname
-    createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: false });
+    createRoomMutation.mutate({ hostNickname: popupNickname });
   };
 
   const handleJoinRoom = async () => {
@@ -817,7 +742,6 @@ export default function Home() {
         if (!open) {
           setPopupNickname("");
           setSelectedAvatar('male');
-          setIsStreamingMode(false);
           setIsViewerMode(false);
           setSelectedModeTab('normal');
         }
@@ -831,28 +755,17 @@ export default function Home() {
           
           {/* GURU USER: Show Mode Tabs */}
           {isGuruUserLoggedIn && (
-            <Tabs value={selectedModeTab} onValueChange={(v) => setSelectedModeTab(v as 'normal' | 'streaming' | 'viewer')} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
+            <Tabs value={selectedModeTab} onValueChange={(v) => setSelectedModeTab(v as 'normal' | 'viewer')} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="normal" className="flex items-center gap-2">
                   <Radio className="h-4 w-4" />
                   Normal
-                </TabsTrigger>
-                <TabsTrigger value="streaming" className="flex items-center gap-2">
-                  <Tv className="h-4 w-4" />
-                  Streaming
                 </TabsTrigger>
                 <TabsTrigger value="viewer" className="flex items-center gap-2">
                   <Eye className="h-4 w-4" />
                   Viewer
                 </TabsTrigger>
               </TabsList>
-              
-              {selectedModeTab === 'streaming' && (
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4 text-sm text-purple-700">
-                  <p className="font-medium mb-1">Streaming Mode Active</p>
-                  <p className="text-xs">Room will open on Stream Page. Join manually via link/QR to become host.</p>
-                </div>
-              )}
               
               {selectedModeTab === 'viewer' && (
                 <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 mb-4 text-sm text-teal-700">
@@ -921,32 +834,10 @@ export default function Home() {
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <Checkbox 
-                    id="streaming-mode" 
-                    checked={isStreamingMode}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setIsViewerMode(false);
-                        setShowStreamingConfirm(true);
-                      } else {
-                        setIsStreamingMode(false);
-                      }
-                    }}
-                  />
-                  <Label 
-                    htmlFor="streaming-mode" 
-                    className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"
-                  >
-                    <Tv className="h-4 w-4 text-purple-500" />
-                    Advanced (Streaming Mode)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <Checkbox 
                     id="viewer-mode" 
                     checked={isViewerMode}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        setIsStreamingMode(false);
                         setShowViewerConfirm(true);
                       } else {
                         setIsViewerMode(false);
@@ -970,7 +861,6 @@ export default function Home() {
                   setShowHostPopup(false);
                   setPopupNickname("");
                   setSelectedAvatar('male');
-                  setIsStreamingMode(false);
                   setIsViewerMode(false);
                   setSelectedModeTab('normal');
                 }}
@@ -997,58 +887,6 @@ export default function Home() {
         </DialogContent>
       </Dialog>
       
-      {/* Streaming Mode Confirmation Dialog */}
-      <Dialog open={showStreamingConfirm} onOpenChange={setShowStreamingConfirm}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg font-semibold text-purple-700">
-              Enable Streaming Mode?
-            </DialogTitle>
-            <DialogDescription className="text-center text-sm text-gray-600 pt-2">
-              Streaming Mode changes room behavior and requires special setup.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-              <p className="font-medium mb-2">What happens in Streaming Mode:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>Room opens on a Stream Page (for OBS/streaming)</li>
-                <li>You must join manually via link or QR code</li>
-                <li>All cards are hidden on the Stream Page</li>
-                <li>First person to join becomes the host</li>
-              </ul>
-            </div>
-            <p className="text-xs text-gray-500 text-center">
-              If you are not sure how this feature works, please click Cancel.
-            </p>
-            <div className="flex space-x-2">
-              <Button
-                onClick={() => {
-                  setShowStreamingConfirm(false);
-                  setIsStreamingMode(false);
-                }}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowStreamingConfirm(false);
-                  setShowHostPopup(false);
-                  // Create streaming room without nickname - first joiner becomes host
-                  createRoomMutation.mutate({ streamingMode: true });
-                }}
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
-              >
-                <Tv className="mr-2 h-4 w-4" />
-                Enable Streaming
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Viewer Mode Confirmation Dialog */}
       <Dialog open={showViewerConfirm} onOpenChange={setShowViewerConfirm}>
         <DialogContent className="sm:max-w-md">
@@ -1089,7 +927,7 @@ export default function Home() {
                   setShowViewerConfirm(false);
                   setShowHostPopup(false);
                   // Create viewer mode room immediately - no nickname needed, first joiner becomes host
-                  createRoomMutation.mutate({ streamingMode: false, viewerMode: true });
+                  createRoomMutation.mutate({ viewerMode: true });
                 }}
                 className="flex-1 bg-teal-600 hover:bg-teal-700"
               >
