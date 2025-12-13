@@ -1282,10 +1282,11 @@ export default function VmodeGame() {
 
       {/* === UNO TABLE (Centered + Responsive) === */}
       <section className="relative w-full h-full flex items-center justify-center bg-transparent p-4 pb-32">
-        {/* Responsive square board centered in viewport */}
+        {/* Responsive square board centered in viewport - offset 3cm (~113px) downward */}
         <div
           className="relative aspect-square w-[min(80vmin,450px)]"
           style={{
+            marginTop: '113px',
             // Board ring radius - Attached to circle edge with proper spacing (center radius + avatar radius + gap)
             ['--r' as any]: 'calc(var(--center) / 2 + var(--avatar) / 2 + 8px)',
             // Avatar diameter (clamped for phone → desktop)
