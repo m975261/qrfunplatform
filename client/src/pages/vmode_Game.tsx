@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
-import { Card as UICard, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle, Share2, Pencil } from "lucide-react";
+import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle, Share2, Pencil, QrCode, Copy, GripVertical, X } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import PlayerArea from "@/components/game/PlayerArea";
@@ -91,6 +91,15 @@ export default function VmodeGame() {
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [showVotingWindow, setShowVotingWindow] = useState(false);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // QR Code state
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [qrCodeData, setQRCodeData] = useState<string | null>(null);
+  const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
+  const [isDraggingQR, setIsDraggingQR] = useState(false);
+  const [dragStartPosQR, setDragStartPosQR] = useState({ x: 0, y: 0 });
+  const qrButtonRef = useRef<HTMLButtonElement>(null);
+  const qrPanelRef = useRef<HTMLDivElement>(null);
 
   // Debug logs for troubleshooting
   console.log("🚨 WHITE PAGE DEBUG:", {
