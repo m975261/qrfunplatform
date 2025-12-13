@@ -224,7 +224,7 @@ export default function StreamPlayerPage() {
   // Derive game end state from gameState directly for reliable rendering
   const shouldShowGameEnd = showGameEnd || gameState?.gameEndData || gameState?.room?.status === 'finished';
   
-  if (!room || (room.status !== 'playing' && room.status !== 'finished' && !shouldShowGameEnd)) {
+  if (!room || (room.status !== 'playing' && room.status !== 'finished' && room.status !== 'paused' && !shouldShowGameEnd)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center p-4">
         <UICard className="bg-white/95 backdrop-blur-sm shadow-xl p-8 text-center">
@@ -284,6 +284,19 @@ export default function StreamPlayerPage() {
               <span>⚠️</span>
               <span>{oneCardMessage}</span>
               <span>⚠️</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Game Paused Banner */}
+      {room?.status === 'paused' && (
+        <div className="fixed top-16 md:top-20 left-1/2 transform -translate-x-1/2 pointer-events-none z-40" data-testid="paused-indicator">
+          <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white text-sm md:text-lg font-bold px-4 md:px-6 py-2 md:py-3 rounded-full shadow-xl border-2 border-gray-400">
+            <div className="flex items-center space-x-1 md:space-x-2">
+              <span>⏸️</span>
+              <span>Game Paused</span>
+              <span>⏸️</span>
             </div>
           </div>
         </div>

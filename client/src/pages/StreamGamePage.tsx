@@ -396,6 +396,16 @@ export default function StreamGamePage() {
                 Enter Code Here: <span className="text-uno-red font-bold underline">QrFun.net</span>
               </div>
             </div>
+            {/* Game Paused Banner */}
+            {room?.status === 'paused' && (
+              <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-1.5 md:py-2 rounded-lg shadow-xl border-2 border-gray-400" data-testid="paused-indicator">
+                <div className="flex items-center space-x-1">
+                  <span>⏸️</span>
+                  <span>Game Paused</span>
+                  <span>⏸️</span>
+                </div>
+              </div>
+            )}
             {/* Turn Indicator - Directly attached below room code */}
             {room?.status === 'playing' && currentGamePlayer && (
               <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs md:text-sm font-bold px-3 md:px-4 py-1.5 md:py-2 rounded-lg shadow-xl border-2 border-white animate-pulse" data-testid="turn-indicator">

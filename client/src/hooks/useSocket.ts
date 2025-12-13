@@ -411,6 +411,11 @@ export function useSocket(autoConnect: boolean = true) {
             console.log("You have been converted to a spectator");
             // Don't redirect - let them stay as spectator
             break;
+          case 'game_paused':
+            // Game was paused (e.g., player kicked during game)
+            console.log("Game paused:", message.reason);
+            // Just log - room_state will update the status
+            break;
           case 'game_continued':
             // Handle game continuation - refresh state
             console.log("Game continued");

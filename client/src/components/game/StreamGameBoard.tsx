@@ -79,7 +79,9 @@ export default function StreamGameBoard({
   const currentColor = room?.currentColor;
   const pendingDraw = room?.pendingDraw ?? 0;
 
-  const isMyTurn = currentGamePlayer?.id === myPlayer?.id && room?.status === "playing";
+  // Only allow actions during playing status, but show turn indicator during paused too
+  const isGameActive = room?.status === "playing";
+  const isMyTurn = currentGamePlayer?.id === myPlayer?.id && isGameActive;
 
   // Detect when a card is drawn (hand increases)
   useEffect(() => {
@@ -594,7 +596,7 @@ export default function StreamGameBoard({
                 {myPlayer?.nickname} (You) - {myHand.length} cards
               </div>
             </div>
-            {onCallUno && (
+            {onCallUno && isGameActive && (
               <div className="absolute top-2 right-4 z-50">
                 <button
                   onClick={onCallUno}
@@ -636,7 +638,7 @@ export default function StreamGameBoard({
         </div>
       )}
 
-      {colorChoiceRequested && (
+      {colorChoiceRequested && isGameActive && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 md:p-6 shadow-2xl">
             <h3 className="text-gray-800 text-base md:text-lg font-bold text-center mb-3">Choose a Color</h3>
