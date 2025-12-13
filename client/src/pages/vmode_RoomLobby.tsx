@@ -549,8 +549,8 @@ export default function VmodeRoomLobby() {
                         </div>
                         <span className="text-xs text-gray-700 flex-1 truncate">{spectator.nickname}</span>
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-                        {/* Host controls for spectators in streaming mode - Edit nickname button */}
-                        {isHost && isStreamingMode && (
+                        {/* Host controls for spectators - Edit nickname button */}
+                        {isHost && (isStreamingMode || isViewerMode) && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
