@@ -426,7 +426,7 @@ export default function StreamGameBoard({
     );
 
     return (
-      <div className={`absolute ${positionStyles[position]} z-10`}>
+      <div className={`absolute ${positionStyles[position]} z-30`}>
         <div className={`${getSlotLayout(position)} gap-1 transition-all duration-300 ${isCurrentTurn ? "scale-105" : ""}`}>
           {/* Pos 0: cards above (flex-col, cards first = top) */}
           {/* Pos 1: cards right/outside (flex-row-reverse, cards after = right) */}
