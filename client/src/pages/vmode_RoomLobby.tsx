@@ -549,8 +549,8 @@ export default function VmodeRoomLobby() {
                         </div>
                         <span className="text-xs text-gray-700 flex-1 truncate">{spectator.nickname}</span>
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-                        {/* Host controls for spectators - Edit nickname button */}
-                        {isHost && (isStreamingMode || isViewerMode) && (
+                        {/* Edit nickname button - Host can edit any, players can edit their own */}
+                        {((isHost && (isStreamingMode || isViewerMode)) || spectator.id === playerId) && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -577,7 +577,7 @@ export default function VmodeRoomLobby() {
                 <div className="mt-2 text-xs text-gray-500 text-center">
                   {isHost && (isStreamingMode || isViewerMode) ? "Edit nicknames with ✏️, assign to slots with +" : 
                    isHost ? "Click + to assign spectators to slots" : 
-                   (isStreamingMode || isViewerMode) ? "Wait for host to assign you a slot" : "Click empty slots to join"}
+                   (isStreamingMode || isViewerMode) ? "Tap ✏️ to edit your name" : "Click empty slots to join"}
                 </div>
               </CardContent>
             </Card>

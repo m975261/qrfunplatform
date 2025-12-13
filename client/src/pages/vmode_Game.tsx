@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle, Share2 } from "lucide-react";
+import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle, Share2, Pencil } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import PlayerArea from "@/components/game/PlayerArea";
@@ -1765,6 +1765,19 @@ export default function VmodeGame() {
                     }
                   >
                     <span className="text-sm text-gray-700 truncate flex-1 font-medium">{spectator.nickname}</span>
+                    {/* Edit own nickname button for spectators */}
+                    {spectator.id === playerId && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowNicknameEditor(true);
+                        }}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                        title="Edit your nickname"
+                      >
+                        <Pencil className="w-3 h-3 text-gray-500" />
+                      </button>
+                    )}
                     {/* Show assignment indicator for host */}
                     {isHost && (
                       <div className="text-blue-600 text-sm font-bold bg-blue-100 rounded-full w-6 h-6 flex items-center justify-center">+</div>
