@@ -1571,7 +1571,7 @@ export default function VmodeGame() {
           )}
 
           {/* === DRAW PILE (left of 6 o'clock avatar, under 9 o'clock avatar) === */}
-          <div className="absolute z-20" style={{ left: '18%', bottom: '22%' }}>
+          <div className="absolute z-20" style={{ left: '21%', bottom: '22%' }}>
             {/* Guru +2/+4 Buttons - Above draw pile, only for guru users */}
             {isGuruUser && isMyTurn && (
               <div className="absolute bottom-full left-0 mb-2 flex flex-col gap-1">
@@ -1623,14 +1623,11 @@ export default function VmodeGame() {
             )}
             
             <div className="relative cursor-pointer group" onClick={drawCard}>
-              <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
-              <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
+              <div className="bg-gradient-to-br from-amber-600 to-orange-700 rounded-lg border-2 border-amber-500 shadow-xl group-hover:shadow-amber-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
+              <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg border-2 border-amber-400 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="text-white font-bold text-xs">CARDS</div>
+                <div className="text-white font-bold text-xs drop-shadow-md">Draw</div>
               </div>
-            </div>
-            <div className="text-center mt-1">
-              <div className="text-blue-300 font-bold text-xs">DRAW</div>
             </div>
           </div>
         </div>
