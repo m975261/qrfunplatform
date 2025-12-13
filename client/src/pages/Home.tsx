@@ -136,14 +136,17 @@ export default function Home() {
         return;
       }
       
-      // VIEWER MODE: Standard room creation but redirect to viewer mode routes
+      // VIEWER MODE: Create empty lobby - no host player, redirect to viewer mode lobby
       if (data.isViewerMode) {
-        localStorage.setItem("playerId", data.player.id);
-        localStorage.setItem("playerNickname", data.hostNickname || popupNickname);
-        localStorage.setItem("currentRoomId", data.room.id);
-        localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
         setShowHostPopup(false);
         setIsViewerMode(false);
+        // Store room info only - no player created yet (first joiner becomes host)
+        localStorage.setItem("currentRoomId", data.room.id);
+        // Clear any stale player IDs
+        localStorage.removeItem("playerId");
+        localStorage.removeItem("playerNickname");
+        
+        // Navigate to Viewer Mode Lobby page (empty lobby, users join via QR/link)
         setLocation(`/vmode/room/${data.room.id}?code=${data.room.code}`);
         return;
       }
@@ -388,8 +391,8 @@ export default function Home() {
             setShowHostPopup(false);
             createRoomMutation.mutate({ streamingMode: true });
           } else if (viewerMode) {
-            // Viewer mode - use nickname, separate routes
-            createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode: false, viewerMode: true });
+            // Viewer mode - no nickname needed, creates empty lobby (first joiner becomes host)
+            createRoomMutation.mutate({ streamingMode: false, viewerMode: true });
           } else {
             // Normal mode - use guru user's playerName
             createRoomMutation.mutate({ hostNickname: data.guruUser.playerName, streamingMode: false });
@@ -412,6 +415,22 @@ export default function Home() {
   };
 
   const handleHostRoom = async () => {
+    // Determine mode based on user type
+    const streamingMode = isGuruUserLoggedIn ? (selectedModeTab === 'streaming') : isStreamingMode;
+    const viewerMode = isGuruUserLoggedIn ? (selectedModeTab === 'viewer') : isViewerMode;
+    
+    // Streaming and Viewer modes don't need nickname - create empty lobby immediately
+    if (streamingMode) {
+      createRoomMutation.mutate({ streamingMode: true });
+      return;
+    }
+    
+    if (viewerMode) {
+      createRoomMutation.mutate({ streamingMode: false, viewerMode: true });
+      return;
+    }
+    
+    // Normal mode requires nickname
     if (!popupNickname.trim()) {
       toast({
         title: "Error",
@@ -435,20 +454,8 @@ export default function Home() {
     localStorage.removeItem("isGuruUser");
     localStorage.removeItem("guruUserData");
     
-    // Determine mode based on user type
-    const streamingMode = isGuruUserLoggedIn ? (selectedModeTab === 'streaming') : isStreamingMode;
-    const viewerMode = isGuruUserLoggedIn ? (selectedModeTab === 'viewer') : isViewerMode;
-    
-    if (streamingMode) {
-      // Streaming mode - no nickname needed, creates empty lobby
-      createRoomMutation.mutate({ streamingMode: true });
-    } else if (viewerMode) {
-      // Viewer mode - use nickname, separate routes
-      createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: false, viewerMode: true });
-    } else {
-      // Normal mode - use nickname
-      createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: false });
-    }
+    // Normal mode - use nickname
+    createRoomMutation.mutate({ hostNickname: popupNickname, streamingMode: false });
   };
 
   const handleJoinRoom = async () => {

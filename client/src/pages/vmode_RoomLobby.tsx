@@ -241,6 +241,8 @@ export default function VmodeRoomLobby() {
   const currentPlayer = players.find((p: any) => p.id === playerId);
   const isHost = currentPlayer?.isHost || currentPlayer?.id === room?.hostId;
   const isStreamingMode = room?.isStreamingMode || false;
+  const isViewerMode = room?.isViewerMode || false;
+  const isViewer = currentPlayer?.isSpectator && !isHost; // Viewer = spectator who is not host
 
   // Debug logging
   console.log("RoomLobby state:", {
@@ -411,7 +413,7 @@ export default function VmodeRoomLobby() {
                     // In streaming mode, only the host can see/interact with slots - spectators see "Empty"
                     <div 
                       className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors ${
-                        isStreamingMode && !isHost
+                        (isStreamingMode || isViewerMode) && !isHost
                           ? 'bg-gray-400/30 border-white/20 cursor-default'
                           : gameInProgress && !wasActiveAtStart
                           ? 'bg-gray-200/50 border-gray-300/30 cursor-not-allowed' 
@@ -420,8 +422,8 @@ export default function VmodeRoomLobby() {
                           : 'bg-gray-300/50 border-white/30 cursor-pointer hover:bg-gray-300/70'
                       }`}
                       onClick={() => {
-                        // In streaming mode, spectators cannot click slots
-                        if (isStreamingMode && !isHost) {
+                        // In streaming mode or viewer mode, spectators cannot click slots
+                        if ((isStreamingMode || isViewerMode) && !isHost) {
                           return;
                         }
                         if (gameInProgress && !wasActiveAtStart) {
@@ -438,8 +440,8 @@ export default function VmodeRoomLobby() {
                         }
                       }}
                     >
-                      {/* Streaming mode spectators see non-interactive empty slots */}
-                      {isStreamingMode && !isHost ? (
+                      {/* Streaming/Viewer mode spectators see non-interactive empty slots */}
+                      {(isStreamingMode || isViewerMode) && !isHost ? (
                         <div className="text-center">
                           <div className="w-8 h-8 rounded-full bg-gray-500/50 mx-auto" />
                           <div className="text-xs text-gray-500 mt-1">Empty</div>
@@ -555,9 +557,9 @@ export default function VmodeRoomLobby() {
                   ))}
                 </div>
                 <div className="mt-2 text-xs text-gray-500 text-center">
-                  {isHost && isStreamingMode ? "Edit nicknames with ✏️, assign to slots with +" : 
+                  {isHost && (isStreamingMode || isViewerMode) ? "Edit nicknames with ✏️, assign to slots with +" : 
                    isHost ? "Click + to assign spectators to slots" : 
-                   isStreamingMode ? "Wait for host to assign you a slot" : "Click empty slots to join"}
+                   (isStreamingMode || isViewerMode) ? "Wait for host to assign you a slot" : "Click empty slots to join"}
                 </div>
               </CardContent>
             </Card>

@@ -686,9 +686,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isViewerMode: isViewerMode
       });
 
-      // STREAMING MODE: Create empty lobby - no host player needed (first joiner becomes host)
-      if (isStreamingMode) {
-        // Generate QR code for streaming mode room
+      // STREAMING MODE or VIEWER MODE: Create empty lobby - no host player needed (first joiner becomes host)
+      if (isStreamingMode || isViewerMode) {
+        // Generate QR code for the room
         let domain;
         let roomLink;
         
@@ -709,14 +709,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           color: { dark: '#000000', light: '#FFFFFF' }
         });
         
-        // Streaming mode: No host created - first joiner becomes host automatically
-        console.log(`[STREAMING MODE] Room ${code} created - empty lobby waiting for first joiner to become host`);
+        if (isStreamingMode) {
+          // Streaming mode: No host created - first joiner becomes host automatically
+          console.log(`[STREAMING MODE] Room ${code} created - empty lobby waiting for first joiner to become host`);
+          
+          return res.json({ 
+            room, 
+            qrCode,
+            isStreamingMode: true,
+            streamLobbyUrl: `/stream/${room.id}/lobby?code=${code}`
+          });
+        }
+        
+        // VIEWER MODE: Empty lobby - first joiner becomes host automatically
+        console.log(`[VIEWER MODE] Room ${code} created - empty lobby waiting for first joiner to become host`);
         
         return res.json({ 
           room, 
           qrCode,
-          isStreamingMode: true,
-          streamLobbyUrl: `/stream/${room.id}/lobby?code=${code}`
+          isViewerMode: true,
+          vmodeRoomUrl: `/vmode/room/${room.id}?code=${code}`
         });
       }
       
@@ -901,6 +913,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Track if this player becomes the streaming host
       let isStreamingHost = false;
       
+      // Track if this player becomes the viewer mode host
+      let isViewerModeHost = false;
+      
       // STREAMING MODE: Only first joiner becomes host, everyone else is a spectator
       if (room.isStreamingMode) {
         if (existingPlayers.length === 0) {
@@ -914,6 +929,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isSpectator = true;
           playerPosition = null;
           console.log(`[STREAMING MODE] Player ${nickname} joining as spectator (streaming room)`);
+        }
+      }
+      // VIEWER MODE: Only first joiner becomes host at position 0, everyone else is a viewer (spectator)
+      else if (room.isViewerMode) {
+        if (existingPlayers.length === 0) {
+          // First joiner in viewer mode becomes host at position 0
+          isSpectator = false;
+          playerPosition = 0;
+          isViewerModeHost = true;
+          console.log(`[VIEWER MODE] First joiner ${nickname} becomes host at position 0`);
+        } else {
+          // All subsequent joiners in viewer mode are forced to be spectators (viewers)
+          isSpectator = true;
+          playerPosition = null;
+          console.log(`[VIEWER MODE] Player ${nickname} joining as viewer/spectator`);
         }
       }
       // NORMAL MODE: Existing behavior
@@ -946,7 +976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (updatedRoom) room = updatedRoom;
       }
 
-      res.json({ player, room, isStreamingHost });
+      res.json({ player, room, isStreamingHost, isViewerModeHost });
     } catch (error) {
       console.error("Join room error:", error);
       res.status(400).json({ error: "Failed to join room" });
