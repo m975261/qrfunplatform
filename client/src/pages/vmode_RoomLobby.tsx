@@ -33,10 +33,14 @@ export default function VmodeRoomLobby() {
     replacePlayer, 
     kickPlayer: kickPlayerWS,
     assignSpectator,
+    streamSubscribe,
     isConnected 
   } = useSocket();
   const roomId = params?.roomId;
   const playerId = localStorage.getItem("playerId");
+  
+  // Track if this is the room creator (has no playerId in Viewer Mode)
+  const isRoomCreator = !playerId && !!roomId;
 
   const { data: roomData, isLoading: isLoadingRoom, error: roomError } = useQuery({
     queryKey: ["/api/rooms", roomId],
@@ -51,11 +55,19 @@ export default function VmodeRoomLobby() {
   }, [roomData]);
 
   useEffect(() => {
-    if (roomId && playerId && isConnected) {
-      console.log("Joining room via WebSocket:", { playerId, roomId });
-      joinRoom(playerId, roomId);
+    if (roomId && isConnected) {
+      if (playerId) {
+        // Player joining room
+        console.log("Joining room via WebSocket:", { playerId, roomId });
+        joinRoom(playerId, roomId);
+      } else {
+        // Room creator subscribing as viewer (no playerId)
+        const roomCode = new URLSearchParams(window.location.search).get('code');
+        console.log("Subscribing to room as viewer:", { roomId, roomCode });
+        streamSubscribe(roomId, roomCode || undefined);
+      }
     }
-  }, [roomId, playerId, isConnected, joinRoom]);
+  }, [roomId, playerId, isConnected, joinRoom, streamSubscribe]);
 
   // Handle game state transitions
   useEffect(() => {
@@ -224,46 +236,7 @@ export default function VmodeRoomLobby() {
     }
   }, [roomError, roomId, playerId, setLocation]);
 
-  // State for auto-join process
-  const [isJoining, setIsJoining] = useState(false);
-
-  // Auto-join as Host when accessing Viewer Mode lobby without playerId
-  useEffect(() => {
-    if (!playerId && roomId && !isJoining) {
-      const roomCode = new URLSearchParams(window.location.search).get('code');
-      if (!roomCode) return;
-      
-      setIsJoining(true);
-      fetch(`/api/rooms/${roomCode}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname: 'Host' })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.player) {
-            localStorage.setItem("playerId", data.player.id);
-            localStorage.setItem("playerNickname", data.player.nickname);
-            localStorage.setItem("currentRoomId", data.room.id);
-            window.location.reload();
-          }
-        })
-        .catch(error => console.error("Auto-join error:", error))
-        .finally(() => setIsJoining(false));
-    }
-  }, [playerId, roomId, isJoining]);
-
-  // Show loading while auto-joining
-  if (!playerId && roomId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mb-4 mx-auto"></div>
-          <p className="text-xl">Setting up room...</p>
-        </div>
-      </div>
-    );
-  }
+  // In Viewer Mode, room creator doesn't need playerId - they just observe/manage
 
   if (!gameState) {
     return (
@@ -281,7 +254,8 @@ export default function VmodeRoomLobby() {
   const players = gameState.players || [];
   const gamePlayers = players.filter((p: any) => !p.isSpectator);
   const currentPlayer = players.find((p: any) => p.id === playerId);
-  const isHost = currentPlayer?.isHost || currentPlayer?.id === room?.hostId;
+  // Room creator (no playerId) has host controls, or actual host player
+  const isHost = isRoomCreator || currentPlayer?.isHost || currentPlayer?.id === room?.hostId;
   const isStreamingMode = room?.isStreamingMode || false;
   const isViewerMode = room?.isViewerMode || false;
   const isViewer = currentPlayer?.isSpectator && !isHost; // Viewer = spectator who is not host
@@ -293,6 +267,7 @@ export default function VmodeRoomLobby() {
     gamePlayers: gamePlayers.length,
     currentPlayer: currentPlayer?.nickname,
     isHost,
+    isRoomCreator,
     playerId
   });
 
