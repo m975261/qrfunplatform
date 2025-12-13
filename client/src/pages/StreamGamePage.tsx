@@ -156,9 +156,10 @@ export default function StreamGamePage() {
     const prev = prevGameStateRef.current;
     
     // Check for card play (discard pile grew or top card changed)
-    if (prev.topCardId && topCardId && prev.topCardId !== topCardId) {
+    // Only detect if we have valid previous state (prev.currentPlayerIndex not null)
+    if (prev.topCardId && topCardId && prev.topCardId !== topCardId && prev.currentPlayerIndex !== null) {
       // Find who played - player at previous index whose hand shrank
-      const prevPlayer = gamePlayers[prev.currentPlayerIndex ?? 0];
+      const prevPlayer = gamePlayers[prev.currentPlayerIndex];
       if (prevPlayer) {
         const prevHandSize = prev.handSizes[prevPlayer.id] || 0;
         const currHandSize = currentHandSizes[prevPlayer.id] || 0;
@@ -449,20 +450,22 @@ export default function StreamGamePage() {
           <UICard className="bg-white/95 backdrop-blur-sm shadow-lg relative" style={{ height: guestsSize.height }}>
             <CardContent className="p-3 h-full flex flex-col">
               <div
-                className="flex items-center justify-between mb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
-                onMouseDown={handleGuestsDragStart}
-                onTouchStart={handleGuestsDragStart}
+                className="flex items-center justify-between mb-2 flex-shrink-0"
               >
-                <div className="flex items-center gap-2">
+                <div 
+                  className="flex items-center gap-2 cursor-grab active:cursor-grabbing flex-1"
+                  onMouseDown={handleGuestsDragStart}
+                  onTouchStart={handleGuestsDragStart}
+                >
                   <GripVertical className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700">Guests ({spectators.length})</span>
+                  <span className="text-sm font-medium text-gray-700">Guests</span>
                 </div>
                 <button
                   onClick={() => setShowSpectators(false)}
                   className="p-1 hover:bg-gray-100 rounded"
-                  data-testid="close-spectators"
+                  data-testid="toggle-spectators"
                 >
-                  <X className="w-4 h-4 text-gray-400" />
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
                 </button>
               </div>
               

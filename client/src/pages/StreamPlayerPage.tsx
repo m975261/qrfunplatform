@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,15 @@ export default function StreamPlayerPage() {
   // Host controls state for editing nicknames
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [editingPlayerNickname, setEditingPlayerNickname] = useState<string>("");
+  
+  // Card animation state for other players
+  const [cardAnimation, setCardAnimation] = useState<{ type: string; playerId?: string } | null>(null);
+  const prevGameStateRef = useRef<{ 
+    topCardId: string | null; 
+    discardLength: number;
+    currentPlayerIndex: number | null;
+    handSizes: { [playerId: string]: number };
+  }>({ topCardId: null, discardLength: 0, currentPlayerIndex: null, handSizes: {} });
 
   useEffect(() => {
     if (isConnected && roomId && effectivePlayerId) {
@@ -136,6 +145,47 @@ export default function StreamPlayerPage() {
       setTimeout(() => setOneCardMessage(null), 2500);
     }
   }, [gameState?.oneCardMessageTimestamp]);
+
+  // Detect card play/draw animations for all players
+  useEffect(() => {
+    if (room?.status !== 'playing') return;
+    
+    const topCard = room?.topCard || room?.discardPile?.[0];
+    const discardLength = room?.discardPile?.length || 0;
+    const currentPlayerIdx = room?.currentPlayerIndex ?? null;
+    const topCardId = topCard ? `${topCard.color}-${topCard.value}-${topCard.type}-${discardLength}` : null;
+    
+    const currentHandSizes: { [playerId: string]: number } = {};
+    gamePlayers.forEach((p: any) => {
+      currentHandSizes[p.id] = p.hand?.length || p.cardCount || 0;
+    });
+    
+    const prev = prevGameStateRef.current;
+    
+    // Only detect play animation if we have valid previous state
+    if (prev.topCardId && topCardId && prev.topCardId !== topCardId && prev.currentPlayerIndex !== null) {
+      const prevPlayer = gamePlayers[prev.currentPlayerIndex];
+      if (prevPlayer) {
+        const prevHandSize = prev.handSizes[prevPlayer.id] || 0;
+        const currHandSize = currentHandSizes[prevPlayer.id] || 0;
+        if (currHandSize < prevHandSize) {
+          setCardAnimation({ type: 'play', playerId: prevPlayer.id });
+          setTimeout(() => setCardAnimation(null), 600);
+        }
+      }
+    }
+    
+    gamePlayers.forEach((player: any) => {
+      const prevSize = prev.handSizes[player.id] || 0;
+      const currSize = currentHandSizes[player.id] || 0;
+      if (currSize > prevSize && prevSize > 0) {
+        setCardAnimation({ type: 'draw', playerId: player.id });
+        setTimeout(() => setCardAnimation(null), 600);
+      }
+    });
+    
+    prevGameStateRef.current = { topCardId, discardLength, currentPlayerIndex: currentPlayerIdx, handSizes: currentHandSizes };
+  }, [room?.currentPlayerIndex, room?.status, room?.topCard, room?.discardPile, gamePlayers]);
 
   // Game end detection
   useEffect(() => {
@@ -330,7 +380,7 @@ export default function StreamPlayerPage() {
           <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0 max-w-xs">
             <CardContent className="p-3">
               <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                Guests ({spectators.length})
+                Guests
               </div>
               
               {spectators.length === 0 ? (
@@ -395,6 +445,7 @@ export default function StreamPlayerPage() {
         onChooseColor={handleColorChoice}
         isSpectator={isSpectator}
         colorChoiceRequested={gameState?.colorChoiceRequested || room?.waitingForColorChoice === effectivePlayerId}
+        cardAnimation={cardAnimation}
         isHost={isHost}
         onKickPlayer={handleKickPlayer}
         onEditPlayer={(pid, nickname) => {

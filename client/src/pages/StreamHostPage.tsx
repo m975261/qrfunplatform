@@ -410,7 +410,7 @@ export default function StreamHostPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="text-lg font-bold text-gray-800 flex items-center gap-2">
                 <Users className="w-5 h-5 text-purple-600" />
-                Guests ({spectators.length})
+                Guests
               </div>
             </div>
             
