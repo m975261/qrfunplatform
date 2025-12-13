@@ -1,0 +1,169 @@
+I want to update the Viewer Mode lobby creation flow, but I do NOT want to change any game logic, rules, UI, or socket behavior during gameplay. Viewer Mode gameplay must remain exactly the same once the game starts. Only the pre-game lobby flow should change.
+
+Below are the exact requirements:
+
+1. Viewer Mode: Room Creation Flow Changes
+
+When Viewer Mode creates a room:
+
+Do NOT ask for a nickname when the room is created.
+
+The lobby must open empty:
+
+No players in any slot
+
+No players listed in the viewer table
+
+The host is NOT assigned at room creation time.
+
+The room should show the lobby UI but with no host and no players yet.
+
+2. Join Flow for Viewer Mode
+
+All players (including the future host) must join the room using:
+
+Link
+
+QR code
+
+Game code
+
+When someone joins Viewer Mode:
+
+They must enter a nickname at this step (not at room creation).
+
+The first player to join becomes the host and is automatically placed into slot 1.
+
+This first player must be redirected to the host page (the same page the host normally sees).
+
+All other joining players:
+
+Appear in the viewer table
+
+They cannot click to join slots
+
+They all see the same lobby page layout, same as other viewers
+
+This means:
+
+No one except the host can join slots during the lobby
+
+Host will later place players in slots (after the game starts, normal join/kick behavior must stay unchanged)
+
+3. Lobby Page Behavior (Before Game Starts)
+
+All players (including the host) must see:
+
+The same lobby page UI
+
+Same player list
+
+Same viewer table
+
+BUT viewer users do NOT have slot selection buttons
+
+Only the host sees the Start Game button
+
+Only the host can later move players into slots after game begins (normal logic stays)
+
+This ensures identical lobby display for all except host authority.
+
+4. When the Host Starts the Game
+
+When the host presses Start Game:
+
+Gameplay must switch to the existing Viewer Mode gameplay UI, but:
+
+The viewers get the full board view WITHOUT their own card deck at the bottom
+
+The 4 active players get their normal hands visible to themselves only
+
+This behavior is already implemented in Viewer Mode; do NOT modify game logic.
+
+IMPORTANT:
+
+Once the game starts:
+
+All existing features must work exactly the same as before, including:
+
+Kick
+
+Replace player with viewer
+
+Rejoin logic
+
+Same cards for reconnecting players
+
+New players joining after start get new cards
+
+Game pause logic
+
+Voting system for host leave
+
+Notifications
+
+Stream updates
+
+All game rules, penalties, turn logic
+
+UI layout for active players
+
+Do NOT modify any of the above.
+
+5. Summary of Required Behavior Changes
+
+Modify ONLY the pre-game lobby workflow in Viewer Mode:
+
+A) Room creation:
+
+No nickname input
+
+Empty lobby
+
+No players assigned
+
+B) First user to join:
+
+Enters nickname
+
+Becomes host automatically
+
+Automatically assigned to slot 1
+
+Redirected to host lobby page
+
+C) Other users:
+
+Enter nickname
+
+Appear in viewer table
+
+Cannot click to join slots
+
+See same lobby layout as others
+
+D) Game start:
+
+Host presses Start
+
+Viewer Mode gameplay begins with ZERO changes to existing game logic
+
+6. DO NOT CHANGE ANY EXISTING LOGIC OUTSIDE THE LOBBY FLOW
+
+Do NOT modify the UNO rules
+
+Do NOT modify game logic
+
+Do NOT modify socket messages
+
+Do NOT modify the card deck
+
+Do NOT modify penalties, kicks, joins
+
+Do NOT modify host logic during gameplay
+
+Do NOT modify any of the Guro/Normal/Stream modes
+
+Do NOT modify any event flows after Start Game
+
+ONLY change the lobby flow as specified above.
