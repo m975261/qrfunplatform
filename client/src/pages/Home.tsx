@@ -829,32 +829,6 @@ export default function Home() {
               </div>
             </div>
             
-            {/* NORMAL USER: Advanced Checkboxes */}
-            {!isGuruUserLoggedIn && (
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <Checkbox 
-                    id="viewer-mode" 
-                    checked={isViewerMode}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setShowViewerConfirm(true);
-                      } else {
-                        setIsViewerMode(false);
-                      }
-                    }}
-                  />
-                  <Label 
-                    htmlFor="viewer-mode" 
-                    className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"
-                  >
-                    <Eye className="h-4 w-4 text-teal-500" />
-                    Advanced (Viewer Mode)
-                  </Label>
-                </div>
-              </div>
-            )}
-            
             <div className="flex space-x-2">
               <Button
                 onClick={() => {
@@ -883,6 +857,31 @@ export default function Home() {
                 Create Room
               </Button>
             </div>
+            
+            {/* NORMAL USER: Advanced option - subtle, at the bottom */}
+            {!isGuruUserLoggedIn && (
+              <div className="flex items-center justify-center gap-1.5 pt-2 opacity-50 hover:opacity-80 transition-opacity">
+                <Checkbox 
+                  id="viewer-mode" 
+                  checked={isViewerMode}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setShowViewerConfirm(true);
+                    } else {
+                      setIsViewerMode(false);
+                    }
+                  }}
+                  className="h-3 w-3"
+                />
+                <Label 
+                  htmlFor="viewer-mode" 
+                  className="text-[10px] text-gray-400 cursor-pointer flex items-center gap-1"
+                >
+                  <Eye className="h-2.5 w-2.5" />
+                  Advanced (Viewer Mode)
+                </Label>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
