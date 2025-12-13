@@ -847,6 +847,9 @@ export default function VmodeGame() {
   const topCard = room.discardPile?.[0];
   const isGuruUser = localStorage.getItem("isGuruUser") === "true";
   
+  // Check if guru is under a +4 penalty - only +4 can respond to +4, not +2 or color change
+  const isUnderWild4Penalty = room.pendingDraw > 0 && topCard?.type === 'wild4';
+  
   // Helper function to get avatar emoji
   const getPlayerAvatar = (playerId: string, nickname: string) => {
     const savedAvatar = localStorage.getItem(`avatar_${playerId}`);
@@ -1752,8 +1755,13 @@ export default function VmodeGame() {
                 {guruCardMode === null ? (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleGuruStartCard('+2')}
-                      className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-sm rounded-lg border-2 border-white/50 shadow-lg hover:scale-105 transition-transform"
+                      onClick={() => !isUnderWild4Penalty && handleGuruStartCard('+2')}
+                      disabled={isUnderWild4Penalty}
+                      className={`px-3 py-1.5 text-white font-bold text-sm rounded-lg border-2 border-white/50 shadow-lg transition-transform ${
+                        isUnderWild4Penalty 
+                          ? 'bg-gray-500 opacity-50 cursor-not-allowed' 
+                          : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 hover:scale-105'
+                      }`}
                       data-testid="button-guru-plus2"
                     >
                       🧙‍♂️ +2
@@ -1766,8 +1774,13 @@ export default function VmodeGame() {
                       🧙‍♂️ +4
                     </button>
                     <button
-                      onClick={() => handleGuruStartCard('color' as any)}
-                      className="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-white font-bold text-sm rounded-lg border-2 border-white/50 shadow-lg hover:scale-105 transition-transform"
+                      onClick={() => !isUnderWild4Penalty && handleGuruStartCard('color' as any)}
+                      disabled={isUnderWild4Penalty}
+                      className={`px-3 py-1.5 text-white font-bold text-sm rounded-lg border-2 border-white/50 shadow-lg transition-transform ${
+                        isUnderWild4Penalty 
+                          ? 'bg-gray-500 opacity-50 cursor-not-allowed' 
+                          : 'bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 hover:scale-105'
+                      }`}
                       data-testid="button-guru-color"
                     >
                       🎨 Color
