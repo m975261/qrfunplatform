@@ -1371,12 +1371,58 @@ export default function VmodeGame() {
                         </div>
                       )}
 
-                      {/* Card count */}
-                      {!player.finishPosition && (
-                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
-                          {player.hand?.length || 0}
-                        </div>
-                      )}
+                      {/* Face-down card fan - same design as Stream Mode */}
+                      {!player.finishPosition && (() => {
+                        const cardCount = player.hand?.length || 0;
+                        const displayCardCount = Math.min(cardCount, 10);
+                        
+                        const getCardFanStyle = (pos: number, cardIndex: number, totalCards: number) => {
+                          const fanSpread = totalCards > 1 ? 8 : 0;
+                          const centerOffset = (totalCards - 1) / 2;
+                          const rotation = (cardIndex - centerOffset) * fanSpread;
+                          
+                          if (pos === 0) {
+                            return { transform: `rotate(${rotation}deg) translateY(-2px)`, marginLeft: cardIndex > 0 ? '-8px' : '0' };
+                          } else if (pos === 1) {
+                            return { transform: `rotate(${rotation + 90}deg)`, marginTop: cardIndex > 0 ? '-8px' : '0' };
+                          } else if (pos === 2) {
+                            return { transform: `rotate(${rotation + 180}deg) translateY(2px)`, marginLeft: cardIndex > 0 ? '-8px' : '0' };
+                          } else {
+                            return { transform: `rotate(${rotation - 90}deg)`, marginTop: cardIndex > 0 ? '-8px' : '0' };
+                          }
+                        };
+                        
+                        const getCardFanPosition = (pos: number) => {
+                          if (pos === 0) return 'absolute -top-16 left-1/2 -translate-x-1/2 flex flex-row';
+                          if (pos === 1) return 'absolute top-1/2 -right-16 -translate-y-1/2 flex flex-col';
+                          if (pos === 2) return 'absolute -bottom-16 left-1/2 -translate-x-1/2 flex flex-row';
+                          return 'absolute top-1/2 -left-16 -translate-y-1/2 flex flex-col';
+                        };
+                        
+                        return (
+                          <div className={getCardFanPosition(position)}>
+                            {Array.from({ length: displayCardCount }).map((_, i) => (
+                              <div
+                                key={i}
+                                className="w-7 h-10 md:w-10 md:h-14 bg-gradient-to-br from-red-600 to-red-800 rounded-sm border border-red-400 shadow-md"
+                                style={{
+                                  ...getCardFanStyle(position, i, displayCardCount),
+                                  zIndex: i,
+                                }}
+                              >
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <span className="text-yellow-300 text-[6px] md:text-[8px] font-bold">UNO</span>
+                                </div>
+                              </div>
+                            ))}
+                            {cardCount > 10 && (
+                              <div className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[7px] px-1 rounded-full font-bold z-20">
+                                +{cardCount - 10}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Controls */}
                       {player.id === playerId && (
