@@ -47,26 +47,21 @@ export default function ChatPanel({ messages, players, onSendMessage, onSendEmoj
             </Button>
           </div>
 
-          {/* Messages */}
+          {/* Messages - only show text chat, emojis show near player avatars */}
           <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
-            {messages.map((message: any, index: number) => (
+            {messages.filter((m: any) => m.type === "chat" || m.type === "system").map((message: any, index: number) => (
               <div key={index} className="text-sm">
                 {message.type === "chat" ? (
                   <>
                     <span className="font-medium text-uno-blue">{getPlayerName(message.playerId)}:</span>
                     <span className="text-gray-700 ml-1">{message.message}</span>
                   </>
-                ) : message.type === "emoji" ? (
-                  <>
-                    <span className="font-medium text-uno-blue">{getPlayerName(message.playerId)}:</span>
-                    <span className="ml-1">{message.emoji}</span>
-                  </>
                 ) : (
                   <span className="text-gray-500 italic">{message.message}</span>
                 )}
               </div>
             ))}
-            {messages.length === 0 && (
+            {messages.filter((m: any) => m.type === "chat" || m.type === "system").length === 0 && (
               <div className="text-gray-500 text-center text-sm">No messages yet</div>
             )}
           </div>

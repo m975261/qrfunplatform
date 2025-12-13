@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRoute, useSearch, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, QrCode, X, Link2, ChevronLeft, ChevronRight, Users, GripVertical, MessageCircle } from "lucide-react";
+import { Copy, QrCode, X, Link2, ChevronLeft, ChevronRight, Users, GripVertical } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSocket } from "@/hooks/useSocket";
 import StreamGameBoard from "@/components/game/StreamGameBoard";
@@ -28,6 +28,12 @@ export default function StreamGamePage() {
   const [showSpectators, setShowSpectators] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [cardAnimation, setCardAnimation] = useState<{ type: string; playerId?: string } | null>(null);
+  const [guestsPosition, setGuestsPosition] = useState({ x: window.innerWidth - 280, y: 80 });
+  const [guestsSize, setGuestsSize] = useState({ width: 200, height: 150 });
+  const [isDraggingGuests, setIsDraggingGuests] = useState(false);
+  const [isResizingGuests, setIsResizingGuests] = useState(false);
+  const [guestsDragStartPos, setGuestsDragStartPos] = useState({ x: 0, y: 0 });
+  const [guestsResizeStart, setGuestsResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const prevGameStateRef = useRef<{ 
     topCardId: string | null; 
     discardLength: number;
@@ -199,18 +205,37 @@ export default function StreamGamePage() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent | TouchEvent) => {
-      if (!isDraggingQR) return;
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      setQrPosition({
-        x: Math.max(0, Math.min(window.innerWidth - 256, clientX - dragStartPos.x)),
-        y: Math.max(0, Math.min(window.innerHeight - 300, clientY - dragStartPos.y))
-      });
+      
+      if (isDraggingQR) {
+        setQrPosition({
+          x: Math.max(0, Math.min(window.innerWidth - 256, clientX - dragStartPos.x)),
+          y: Math.max(0, Math.min(window.innerHeight - 300, clientY - dragStartPos.y))
+        });
+      }
+      
+      if (isDraggingGuests) {
+        setGuestsPosition({
+          x: Math.max(0, Math.min(window.innerWidth - guestsSize.width, clientX - guestsDragStartPos.x)),
+          y: Math.max(0, Math.min(window.innerHeight - guestsSize.height, clientY - guestsDragStartPos.y))
+        });
+      }
+      
+      if (isResizingGuests) {
+        const newWidth = Math.max(150, Math.min(400, guestsResizeStart.width + (clientX - guestsResizeStart.x)));
+        const newHeight = Math.max(100, Math.min(400, guestsResizeStart.height + (clientY - guestsResizeStart.y)));
+        setGuestsSize({ width: newWidth, height: newHeight });
+      }
     };
 
-    const handleMouseUp = () => setIsDraggingQR(false);
+    const handleMouseUp = () => {
+      setIsDraggingQR(false);
+      setIsDraggingGuests(false);
+      setIsResizingGuests(false);
+    };
 
-    if (isDraggingQR) {
+    if (isDraggingQR || isDraggingGuests || isResizingGuests) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.addEventListener('touchmove', handleMouseMove);
@@ -223,7 +248,24 @@ export default function StreamGamePage() {
       document.removeEventListener('touchmove', handleMouseMove);
       document.removeEventListener('touchend', handleMouseUp);
     };
-  }, [isDraggingQR, dragStartPos]);
+  }, [isDraggingQR, isDraggingGuests, isResizingGuests, dragStartPos, guestsDragStartPos, guestsResizeStart, guestsSize]);
+
+  const handleGuestsDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    setIsDraggingGuests(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setGuestsDragStartPos({ x: clientX - guestsPosition.x, y: clientY - guestsPosition.y });
+  };
+
+  const handleGuestsResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizingGuests(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setGuestsResizeStart({ x: clientX, y: clientY, width: guestsSize.width, height: guestsSize.height });
+  };
 
   const handleCopyCode = () => {
     if (room?.code) {
@@ -393,58 +435,76 @@ export default function StreamGamePage() {
         </div>
       </div>
 
-      {/* Simple Viewers Panel - Fixed position like StreamPlayerPage */}
-      <div className="fixed top-20 right-0 z-20 flex items-start">
-        {/* Toggle Button */}
-        <button
-          onClick={() => setShowSpectators(!showSpectators)}
-          className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg p-2 hover:bg-gray-100 transition-colors border-r-0"
-          data-testid="toggle-spectators"
+      {/* Movable and Resizable Guests Panel */}
+      {showSpectators ? (
+        <div
+          className="fixed z-20 select-none"
+          style={{
+            left: guestsPosition.x,
+            top: guestsPosition.y,
+            width: guestsSize.width,
+            cursor: isDraggingGuests ? 'grabbing' : 'default'
+          }}
         >
-          {showSpectators ? (
-            <ChevronRight className="w-4 h-4 text-gray-600" />
-          ) : (
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4 text-gray-600" />
-              <span className="text-xs font-medium text-gray-600">
-                {spectators.length + (gameState?.streamViewerCount ?? 0)}
-              </span>
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
-            </div>
-          )}
-        </button>
-        
-        {/* Panel Content - Just names, no status */}
-        {showSpectators && (
-          <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0 max-w-xs">
-            <CardContent className="p-3">
-              <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                Spectators ({spectators.length})
-                {(gameState?.streamViewerCount ?? 0) > 0 && (
-                  <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full" data-testid="stream-viewer-count">
-                    + {gameState?.streamViewerCount} watching
-                  </span>
-                )}
+          <UICard className="bg-white/95 backdrop-blur-sm shadow-lg relative" style={{ height: guestsSize.height }}>
+            <CardContent className="p-3 h-full flex flex-col">
+              <div
+                className="flex items-center justify-between mb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
+                onMouseDown={handleGuestsDragStart}
+                onTouchStart={handleGuestsDragStart}
+              >
+                <div className="flex items-center gap-2">
+                  <GripVertical className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700">Guests ({spectators.length})</span>
+                </div>
+                <button
+                  onClick={() => setShowSpectators(false)}
+                  className="p-1 hover:bg-gray-100 rounded"
+                  data-testid="close-spectators"
+                >
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
               </div>
               
-              {spectators.length === 0 ? (
-                <div className="text-sm text-gray-400 italic">No viewers yet</div>
-              ) : (
-                <div className="space-y-2" data-testid="viewers-list">
-                  {spectators.map((spectator: any) => (
-                    <div key={spectator.id} className="flex items-center gap-2" data-testid={`viewer-${spectator.id}`}>
-                      <div className="w-6 h-6 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {spectator.nickname?.[0]?.toUpperCase()}
+              <div className="flex-1 overflow-y-auto">
+                {spectators.length === 0 ? (
+                  <div className="text-sm text-gray-400 italic">No guests yet</div>
+                ) : (
+                  <div className="space-y-2" data-testid="viewers-list">
+                    {spectators.map((spectator: any) => (
+                      <div key={spectator.id} className="flex items-center gap-2" data-testid={`viewer-${spectator.id}`}>
+                        <div className="w-6 h-6 bg-gradient-to-br from-uno-blue to-uno-green rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          {spectator.nickname?.[0]?.toUpperCase()}
+                        </div>
+                        <span className="text-sm text-gray-600 truncate" data-testid={`viewer-name-${spectator.id}`}>{spectator.nickname}</span>
                       </div>
-                      <span className="text-sm text-gray-600 truncate" data-testid={`viewer-name-${spectator.id}`}>{spectator.nickname}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </CardContent>
+            {/* Resize handle */}
+            <div
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+              onMouseDown={handleGuestsResizeStart}
+              onTouchStart={handleGuestsResizeStart}
+            >
+              <svg className="w-4 h-4 text-gray-400" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M14 10V14H10L14 10Z M14 6V8L8 14H6L14 6Z M14 2V4L4 14H2L14 2Z" />
+              </svg>
+            </div>
           </UICard>
-        )}
-      </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowSpectators(true)}
+          className="fixed top-20 right-4 z-20 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg p-2 hover:bg-gray-100 transition-colors flex items-center gap-1"
+          data-testid="toggle-spectators"
+        >
+          <Users className="w-4 h-4 text-gray-600" />
+          <span className="text-xs font-medium text-gray-600">{spectators.length}</span>
+        </button>
+      )}
 
       {/* Game Board - Using StreamGameBoard with isSpectator=true for OBS view */}
       {/* For spectator/OBS view, pass undefined for currentPlayerId so isMyTurn is always false */}
@@ -516,16 +576,6 @@ export default function StreamGamePage() {
         </div>
       )}
 
-      {/* Chat Toggle Button - Bottom left corner */}
-      <Button
-        onClick={() => setShowChat(!showChat)}
-        className="fixed bottom-4 left-4 z-40 bg-white/95 hover:bg-white text-gray-800 shadow-lg"
-        size="sm"
-        data-testid="chat-toggle"
-      >
-        <MessageCircle className="h-4 w-4 mr-1" />
-        Chat
-      </Button>
 
       {/* Chat Panel - Spectator view (read-only visible) */}
       {showChat && (

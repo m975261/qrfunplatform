@@ -410,12 +410,7 @@ export default function StreamHostPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="text-lg font-bold text-gray-800 flex items-center gap-2">
                 <Users className="w-5 h-5 text-purple-600" />
-                Spectators ({spectators.length})
-                {(gameState?.streamViewerCount ?? 0) > 0 && (
-                  <span className="ml-2 bg-purple-100 text-purple-700 text-sm px-2 py-0.5 rounded-full" data-testid="stream-viewer-count">
-                    + {gameState?.streamViewerCount} watching
-                  </span>
-                )}
+                Guests ({spectators.length})
               </div>
             </div>
             

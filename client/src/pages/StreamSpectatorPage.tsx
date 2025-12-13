@@ -222,7 +222,7 @@ export default function StreamSpectatorPage() {
             <UICard className="bg-white/95 backdrop-blur-sm shadow-lg rounded-l-lg rounded-r-none mr-0">
               <CardContent className="p-3">
                 <div className="text-sm font-medium text-gray-700 mb-2">
-                  Viewers ({spectators.length})
+                  Guests ({spectators.length})
                 </div>
                 
                 {spectators.length === 0 ? (
@@ -380,7 +380,7 @@ export default function StreamSpectatorPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-gray-700 mb-3">
               <Users className="w-5 h-5" />
-              <span className="font-semibold">Viewers ({spectators.length})</span>
+              <span className="font-semibold">Guests ({spectators.length})</span>
             </div>
             {spectators.length > 0 ? (
               <div className="flex flex-wrap gap-2">
