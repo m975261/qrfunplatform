@@ -1309,7 +1309,7 @@ export default function VmodeGame() {
                         className={`absolute text-xs font-semibold text-white bg-black/70 px-2 py-1 rounded-full whitespace-nowrap ${
                           position === 0 ? 'left-full top-1/2 -translate-y-1/2 ml-2'
                           : position === 1 ? 'top-full left-1/2 -translate-x-1/2 mt-2'
-                          : position === 2 ? 'right-3/4 top-full mt-2'
+                          : position === 2 ? 'right-3/4 top-full -mt-12'
                           : 'left-1/2 -translate-x-1/2 -top-8'
                         }`}
                       >
