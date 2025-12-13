@@ -260,16 +260,25 @@ export default function VmodeGame() {
       return;
     }
     
-    // Only show color picker if this player is the one who needs to choose
-    if (gameState?.room?.waitingForColorChoice === playerId || 
-        (gameState?.colorChoiceRequested && gameState?.room?.currentPlayerIndex !== undefined)) {
+    // If color is already set, don't show the picker (guru already chose color)
+    if (gameState?.room?.currentColor && gameState?.room?.currentColor !== 'wild') {
+      setShowColorPicker(false);
+      return;
+    }
+    
+    // Only show color picker if this specific player is the one who needs to choose
+    // Check waitingForColorChoice explicitly matches this player's ID
+    if (gameState?.room?.waitingForColorChoice === playerId) {
+      setShowColorPicker(true);
+    } else if (gameState?.colorChoiceRequested && gameState?.room?.currentPlayerIndex !== undefined) {
+      // Secondary check: only if colorChoiceRequested and this is the current player
       const players = gameState?.players?.filter((p: any) => !p.isSpectator).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
       const currentPlayer = players?.[gameState.room.currentPlayerIndex];
-      if (currentPlayer?.id === playerId) {
+      if (currentPlayer?.id === playerId && gameState?.room?.waitingForColorChoice === playerId) {
         setShowColorPicker(true);
       }
     }
-  }, [gameState?.colorChoiceRequested, gameState?.room?.waitingForColorChoice, gameState?.room?.currentPlayerIndex, gameState?.players, playerId]);
+  }, [gameState?.colorChoiceRequested, gameState?.room?.waitingForColorChoice, gameState?.room?.currentPlayerIndex, gameState?.room?.currentColor, gameState?.players, playerId]);
 
   // Handle active color updates for visual refresh
   useEffect(() => {
