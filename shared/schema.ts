@@ -15,6 +15,7 @@ export const rooms = pgTable("rooms", {
   hostId: varchar("host_id"),
   status: varchar("status", { enum: ["waiting", "playing", "finished", "paused"] }).notNull().default("waiting"),
   isStreamingMode: boolean("is_streaming_mode").default(false),
+  isViewerMode: boolean("is_viewer_mode").default(false),
   streamPageConnectionId: text("stream_page_connection_id"),
   maxPlayers: integer("max_players").notNull().default(4),
   currentPlayerIndex: integer("current_player_index").default(0),

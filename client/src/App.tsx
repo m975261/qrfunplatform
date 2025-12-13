@@ -16,6 +16,8 @@ import StreamPlayerPage from "@/pages/StreamPlayerPage";
 import StreamJoinPage from "@/pages/StreamJoinPage";
 import StreamSpectatorPage from "@/pages/StreamSpectatorPage";
 import XOPlaceholder from "@/pages/XOPlaceholder";
+import VmodeRoomLobby from "@/pages/vmode_RoomLobby";
+import VmodeGame from "@/pages/vmode_Game";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AssetGenerator from "@/pages/AssetGenerator";
@@ -39,6 +41,9 @@ function Router() {
       <Route path="/stream/:roomId/host/game" component={StreamPlayerPage} />
       <Route path="/stream/:roomId/player/:slot" component={StreamPlayerPage} />
       <Route path="/stream/:roomId" component={StreamPage} />
+      {/* Viewer Mode Routes */}
+      <Route path="/vmode/room/:roomId" component={VmodeRoomLobby} />
+      <Route path="/vmode/game/:roomId" component={VmodeGame} />
       <Route path="/man" component={AdminLogin} />
       <Route path="/man/dashboard" component={AdminDashboard} />
       <Route path="/assets" component={AssetGenerator} />

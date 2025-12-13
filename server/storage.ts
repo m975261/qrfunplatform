@@ -51,6 +51,17 @@ export class MemStorage implements IStorage {
       pendingDraw: insertRoom.pendingDraw || null,
       positionHands: insertRoom.positionHands || {},
       activePositions: insertRoom.activePositions || [],
+      isStreamingMode: insertRoom.isStreamingMode ?? false,
+      isViewerMode: insertRoom.isViewerMode ?? false,
+      streamPageConnectionId: insertRoom.streamPageConnectionId || null,
+      hostElectionActive: insertRoom.hostElectionActive ?? false,
+      hostElectionStartTime: insertRoom.hostElectionStartTime || null,
+      hostElectionVotes: insertRoom.hostElectionVotes || {},
+      hostElectionEligibleVoters: insertRoom.hostElectionEligibleVoters || [],
+      hostDisconnectedAt: insertRoom.hostDisconnectedAt || null,
+      hostPreviousId: insertRoom.hostPreviousId || null,
+      hostPreviousPosition: insertRoom.hostPreviousPosition || null,
+      noHostMode: insertRoom.noHostMode ?? false,
     };
     this.rooms.set(id, room);
     return room;

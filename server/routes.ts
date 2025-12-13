@@ -669,9 +669,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create room (supports normal and streaming mode)
   app.post("/api/rooms", async (req, res) => {
     try {
-      const { hostNickname, isStreamingMode } = z.object({
+      const { hostNickname, isStreamingMode, isViewerMode } = z.object({
         hostNickname: z.string().min(1).max(20).optional(),
-        isStreamingMode: z.boolean().optional().default(false)
+        isStreamingMode: z.boolean().optional().default(false),
+        isViewerMode: z.boolean().optional().default(false)
       }).parse(req.body);
 
       const code = UnoGameLogic.generateRoomCode();
@@ -681,7 +682,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         code,
         hostId: "", // Will be set when first player joins (streaming mode) or host joins (normal mode)
         status: "waiting",
-        isStreamingMode: isStreamingMode
+        isStreamingMode: isStreamingMode,
+        isViewerMode: isViewerMode
       });
 
       // STREAMING MODE: Create empty lobby - no host player needed (first joiner becomes host)
@@ -768,7 +770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      res.json({ room: updatedRoom, qrCode, player: hostPlayer, hostNickname });
+      res.json({ room: updatedRoom, qrCode, player: hostPlayer, hostNickname, isViewerMode: isViewerMode });
     } catch (error) {
       console.error("Room creation error:", error);
       res.status(400).json({ error: "Failed to create room", details: error instanceof Error ? error.message : String(error) });
