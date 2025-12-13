@@ -223,6 +223,62 @@ export default function VmodeRoomLobby() {
     }
   }, [roomError, roomId, playerId, setLocation]);
 
+  // Special case: Viewer Mode room creator has no playerId yet
+  // They need to join via the link to become the first player (host)
+  if (!playerId && roomId) {
+    const roomCode = new URLSearchParams(window.location.search).get('code');
+    const joinUrl = `${window.location.origin}/?room=${roomCode}`;
+    
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center p-4">
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-uno-red to-uno-yellow rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white font-bold text-xl">UNO</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Viewer Mode Room Created!</h2>
+            <p className="text-gray-600 mb-4">Room Code: <span className="font-mono font-bold text-uno-blue text-xl">{roomCode}</span></p>
+            <p className="text-sm text-gray-500 mb-6">
+              Share this link with players. The first person to join becomes the host!
+            </p>
+            <div className="space-y-3">
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(joinUrl);
+                  toast({
+                    title: "Link Copied!",
+                    description: "Share this link with players",
+                    duration: 2000,
+                  });
+                }}
+                className="w-full bg-uno-blue hover:bg-blue-600 text-white"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Join Link
+              </Button>
+              <Button
+                onClick={() => {
+                  window.location.href = joinUrl;
+                }}
+                className="w-full bg-uno-green hover:bg-green-600 text-white"
+              >
+                <Play className="mr-2 h-4 w-4" />
+                Join as Host
+              </Button>
+              <Button
+                onClick={() => setLocation("/")}
+                variant="outline"
+                className="w-full"
+              >
+                Back to Home
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!gameState) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center">
