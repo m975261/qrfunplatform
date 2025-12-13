@@ -1313,7 +1313,7 @@ export default function VmodeGame() {
                           position === 0 ? 'left-full top-1/2 -translate-y-1/2 ml-2'
                           : position === 1 ? 'top-full left-1/2 -translate-x-1/2 mt-2'
                           : position === 2 ? 'right-3/4 top-full mt-2'
-                          : 'right-1/4 bottom-full -translate-x-1/2 mb-2'
+                          : 'left-1/2 -translate-x-1/2 -top-8'
                         }`}
                       >
                         {player.nickname}
