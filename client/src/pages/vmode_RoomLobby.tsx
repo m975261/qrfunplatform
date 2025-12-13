@@ -72,9 +72,10 @@ export default function VmodeRoomLobby() {
   // Handle game state transitions
   useEffect(() => {
     if (gameState?.room?.status === "playing") {
-      setLocation(`/vmode/game/${roomId}`);
+      const roomCode = gameState?.room?.code || new URLSearchParams(window.location.search).get('code');
+      setLocation(`/vmode/game/${roomId}?code=${roomCode}`);
     }
-  }, [gameState?.room?.status, roomId, setLocation]);
+  }, [gameState?.room?.status, roomId, setLocation, gameState?.room?.code]);
 
   // Handle end-game reset when room status changes from "finished"
   useEffect(() => {

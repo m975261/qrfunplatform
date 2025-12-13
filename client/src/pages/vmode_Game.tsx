@@ -46,9 +46,13 @@ export default function VmodeGame() {
     hostEndGame,
     hostExitRoom,
     voteNoHost,
+    streamSubscribe,
     isConnected,
     refreshGameState
   } = useSocket();
+  
+  // Track if this is the room creator (no playerId in Viewer Mode)
+  const isRoomCreator = !playerId && !!roomId;
 
   const [showChat, setShowChat] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -99,17 +103,18 @@ export default function VmodeGame() {
   });
 
   useEffect(() => {
-    // If no playerId exists, redirect to home to join properly
-    if (!playerId && roomId) {
-      console.log("No playerId found, redirecting to home");
-      setLocation(`/?room=${roomId}`);
-      return;
+    if (roomId && isConnected) {
+      if (playerId) {
+        // Player joining game
+        joinRoom(playerId, roomId);
+      } else {
+        // Room creator subscribing as viewer (no playerId)
+        const roomCode = new URLSearchParams(window.location.search).get('code');
+        console.log("Subscribing to game as viewer:", { roomId, roomCode });
+        streamSubscribe(roomId, roomCode || undefined);
+      }
     }
-    
-    if (roomId && playerId && isConnected) {
-      joinRoom(playerId, roomId);
-    }
-  }, [roomId, playerId, isConnected, joinRoom, setLocation]);
+  }, [roomId, playerId, isConnected, joinRoom, streamSubscribe]);
 
   useEffect(() => {
     // Sync voting window visibility with host disconnection state
@@ -753,7 +758,8 @@ export default function VmodeGame() {
   const currentGamePlayer = gamePlayers[room.currentPlayerIndex || 0];
   const isMyTurn = currentGamePlayer?.id === playerId;
   const isPaused = room.status === "paused";
-  const isHost = currentPlayer?.id === room?.hostId;
+  // Room creator (no playerId) has host controls, or actual host player
+  const isHost = isRoomCreator || currentPlayer?.id === room?.hostId;
   const topCard = room.discardPile?.[0];
   const isGuruUser = localStorage.getItem("isGuruUser") === "true";
   
