@@ -125,6 +125,56 @@ export default function VmodeGame() {
     }
   }, [roomId, playerId, isConnected, joinRoom, streamSubscribe]);
 
+  // Fetch QR code when room data is available
+  useEffect(() => {
+    if (gameState?.room?.id) {
+      fetch(`/api/rooms/${gameState.room.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.qrCode) {
+            setQRCodeData(data.qrCode);
+          }
+        })
+        .catch(err => console.error("Failed to fetch QR code:", err));
+    }
+  }, [gameState?.room?.id]);
+
+  // QR Code drag handlers
+  const handleQRDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDraggingQR(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setDragStartPosQR({ x: clientX - qrPosition.x, y: clientY - qrPosition.y });
+  };
+
+  // Global mouse/touch move and end for QR dragging
+  useEffect(() => {
+    if (!isDraggingQR) return;
+    
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      setQrPosition({
+        x: Math.max(0, Math.min(window.innerWidth - 200, clientX - dragStartPosQR.x)),
+        y: Math.max(0, Math.min(window.innerHeight - 300, clientY - dragStartPosQR.y))
+      });
+    };
+    
+    const handleEnd = () => setIsDraggingQR(false);
+    
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchend', handleEnd);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+    };
+  }, [isDraggingQR, dragStartPosQR]);
+
   useEffect(() => {
     // Sync voting window visibility with host disconnection state
     if (hostDisconnectedWarning && electionCandidates.length > 0) {
@@ -1097,6 +1147,24 @@ export default function VmodeGame() {
           </div>
 
           <div className="flex space-x-1 sm:space-x-2 flex-shrink-0">
+            <Button
+              ref={qrButtonRef}
+              variant="outline"
+              size="sm"
+              className="bg-green-600 border-green-500 text-white hover:bg-green-700 p-2 sm:px-3"
+              data-testid="button-qr-code"
+              onClick={() => {
+                if (!showQRCode && qrButtonRef.current) {
+                  const rect = qrButtonRef.current.getBoundingClientRect();
+                  setQrPosition({ x: rect.left, y: rect.bottom + 8 });
+                }
+                setShowQRCode(!showQRCode);
+              }}
+            >
+              <QrCode className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline sm:ml-2">QR Code</span>
+            </Button>
+            
             <Button
               variant="outline"
               size="sm"
@@ -2075,6 +2143,48 @@ export default function VmodeGame() {
               Must draw 2 penalty cards for not calling UNO before playing second-to-last card
             </p>
           </div>
+        </div>
+      )}
+
+      {/* QR Code Panel */}
+      {showQRCode && qrCodeData && (
+        <div
+          ref={qrPanelRef}
+          className="fixed z-40 select-none"
+          style={{ left: qrPosition.x, top: qrPosition.y, cursor: isDraggingQR ? 'grabbing' : 'default' }}
+        >
+          <Card className="w-64 shadow-2xl border-2 border-green-500/50 bg-white/98 backdrop-blur-sm animate-in slide-in-from-top-2 duration-200">
+            <CardContent className="p-4">
+              <div
+                className="flex items-center justify-between mb-2 cursor-grab active:cursor-grabbing bg-green-600 rounded-lg px-3 py-2"
+                onMouseDown={handleQRDragStart}
+                onTouchStart={handleQRDragStart}
+              >
+                <div className="flex items-center gap-2">
+                  <GripVertical className="h-4 w-4 text-white/70" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-white">Room {room?.code}</span>
+                    <span className="text-xs font-bold text-white">QrFun.org</span>
+                  </div>
+                </div>
+                <button onClick={() => setShowQRCode(false)} className="text-white/70 hover:text-white p-1">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <Button
+                onClick={() => { if (room?.code) navigator.clipboard.writeText(room.code); }}
+                variant="outline"
+                size="sm"
+                className="w-full mb-3 bg-green-600 text-white hover:bg-green-700"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Code
+              </Button>
+              <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100">
+                <img src={qrCodeData} alt={`QR Code for room ${room?.code}`} className="w-full h-auto" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
