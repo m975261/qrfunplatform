@@ -252,12 +252,24 @@ export default function VmodeGame() {
     }
   }, [gameState?.cardReplacementTrigger]);
 
-  // Handle server color choice request
+  // Handle server color choice request - only show for the player who needs to choose, not viewers
   useEffect(() => {
-    if (gameState?.colorChoiceRequested || (gameState?.room?.waitingForColorChoice === playerId)) {
-      setShowColorPicker(true);
+    // Viewers (no playerId or room creators) should never see color picker
+    if (!playerId) {
+      setShowColorPicker(false);
+      return;
     }
-  }, [gameState?.colorChoiceRequested, gameState?.room?.waitingForColorChoice, playerId]);
+    
+    // Only show color picker if this player is the one who needs to choose
+    if (gameState?.room?.waitingForColorChoice === playerId || 
+        (gameState?.colorChoiceRequested && gameState?.room?.currentPlayerIndex !== undefined)) {
+      const players = gameState?.players?.filter((p: any) => !p.isSpectator).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
+      const currentPlayer = players?.[gameState.room.currentPlayerIndex];
+      if (currentPlayer?.id === playerId) {
+        setShowColorPicker(true);
+      }
+    }
+  }, [gameState?.colorChoiceRequested, gameState?.room?.waitingForColorChoice, gameState?.room?.currentPlayerIndex, gameState?.players, playerId]);
 
   // Handle active color updates for visual refresh
   useEffect(() => {
@@ -1925,8 +1937,8 @@ export default function VmodeGame() {
         />
       )}
 
-      {/* Color Picker Modal */}
-      {showColorPicker && (
+      {/* Color Picker Modal - Only show for active players, never for viewers */}
+      {showColorPicker && playerId && (
         <ColorPickerModal
           onChooseColor={handleColorChoice}
           onClose={() => setShowColorPicker(false)}
