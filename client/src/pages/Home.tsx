@@ -1087,7 +1087,9 @@ export default function Home() {
               <Button
                 onClick={() => {
                   setShowViewerConfirm(false);
-                  setIsViewerMode(true);
+                  setShowHostPopup(false);
+                  // Create viewer mode room immediately - no nickname needed, first joiner becomes host
+                  createRoomMutation.mutate({ streamingMode: false, viewerMode: true });
                 }}
                 className="flex-1 bg-teal-600 hover:bg-teal-700"
               >
