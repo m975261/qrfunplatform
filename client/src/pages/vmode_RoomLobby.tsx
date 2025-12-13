@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/hooks/useSocket";
@@ -223,54 +224,68 @@ export default function VmodeRoomLobby() {
     }
   }, [roomError, roomId, playerId, setLocation]);
 
-  // Special case: Viewer Mode room creator has no playerId yet
-  // They need to join via the link to become the first player (host)
+  // State for inline join form when no playerId
+  const [joinNickname, setJoinNickname] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+  
+  // Handle inline join for room creator or visitors without playerId
+  const handleInlineJoin = async () => {
+    if (!joinNickname.trim() || !roomId) return;
+    setIsJoining(true);
+    
+    const roomCode = new URLSearchParams(window.location.search).get('code') || roomData?.room?.code;
+    if (!roomCode) {
+      setIsJoining(false);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/rooms/${roomCode}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: joinNickname.trim() })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("playerId", data.player.id);
+        localStorage.setItem("playerNickname", data.player.nickname);
+        localStorage.setItem("currentRoomId", data.room.id);
+        // Reload to connect with new playerId
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Join error:", error);
+    }
+    setIsJoining(false);
+  };
+
+  // Show join form if no playerId (room creator in Viewer Mode)
   if (!playerId && roomId) {
     const roomCode = new URLSearchParams(window.location.search).get('code');
-    const joinUrl = `${window.location.origin}/?room=${roomCode}`;
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center p-4">
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl max-w-md w-full">
-          <CardContent className="p-6 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-uno-red to-uno-yellow rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-xl">UNO</span>
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl max-w-sm w-full">
+          <CardContent className="p-6">
+            <div className="text-center mb-4">
+              <p className="text-gray-600">Room <span className="font-mono font-bold text-uno-blue text-xl">{roomCode}</span></p>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Viewer Mode Room Created!</h2>
-            <p className="text-gray-600 mb-4">Room Code: <span className="font-mono font-bold text-uno-blue text-xl">{roomCode}</span></p>
-            <p className="text-sm text-gray-500 mb-6">
-              Share this link with players. The first person to join becomes the host!
-            </p>
-            <div className="space-y-3">
-              <Button
-                onClick={() => {
-                  navigator.clipboard.writeText(joinUrl);
-                  toast({
-                    title: "Link Copied!",
-                    description: "Share this link with players",
-                    duration: 2000,
-                  });
-                }}
-                className="w-full bg-uno-blue hover:bg-blue-600 text-white"
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter your nickname"
+                value={joinNickname}
+                onChange={(e) => setJoinNickname(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleInlineJoin()}
+                className="flex-1"
+                maxLength={20}
+                disabled={isJoining}
+              />
+              <Button 
+                onClick={handleInlineJoin}
+                disabled={!joinNickname.trim() || isJoining}
+                className="bg-uno-green hover:bg-green-600"
               >
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Join Link
-              </Button>
-              <Button
-                onClick={() => {
-                  window.location.href = joinUrl;
-                }}
-                className="w-full bg-uno-green hover:bg-green-600 text-white"
-              >
-                <Play className="mr-2 h-4 w-4" />
-                Join as Host
-              </Button>
-              <Button
-                onClick={() => setLocation("/")}
-                variant="outline"
-                className="w-full"
-              >
-                Back to Home
+                {isJoining ? "..." : <ArrowRight className="h-4 w-4" />}
               </Button>
             </div>
           </CardContent>
