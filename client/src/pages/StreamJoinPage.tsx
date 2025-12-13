@@ -215,22 +215,6 @@ export default function StreamJoinPage() {
                 "Join as Host"
               )}
             </Button>
-
-            {/* Watch Only option - skip nickname for pure viewers */}
-            {hasHost && (
-              <Button
-                onClick={() => {
-                  const code = roomInfo?.room?.code || roomCode;
-                  setLocation(`/stream/${roomId}/game?code=${code}`);
-                }}
-                variant="outline"
-                className="w-full py-4 text-base font-medium border-gray-300 text-gray-600 hover:bg-gray-50"
-                data-testid="button-watch-only"
-              >
-                <Tv className="w-4 h-4 mr-2" />
-                Just Watch (No nickname needed)
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
