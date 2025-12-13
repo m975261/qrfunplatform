@@ -1570,8 +1570,8 @@ export default function VmodeGame() {
             </div>
           )}
 
-          {/* === DRAW PILE (bottom-left of board) === */}
-          <div className="absolute z-20 bottom-2 left-2">
+          {/* === DRAW PILE (left of 6 o'clock avatar, under 9 o'clock avatar) === */}
+          <div className="absolute z-20" style={{ left: '18%', bottom: '22%' }}>
             {/* Guru +2/+4 Buttons - Above draw pile, only for guru users */}
             {isGuruUser && isMyTurn && (
               <div className="absolute bottom-full left-0 mb-2 flex flex-col gap-1">
