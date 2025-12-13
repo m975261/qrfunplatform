@@ -3,7 +3,7 @@ import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv, ArrowRight } from "lucide-react";
+import { Copy, QrCode, X, Plus, Play, Crown, GripVertical, Pencil, Tv } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useSocket } from "@/hooks/useSocket";
@@ -224,72 +224,43 @@ export default function VmodeRoomLobby() {
     }
   }, [roomError, roomId, playerId, setLocation]);
 
-  // State for inline join form when no playerId
-  const [joinNickname, setJoinNickname] = useState("");
+  // State for auto-join process
   const [isJoining, setIsJoining] = useState(false);
-  
-  // Handle inline join for room creator or visitors without playerId
-  const handleInlineJoin = async () => {
-    if (!joinNickname.trim() || !roomId) return;
-    setIsJoining(true);
-    
-    const roomCode = new URLSearchParams(window.location.search).get('code') || roomData?.room?.code;
-    if (!roomCode) {
-      setIsJoining(false);
-      return;
-    }
-    
-    try {
-      const response = await fetch(`/api/rooms/${roomCode}/join`, {
+
+  // Auto-join as Host when accessing Viewer Mode lobby without playerId
+  useEffect(() => {
+    if (!playerId && roomId && !isJoining) {
+      const roomCode = new URLSearchParams(window.location.search).get('code');
+      if (!roomCode) return;
+      
+      setIsJoining(true);
+      fetch(`/api/rooms/${roomCode}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname: joinNickname.trim() })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("playerId", data.player.id);
-        localStorage.setItem("playerNickname", data.player.nickname);
-        localStorage.setItem("currentRoomId", data.room.id);
-        // Reload to connect with new playerId
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error("Join error:", error);
+        body: JSON.stringify({ nickname: 'Host' })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.player) {
+            localStorage.setItem("playerId", data.player.id);
+            localStorage.setItem("playerNickname", data.player.nickname);
+            localStorage.setItem("currentRoomId", data.room.id);
+            window.location.reload();
+          }
+        })
+        .catch(error => console.error("Auto-join error:", error))
+        .finally(() => setIsJoining(false));
     }
-    setIsJoining(false);
-  };
+  }, [playerId, roomId, isJoining]);
 
-  // Show join form if no playerId (room creator in Viewer Mode)
+  // Show loading while auto-joining
   if (!playerId && roomId) {
-    const roomCode = new URLSearchParams(window.location.search).get('code');
     return (
-      <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center p-4">
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl max-w-sm w-full">
-          <CardContent className="p-6">
-            <div className="text-center mb-4">
-              <p className="text-gray-600">Room <span className="font-mono font-bold text-uno-blue text-xl">{roomCode}</span></p>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter your nickname"
-                value={joinNickname}
-                onChange={(e) => setJoinNickname(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleInlineJoin()}
-                className="flex-1"
-                maxLength={20}
-                disabled={isJoining}
-              />
-              <Button 
-                onClick={handleInlineJoin}
-                disabled={!joinNickname.trim() || isJoining}
-                className="bg-uno-green hover:bg-green-600"
-              >
-                {isJoining ? "..." : <ArrowRight className="h-4 w-4" />}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-uno-blue via-uno-purple to-uno-red flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mb-4 mx-auto"></div>
+          <p className="text-xl">Setting up room...</p>
+        </div>
       </div>
     );
   }
