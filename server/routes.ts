@@ -5747,12 +5747,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // XO next round (after win, progress board)
   app.post("/api/xo/rooms/:roomId/next-round", async (req, res) => {
     try {
+      const { expectedGameNumber } = req.body || {};
+      
       const room = await storage.getRoom(req.params.roomId);
       if (!room || room.gameType !== "xo") {
         return res.status(404).json({ error: "XO room not found" });
       }
 
       const xoState = room.xoState as XOGameState;
+      
+      // Prevent duplicate progressions: only progress if game hasn't already moved on
+      // Either the round is still the one being finished (has winner/draw) 
+      // or the expectedGameNumber matches current
+      if (expectedGameNumber !== undefined && xoState.gameNumber !== expectedGameNumber) {
+        // Already progressed by another player - just return current state
+        console.log(`XO next-round: skipping duplicate (expected ${expectedGameNumber}, current ${xoState.gameNumber})`);
+        return res.json({ success: true, xoState, alreadyProgressed: true });
+      }
+      
+      // Only allow progression if game is actually finished
+      if (!xoState.winner && !xoState.isDraw) {
+        return res.status(400).json({ error: "Game not finished yet" });
+      }
+      
       const newState = XOGameLogic.progressBoard(xoState);
       
       await storage.updateRoom(room.id, { 

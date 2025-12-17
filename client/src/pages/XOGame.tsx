@@ -118,11 +118,16 @@ export default function XOGame() {
   });
 
   const nextRoundMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/next-round`);
+    mutationFn: async (expectedGameNumber?: number) => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/next-round`, { expectedGameNumber });
       return response.json();
     },
     onSuccess: (data) => {
+      // If already progressed by another player, just refresh state
+      if (data.alreadyProgressed) {
+        queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+        return;
+      }
       setShowRoundEnd(false);
       setRoundWinner(null);
       setDrawCountdown(null);
@@ -174,9 +179,10 @@ export default function XOGame() {
       return () => clearTimeout(timer);
     } else if (drawCountdown === 0 && xoState?.isDraw && xoState?.boardSize < 6 && !nextRoundMutation.isPending) {
       setDrawCountdown(null);
-      nextRoundMutation.mutate();
+      // Pass current game number to prevent duplicate progressions
+      nextRoundMutation.mutate(xoState.gameNumber);
     }
-  }, [drawCountdown, xoState?.isDraw, xoState?.boardSize, nextRoundMutation.isPending]);
+  }, [drawCountdown, xoState?.isDraw, xoState?.boardSize, xoState?.gameNumber, nextRoundMutation.isPending]);
 
   useEffect(() => {
     if (winCountdown !== null && winCountdown > 0) {
@@ -420,12 +426,13 @@ export default function XOGame() {
               <div className="space-y-1">
                 {xoState.boardSize < 6 && roundWinner && !(isBotGame && xoState.winner === "O") && (
                   <Button 
-                    onClick={() => nextRoundMutation.mutate()}
+                    onClick={() => nextRoundMutation.mutate(xoState.gameNumber)}
+                    disabled={nextRoundMutation.isPending}
                     className="w-full bg-green-600 hover:bg-green-700 text-xs py-1 h-7"
                     size="sm"
                     data-testid="button-next-round"
                   >
-                    Next
+                    {nextRoundMutation.isPending ? "..." : "Next"}
                   </Button>
                 )}
                 <Button 
