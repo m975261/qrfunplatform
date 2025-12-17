@@ -33,6 +33,7 @@ export default function XOGame() {
   const { toast } = useToast();
   const [showRoundEnd, setShowRoundEnd] = useState(false);
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
+  const [drawCountdown, setDrawCountdown] = useState<number | null>(null);
   
   const playerId = localStorage.getItem("xo_playerId");
 
@@ -74,6 +75,7 @@ export default function XOGame() {
       } else if (data.xoState.isDraw) {
         setRoundWinner(null);
         setShowRoundEnd(true);
+        setDrawCountdown(5);
       } else if (isBotGame && data.xoState.currentPlayer === "O") {
         setTimeout(() => triggerBotMove(), 500);
       }
@@ -102,6 +104,7 @@ export default function XOGame() {
       } else if (data.xoState.isDraw) {
         setRoundWinner(null);
         setShowRoundEnd(true);
+        setDrawCountdown(5);
       }
     },
   });
@@ -111,10 +114,15 @@ export default function XOGame() {
       const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/next-round`);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setShowRoundEnd(false);
       setRoundWinner(null);
+      setDrawCountdown(null);
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+      
+      if (isBotGame && data.xoState?.currentPlayer === "O") {
+        setTimeout(() => triggerBotMove(), 800);
+      }
     },
   });
 
@@ -142,6 +150,18 @@ export default function XOGame() {
       return () => clearTimeout(timer);
     }
   }, [isBotGame, xoState?.currentPlayer, triggerBotMove]);
+
+  useEffect(() => {
+    if (drawCountdown !== null && drawCountdown > 0) {
+      const timer = setTimeout(() => {
+        setDrawCountdown(drawCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (drawCountdown === 0 && xoState?.isDraw && xoState?.boardSize < 6 && !nextRoundMutation.isPending) {
+      setDrawCountdown(null);
+      nextRoundMutation.mutate();
+    }
+  }, [drawCountdown, xoState?.isDraw, xoState?.boardSize, nextRoundMutation.isPending]);
 
   const handleCellClick = (row: number, col: number) => {
     if (!isMyTurn || xoState?.board[row][col] || xoState?.winner || xoState?.isDraw) return;
@@ -278,16 +298,19 @@ export default function XOGame() {
                 {xoState.boardSize >= 6 && roundWinner && (
                   <>Maximum board size reached!</>
                 )}
+                {xoState.isDraw && xoState.boardSize < 6 && drawCountdown !== null && (
+                  <>Next level in {drawCountdown} seconds...</>
+                )}
               </p>
               <div className="space-y-2">
-                {xoState.boardSize < 6 && (roundWinner || xoState.isDraw) && (
+                {xoState.boardSize < 6 && roundWinner && (
                   <Button 
                     onClick={() => nextRoundMutation.mutate()}
                     className="w-full bg-gradient-to-r from-green-600 to-emerald-600"
                     data-testid="button-next-round"
                   >
                     <Zap size={18} className="mr-2" />
-                    {roundWinner ? "Next Round!" : "Play Again"}
+                    Next Round!
                   </Button>
                 )}
                 <Button 

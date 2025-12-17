@@ -255,7 +255,7 @@ export class XOMinimaxAI {
       case "easy": this.maxDepth = 1; break;
       case "medium": this.maxDepth = 3; break;
       case "hard": this.maxDepth = 6; break;
-      case "hardest": this.maxDepth = Infinity; break;
+      case "hardest": this.maxDepth = 9; break;
     }
   }
 
