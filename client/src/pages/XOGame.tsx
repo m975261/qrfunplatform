@@ -16,6 +16,7 @@ interface Player {
   position: number;
   isSpectator?: boolean;
   hasLeft?: boolean;
+  isOnline?: boolean;
 }
 
 interface Room {
@@ -64,7 +65,7 @@ export default function XOGame() {
   const xPlayerName = players.find(p => p.id === xoState?.xPlayerId)?.nickname || "Player X";
   const oPlayerName = isBotGame ? "Bot" : (players.find(p => p.id === xoState?.oPlayerId)?.nickname || "Player O");
   const myNickname = players.find(p => p.id === playerId)?.nickname;
-  const spectators = players.filter(p => p.isSpectator && !p.hasLeft);
+  const spectators = players.filter(p => p.isSpectator && !p.hasLeft && p.isOnline);
   const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
   const isHost = room?.hostId === playerId;
   const isPaused = room?.status === "paused";
@@ -607,6 +608,7 @@ export default function XOGame() {
             <div className="flex flex-wrap gap-2">
               {spectators.map(spectator => (
                 <div key={spectator.id} className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
                   {editingPlayerId === spectator.id ? (
                     <div className="flex items-center gap-1">
                       <Input

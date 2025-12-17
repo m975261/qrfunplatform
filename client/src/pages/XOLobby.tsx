@@ -16,6 +16,7 @@ interface Player {
   position: number;
   isSpectator: boolean;
   hasLeft?: boolean;
+  isOnline?: boolean;
 }
 
 interface XOGameState {
@@ -226,7 +227,7 @@ export default function XOLobby() {
   }
 
   const activePlayers = players.filter(p => !p.hasLeft && !p.isSpectator);
-  const spectators = players.filter(p => !p.hasLeft && p.isSpectator);
+  const spectators = players.filter(p => !p.hasLeft && p.isSpectator && p.isOnline);
   const canStart = activePlayers.length >= 2;
 
   return (
@@ -376,6 +377,7 @@ export default function XOLobby() {
                   className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50"
                   data-testid={`spectator-${spectator.id}`}
                 >
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
                   <span className="text-lg">👁️</span>
                   <span className="font-medium flex-1">{spectator.nickname}</span>
                   {isHost && activePlayers.length < 2 && (
