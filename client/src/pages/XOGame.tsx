@@ -67,6 +67,9 @@ export default function XOGame() {
     p.id === (xoState?.currentPlayer === "X" ? xoState?.xPlayerId : xoState?.oPlayerId)
   )?.nickname || (xoState?.currentPlayer === "X" ? "X" : "O");
 
+  const isHost = room?.hostId === playerId;
+  const isPaused = room?.status === "paused";
+  
   const xPlayer = players.find(p => p.id === xoState?.xPlayerId && !p.isSpectator && !p.hasLeft);
   const oPlayer = players.find(p => p.id === xoState?.oPlayerId && !p.isSpectator && !p.hasLeft);
   const xPlayerName = xPlayer?.nickname || (isPaused && !xoState?.xPlayerId ? "Waiting..." : "Player X");
@@ -76,8 +79,6 @@ export default function XOGame() {
   const myNickname = players.find(p => p.id === playerId)?.nickname;
   const spectators = players.filter(p => p.isSpectator && !p.hasLeft);
   const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
-  const isHost = room?.hostId === playerId;
-  const isPaused = room?.status === "paused";
 
   const makeMovesMutation = useMutation({
     mutationFn: async ({ row, col }: { row: number; col: number }) => {
