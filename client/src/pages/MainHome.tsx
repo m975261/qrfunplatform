@@ -146,7 +146,7 @@ export default function MainHome() {
       name: "XO",
       path: "/xo",
       logo: "⭕",
-      status: "coming-soon",
+      status: "available",
       description: "Strategic Tic Tac Toe game",
       rules: [
         "Get three in a row to win",
