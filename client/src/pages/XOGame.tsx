@@ -65,6 +65,7 @@ export default function XOGame() {
 
   const xPlayerName = players.find(p => p.id === xoState?.xPlayerId)?.nickname || "Player X";
   const oPlayerName = isBotGame ? "Bot" : (players.find(p => p.id === xoState?.oPlayerId)?.nickname || "Player O");
+  const myNickname = players.find(p => p.id === playerId)?.nickname;
   const spectators = players.filter(p => p.isSpectator && !p.hasLeft);
   const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
   const isHost = room?.hostId === playerId;
@@ -347,14 +348,71 @@ export default function XOGame() {
           </Button>
         </div>
 
+        {/* Player Name Display */}
+        {myNickname && (
+          <div className="text-center mb-2 text-sm text-gray-600 dark:text-gray-300">
+            Player name: <span className="font-semibold">{myNickname}</span>
+          </div>
+        )}
+
         {/* Game Info */}
         <Card className="p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl mb-4">
           <div className="flex justify-between items-center">
-            <div className="text-center flex-1">
-              <div className="text-2xl mb-1">❌</div>
-              <div className="font-medium text-sm">{xPlayerName}</div>
+            {/* X Player */}
+            <div className="text-center flex-1 relative">
+              <div className="relative inline-block">
+                <div className="text-2xl mb-1">❌</div>
+                {/* Host controls for X player */}
+                {isHost && !isBotGame && xoState.xPlayerId && xoState.xPlayerId !== playerId && (
+                  <div className="absolute -top-1 -right-6 flex flex-col gap-0.5">
+                    {editingPlayerId === xoState.xPlayerId ? null : (
+                      <>
+                        <button
+                          onClick={() => {
+                            const xPlayer = players.find(p => p.id === xoState.xPlayerId);
+                            if (xPlayer) startEditingNickname(xPlayer);
+                          }}
+                          className="text-gray-400 hover:text-blue-500 p-0.5 rounded bg-white/80 dark:bg-gray-700/80"
+                          title="Edit nickname"
+                        >
+                          <Pencil size={10} />
+                        </button>
+                        <button
+                          onClick={() => kickPlayerMutation.mutate(xoState.xPlayerId!)}
+                          disabled={kickPlayerMutation.isPending}
+                          className="text-gray-400 hover:text-red-500 p-0.5 rounded bg-white/80 dark:bg-gray-700/80"
+                          title="Move to spectators"
+                        >
+                          <UserMinus size={10} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              {editingPlayerId === xoState.xPlayerId ? (
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <Input
+                    value={editNickname}
+                    onChange={(e) => setEditNickname(e.target.value)}
+                    className="h-6 w-20 text-xs px-1"
+                    maxLength={15}
+                    onKeyDown={(e) => e.key === 'Enter' && saveNickname(xoState.xPlayerId!)}
+                  />
+                  <button onClick={() => saveNickname(xoState.xPlayerId!)} className="text-green-500 hover:text-green-700">
+                    <Check size={12} />
+                  </button>
+                  <button onClick={() => { setEditingPlayerId(null); setEditNickname(""); }} className="text-red-500 hover:text-red-700">
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div className="font-medium text-sm">{xPlayerName}</div>
+              )}
               <div className="text-2xl font-bold text-blue-600">{xoState.scores.x}</div>
             </div>
+
+            {/* Center Info */}
             <div className="text-center px-4">
               <div className="text-sm text-gray-500 dark:text-gray-400">Round {xoState.gameNumber}</div>
               <div className="text-lg font-bold">{boardSize}×{boardSize}</div>
@@ -362,9 +420,58 @@ export default function XOGame() {
                 🎯 {xoState.winLength} in a row to win!
               </div>
             </div>
-            <div className="text-center flex-1">
-              <div className="text-2xl mb-1">⭕</div>
-              <div className="font-medium text-sm">{oPlayerName}</div>
+
+            {/* O Player */}
+            <div className="text-center flex-1 relative">
+              <div className="relative inline-block">
+                <div className="text-2xl mb-1">⭕</div>
+                {/* Host controls for O player */}
+                {isHost && !isBotGame && xoState.oPlayerId && xoState.oPlayerId !== playerId && (
+                  <div className="absolute -top-1 -left-6 flex flex-col gap-0.5">
+                    {editingPlayerId === xoState.oPlayerId ? null : (
+                      <>
+                        <button
+                          onClick={() => {
+                            const oPlayer = players.find(p => p.id === xoState.oPlayerId);
+                            if (oPlayer) startEditingNickname(oPlayer);
+                          }}
+                          className="text-gray-400 hover:text-purple-500 p-0.5 rounded bg-white/80 dark:bg-gray-700/80"
+                          title="Edit nickname"
+                        >
+                          <Pencil size={10} />
+                        </button>
+                        <button
+                          onClick={() => kickPlayerMutation.mutate(xoState.oPlayerId!)}
+                          disabled={kickPlayerMutation.isPending}
+                          className="text-gray-400 hover:text-red-500 p-0.5 rounded bg-white/80 dark:bg-gray-700/80"
+                          title="Move to spectators"
+                        >
+                          <UserMinus size={10} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              {editingPlayerId === xoState.oPlayerId ? (
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <Input
+                    value={editNickname}
+                    onChange={(e) => setEditNickname(e.target.value)}
+                    className="h-6 w-20 text-xs px-1"
+                    maxLength={15}
+                    onKeyDown={(e) => e.key === 'Enter' && saveNickname(xoState.oPlayerId!)}
+                  />
+                  <button onClick={() => saveNickname(xoState.oPlayerId!)} className="text-green-500 hover:text-green-700">
+                    <Check size={12} />
+                  </button>
+                  <button onClick={() => { setEditingPlayerId(null); setEditNickname(""); }} className="text-red-500 hover:text-red-700">
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div className="font-medium text-sm">{oPlayerName}</div>
+              )}
               <div className="text-2xl font-bold text-purple-600">{xoState.scores.o}</div>
             </div>
           </div>
@@ -375,12 +482,26 @@ export default function XOGame() {
 
         {/* Game Paused Banner */}
         {isPaused && (
-          <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white text-lg font-bold px-6 py-3 rounded-full shadow-xl border-2 border-gray-400 mb-4 text-center" data-testid="paused-indicator">
-            <div className="flex items-center justify-center gap-2">
+          <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold px-4 py-3 rounded-xl shadow-xl border-2 border-gray-400 mb-4" data-testid="paused-indicator">
+            <div className="flex items-center justify-center gap-2 text-lg">
               <span>⏸️</span>
               <span>Game Paused</span>
               <span>⏸️</span>
             </div>
+            {isHost && !isBotGame && (
+              <div className="mt-2 flex justify-center">
+                <Button
+                  onClick={() => continueGameMutation.mutate()}
+                  disabled={continueGameMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700 text-sm"
+                  size="sm"
+                  data-testid="button-continue-game"
+                >
+                  <Play size={14} className="mr-1" />
+                  {continueGameMutation.isPending ? "Continuing..." : "Continue Game"}
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -536,65 +657,6 @@ export default function XOGame() {
                   )}
                 </div>
               ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Host Controls for Active Players */}
-        {isHost && !isBotGame && (
-          <Card className="p-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl mt-4">
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Host Controls:</div>
-            <div className="space-y-2">
-              {activePlayers.filter(p => p.id !== playerId).map(player => (
-                <div key={player.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                  {editingPlayerId === player.id ? (
-                    <div className="flex items-center gap-1 flex-1">
-                      <Input
-                        value={editNickname}
-                        onChange={(e) => setEditNickname(e.target.value)}
-                        className="h-7 text-sm px-2"
-                        maxLength={15}
-                        onKeyDown={(e) => e.key === 'Enter' && saveNickname(player.id)}
-                      />
-                      <button onClick={() => saveNickname(player.id)} className="text-green-500 hover:text-green-700 p-1">
-                        <Check size={16} />
-                      </button>
-                      <button onClick={() => { setEditingPlayerId(null); setEditNickname(""); }} className="text-red-500 hover:text-red-700 p-1">
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="text-sm">{player.nickname}</span>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => startEditingNickname(player)} className="text-gray-400 hover:text-gray-600 p-1" title="Rename">
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          onClick={() => kickPlayerMutation.mutate(player.id)}
-                          disabled={kickPlayerMutation.isPending}
-                          className="text-red-500 hover:text-red-700 p-1"
-                          title="Move to spectators"
-                        >
-                          <UserMinus size={14} />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-              {isPaused && (
-                <Button
-                  onClick={() => continueGameMutation.mutate()}
-                  disabled={continueGameMutation.isPending}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  size="sm"
-                  data-testid="button-continue-game"
-                >
-                  <Play size={14} className="mr-1" />
-                  {continueGameMutation.isPending ? "Continuing..." : "Continue Game"}
-                </Button>
-              )}
             </div>
           </Card>
         )}
