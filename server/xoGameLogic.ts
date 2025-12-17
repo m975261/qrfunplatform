@@ -14,7 +14,7 @@ export interface BoardProgression {
 
 const BOARD_PROGRESSIONS: BoardProgression[] = [
   { size: 3, winLength: 3 },
-  { size: 4, winLength: 3 },
+  { size: 4, winLength: 4 },
   { size: 5, winLength: 4 },
   { size: 6, winLength: 5 },
 ];
