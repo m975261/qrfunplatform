@@ -209,6 +209,13 @@ export default function XOGame() {
     }
   }, [xoState?.winner, xoState?.isDraw, xoState?.gameNumber, lastProcessedGameNumber, showWinAnimation, showRoundEnd, drawCountdown, xPlayerName, oPlayerName]);
 
+  useEffect(() => {
+    if (xoState && !xoState.isDraw && !xoState.winner && (showRoundEnd || drawCountdown !== null)) {
+      setShowRoundEnd(false);
+      setDrawCountdown(null);
+    }
+  }, [xoState?.isDraw, xoState?.winner, showRoundEnd, drawCountdown]);
+
   const handleCellClick = (row: number, col: number) => {
     if (!isMyTurn || xoState?.board[row][col] || xoState?.winner || xoState?.isDraw) return;
     makeMovesMutation.mutate({ row, col });
