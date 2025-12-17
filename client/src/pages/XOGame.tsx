@@ -65,7 +65,7 @@ export default function XOGame() {
   const xPlayerName = players.find(p => p.id === xoState?.xPlayerId)?.nickname || "Player X";
   const oPlayerName = isBotGame ? "Bot" : (players.find(p => p.id === xoState?.oPlayerId)?.nickname || "Player O");
   const myNickname = players.find(p => p.id === playerId)?.nickname;
-  const spectators = players.filter(p => p.isSpectator && !p.hasLeft && p.isOnline);
+  const spectators = players.filter(p => p.isSpectator && !p.hasLeft);
   const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
   const isHost = room?.hostId === playerId;
   const isPaused = room?.status === "paused";

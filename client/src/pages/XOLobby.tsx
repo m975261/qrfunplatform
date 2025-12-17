@@ -227,7 +227,7 @@ export default function XOLobby() {
   }
 
   const activePlayers = players.filter(p => !p.hasLeft && !p.isSpectator);
-  const spectators = players.filter(p => !p.hasLeft && p.isSpectator && p.isOnline);
+  const spectators = players.filter(p => !p.hasLeft && p.isSpectator);
   const canStart = activePlayers.length >= 2;
 
   return (
