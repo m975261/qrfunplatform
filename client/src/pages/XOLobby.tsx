@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Copy, Users, Play, Crown, UserMinus, UserPlus, Eye, Pencil, Check, X, Shield } from "lucide-react";
 import { Link } from "wouter";
 import QRCode from "qrcode";
@@ -38,7 +37,6 @@ export default function XOLobby() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [editingNickname, setEditingNickname] = useState<string>("");
-  const { toast } = useToast();
   
   const playerId = localStorage.getItem("xo_playerId");
   const roomCode = new URLSearchParams(window.location.search).get("code") || "";
@@ -83,11 +81,7 @@ export default function XOLobby() {
       setLocation(`/xo/game/${roomId}`);
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to start game",
-        variant: "destructive",
-      });
+      console.error("Failed to start game:", error.message);
     },
   });
 
@@ -101,17 +95,9 @@ export default function XOLobby() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
-      toast({
-        title: "Moved to Spectators",
-        description: "Player is now watching the game",
-      });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to kick player",
-        variant: "destructive",
-      });
+      console.error("Failed to kick player:", error.message);
     },
   });
 
@@ -125,17 +111,9 @@ export default function XOLobby() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
-      toast({
-        title: "Spectator Promoted",
-        description: "Spectator is now a player",
-      });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to promote spectator",
-        variant: "destructive",
-      });
+      console.error("Failed to promote spectator:", error.message);
     },
   });
 
@@ -152,17 +130,9 @@ export default function XOLobby() {
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
       setEditingPlayerId(null);
       setEditingNickname("");
-      toast({
-        title: "Player Renamed",
-        description: "Player nickname has been updated",
-      });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to rename player",
-        variant: "destructive",
-      });
+      console.error("Failed to rename player:", error.message);
     },
   });
 
@@ -176,17 +146,9 @@ export default function XOLobby() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
-      toast({
-        title: "Host Transferred",
-        description: "Host privileges have been transferred",
-      });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to transfer host",
-        variant: "destructive",
-      });
+      console.error("Failed to transfer host:", error.message);
     },
   });
 
@@ -208,19 +170,11 @@ export default function XOLobby() {
 
   const copyRoomCode = () => {
     navigator.clipboard.writeText(roomCode);
-    toast({
-      title: "Copied!",
-      description: "Room code copied to clipboard",
-    });
   };
 
   const copyShareLink = () => {
     const shareUrl = `${window.location.origin}/xo?room=${roomCode}`;
     navigator.clipboard.writeText(shareUrl);
-    toast({
-      title: "Copied!",
-      description: "Share link copied to clipboard",
-    });
   };
 
   if (isLoading) {
