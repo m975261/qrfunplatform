@@ -238,8 +238,8 @@ export class XOGameLogic {
   }
 
   static generateRoomCode(): string {
-    // Generate codes in format AA2BB - letters + 2 + letters for XO
-    const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    // Generate codes in format aa2bb - lowercase letters + 2 + letters for XO
+    const letters = "abcdefghjklmnpqrstuvwxyz";
     
     const first = letters.charAt(Math.floor(Math.random() * letters.length));
     const second = letters.charAt(Math.floor(Math.random() * letters.length));
