@@ -1,4 +1,4 @@
-import { type Room, type InsertRoom, type Player, type InsertPlayer, type GameMessage, type InsertGameMessage } from "@shared/schema";
+import { type Room, type InsertRoom, type Player, type InsertPlayer, type GameMessage, type InsertGameMessage, type XOGameState, type XOSettings } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -41,6 +41,7 @@ export class MemStorage implements IStorage {
       ...insertRoom,
       id,
       createdAt: new Date(),
+      gameType: insertRoom.gameType || "uno",
       status: insertRoom.status || "waiting",
       direction: insertRoom.direction || "clockwise",
       currentPlayerIndex: insertRoom.currentPlayerIndex || 0,
@@ -50,18 +51,20 @@ export class MemStorage implements IStorage {
       currentColor: insertRoom.currentColor || null,
       pendingDraw: insertRoom.pendingDraw || null,
       positionHands: insertRoom.positionHands || {},
-      activePositions: insertRoom.activePositions || [],
+      activePositions: (insertRoom.activePositions || []) as number[],
       isStreamingMode: insertRoom.isStreamingMode ?? false,
       isViewerMode: insertRoom.isViewerMode ?? false,
       streamPageConnectionId: insertRoom.streamPageConnectionId || null,
       hostElectionActive: insertRoom.hostElectionActive ?? false,
       hostElectionStartTime: insertRoom.hostElectionStartTime || null,
       hostElectionVotes: insertRoom.hostElectionVotes || {},
-      hostElectionEligibleVoters: insertRoom.hostElectionEligibleVoters || [],
+      hostElectionEligibleVoters: (insertRoom.hostElectionEligibleVoters || []) as string[],
       hostDisconnectedAt: insertRoom.hostDisconnectedAt || null,
       hostPreviousId: insertRoom.hostPreviousId || null,
       hostPreviousPosition: insertRoom.hostPreviousPosition || null,
       noHostMode: insertRoom.noHostMode ?? false,
+      xoState: (insertRoom.xoState || null) as XOGameState | null,
+      xoSettings: (insertRoom.xoSettings || null) as XOSettings | null,
     };
     this.rooms.set(id, room);
     return room;

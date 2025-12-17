@@ -1,0 +1,347 @@
+You previously built the UNO Multiplayer game inside the QRFun platform, which was designed to support multiple games.
+The QRFun main menu already includes an “XO (Coming Soon)” entry.
+Now build XO Multiplayer as the second game inside the QRFun platform.
+
+XO must be implemented on top of the existing QRFun architecture, reusing all systems already built for UNO Multiplayer whenever possible—without breaking UNO or duplicating functionality.
+
+Follow the same structural patterns, WebSocket architecture, user entry system, QR joining logic, admin system, and UI framework that QRFun already uses for UNO.
+
+=========================
+IMPORTANT PLATFORM INTEGRATION RULES
+=========================
+✔ XO becomes Game #2 on QRFun
+
+Integrate it into the existing QRFun main menu.
+
+Replace the “XO (Coming Soon)” tile with the new XO game.
+
+✔ Do NOT modify UNO gameplay or break its logic.
+✔ DO reuse what is already built for QRFun:
+
+Room creation & join system
+
+QR code generate/scan/upload system
+
+Nickname-based user entry
+
+Host & viewer logic
+
+WebSocket structure
+
+Admin panel
+
+2FA authentication (Google Authenticator)
+
+Email password reset
+
+Session/token system
+
+UI layout framework
+
+Lobby flow
+
+Game routing system
+
+✔ DO keep XO logic modular & isolated to avoid interfering with UNO.
+=========================
+XO GAME RULES & LOGIC
+=========================
+Board Progression System
+
+Start at 3×3, win = 3-in-a-row
+
+Draw → 4×4, win = 3-in-a-row
+
+Draw → 5×5, win = 4-in-a-row
+
+Draw → 6×6, win = 5-in-a-row
+
+Draw on 6×6 → start new 6×6 and alternate first turn
+
+Turn & Gameplay
+
+Exactly 2 active players
+
+Unlimited spectators
+
+Always display: “Win Condition: {N}-in-a-row.”
+
+Game pauses if a player disconnects (NO AI takeover)
+
+Game Over
+
+Show simple win screen (Play Again / Go Home)
+
+=============================
+AI SYSTEM (NORMAL + PERFECT MODE)
+=============================
+
+XO must support two AI types.
+
+🔹 1. Normal Bot Mode
+
+Used when a regular player selects Play With Bot.
+
+Easy, Medium, Hard = normal behavior
+
+If the player selects Hardest difficulty, activate Perfect Mode AI
+
+🔹 2. Perfect Mode AI (Must-Win AI)
+
+This AI MUST activate in ONLY TWO situations:
+
+A. Guru User logs in and becomes a player
+
+Perfect Mode AI takes over the Guru User seat
+
+MUST ignore difficulty settings
+
+MUST try to win
+
+Plays invisibly (nickname only)
+
+B. Normal user chooses the “Hardest” difficulty in Bot Mode
+
+Perfect Mode AI replaces normal bot logic
+
+MUST try to win
+
+AI Algorithms
+
+3×3 and 4×4 → strong Minimax
+
+5×5 and 6×6 → MCTS (Monte Carlo Tree Search)
+
+No neural networks or training required
+
+=============================
+AI INVISIBILITY RULE
+=============================
+
+In XO gameplay UI:
+
+Never display “Bot”, “AI”, “Perfect Mode”, “Guru User”, or any tag.
+Only show player nicknames.
+The AI must remain invisible.
+
+Nicknames must be the only identities visible to players and spectators.
+
+=============================
+USER SYSTEM (NORMAL + GURU)
+=============================
+Normal Users
+
+Join QRFun XO rooms with a nickname
+
+No login required
+
+Can edit nickname anytime
+
+Guru Users
+
+Created in the Admin Panel.
+
+Store:
+
+username (private, never shown)
+
+password
+
+email
+
+nickname (this is the public name)
+
+Guru Login Rules
+
+Login requires username + password + Google Authenticator 2FA
+
+Public nickname displays in game
+
+If Guru becomes a player → Perfect Mode AI plays AS them
+
+Guru vs Bot
+
+If Guru User chooses Play with Bot, Perfect Mode AI must activate and attempt to win.
+
+=============================
+ADMIN PANEL EXTENSION
+=============================
+
+Extend the existing QRFun Admin Panel (do not replace it).
+
+Add Guru User Management
+
+Create Guru Users (username, password, email, nickname)
+
+Edit Guru Users
+
+Delete Guru Users
+
+Reset Guru password via email
+
+Admin password reset also via email
+
+Admin panel security:
+
+Username + password
+
+2FA (Google Authenticator)
+
+=============================
+LOGIN & ACCESS (QR + CODE)
+=============================
+
+XO must use the same login/join options as UNO, but adapted:
+
+Supported Methods
+
+Enter nickname
+
+Enter room code
+
+Scan QR code
+
+Upload QR image
+
+Click invitation link
+
+Guru Login Flow
+
+If entered nickname equals a Guru User username:
+
+Prompt for password
+
+Prompt for 2FA
+
+Load Guru’s stored nickname
+
+Only the nickname shows publicly.
+
+=============================
+ROOM & MULTIPLAYER SYSTEM (REUSE UNO’S APPROACH)
+=============================
+
+Reuse QRFun’s UNO systems:
+
+Room creation
+
+Room join
+
+WebSocket sync
+
+Host system
+
+Viewers
+
+Promote viewer to player
+
+Kick viewer
+
+Spectator viewing
+
+Restart flow
+
+Restrictions
+
+No host voting system
+
+No difficulty selector in multiplayer
+
+No takeover on disconnect
+
+=============================
+XO UI/UX REQUIREMENTS
+=============================
+
+XO must match QRFun’s quality standards.
+
+Required:
+
+Fully responsive
+
+Turn highlighting
+
+XO board animations (3×3 → 6×6)
+
+Winning line highlight
+
+Sound effects (toggle): move, win, draw, click
+
+Smooth transition after QR join
+
+Same styling principles as UNO
+
+Not required:
+
+Direction indicator
+
+Guru aura
+
+AI labels
+
+=============================
+TECHNICAL REQUIREMENTS
+=============================
+Backend
+
+Node.js
+
+Express
+
+WebSockets (socket.io or ws)
+
+Shared session management with UNO
+
+TOTP 2FA
+
+Email reset
+
+Frontend
+
+React (or QRFun frontend framework)
+
+Shared UI components where possible
+
+XO must live in its own module to avoid conflicts
+
+AI Modules File Structure
+
+Create:
+
+xo-ai/minimax.js
+
+xo-ai/mcts.js
+
+xo-ai/ai-manager.js
+
+Activates Normal Bot or Perfect Mode AI
+
+Handles invisibility rule
+
+=============================
+FINAL OUTPUT
+=============================
+
+Deliver XO Multiplayer as a second game on the QRFun platform, with:
+
+Full integration into main menu
+
+Reuse of all existing systems (rooms, QR, WebSockets, admin, auth)
+
+Zero impact on UNO game
+
+Dynamic XO board progression
+
+Perfect Mode AI & Normal Bot AI
+
+Guru user login + 2FA
+
+Email password reset
+
+Nickname-only display
+
+Host & viewer system
+
+Smooth, production-ready UI
+
+XO must become a polished, stable game inside QRFun, following the same development style and quality as the UNO Multiplayer game already built.

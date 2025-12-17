@@ -13,6 +13,7 @@ export const rooms = pgTable("rooms", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: varchar("code", { length: 6 }).notNull().unique(),
   hostId: varchar("host_id"),
+  gameType: varchar("game_type", { enum: ["uno", "xo"] }).notNull().default("uno"),
   status: varchar("status", { enum: ["waiting", "playing", "finished", "paused"] }).notNull().default("waiting"),
   isStreamingMode: boolean("is_streaming_mode").default(false),
   isViewerMode: boolean("is_viewer_mode").default(false),
@@ -34,8 +35,37 @@ export const rooms = pgTable("rooms", {
   hostPreviousId: varchar("host_previous_id"),
   hostPreviousPosition: integer("host_previous_position"),
   noHostMode: boolean("no_host_mode").default(false),
+  xoState: jsonb("xo_state").$type<XOGameState | null>().default(null),
+  xoSettings: jsonb("xo_settings").$type<XOSettings | null>().default(null),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
+
+// XO Game Types
+export type XOPlayer = "X" | "O";
+export type XOCell = XOPlayer | null;
+
+export interface XOGameState {
+  board: XOCell[][];
+  boardSize: number;
+  winLength: number;
+  currentPlayer: XOPlayer;
+  winner: XOPlayer | null;
+  winningLine: { row: number; col: number }[] | null;
+  moveHistory: { row: number; col: number; player: XOPlayer }[];
+  isDraw: boolean;
+  gameNumber: number;
+  xPlayerId: string | null;
+  oPlayerId: string | null;
+  scores: { x: number; o: number; draws: number };
+}
+
+export interface XOSettings {
+  difficulty: "easy" | "medium" | "hard" | "hardest";
+  isBotGame: boolean;
+  botPlayer: "X" | "O" | null;
+  isGuruPlayer: boolean;
+  guruPlayerId: string | null;
+}
 
 export const players = pgTable("players", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
