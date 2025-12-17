@@ -5521,6 +5521,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update XO state if player was X or O
       const xoState = room.xoState as XOGameState;
+      const wasActivePlayer = xoState && (xoState.xPlayerId === playerIdToKick || xoState.oPlayerId === playerIdToKick);
+      
       if (xoState) {
         let updatedXoState = { ...xoState };
         if (xoState.xPlayerId === playerIdToKick) {
@@ -5529,7 +5531,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (xoState.oPlayerId === playerIdToKick) {
           updatedXoState.oPlayerId = null;
         }
-        await storage.updateRoom(room.id, { xoState: updatedXoState });
+        
+        // If game was in progress and an active player was kicked, pause the game
+        if (room.status === "playing" && wasActivePlayer) {
+          await storage.updateRoom(room.id, { 
+            xoState: updatedXoState,
+            status: "paused"
+          });
+        } else {
+          await storage.updateRoom(room.id, { xoState: updatedXoState });
+        }
       }
 
       // Broadcast to room
@@ -5537,6 +5548,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: "xo_player_kicked",
         playerId: playerIdToKick,
         isNowSpectator: true,
+        gamePaused: room.status === "playing" && wasActivePlayer,
       });
 
       res.json({ success: true });

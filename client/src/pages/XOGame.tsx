@@ -179,7 +179,7 @@ export default function XOGame() {
     mutationFn: async (playerIdToKick: string) => {
       const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/kick`, {
         requesterId: playerId,
-        playerIdToKick,
+        playerId: playerIdToKick,
       });
       return response.json();
     },
@@ -608,7 +608,6 @@ export default function XOGame() {
             <div className="flex flex-wrap gap-2">
               {spectators.map(spectator => (
                 <div key={spectator.id} className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
                   {editingPlayerId === spectator.id ? (
                     <div className="flex items-center gap-1">
                       <Input
