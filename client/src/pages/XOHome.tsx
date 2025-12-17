@@ -34,6 +34,16 @@ export default function XOHome() {
     if (savedNickname) {
       setPopupNickname(savedNickname);
     }
+    
+    // Handle room code from URL (e.g., from QR scan or shared link)
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomFromUrl = urlParams.get('room') || urlParams.get('code');
+    if (roomFromUrl) {
+      const code = roomFromUrl.toUpperCase();
+      setRoomCode(code);
+      setPendingCode(code);
+      setShowNicknamePopup(true);
+    }
   }, []);
 
   const createRoomMutation = useMutation({
@@ -98,7 +108,7 @@ export default function XOHome() {
     if (roomCode.length < 5) {
       toast({
         title: "Invalid Code",
-        description: "Please enter a valid 5-digit room code.",
+        description: "Please enter a valid 5-character room code.",
         variant: "destructive",
       });
       return;
@@ -183,9 +193,9 @@ export default function XOHome() {
               <Input
                 id="roomCode"
                 type="text"
-                placeholder="Enter 5-digit code"
+                placeholder="Enter room code (e.g. AB2CD)"
                 value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5))}
                 className="text-center text-lg font-mono tracking-widest"
                 data-testid="input-room-code"
               />

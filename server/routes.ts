@@ -676,7 +676,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isViewerMode: z.boolean().optional().default(false)
       }).parse(req.body);
 
-      const code = UnoGameLogic.generateRoomCode();
+      // Generate unique code with format AA1BB for UNO
+      let code: string;
+      let existingRoom;
+      do {
+        code = UnoGameLogic.generateRoomCode();
+        existingRoom = await storage.getRoomByCode(code);
+      } while (existingRoom);
       
       // Create the room first
       const room = await storage.createRoom({
@@ -5271,7 +5277,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         difficulty: z.enum(['easy', 'medium', 'hard', 'hardest']).optional().default('medium'),
       }).parse(req.body);
 
-      const code = Math.random().toString().slice(2, 7);
+      // Generate unique code with format AA2BB for XO
+      let code: string;
+      let existingRoom;
+      do {
+        code = XOGameLogic.generateRoomCode();
+        existingRoom = await storage.getRoomByCode(code);
+      } while (existingRoom);
       
       const xoSettings: XOSettings = {
         difficulty: difficulty || 'medium',

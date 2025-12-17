@@ -18,6 +18,26 @@ export default function MainHome() {
   const [isJoining, setIsJoining] = useState(false);
   const { toast } = useToast();
 
+  const redirectToGame = async (code: string) => {
+    try {
+      const response = await fetch(`/api/rooms/code/${code}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.room) {
+          if (data.room.gameType === "xo") {
+            setLocation(`/xo?room=${code}`);
+          } else {
+            setLocation(`/uno?room=${code}`);
+          }
+          return true;
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
   const handleQRImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -42,21 +62,29 @@ export default function MainHome() {
         const result = await QrScanner.scanImage(canvas);
         
         let extractedCode = '';
+        // Match alphanumeric codes (AA1BB or AA2BB format)
         if (result.includes('/r/')) {
-          const match = result.match(/\/r\/([0-9]{5})/);
-          extractedCode = match ? match[1] : '';
+          const match = result.match(/\/r\/([A-Z0-9]{5})/i);
+          extractedCode = match ? match[1].toUpperCase() : '';
         } else if (result.includes('code=')) {
-          const match = result.match(/code=([0-9]{5})/);
-          extractedCode = match ? match[1] : '';
+          const match = result.match(/code=([A-Z0-9]{5})/i);
+          extractedCode = match ? match[1].toUpperCase() : '';
         } else if (result.includes('room=')) {
-          const match = result.match(/room=([0-9]{5})/);
-          extractedCode = match ? match[1] : '';
-        } else if (/^[0-9]{5}$/.test(result)) {
-          extractedCode = result;
+          const match = result.match(/room=([A-Z0-9]{5})/i);
+          extractedCode = match ? match[1].toUpperCase() : '';
+        } else if (/^[A-Z0-9]{5}$/i.test(result)) {
+          extractedCode = result.toUpperCase();
         }
         
         if (extractedCode) {
-          setLocation(`/uno?room=${extractedCode}`);
+          const found = await redirectToGame(extractedCode);
+          if (!found) {
+            toast({
+              title: "Room Not Found",
+              description: "This room code doesn't exist or has expired.",
+              variant: "destructive",
+            });
+          }
         } else {
           toast({
             title: "Invalid QR Code",
@@ -80,7 +108,7 @@ export default function MainHome() {
   };
 
   const handleJoinWithCode = async () => {
-    const code = roomCode.trim();
+    const code = roomCode.trim().toUpperCase();
     if (!code) {
       setJoinError("Please enter a room code");
       return;
@@ -90,15 +118,8 @@ export default function MainHome() {
     setJoinError("");
     
     try {
-      const response = await fetch(`/api/rooms/code/${code}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.room) {
-          setLocation(`/uno?room=${code}`);
-        } else {
-          setJoinError("Room not found");
-        }
-      } else {
+      const found = await redirectToGame(code);
+      if (!found) {
         setJoinError("Room not found");
       }
     } catch (error) {
@@ -108,19 +129,16 @@ export default function MainHome() {
     }
   };
 
-  // Handle shared room links - redirect to UNO page with room parameters
+  // Handle shared room links - detect game type and redirect appropriately
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room') || urlParams.get('code');
     
     if (roomFromUrl) {
-      // Redirect to UNO page with room parameters preserved
-      console.log("Room link detected on main page, redirecting to UNO:", roomFromUrl);
-      const currentSearch = window.location.search;
-      setLocation(`/uno${currentSearch}`);
-      return;
+      console.log("Room link detected on main page, looking up game type:", roomFromUrl);
+      redirectToGame(roomFromUrl.toUpperCase());
     }
-  }, [setLocation]);
+  }, []);
 
   const games = [
     {

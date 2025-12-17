@@ -238,12 +238,15 @@ export class XOGameLogic {
   }
 
   static generateRoomCode(): string {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let code = "";
-    for (let i = 0; i < 5; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
+    // Generate codes in format AA2BB - letters + 2 + letters for XO
+    const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    
+    const first = letters.charAt(Math.floor(Math.random() * letters.length));
+    const second = letters.charAt(Math.floor(Math.random() * letters.length));
+    const fourth = letters.charAt(Math.floor(Math.random() * letters.length));
+    const fifth = letters.charAt(Math.floor(Math.random() * letters.length));
+    
+    return `${first}${second}2${fourth}${fifth}`;
   }
 }
 
