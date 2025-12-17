@@ -5421,18 +5421,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Auto-remove spectators who have been offline for 30+ seconds
+      // Only remove if they HAD a connection that went stale (has lastSeen timestamp)
       const now = Date.now();
       for (const player of playersWithStatus) {
         if (player.isSpectator && !player.isOnline && !player.hasLeft) {
-          // Check if player has been offline for 30+ seconds
+          // Find any connection that was ever associated with this player
           const lastSeenConnection = Array.from(connections.values()).find(conn => conn.playerId === player.id);
-          const lastSeen = lastSeenConnection?.lastSeen || 0;
-          const offlineDuration = now - lastSeen;
           
-          if (offlineDuration > 30000) {
-            // Mark spectator as left
-            await storage.updatePlayer(player.id, { hasLeft: true, leftAt: new Date() });
-            console.log(`Auto-removed inactive spectator ${player.nickname} from XO room ${room.id}`);
+          // Only auto-remove if player had a connection that went stale
+          // Don't remove players who never established a connection (just joined)
+          if (lastSeenConnection && lastSeenConnection.lastSeen) {
+            const offlineDuration = now - lastSeenConnection.lastSeen;
+            
+            if (offlineDuration > 30000) {
+              // Mark spectator as left
+              await storage.updatePlayer(player.id, { hasLeft: true, leftAt: new Date() });
+              console.log(`Auto-removed inactive spectator ${player.nickname} from XO room ${room.id}`);
+            }
           }
         }
       }
