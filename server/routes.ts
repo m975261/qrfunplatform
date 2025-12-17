@@ -5817,6 +5817,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // XO continue game (resume from paused state)
+  app.post("/api/xo/rooms/:roomId/continue", async (req, res) => {
+    try {
+      const { requesterId } = req.body;
+      
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room || room.gameType !== "xo") {
+        return res.status(404).json({ error: "XO room not found" });
+      }
+
+      if (room.hostId !== requesterId) {
+        return res.status(403).json({ error: "Only host can continue the game" });
+      }
+
+      if (room.status !== "paused") {
+        return res.status(400).json({ error: "Game is not paused" });
+      }
+
+      const players = await storage.getPlayersByRoom(room.id);
+      const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
+
+      if (activePlayers.length < 2) {
+        return res.status(400).json({ error: "Need 2 players to continue" });
+      }
+
+      await storage.updateRoom(room.id, { status: "playing" });
+
+      broadcastToRoom(room.id, {
+        type: "xo_game_continued",
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error continuing XO game:", error);
+      res.status(500).json({ error: "Failed to continue game" });
+    }
+  });
+
+  // XO assign spectator to player position
+  app.post("/api/xo/rooms/:roomId/assign-spectator", async (req, res) => {
+    try {
+      const { requesterId, spectatorId, position } = req.body;
+      
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room || room.gameType !== "xo") {
+        return res.status(404).json({ error: "XO room not found" });
+      }
+
+      if (room.hostId !== requesterId) {
+        return res.status(403).json({ error: "Only host can assign spectators" });
+      }
+
+      const spectator = await storage.getPlayer(spectatorId);
+      if (!spectator || spectator.roomId !== room.id || !spectator.isSpectator) {
+        return res.status(400).json({ error: "Invalid spectator" });
+      }
+
+      const players = await storage.getPlayersByRoom(room.id);
+      const positionTaken = players.some(p => p.position === position && !p.isSpectator && !p.hasLeft);
+
+      if (positionTaken) {
+        return res.status(400).json({ error: "Position already taken" });
+      }
+
+      await storage.updatePlayer(spectatorId, {
+        isSpectator: false,
+        position: position,
+      });
+
+      const xoState = room.xoState as XOGameState;
+      let updatedXoState = xoState;
+
+      if (position === 0 && !xoState.xPlayerId) {
+        updatedXoState = { ...xoState, xPlayerId: spectatorId };
+      } else if (position === 1 && !xoState.oPlayerId) {
+        updatedXoState = { ...xoState, oPlayerId: spectatorId };
+      }
+
+      if (updatedXoState !== xoState) {
+        await storage.updateRoom(room.id, { xoState: updatedXoState });
+      }
+
+      if (room.status === "paused") {
+        await storage.updateRoom(room.id, { status: "playing" });
+      }
+
+      broadcastToRoom(room.id, {
+        type: "xo_spectator_promoted",
+        player: spectator.nickname,
+        position: position,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error assigning XO spectator:", error);
+      res.status(500).json({ error: "Failed to assign spectator" });
+    }
+  });
+
   // XO bot move endpoint
   app.post("/api/xo/rooms/:roomId/bot-move", async (req, res) => {
     try {

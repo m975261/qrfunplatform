@@ -2,10 +2,12 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, RotateCcw, Trophy, Zap, Eye } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trophy, Zap, Eye, UserMinus, UserPlus, Pencil, Check, X, Play } from "lucide-react";
 import { Link } from "wouter";
 import { XOGameState, XOCell } from "@shared/schema";
 
@@ -39,6 +41,9 @@ export default function XOGame() {
   const [showWinAnimation, setShowWinAnimation] = useState(false);
   const [winCountdown, setWinCountdown] = useState<number | null>(null);
   const [lastProcessedGameNumber, setLastProcessedGameNumber] = useState<number | null>(null);
+  const [showContinuePrompt, setShowContinuePrompt] = useState(false);
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [editNickname, setEditNickname] = useState("");
   
   const playerId = localStorage.getItem("xo_playerId");
 
@@ -61,6 +66,9 @@ export default function XOGame() {
   const xPlayerName = players.find(p => p.id === xoState?.xPlayerId)?.nickname || "Player X";
   const oPlayerName = isBotGame ? "Bot" : (players.find(p => p.id === xoState?.oPlayerId)?.nickname || "Player O");
   const spectators = players.filter(p => p.isSpectator && !p.hasLeft);
+  const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
+  const isHost = room?.hostId === playerId;
+  const isPaused = room?.status === "paused";
 
   const makeMovesMutation = useMutation({
     mutationFn: async ({ row, col }: { row: number; col: number }) => {
@@ -158,6 +166,66 @@ export default function XOGame() {
     },
   });
 
+  const continueGameMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/continue`, {
+        requesterId: playerId,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowContinuePrompt(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+    },
+  });
+
+  const kickPlayerMutation = useMutation({
+    mutationFn: async (playerIdToKick: string) => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/kick`, {
+        requesterId: playerId,
+        playerIdToKick,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Player moved to spectators" });
+      queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+    },
+  });
+
+  const assignSpectatorMutation = useMutation({
+    mutationFn: async ({ spectatorId, position }: { spectatorId: string; position: number }) => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/assign-spectator`, {
+        requesterId: playerId,
+        spectatorId,
+        position,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowContinuePrompt(false);
+      toast({ title: "Spectator promoted to player" });
+      queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+    },
+  });
+
+  const renamePlayerMutation = useMutation({
+    mutationFn: async ({ targetPlayerId, newNickname }: { targetPlayerId: string; newNickname: string }) => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/rename`, {
+        requesterId: playerId,
+        targetPlayerId,
+        newNickname,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      setEditingPlayerId(null);
+      setEditNickname("");
+      toast({ title: "Nickname updated" });
+      queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+    },
+  });
+
   const triggerBotMove = useCallback(() => {
     if (isBotGame && xoState?.currentPlayer === "O" && !xoState?.winner && !xoState?.isDraw) {
       botMoveMutation.mutate();
@@ -225,8 +293,28 @@ export default function XOGame() {
     }
   }, [xoState?.isDraw, xoState?.winner, xoState?.moveHistory?.length, showRoundEnd, drawCountdown]);
 
+  useEffect(() => {
+    if (isPaused && isHost && !isBotGame) {
+      setShowContinuePrompt(true);
+    }
+  }, [isPaused, isHost, isBotGame]);
+
+  const startEditingNickname = (player: Player) => {
+    setEditingPlayerId(player.id);
+    setEditNickname(player.nickname);
+  };
+
+  const saveNickname = (targetPlayerId: string) => {
+    if (editNickname.trim() && editNickname !== players.find(p => p.id === targetPlayerId)?.nickname) {
+      renamePlayerMutation.mutate({ targetPlayerId, newNickname: editNickname.trim() });
+    } else {
+      setEditingPlayerId(null);
+      setEditNickname("");
+    }
+  };
+
   const handleCellClick = (row: number, col: number) => {
-    if (!isMyTurn || xoState?.board[row][col] || xoState?.winner || xoState?.isDraw) return;
+    if (isPaused || !isMyTurn || xoState?.board[row][col] || xoState?.winner || xoState?.isDraw) return;
     makeMovesMutation.mutate({ row, col });
   };
 
@@ -285,21 +373,15 @@ export default function XOGame() {
           </div>
         </Card>
 
-        {/* Spectators */}
-        {spectators.length > 0 && (
-          <Card className="p-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl mb-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <Eye size={14} />
-              <span className="font-medium">Spectators:</span>
-              <div className="flex flex-wrap gap-2">
-                {spectators.map(spectator => (
-                  <span key={spectator.id} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full text-xs">
-                    {spectator.nickname}
-                  </span>
-                ))}
-              </div>
+        {/* Game Paused Banner */}
+        {isPaused && (
+          <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white text-lg font-bold px-6 py-3 rounded-full shadow-xl border-2 border-gray-400 mb-4 text-center" data-testid="paused-indicator">
+            <div className="flex items-center justify-center gap-2">
+              <span>⏸️</span>
+              <span>Game Paused</span>
+              <span>⏸️</span>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Turn Indicator */}
@@ -402,6 +484,176 @@ export default function XOGame() {
             </div>
           )}
         </Card>
+
+        {/* Spectators Section - Below game board */}
+        {spectators.length > 0 && (
+          <Card className="p-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl mt-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
+              <Eye size={14} />
+              <span className="font-medium">Spectators ({spectators.length}):</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {spectators.map(spectator => (
+                <div key={spectator.id} className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                  {editingPlayerId === spectator.id ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        value={editNickname}
+                        onChange={(e) => setEditNickname(e.target.value)}
+                        className="h-5 w-20 text-xs px-1"
+                        maxLength={15}
+                        onKeyDown={(e) => e.key === 'Enter' && saveNickname(spectator.id)}
+                      />
+                      <button onClick={() => saveNickname(spectator.id)} className="text-green-500 hover:text-green-700">
+                        <Check size={12} />
+                      </button>
+                      <button onClick={() => { setEditingPlayerId(null); setEditNickname(""); }} className="text-red-500 hover:text-red-700">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span>{spectator.nickname}</span>
+                      {isHost && (
+                        <button onClick={() => startEditingNickname(spectator)} className="text-gray-400 hover:text-gray-600 ml-1">
+                          <Pencil size={10} />
+                        </button>
+                      )}
+                      {isHost && isPaused && (
+                        <button
+                          onClick={() => {
+                            const vacantPosition = xoState.xPlayerId && !players.find(p => p.id === xoState.xPlayerId && !p.isSpectator && !p.hasLeft) ? 0 : 1;
+                            assignSpectatorMutation.mutate({ spectatorId: spectator.id, position: vacantPosition });
+                          }}
+                          disabled={assignSpectatorMutation.isPending}
+                          className="text-green-500 hover:text-green-700 ml-1"
+                          title="Promote to player"
+                        >
+                          <UserPlus size={12} />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Host Controls for Active Players */}
+        {isHost && !isBotGame && (
+          <Card className="p-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl mt-4">
+            <div className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Host Controls:</div>
+            <div className="space-y-2">
+              {activePlayers.filter(p => p.id !== playerId).map(player => (
+                <div key={player.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
+                  {editingPlayerId === player.id ? (
+                    <div className="flex items-center gap-1 flex-1">
+                      <Input
+                        value={editNickname}
+                        onChange={(e) => setEditNickname(e.target.value)}
+                        className="h-7 text-sm px-2"
+                        maxLength={15}
+                        onKeyDown={(e) => e.key === 'Enter' && saveNickname(player.id)}
+                      />
+                      <button onClick={() => saveNickname(player.id)} className="text-green-500 hover:text-green-700 p-1">
+                        <Check size={16} />
+                      </button>
+                      <button onClick={() => { setEditingPlayerId(null); setEditNickname(""); }} className="text-red-500 hover:text-red-700 p-1">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-sm">{player.nickname}</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => startEditingNickname(player)} className="text-gray-400 hover:text-gray-600 p-1" title="Rename">
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => kickPlayerMutation.mutate(player.id)}
+                          disabled={kickPlayerMutation.isPending}
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title="Move to spectators"
+                        >
+                          <UserMinus size={14} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+              {isPaused && (
+                <Button
+                  onClick={() => continueGameMutation.mutate()}
+                  disabled={continueGameMutation.isPending}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="sm"
+                  data-testid="button-continue-game"
+                >
+                  <Play size={14} className="mr-1" />
+                  {continueGameMutation.isPending ? "Continuing..." : "Continue Game"}
+                </Button>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {/* Continue Game Prompt Dialog */}
+        {showContinuePrompt && isHost && !isBotGame && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <Card className="max-w-md w-full mx-4">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Player Left the Game</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  A player has left the game. As the host, you can continue with a replacement or wait for them to return.
+                </p>
+                
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => {
+                      continueGameMutation.mutate();
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    disabled={continueGameMutation.isPending}
+                  >
+                    <Play size={16} className="mr-2" />
+                    Continue Game
+                  </Button>
+                  
+                  {spectators.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Or select a spectator to replace:</p>
+                      {spectators.map(spectator => (
+                        <Button
+                          key={spectator.id}
+                          onClick={() => {
+                            const vacantPosition = xoState.xPlayerId && !players.find(p => p.id === xoState.xPlayerId && !p.isSpectator && !p.hasLeft) ? 0 : 1;
+                            assignSpectatorMutation.mutate({ spectatorId: spectator.id, position: vacantPosition });
+                          }}
+                          disabled={assignSpectatorMutation.isPending}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          <UserPlus size={14} className="mr-2" />
+                          Replace with {spectator.nickname}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <Button
+                    onClick={() => setShowContinuePrompt(false)}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Round End Popup - small, positioned at 6 o'clock (bottom center) */}
         {showRoundEnd && (
