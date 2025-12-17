@@ -125,6 +125,7 @@ export default function XOGame() {
       setDrawCountdown(null);
       setShowWinAnimation(false);
       setWinCountdown(null);
+      setLastProcessedGameNumber(null);
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
       
       if (isBotGame && data.xoState?.currentPlayer === "O") {
@@ -141,6 +142,10 @@ export default function XOGame() {
     onSuccess: () => {
       setShowRoundEnd(false);
       setRoundWinner(null);
+      setShowWinAnimation(false);
+      setWinCountdown(null);
+      setDrawCountdown(null);
+      setLastProcessedGameNumber(null);
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
     },
   });
@@ -249,7 +254,9 @@ export default function XOGame() {
             <div className="text-center px-4">
               <div className="text-sm text-gray-500 dark:text-gray-400">Round {xoState.gameNumber}</div>
               <div className="text-lg font-bold">{boardSize}×{boardSize}</div>
-              <div className="text-xs text-gray-400">Win {xoState.winLength} in a row</div>
+              <div className="text-sm font-semibold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 px-2 py-1 rounded-full mt-1">
+                🎯 {xoState.winLength} in a row to win!
+              </div>
             </div>
             <div className="text-center flex-1">
               <div className="text-2xl mb-1">⭕</div>
@@ -363,29 +370,29 @@ export default function XOGame() {
           )}
         </Card>
 
-        {/* Round End Modal */}
+        {/* Round End Modal - compact and transparent to show winning line */}
         {showRoundEnd && (
-          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-sm w-full p-6 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm text-center">
-              <div className="text-6xl mb-4">
+          <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-xs w-full p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-center shadow-lg">
+              <div className="text-4xl mb-2">
                 {roundWinner ? '🎉' : '🤝'}
               </div>
-              <h2 className="text-2xl font-bold mb-2">
+              <h2 className="text-xl font-bold mb-1">
                 {roundWinner ? `${roundWinner} Wins!` : "It's a Draw!"}
               </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
+              <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">
                 {/* Show next round info only for human wins or human vs human */}
                 {xoState.boardSize < 6 && roundWinner && !(isBotGame && xoState.winner === "O") && (
-                  <>Next round: {xoState.boardSize + 1}×{xoState.boardSize + 1} board!</>
+                  <>Next: {xoState.boardSize + 1}×{xoState.boardSize + 1} ({xoState.winLength + 1} in a row)</>
                 )}
                 {xoState.boardSize >= 6 && roundWinner && (
                   <>Maximum board size reached!</>
                 )}
                 {isBotGame && xoState.winner === "O" && (
-                  <>Bot wins this game! Try again?</>
+                  <>Bot wins! Try again?</>
                 )}
                 {xoState.isDraw && xoState.boardSize < 6 && drawCountdown !== null && (
-                  <>Next level in {drawCountdown} seconds...</>
+                  <>Next level in {drawCountdown}s...</>
                 )}
               </p>
               <div className="space-y-2">
@@ -394,28 +401,31 @@ export default function XOGame() {
                   <Button 
                     onClick={() => nextRoundMutation.mutate()}
                     className="w-full bg-gradient-to-r from-green-600 to-emerald-600"
+                    size="sm"
                     data-testid="button-next-round"
                   >
-                    <Zap size={18} className="mr-2" />
-                    Next Round!
+                    <Zap size={16} className="mr-1" />
+                    Next Round
                   </Button>
                 )}
                 <Button 
                   variant="outline" 
                   onClick={() => resetGameMutation.mutate()}
                   className="w-full"
+                  size="sm"
                   data-testid="button-play-again"
                 >
-                  Play Again (3×3)
+                  Play Again
                 </Button>
                 <Link href="/xo" className="block">
                   <Button 
                     variant="ghost" 
                     className="w-full"
+                    size="sm"
                     data-testid="button-home"
                   >
-                    <ArrowLeft size={18} className="mr-2" />
-                    Back to Home
+                    <ArrowLeft size={16} className="mr-1" />
+                    Home
                   </Button>
                 </Link>
               </div>
