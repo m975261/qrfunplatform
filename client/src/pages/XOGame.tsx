@@ -338,27 +338,29 @@ export default function XOGame() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-indigo-900 dark:to-purple-900 p-4">
-      {/* Room Code Header - Top Center */}
-      <div className="text-center mb-4">
-        <div className="text-xl font-bold text-gray-800 dark:text-gray-200">
-          Room#: <span className="text-indigo-600 dark:text-indigo-400">{room?.code}</span>
+      {/* Top Header Row - Leave, Room Code, Reset */}
+      <div className="flex items-center justify-between mb-4">
+        <Link href="/xo" className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors text-sm">
+          <ArrowLeft size={16} />
+          Leave
+        </Link>
+        
+        <div className="text-center">
+          <div className="text-lg font-bold text-gray-800 dark:text-gray-200">
+            Room#: <span className="text-indigo-600 dark:text-indigo-400">{room?.code}</span>
+          </div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            go to: <span className="font-semibold text-indigo-500 underline">QrFun.org</span>
+          </div>
         </div>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          go to: <span className="font-semibold text-indigo-500 underline">QrFun.org</span>
-        </div>
+        
+        <Button variant="ghost" size="sm" onClick={() => resetGameMutation.mutate()} data-testid="button-reset" className="text-sm">
+          <RotateCcw size={16} className="mr-1" />
+          Reset
+        </Button>
       </div>
 
       <div className="max-w-lg mx-auto relative">
-        <div className="mb-4 flex items-center justify-between">
-          <Link href="/xo" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors">
-            <ArrowLeft size={20} />
-            Leave
-          </Link>
-          <Button variant="ghost" size="sm" onClick={() => resetGameMutation.mutate()} data-testid="button-reset">
-            <RotateCcw size={18} className="mr-1" />
-            Reset
-          </Button>
-        </div>
 
         {/* Player Name Display */}
         {myNickname && (
