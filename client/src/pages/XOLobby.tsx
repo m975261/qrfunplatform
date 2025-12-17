@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Users, Play, Crown, UserMinus, UserPlus, Eye } from "lucide-react";
+import { ArrowLeft, Copy, Users, Play, Crown, UserMinus, UserPlus, Eye, Pencil, Check, X, Shield } from "lucide-react";
 import { Link } from "wouter";
 import QRCode from "qrcode";
 
@@ -34,6 +35,8 @@ export default function XOLobby() {
   const { roomId } = useParams<{ roomId: string }>();
   const [, setLocation] = useLocation();
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [editingNickname, setEditingNickname] = useState<string>("");
   const { toast } = useToast();
   
   const playerId = localStorage.getItem("xo_playerId");
@@ -93,8 +96,8 @@ export default function XOLobby() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
       toast({
-        title: "Player Removed",
-        description: "Player has been removed from the room",
+        title: "Moved to Spectators",
+        description: "Player is now watching the game",
       });
     },
     onError: (error: any) => {
@@ -129,6 +132,73 @@ export default function XOLobby() {
       });
     },
   });
+
+  const renamePlayerMutation = useMutation({
+    mutationFn: async ({ targetPlayerId, newNickname }: { targetPlayerId: string; newNickname: string }) => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/rename`, { 
+        playerId: targetPlayerId,
+        newNickname,
+        requesterId: playerId 
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+      setEditingPlayerId(null);
+      setEditingNickname("");
+      toast({
+        title: "Player Renamed",
+        description: "Player nickname has been updated",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to rename player",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const transferHostMutation = useMutation({
+    mutationFn: async (newHostId: string) => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/transfer-host`, { 
+        newHostId,
+        requesterId: playerId 
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+      toast({
+        title: "Host Transferred",
+        description: "Host privileges have been transferred",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to transfer host",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const startEditingNickname = (player: Player) => {
+    setEditingPlayerId(player.id);
+    setEditingNickname(player.nickname);
+  };
+
+  const saveNickname = () => {
+    if (editingPlayerId && editingNickname.trim()) {
+      renamePlayerMutation.mutate({ targetPlayerId: editingPlayerId, newNickname: editingNickname.trim() });
+    }
+  };
+
+  const cancelEditing = () => {
+    setEditingPlayerId(null);
+    setEditingNickname("");
+  };
 
   const copyRoomCode = () => {
     navigator.clipboard.writeText(roomCode);
@@ -171,7 +241,7 @@ export default function XOLobby() {
 
         <Card className="p-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl mb-6">
           <div className="text-center mb-6">
-            <div className="text-5xl mb-3">⭕❌</div>
+            <div className="text-5xl mb-3">❌⭕</div>
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">XO Game Lobby</h1>
             <div className="flex items-center justify-center gap-3">
               <span className="text-3xl font-mono font-bold tracking-widest text-indigo-600 dark:text-indigo-400">
@@ -206,28 +276,78 @@ export default function XOLobby() {
                 {activePlayers.map((player, index) => (
                   <div
                     key={player.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg ${
+                    className={`flex items-center gap-2 p-3 rounded-lg ${
                       index === 0 ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-purple-50 dark:bg-purple-900/30'
                     }`}
                     data-testid={`player-${player.id}`}
                   >
                     <span className="text-2xl">{index === 0 ? '❌' : '⭕'}</span>
-                    <span className="font-medium flex-1">{player.nickname}</span>
-                    {room?.hostId === player.id && (
-                      <Crown size={16} className="text-yellow-500" />
-                    )}
-                    {isHost && player.id !== playerId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => kickPlayerMutation.mutate(player.id)}
-                        disabled={kickPlayerMutation.isPending}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
-                        data-testid={`button-kick-${player.id}`}
-                        title="Remove player"
-                      >
-                        <UserMinus size={16} />
-                      </Button>
+                    {editingPlayerId === player.id ? (
+                      <div className="flex-1 flex items-center gap-1">
+                        <Input
+                          value={editingNickname}
+                          onChange={(e) => setEditingNickname(e.target.value)}
+                          className="h-7 text-sm"
+                          maxLength={20}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveNickname();
+                            if (e.key === 'Escape') cancelEditing();
+                          }}
+                          data-testid={`input-nickname-${player.id}`}
+                        />
+                        <Button variant="ghost" size="sm" onClick={saveNickname} className="p-1 h-7 w-7 text-green-600" data-testid={`button-save-nickname-${player.id}`}>
+                          <Check size={14} />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={cancelEditing} className="p-1 h-7 w-7 text-red-500" data-testid={`button-cancel-nickname-${player.id}`}>
+                          <X size={14} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="font-medium flex-1">{player.nickname}</span>
+                        {room?.hostId === player.id && (
+                          <Crown size={16} className="text-yellow-500" />
+                        )}
+                        {isHost && !renamePlayerMutation.isPending && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditingNickname(player)}
+                            className="p-1 h-7 w-7 text-gray-500 hover:text-gray-700"
+                            data-testid={`button-rename-${player.id}`}
+                            title="Rename player"
+                          >
+                            <Pencil size={14} />
+                          </Button>
+                        )}
+                        {isHost && player.id !== playerId && room?.hostId !== player.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => transferHostMutation.mutate(player.id)}
+                            disabled={transferHostMutation.isPending || kickPlayerMutation.isPending}
+                            className="p-1 h-7 w-7 text-yellow-500 hover:text-yellow-700"
+                            data-testid={`button-transfer-host-${player.id}`}
+                            title="Make host"
+                          >
+                            <Shield size={14} />
+                          </Button>
+                        )}
+                        {isHost && player.id !== playerId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => kickPlayerMutation.mutate(player.id)}
+                            disabled={kickPlayerMutation.isPending || transferHostMutation.isPending}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 h-7 w-7"
+                            data-testid={`button-kick-${player.id}`}
+                            title="Kick to spectators"
+                          >
+                            <UserMinus size={14} />
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, RotateCcw, Trophy, Zap } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trophy, Zap, Eye } from "lucide-react";
 import { Link } from "wouter";
 import { XOGameState, XOCell } from "@shared/schema";
 
@@ -13,6 +13,8 @@ interface Player {
   id: string;
   nickname: string;
   position: number;
+  isSpectator?: boolean;
+  hasLeft?: boolean;
 }
 
 interface Room {
@@ -58,6 +60,7 @@ export default function XOGame() {
 
   const xPlayerName = players.find(p => p.id === xoState?.xPlayerId)?.nickname || "Player X";
   const oPlayerName = isBotGame ? "Bot" : (players.find(p => p.id === xoState?.oPlayerId)?.nickname || "Player O");
+  const spectators = players.filter(p => p.isSpectator && !p.hasLeft);
 
   const makeMovesMutation = useMutation({
     mutationFn: async ({ row, col }: { row: number; col: number }) => {
@@ -275,6 +278,23 @@ export default function XOGame() {
             Draws: {xoState.scores.draws}
           </div>
         </Card>
+
+        {/* Spectators */}
+        {spectators.length > 0 && (
+          <Card className="p-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl mb-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+              <Eye size={14} />
+              <span className="font-medium">Spectators:</span>
+              <div className="flex flex-wrap gap-2">
+                {spectators.map(spectator => (
+                  <span key={spectator.id} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full text-xs">
+                    {spectator.nickname}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Turn Indicator */}
         <div className={`text-center py-3 px-4 rounded-lg mb-4 ${

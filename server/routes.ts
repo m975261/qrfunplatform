@@ -5360,7 +5360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const player = await storage.createPlayer({
         nickname,
         roomId: room.id,
-        position: joinAsSpectator ? -1 : 1,
+        position: joinAsSpectator ? null : 1,
         isSpectator: joinAsSpectator,
       });
       
@@ -5476,8 +5476,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Player not found" });
       }
 
-      // Mark player as left
-      await storage.updatePlayer(playerIdToKick, { hasLeft: true });
+      // Convert player to spectator instead of removing them (same as UNO pattern)
+      await storage.updatePlayer(playerIdToKick, { 
+        isSpectator: true,
+        hasLeft: false,  // Keep as false so they remain visible as spectator
+        position: null
+      });
 
       // Update XO state if player was X or O
       const xoState = room.xoState as XOGameState;
@@ -5496,6 +5500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       broadcastToRoom(room.id, {
         type: "xo_player_kicked",
         playerId: playerIdToKick,
+        isNowSpectator: true,
       });
 
       res.json({ success: true });
@@ -5575,6 +5580,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error promoting XO spectator:", error);
       res.status(500).json({ error: "Failed to promote spectator" });
+    }
+  });
+
+  // XO rename player (host only)
+  app.post("/api/xo/rooms/:roomId/rename", async (req, res) => {
+    try {
+      const { playerId: targetPlayerId, newNickname, requesterId } = z.object({
+        playerId: z.string(),
+        newNickname: z.string().min(1).max(20),
+        requesterId: z.string(),
+      }).parse(req.body);
+
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      // Verify requester is the host
+      if (requesterId !== room.hostId) {
+        return res.status(403).json({ error: "Only the host can rename players" });
+      }
+
+      const player = await storage.getPlayer(targetPlayerId);
+      if (!player || player.roomId !== room.id) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      await storage.updatePlayer(targetPlayerId, { nickname: newNickname });
+
+      // Broadcast to room
+      broadcastToRoom(room.id, {
+        type: "xo_player_renamed",
+        playerId: targetPlayerId,
+        newNickname,
+      });
+
+      res.json({ success: true, nickname: newNickname });
+    } catch (error) {
+      console.error("Error renaming XO player:", error);
+      res.status(500).json({ error: "Failed to rename player" });
+    }
+  });
+
+  // XO transfer host (host only)
+  app.post("/api/xo/rooms/:roomId/transfer-host", async (req, res) => {
+    try {
+      const { newHostId, requesterId } = z.object({
+        newHostId: z.string(),
+        requesterId: z.string(),
+      }).parse(req.body);
+
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      // Verify requester is the current host
+      if (requesterId !== room.hostId) {
+        return res.status(403).json({ error: "Only the host can transfer host privileges" });
+      }
+
+      const newHost = await storage.getPlayer(newHostId);
+      if (!newHost || newHost.roomId !== room.id) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      // Update room hostId
+      await storage.updateRoom(room.id, { hostId: newHostId });
+
+      // Broadcast to room
+      broadcastToRoom(room.id, {
+        type: "xo_host_transferred",
+        oldHostId: requesterId,
+        newHostId,
+      });
+
+      res.json({ success: true, newHostId });
+    } catch (error) {
+      console.error("Error transferring XO host:", error);
+      res.status(500).json({ error: "Failed to transfer host" });
     }
   });
 
