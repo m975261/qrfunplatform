@@ -67,8 +67,12 @@ export default function XOGame() {
     p.id === (xoState?.currentPlayer === "X" ? xoState?.xPlayerId : xoState?.oPlayerId)
   )?.nickname || (xoState?.currentPlayer === "X" ? "X" : "O");
 
-  const xPlayerName = players.find(p => p.id === xoState?.xPlayerId)?.nickname || "Player X";
-  const oPlayerName = isBotGame ? "Bot" : (players.find(p => p.id === xoState?.oPlayerId)?.nickname || "Player O");
+  const xPlayer = players.find(p => p.id === xoState?.xPlayerId && !p.isSpectator && !p.hasLeft);
+  const oPlayer = players.find(p => p.id === xoState?.oPlayerId && !p.isSpectator && !p.hasLeft);
+  const xPlayerName = xPlayer?.nickname || (isPaused && !xoState?.xPlayerId ? "Waiting..." : "Player X");
+  const oPlayerName = isBotGame ? "Bot" : (oPlayer?.nickname || (isPaused && !xoState?.oPlayerId ? "Waiting..." : "Player O"));
+  const isXVacant = !xPlayer && isPaused;
+  const isOVacant = !oPlayer && isPaused && !isBotGame;
   const myNickname = players.find(p => p.id === playerId)?.nickname;
   const spectators = players.filter(p => p.isSpectator && !p.hasLeft);
   const activePlayers = players.filter(p => !p.isSpectator && !p.hasLeft);
@@ -404,7 +408,9 @@ export default function XOGame() {
                   </button>
                 </div>
               ) : (
-                <div className="font-medium text-sm">{xPlayerName}</div>
+                <div className={`font-medium text-sm ${isXVacant ? 'text-amber-500 animate-pulse' : ''}`}>
+                  {isXVacant ? '⏳ Waiting...' : xPlayerName}
+                </div>
               )}
               <div className="text-2xl font-bold text-blue-600">{xoState.scores.x}</div>
             </div>
@@ -467,7 +473,9 @@ export default function XOGame() {
                   </button>
                 </div>
               ) : (
-                <div className="font-medium text-sm">{oPlayerName}</div>
+                <div className={`font-medium text-sm ${isOVacant ? 'text-amber-500 animate-pulse' : ''}`}>
+                  {isOVacant ? '⏳ Waiting...' : oPlayerName}
+                </div>
               )}
               <div className="text-2xl font-bold text-purple-600">{xoState.scores.o}</div>
             </div>
@@ -613,6 +621,7 @@ export default function XOGame() {
             <div className="flex flex-wrap gap-2">
               {spectators.map(spectator => (
                 <div key={spectator.id} className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${spectator.isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
                   {editingPlayerId === spectator.id ? (
                     <div className="flex items-center gap-1">
                       <Input
@@ -658,61 +667,6 @@ export default function XOGame() {
           </Card>
         )}
 
-        {/* Continue Game Prompt Dialog */}
-        {showContinuePrompt && isHost && !isBotGame && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <Card className="max-w-md w-full mx-4">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Player Left the Game</h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  A player has left the game. As the host, you can continue with a replacement or wait for them to return.
-                </p>
-                
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => {
-                      continueGameMutation.mutate();
-                    }}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    disabled={continueGameMutation.isPending}
-                  >
-                    <Play size={16} className="mr-2" />
-                    Continue Game
-                  </Button>
-                  
-                  {spectators.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Or select a spectator to replace:</p>
-                      {spectators.map(spectator => (
-                        <Button
-                          key={spectator.id}
-                          onClick={() => {
-                            const vacantPosition = xoState.xPlayerId && !players.find(p => p.id === xoState.xPlayerId && !p.isSpectator && !p.hasLeft) ? 0 : 1;
-                            assignSpectatorMutation.mutate({ spectatorId: spectator.id, position: vacantPosition });
-                          }}
-                          disabled={assignSpectatorMutation.isPending}
-                          variant="outline"
-                          className="w-full"
-                        >
-                          <UserPlus size={14} className="mr-2" />
-                          Replace with {spectator.nickname}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <Button
-                    onClick={() => setShowContinuePrompt(false)}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {/* Round End Popup - horizontal layout */}
         {showRoundEnd && (
