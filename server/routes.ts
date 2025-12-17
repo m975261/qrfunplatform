@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { UnoGameLogic } from "./gameLogic";
-import { XOGameLogic } from "./xoGameLogic";
+import { XOGameLogic, XOAIManager } from "./xoGameLogic";
 import { z } from "zod";
 import QRCode from "qrcode";
 import jwt from "jsonwebtoken";
@@ -5276,10 +5276,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const xoSettings: XOSettings = {
         difficulty: difficulty || 'medium',
         isBotGame: isBotGame || false,
+        botPlayer: isBotGame ? "O" : null,
         isGuruPlayer: false,
+        guruPlayerId: null,
       };
-      
-      const initialState = XOGameLogic.createInitialState();
       
       const room = await storage.createRoom({
         code,
@@ -5287,7 +5287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gameType: "xo",
         status: isBotGame ? "playing" : "waiting",
         maxPlayers: 2,
-        xoState: initialState,
+        xoState: null,
         xoSettings,
       });
       
@@ -5298,18 +5298,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isSpectator: false,
       });
       
+      const initialState = XOGameLogic.createInitialState(player.id, isBotGame ? "bot" : null);
+      
       await storage.updateRoom(room.id, { 
         hostId: player.id,
-        xoState: {
-          ...initialState,
-          xPlayerId: player.id,
-        }
+        xoState: initialState
       });
 
       const token = jwt.sign({ playerId: player.id, roomId: room.id }, JWT_SECRET, { expiresIn: "24h" });
 
       res.json({
-        room: { ...room, hostId: player.id, xoState: { ...initialState, xPlayerId: player.id } },
+        room: { ...room, hostId: player.id, xoState: initialState },
         player,
         token,
         hostNickname,
@@ -5356,11 +5355,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const xoState = room.xoState as XOGameState;
+      if (!xoState) {
+        return res.status(400).json({ error: "Room not properly initialized" });
+      }
+      
+      const updatedXoState = {
+        ...xoState,
+        oPlayerId: player.id,
+      };
+      
       await storage.updateRoom(room.id, {
-        xoState: {
-          ...xoState,
-          oPlayerId: player.id,
-        }
+        xoState: updatedXoState
       });
 
       const token = jwt.sign({ playerId: player.id, roomId: room.id }, JWT_SECRET, { expiresIn: "24h" });
@@ -5371,7 +5376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({
-        room: { ...room, xoState: { ...xoState, oPlayerId: player.id } },
+        room: { ...room, xoState: updatedXoState },
         player,
         token,
       });
@@ -5454,20 +5459,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const xoState = room.xoState as XOGameState;
+      if (!xoState) {
+        return res.status(400).json({ error: "Game not properly initialized" });
+      }
+      
       const currentPlayerMark = xoState.currentPlayer;
       const expectedPlayerId = currentPlayerMark === "X" ? xoState.xPlayerId : xoState.oPlayerId;
       
-      if (playerId !== expectedPlayerId) {
-        return res.status(400).json({ error: "Not your turn" });
+      // For bot games, bot is O so player must be X
+      const isBotGame = room.xoSettings?.isBotGame;
+      if (isBotGame) {
+        if (currentPlayerMark !== "X" || playerId !== xoState.xPlayerId) {
+          return res.status(400).json({ error: "Not your turn - waiting for bot" });
+        }
+      } else {
+        if (playerId !== expectedPlayerId) {
+          return res.status(400).json({ error: "Not your turn" });
+        }
       }
 
-      const moveResult = XOGameLogic.makeMove(xoState, row, col, currentPlayerMark);
+      const newState = XOGameLogic.makeMove(xoState, row, col);
       
-      if (!moveResult.success) {
-        return res.status(400).json({ error: moveResult.error });
+      if (!newState) {
+        return res.status(400).json({ error: "Invalid move" });
       }
-
-      const newState = moveResult.state!;
       
       let roomUpdates: any = { xoState: newState };
       
@@ -5515,11 +5530,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const xoState = room.xoState as XOGameState;
-      const newState = XOGameLogic.progressToNextRound(xoState);
+      const newState = XOGameLogic.progressBoard(xoState);
       
       await storage.updateRoom(room.id, { 
         xoState: newState,
-        status: newState.boardSize > 6 ? "finished" : "playing"
+        status: "playing"
       });
 
       broadcastToRoom(room.id, {
@@ -5543,9 +5558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const oldState = room.xoState as XOGameState;
-      const newState = XOGameLogic.createInitialState();
-      newState.xPlayerId = oldState.xPlayerId;
-      newState.oPlayerId = oldState.oPlayerId;
+      const newState = XOGameLogic.createInitialState(oldState.xPlayerId, oldState.oPlayerId);
       
       await storage.updateRoom(room.id, { 
         xoState: newState,
@@ -5577,21 +5590,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const xoState = room.xoState as XOGameState;
-      const difficulty = room.xoSettings.difficulty || 'medium';
+      const settings = room.xoSettings as XOSettings;
       
-      const botMove = XOGameLogic.getBotMove(xoState.board, xoState.currentPlayer, difficulty, xoState.winLength);
+      if (!xoState) {
+        return res.status(400).json({ error: "Game not properly initialized" });
+      }
+      
+      // Bot should only move when it's O's turn
+      if (xoState.currentPlayer !== "O") {
+        return res.status(400).json({ error: "Not bot's turn" });
+      }
+      
+      const botMove = XOAIManager.getMove(xoState, settings);
       
       if (!botMove) {
         return res.status(400).json({ error: "No valid moves" });
       }
 
-      const moveResult = XOGameLogic.makeMove(xoState, botMove.row, botMove.col, xoState.currentPlayer);
+      const newState = XOGameLogic.makeMove(xoState, botMove.row, botMove.col);
       
-      if (!moveResult.success) {
-        return res.status(400).json({ error: moveResult.error });
+      if (!newState) {
+        return res.status(400).json({ error: "Invalid move" });
       }
-
-      const newState = moveResult.state!;
       await storage.updateRoom(room.id, { xoState: newState });
 
       broadcastToRoom(room.id, {
