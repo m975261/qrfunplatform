@@ -377,9 +377,9 @@ export default function XOGame() {
           )}
         </Card>
 
-        {/* Round End Popup - small, positioned to the right */}
+        {/* Round End Popup - small, positioned at 3 o'clock with gap from cells */}
         {showRoundEnd && (
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-50">
+          <div className="absolute -right-36 top-1/2 -translate-y-1/2 z-50">
             <Card className="p-3 bg-white dark:bg-gray-800 shadow-lg text-center w-32">
               <div className="text-2xl mb-1">
                 {roundWinner ? '🎉' : '🤝'}
