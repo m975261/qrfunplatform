@@ -47,7 +47,12 @@ export default function XOGame() {
   const playerId = localStorage.getItem("xo_playerId");
 
   const { data, isLoading, refetch } = useQuery<{ room: Room; players: Player[] }>({
-    queryKey: ['/api/xo/rooms', roomId],
+    queryKey: ['/api/xo/rooms', roomId, playerId],
+    queryFn: async () => {
+      const response = await fetch(`/api/xo/rooms/${roomId}?playerId=${playerId}`);
+      if (!response.ok) throw new Error('Failed to fetch room');
+      return response.json();
+    },
     refetchInterval: 500,
   });
 

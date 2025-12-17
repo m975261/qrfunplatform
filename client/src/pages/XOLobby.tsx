@@ -44,8 +44,13 @@ export default function XOLobby() {
   const roomCode = new URLSearchParams(window.location.search).get("code") || "";
 
   const { data, isLoading } = useQuery<{ room: Room; players: Player[] }>({
-    queryKey: ['/api/xo/rooms', roomId],
-    refetchInterval: 2000,
+    queryKey: ['/api/xo/rooms', roomId, playerId],
+    queryFn: async () => {
+      const response = await fetch(`/api/xo/rooms/${roomId}?playerId=${playerId}`);
+      if (!response.ok) throw new Error('Failed to fetch room');
+      return response.json();
+    },
+    refetchInterval: 500,
   });
 
   const room = data?.room;

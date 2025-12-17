@@ -5407,37 +5407,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Room not found" });
       }
       
-      const players = await storage.getPlayersByRoom(room.id);
+      // Update caller's lastSeenAt timestamp (HTTP polling as heartbeat)
+      const callerPlayerId = req.query.playerId as string | undefined;
+      if (callerPlayerId) {
+        await storage.updatePlayer(callerPlayerId, { lastSeenAt: new Date() });
+      }
       
-      // Add isOnline status to players based on WebSocket connections (same as UNO)
+      const players = await storage.getPlayersByRoom(room.id);
+      const now = Date.now();
+      
+      // Compute isOnline based on lastSeenAt (online if polled within last 10 seconds)
+      // Since XO polls every 500ms, 10 seconds is very generous for "online" status
       const playersWithStatus = players.map(player => {
-        const playerConnections = Array.from(connections.values()).filter(conn => 
-          conn.playerId === player.id && 
-          conn.ws.readyState === WebSocket.OPEN &&
-          (!conn.lastSeen || Date.now() - conn.lastSeen < 45000)
-        );
-        const isOnline = playerConnections.length > 0;
+        const lastSeen = player.lastSeenAt ? new Date(player.lastSeenAt).getTime() : 0;
+        const isOnline = now - lastSeen < 10000; // Online if seen in last 10 seconds
         return { ...player, isOnline };
       });
       
       // Auto-remove spectators who have been offline for 30+ seconds
-      // Only remove if they HAD a connection that went stale (has lastSeen timestamp)
-      const now = Date.now();
       for (const player of playersWithStatus) {
-        if (player.isSpectator && !player.isOnline && !player.hasLeft) {
-          // Find any connection that was ever associated with this player
-          const lastSeenConnection = Array.from(connections.values()).find(conn => conn.playerId === player.id);
+        if (player.isSpectator && !player.hasLeft) {
+          const lastSeen = player.lastSeenAt ? new Date(player.lastSeenAt).getTime() : 0;
+          const offlineDuration = now - lastSeen;
           
-          // Only auto-remove if player had a connection that went stale
-          // Don't remove players who never established a connection (just joined)
-          if (lastSeenConnection && lastSeenConnection.lastSeen) {
-            const offlineDuration = now - lastSeenConnection.lastSeen;
-            
-            if (offlineDuration > 30000) {
-              // Mark spectator as left
-              await storage.updatePlayer(player.id, { hasLeft: true, leftAt: new Date() });
-              console.log(`Auto-removed inactive spectator ${player.nickname} from XO room ${room.id}`);
-            }
+          // Only auto-remove if they have a lastSeenAt timestamp (not brand new)
+          // and they've been offline for 30+ seconds
+          if (lastSeen > 0 && offlineDuration > 30000) {
+            await storage.updatePlayer(player.id, { hasLeft: true, leftAt: new Date() });
+            console.log(`Auto-removed inactive spectator ${player.nickname} from XO room ${room.id}`);
           }
         }
       }
