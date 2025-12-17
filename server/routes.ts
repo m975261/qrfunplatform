@@ -5409,7 +5409,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const players = await storage.getPlayersByRoom(room.id);
       
-      res.json({ room, players });
+      // Add isOnline status to players based on WebSocket connections (same as UNO)
+      const playersWithStatus = players.map(player => {
+        const playerConnections = Array.from(connections.values()).filter(conn => 
+          conn.playerId === player.id && 
+          conn.ws.readyState === WebSocket.OPEN &&
+          (!conn.lastSeen || Date.now() - conn.lastSeen < 45000)
+        );
+        const isOnline = playerConnections.length > 0;
+        return { ...player, isOnline };
+      });
+      
+      // Auto-remove spectators who have been offline for 30+ seconds
+      const now = Date.now();
+      for (const player of playersWithStatus) {
+        if (player.isSpectator && !player.isOnline && !player.hasLeft) {
+          // Check if player has been offline for 30+ seconds
+          const lastSeenConnection = Array.from(connections.values()).find(conn => conn.playerId === player.id);
+          const lastSeen = lastSeenConnection?.lastSeen || 0;
+          const offlineDuration = now - lastSeen;
+          
+          if (offlineDuration > 30000) {
+            // Mark spectator as left
+            await storage.updatePlayer(player.id, { hasLeft: true, leftAt: new Date() });
+            console.log(`Auto-removed inactive spectator ${player.nickname} from XO room ${room.id}`);
+          }
+        }
+      }
+      
+      // Filter out players who have left
+      const activePlayers = playersWithStatus.filter(p => !p.hasLeft);
+      
+      res.json({ room, players: activePlayers });
     } catch (error) {
       console.error("Error getting XO room:", error);
       res.status(500).json({ error: "Failed to get room" });

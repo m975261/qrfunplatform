@@ -81,6 +81,7 @@ export const players = pgTable("players", {
   finishPosition: integer("finish_position"), // 1st, 2nd, 3rd, 4th place
   leftAt: timestamp("left_at"),
   joinedAt: timestamp("joined_at").default(sql`now()`),
+  lastSeenAt: timestamp("last_seen_at").default(sql`now()`), // For connection status tracking
 });
 
 export const gameMessages = pgTable("game_messages", {
