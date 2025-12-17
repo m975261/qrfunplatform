@@ -238,13 +238,13 @@ export class XOGameLogic {
   }
 
   static generateRoomCode(): string {
-    // Generate codes in format AA2BB - uppercase letters + 2 + letters for XO
-    const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    // Generate codes in format DD2DD - digits with 2 always in the middle for XO
+    const digits = "0123456789";
     
-    const first = letters.charAt(Math.floor(Math.random() * letters.length));
-    const second = letters.charAt(Math.floor(Math.random() * letters.length));
-    const fourth = letters.charAt(Math.floor(Math.random() * letters.length));
-    const fifth = letters.charAt(Math.floor(Math.random() * letters.length));
+    const first = digits.charAt(Math.floor(Math.random() * digits.length));
+    const second = digits.charAt(Math.floor(Math.random() * digits.length));
+    const fourth = digits.charAt(Math.floor(Math.random() * digits.length));
+    const fifth = digits.charAt(Math.floor(Math.random() * digits.length));
     
     return `${first}${second}2${fourth}${fifth}`;
   }
