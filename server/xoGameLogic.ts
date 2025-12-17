@@ -423,10 +423,10 @@ export class XOMCTSAI {
 
   constructor(difficulty: "easy" | "medium" | "hard" | "hardest") {
     switch (difficulty) {
-      case "easy": this.simulations = 100; break;
-      case "medium": this.simulations = 500; break;
+      case "easy": this.simulations = 200; break;
+      case "medium": this.simulations = 800; break;
       case "hard": this.simulations = 2000; break;
-      case "hardest": this.simulations = 10000; break;
+      case "hardest": this.simulations = 5000; break;
     }
   }
 
@@ -497,7 +497,8 @@ export class XOAIManager {
   static getAI(settings: XOSettings, boardSize: number) {
     const difficulty = settings.isGuruPlayer ? "hardest" : settings.difficulty;
 
-    if (boardSize <= 4) {
+    // Use MCTS for 4x4 and larger boards - minimax is too slow
+    if (boardSize <= 3) {
       return new XOMinimaxAI(difficulty);
     } else {
       return new XOMCTSAI(difficulty);

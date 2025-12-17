@@ -34,6 +34,9 @@ export default function XOGame() {
   const [showRoundEnd, setShowRoundEnd] = useState(false);
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
   const [drawCountdown, setDrawCountdown] = useState<number | null>(null);
+  const [showWinAnimation, setShowWinAnimation] = useState(false);
+  const [winCountdown, setWinCountdown] = useState<number | null>(null);
+  const [lastProcessedGameNumber, setLastProcessedGameNumber] = useState<number | null>(null);
   
   const playerId = localStorage.getItem("xo_playerId");
 
@@ -71,7 +74,8 @@ export default function XOGame() {
       if (data.xoState.winner) {
         const winnerName = data.xoState.winner === "X" ? xPlayerName : oPlayerName;
         setRoundWinner(winnerName);
-        setShowRoundEnd(true);
+        setShowWinAnimation(true);
+        setWinCountdown(3);
       } else if (data.xoState.isDraw) {
         setRoundWinner(null);
         setShowRoundEnd(true);
@@ -100,7 +104,8 @@ export default function XOGame() {
       if (data.xoState.winner) {
         const winnerName = data.xoState.winner === "X" ? xPlayerName : oPlayerName;
         setRoundWinner(winnerName);
-        setShowRoundEnd(true);
+        setShowWinAnimation(true);
+        setWinCountdown(3);
       } else if (data.xoState.isDraw) {
         setRoundWinner(null);
         setShowRoundEnd(true);
@@ -118,6 +123,8 @@ export default function XOGame() {
       setShowRoundEnd(false);
       setRoundWinner(null);
       setDrawCountdown(null);
+      setShowWinAnimation(false);
+      setWinCountdown(null);
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
       
       if (isBotGame && data.xoState?.currentPlayer === "O") {
@@ -162,6 +169,40 @@ export default function XOGame() {
       nextRoundMutation.mutate();
     }
   }, [drawCountdown, xoState?.isDraw, xoState?.boardSize, nextRoundMutation.isPending]);
+
+  useEffect(() => {
+    if (winCountdown !== null && winCountdown > 0) {
+      const timer = setTimeout(() => {
+        setWinCountdown(winCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (winCountdown === 0) {
+      setShowWinAnimation(false);
+      setWinCountdown(null);
+      setShowRoundEnd(true);
+    }
+  }, [winCountdown]);
+
+  useEffect(() => {
+    if (!xoState) return;
+    
+    const gameId = xoState.gameNumber;
+    
+    if (lastProcessedGameNumber !== gameId) {
+      if (xoState.winner && !showWinAnimation && !showRoundEnd) {
+        const winnerName = xoState.winner === "X" ? xPlayerName : oPlayerName;
+        setRoundWinner(winnerName);
+        setShowWinAnimation(true);
+        setWinCountdown(3);
+        setLastProcessedGameNumber(gameId);
+      } else if (xoState.isDraw && !showRoundEnd && drawCountdown === null) {
+        setRoundWinner(null);
+        setShowRoundEnd(true);
+        setDrawCountdown(5);
+        setLastProcessedGameNumber(gameId);
+      }
+    }
+  }, [xoState?.winner, xoState?.isDraw, xoState?.gameNumber, lastProcessedGameNumber, showWinAnimation, showRoundEnd, drawCountdown, xPlayerName, oPlayerName]);
 
   const handleCellClick = (row: number, col: number) => {
     if (!isMyTurn || xoState?.board[row][col] || xoState?.winner || xoState?.isDraw) return;
@@ -244,7 +285,7 @@ export default function XOGame() {
         {/* Game Board */}
         <Card className="p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl">
           <div 
-            className="mx-auto"
+            className="mx-auto relative"
             style={{
               display: 'grid',
               gridTemplateColumns: `repeat(${boardSize}, ${cellSize}px)`,
@@ -278,13 +319,54 @@ export default function XOGame() {
                 </button>
               ))
             )}
+            
+            {/* Winning Line SVG Overlay - stays visible even with modal */}
+            {xoState.winningLine && xoState.winningLine.length >= 2 && (
+              <svg
+                className="absolute inset-0 pointer-events-none z-[60]"
+                style={{
+                  width: boardSize * cellSize + (boardSize - 1) * 4,
+                  height: boardSize * cellSize + (boardSize - 1) * 4,
+                }}
+              >
+                <line
+                  x1={(xoState.winningLine[0].col * (cellSize + 4)) + cellSize / 2}
+                  y1={(xoState.winningLine[0].row * (cellSize + 4)) + cellSize / 2}
+                  x2={(xoState.winningLine[xoState.winningLine.length - 1].col * (cellSize + 4)) + cellSize / 2}
+                  y2={(xoState.winningLine[xoState.winningLine.length - 1].row * (cellSize + 4)) + cellSize / 2}
+                  stroke={xoState.winner === "X" ? "#2563eb" : "#9333ea"}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  className="animate-pulse"
+                  style={{
+                    strokeDasharray: 1000,
+                    strokeDashoffset: 1000,
+                    animation: 'drawLine 0.5s ease-out forwards',
+                  }}
+                />
+                <style>{`
+                  @keyframes drawLine {
+                    to {
+                      stroke-dashoffset: 0;
+                    }
+                  }
+                `}</style>
+              </svg>
+            )}
           </div>
+          
+          {/* Win Animation Countdown */}
+          {showWinAnimation && winCountdown !== null && (
+            <div className="text-center mt-4 text-lg font-bold text-yellow-600 dark:text-yellow-400 animate-pulse">
+              🎉 {roundWinner} Wins! {isBotGame && xoState.winner === "O" ? `Game over in ${winCountdown}...` : `Next round in ${winCountdown}...`}
+            </div>
+          )}
         </Card>
 
         {/* Round End Modal */}
         {showRoundEnd && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-sm w-full p-6 bg-white dark:bg-gray-800 text-center">
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-sm w-full p-6 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm text-center">
               <div className="text-6xl mb-4">
                 {roundWinner ? '🎉' : '🤝'}
               </div>
@@ -292,18 +374,23 @@ export default function XOGame() {
                 {roundWinner ? `${roundWinner} Wins!` : "It's a Draw!"}
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
-                {xoState.boardSize < 6 && roundWinner && (
+                {/* Show next round info only for human wins or human vs human */}
+                {xoState.boardSize < 6 && roundWinner && !(isBotGame && xoState.winner === "O") && (
                   <>Next round: {xoState.boardSize + 1}×{xoState.boardSize + 1} board!</>
                 )}
                 {xoState.boardSize >= 6 && roundWinner && (
                   <>Maximum board size reached!</>
+                )}
+                {isBotGame && xoState.winner === "O" && (
+                  <>Bot wins this game! Try again?</>
                 )}
                 {xoState.isDraw && xoState.boardSize < 6 && drawCountdown !== null && (
                   <>Next level in {drawCountdown} seconds...</>
                 )}
               </p>
               <div className="space-y-2">
-                {xoState.boardSize < 6 && roundWinner && (
+                {/* Next Round button - only show when human wins or non-bot game */}
+                {xoState.boardSize < 6 && roundWinner && !(isBotGame && xoState.winner === "O") && (
                   <Button 
                     onClick={() => nextRoundMutation.mutate()}
                     className="w-full bg-gradient-to-r from-green-600 to-emerald-600"
@@ -317,10 +404,20 @@ export default function XOGame() {
                   variant="outline" 
                   onClick={() => resetGameMutation.mutate()}
                   className="w-full"
-                  data-testid="button-new-game"
+                  data-testid="button-play-again"
                 >
-                  New Game (3×3)
+                  Play Again (3×3)
                 </Button>
+                <Link href="/xo" className="block">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full"
+                    data-testid="button-home"
+                  >
+                    <ArrowLeft size={18} className="mr-2" />
+                    Back to Home
+                  </Button>
+                </Link>
               </div>
             </Card>
           </div>
