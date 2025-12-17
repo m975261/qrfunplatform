@@ -238,15 +238,18 @@ export class XOGameLogic {
   }
 
   static generateRoomCode(): string {
-    // Generate codes in format DD2DD - digits with 2 always in the middle for XO
+    // Generate codes in format AA2BB - first pair same, 2 in middle, last pair same but different from first
     const digits = "0123456789";
     
-    const first = digits.charAt(Math.floor(Math.random() * digits.length));
-    const second = digits.charAt(Math.floor(Math.random() * digits.length));
-    const fourth = digits.charAt(Math.floor(Math.random() * digits.length));
-    const fifth = digits.charAt(Math.floor(Math.random() * digits.length));
+    const firstPair = digits.charAt(Math.floor(Math.random() * digits.length));
+    let lastPair = digits.charAt(Math.floor(Math.random() * digits.length));
     
-    return `${first}${second}2${fourth}${fifth}`;
+    // Ensure last pair is different from first pair
+    while (lastPair === firstPair) {
+      lastPair = digits.charAt(Math.floor(Math.random() * digits.length));
+    }
+    
+    return `${firstPair}${firstPair}2${lastPair}${lastPair}`;
   }
 }
 
