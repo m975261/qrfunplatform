@@ -8,7 +8,9 @@ import Home from "@/pages/Home";
 import RoomLobby from "@/pages/RoomLobby";
 import Game from "@/pages/GameFixed";
 import BotGame from "@/pages/BotGame";
-import XOPlaceholder from "@/pages/XOPlaceholder";
+import XOHome from "@/pages/XOHome";
+import XOLobby from "@/pages/XOLobby";
+import XOGame from "@/pages/XOGame";
 import VmodeRoomLobby from "@/pages/vmode_RoomLobby";
 import VmodeGame from "@/pages/vmode_Game";
 import AdminLogin from "@/pages/AdminLogin";
@@ -22,7 +24,9 @@ function Router() {
       <Route path="/" component={MainHome} />
       <Route path="/uno" component={Home} />
       <Route path="/uno/bot" component={BotGame} />
-      <Route path="/xo" component={XOPlaceholder} />
+      <Route path="/xo" component={XOHome} />
+      <Route path="/xo/room/:roomId" component={XOLobby} />
+      <Route path="/xo/game/:roomId" component={XOGame} />
       <Route path="/room/:roomId" component={RoomLobby} />
       <Route path="/game/:roomId" component={Game} />
       {/* Viewer Mode Routes */}

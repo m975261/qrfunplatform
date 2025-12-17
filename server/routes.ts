@@ -3,10 +3,11 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { UnoGameLogic } from "./gameLogic";
+import { XOGameLogic } from "./xoGameLogic";
 import { z } from "zod";
 import QRCode from "qrcode";
 import jwt from "jsonwebtoken";
-import { Card, guruUsers, gameSessions } from "@shared/schema";
+import { Card, guruUsers, gameSessions, XOGameState, XOSettings } from "@shared/schema";
 import { adminAuthService } from "./adminAuth";
 import { db } from "./db";
 import { eq, and, or, ne } from "drizzle-orm";
@@ -5254,6 +5255,369 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, cardsLeft: newHand.length, gameEnded: newHand.length === 0 });
     } catch (error) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  // =====================================================
+  // XO GAME ROUTES
+  // =====================================================
+  
+  // Create XO room
+  app.post("/api/xo/rooms", async (req, res) => {
+    try {
+      const { hostNickname, isBotGame, difficulty } = z.object({
+        hostNickname: z.string().min(1).max(15),
+        isBotGame: z.boolean().optional().default(false),
+        difficulty: z.enum(['easy', 'medium', 'hard', 'hardest']).optional().default('medium'),
+      }).parse(req.body);
+
+      const code = Math.random().toString().slice(2, 7);
+      
+      const xoSettings: XOSettings = {
+        difficulty: difficulty || 'medium',
+        isBotGame: isBotGame || false,
+        isGuruPlayer: false,
+      };
+      
+      const initialState = XOGameLogic.createInitialState();
+      
+      const room = await storage.createRoom({
+        code,
+        hostId: null,
+        gameType: "xo",
+        status: isBotGame ? "playing" : "waiting",
+        maxPlayers: 2,
+        xoState: initialState,
+        xoSettings,
+      });
+      
+      const player = await storage.createPlayer({
+        nickname: hostNickname,
+        roomId: room.id,
+        position: 0,
+        isSpectator: false,
+      });
+      
+      await storage.updateRoom(room.id, { 
+        hostId: player.id,
+        xoState: {
+          ...initialState,
+          xPlayerId: player.id,
+        }
+      });
+
+      const token = jwt.sign({ playerId: player.id, roomId: room.id }, JWT_SECRET, { expiresIn: "24h" });
+
+      res.json({
+        room: { ...room, hostId: player.id, xoState: { ...initialState, xPlayerId: player.id } },
+        player,
+        token,
+        hostNickname,
+      });
+    } catch (error) {
+      console.error("Error creating XO room:", error);
+      res.status(500).json({ error: "Failed to create room" });
+    }
+  });
+
+  // Join XO room
+  app.post("/api/xo/rooms/:code/join", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const { nickname } = z.object({
+        nickname: z.string().min(1).max(15),
+      }).parse(req.body);
+
+      const room = await storage.getRoomByCode(code);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      
+      if (room.gameType !== "xo") {
+        return res.status(400).json({ error: "This is not an XO room" });
+      }
+
+      const players = await storage.getPlayersByRoom(room.id);
+      const activePlayers = players.filter(p => !p.hasLeft && !p.isSpectator);
+      
+      if (activePlayers.length >= 2) {
+        return res.status(400).json({ error: "Room is full" });
+      }
+      
+      if (room.status === "playing") {
+        return res.status(400).json({ error: "Game already in progress" });
+      }
+
+      const player = await storage.createPlayer({
+        nickname,
+        roomId: room.id,
+        position: 1,
+        isSpectator: false,
+      });
+      
+      const xoState = room.xoState as XOGameState;
+      await storage.updateRoom(room.id, {
+        xoState: {
+          ...xoState,
+          oPlayerId: player.id,
+        }
+      });
+
+      const token = jwt.sign({ playerId: player.id, roomId: room.id }, JWT_SECRET, { expiresIn: "24h" });
+
+      broadcastToRoom(room.id, {
+        type: "xo_player_joined",
+        player: { id: player.id, nickname: player.nickname },
+      });
+
+      res.json({
+        room: { ...room, xoState: { ...xoState, oPlayerId: player.id } },
+        player,
+        token,
+      });
+    } catch (error) {
+      console.error("Error joining XO room:", error);
+      res.status(500).json({ error: "Failed to join room" });
+    }
+  });
+
+  // Get XO room state
+  app.get("/api/xo/rooms/:roomId", async (req, res) => {
+    try {
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      
+      const players = await storage.getPlayersByRoom(room.id);
+      
+      res.json({ room, players });
+    } catch (error) {
+      console.error("Error getting XO room:", error);
+      res.status(500).json({ error: "Failed to get room" });
+    }
+  });
+
+  // Start XO game
+  app.post("/api/xo/rooms/:roomId/start", async (req, res) => {
+    try {
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      
+      const players = await storage.getPlayersByRoom(room.id);
+      const activePlayers = players.filter(p => !p.hasLeft && !p.isSpectator);
+      
+      if (activePlayers.length < 2 && !room.xoSettings?.isBotGame) {
+        return res.status(400).json({ error: "Need 2 players to start" });
+      }
+
+      const xoState = room.xoState as XOGameState;
+      await storage.updateRoom(room.id, {
+        status: "playing",
+        xoState: {
+          ...xoState,
+          xPlayerId: activePlayers[0]?.id || null,
+          oPlayerId: activePlayers[1]?.id || null,
+        }
+      });
+
+      broadcastToRoom(room.id, {
+        type: "xo_game_started",
+        xoState: xoState,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error starting XO game:", error);
+      res.status(500).json({ error: "Failed to start game" });
+    }
+  });
+
+  // XO make move
+  app.post("/api/xo/rooms/:roomId/move", async (req, res) => {
+    try {
+      const { playerId, row, col } = z.object({
+        playerId: z.string(),
+        row: z.number().min(0),
+        col: z.number().min(0),
+      }).parse(req.body);
+
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room || room.gameType !== "xo") {
+        return res.status(404).json({ error: "XO room not found" });
+      }
+      
+      if (room.status !== "playing") {
+        return res.status(400).json({ error: "Game not in progress" });
+      }
+
+      const xoState = room.xoState as XOGameState;
+      const currentPlayerMark = xoState.currentPlayer;
+      const expectedPlayerId = currentPlayerMark === "X" ? xoState.xPlayerId : xoState.oPlayerId;
+      
+      if (playerId !== expectedPlayerId) {
+        return res.status(400).json({ error: "Not your turn" });
+      }
+
+      const moveResult = XOGameLogic.makeMove(xoState, row, col, currentPlayerMark);
+      
+      if (!moveResult.success) {
+        return res.status(400).json({ error: moveResult.error });
+      }
+
+      const newState = moveResult.state!;
+      
+      let roomUpdates: any = { xoState: newState };
+      
+      if (newState.winner || newState.isDraw) {
+        if (!newState.winner) {
+          roomUpdates.status = "finished";
+        }
+      }
+      
+      await storage.updateRoom(room.id, roomUpdates);
+
+      broadcastToRoom(room.id, {
+        type: "xo_state_update",
+        xoState: newState,
+        lastMove: { row, col, player: currentPlayerMark },
+      });
+
+      if (newState.winner) {
+        broadcastToRoom(room.id, {
+          type: "xo_round_end",
+          winner: newState.winner,
+          winningLine: newState.winningLine,
+          scores: newState.scores,
+        });
+      } else if (newState.isDraw) {
+        broadcastToRoom(room.id, {
+          type: "xo_round_draw",
+          scores: newState.scores,
+        });
+      }
+
+      res.json({ success: true, xoState: newState });
+    } catch (error) {
+      console.error("Error making XO move:", error);
+      res.status(500).json({ error: "Failed to make move" });
+    }
+  });
+
+  // XO next round (after win, progress board)
+  app.post("/api/xo/rooms/:roomId/next-round", async (req, res) => {
+    try {
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room || room.gameType !== "xo") {
+        return res.status(404).json({ error: "XO room not found" });
+      }
+
+      const xoState = room.xoState as XOGameState;
+      const newState = XOGameLogic.progressToNextRound(xoState);
+      
+      await storage.updateRoom(room.id, { 
+        xoState: newState,
+        status: newState.boardSize > 6 ? "finished" : "playing"
+      });
+
+      broadcastToRoom(room.id, {
+        type: "xo_new_round",
+        xoState: newState,
+      });
+
+      res.json({ success: true, xoState: newState });
+    } catch (error) {
+      console.error("Error progressing XO round:", error);
+      res.status(500).json({ error: "Failed to progress round" });
+    }
+  });
+
+  // XO reset game
+  app.post("/api/xo/rooms/:roomId/reset", async (req, res) => {
+    try {
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room || room.gameType !== "xo") {
+        return res.status(404).json({ error: "XO room not found" });
+      }
+
+      const oldState = room.xoState as XOGameState;
+      const newState = XOGameLogic.createInitialState();
+      newState.xPlayerId = oldState.xPlayerId;
+      newState.oPlayerId = oldState.oPlayerId;
+      
+      await storage.updateRoom(room.id, { 
+        xoState: newState,
+        status: "playing"
+      });
+
+      broadcastToRoom(room.id, {
+        type: "xo_game_reset",
+        xoState: newState,
+      });
+
+      res.json({ success: true, xoState: newState });
+    } catch (error) {
+      console.error("Error resetting XO game:", error);
+      res.status(500).json({ error: "Failed to reset game" });
+    }
+  });
+
+  // XO bot move endpoint
+  app.post("/api/xo/rooms/:roomId/bot-move", async (req, res) => {
+    try {
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room || room.gameType !== "xo") {
+        return res.status(404).json({ error: "XO room not found" });
+      }
+      
+      if (!room.xoSettings?.isBotGame) {
+        return res.status(400).json({ error: "Not a bot game" });
+      }
+
+      const xoState = room.xoState as XOGameState;
+      const difficulty = room.xoSettings.difficulty || 'medium';
+      
+      const botMove = XOGameLogic.getBotMove(xoState.board, xoState.currentPlayer, difficulty, xoState.winLength);
+      
+      if (!botMove) {
+        return res.status(400).json({ error: "No valid moves" });
+      }
+
+      const moveResult = XOGameLogic.makeMove(xoState, botMove.row, botMove.col, xoState.currentPlayer);
+      
+      if (!moveResult.success) {
+        return res.status(400).json({ error: moveResult.error });
+      }
+
+      const newState = moveResult.state!;
+      await storage.updateRoom(room.id, { xoState: newState });
+
+      broadcastToRoom(room.id, {
+        type: "xo_state_update",
+        xoState: newState,
+        lastMove: { row: botMove.row, col: botMove.col, player: xoState.currentPlayer },
+      });
+
+      if (newState.winner) {
+        broadcastToRoom(room.id, {
+          type: "xo_round_end",
+          winner: newState.winner,
+          winningLine: newState.winningLine,
+          scores: newState.scores,
+        });
+      } else if (newState.isDraw) {
+        broadcastToRoom(room.id, {
+          type: "xo_round_draw",
+          scores: newState.scores,
+        });
+      }
+
+      res.json({ success: true, xoState: newState, botMove });
+    } catch (error) {
+      console.error("Error making bot move:", error);
+      res.status(500).json({ error: "Failed to make bot move" });
     }
   });
 
