@@ -238,7 +238,7 @@ export default function XOGame() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-indigo-900 dark:to-purple-900 p-4">
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-lg mx-auto relative">
         <div className="mb-4 flex items-center justify-between">
           <Link href="/xo" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors">
             <ArrowLeft size={20} />
@@ -377,61 +377,53 @@ export default function XOGame() {
           )}
         </Card>
 
-        {/* Round End Modal - compact and transparent to show winning line */}
+        {/* Round End Popup - small, positioned to the right */}
         {showRoundEnd && (
-          <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-xs w-full p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-center shadow-lg">
-              <div className="text-4xl mb-2">
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-50">
+            <Card className="p-3 bg-white dark:bg-gray-800 shadow-lg text-center w-32">
+              <div className="text-2xl mb-1">
                 {roundWinner ? '🎉' : '🤝'}
               </div>
-              <h2 className="text-xl font-bold mb-1">
-                {roundWinner ? `${roundWinner} Wins!` : "It's a Draw!"}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">
-                {/* Show next round info only for human wins or human vs human */}
+              <h3 className="text-sm font-bold mb-1">
+                {roundWinner ? `${roundWinner} Wins!` : "Draw!"}
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mb-2">
                 {xoState.boardSize < 6 && roundWinner && !(isBotGame && xoState.winner === "O") && (
-                  <>Next: {xoState.boardSize + 1}×{xoState.boardSize + 1} ({xoState.winLength + 1} in a row)</>
+                  <>Next: {xoState.boardSize + 1}×{xoState.boardSize + 1}</>
                 )}
-                {xoState.boardSize >= 6 && roundWinner && (
-                  <>Maximum board size reached!</>
-                )}
-                {isBotGame && xoState.winner === "O" && (
-                  <>Bot wins! Try again?</>
-                )}
+                {xoState.boardSize >= 6 && roundWinner && <>Max size!</>}
+                {isBotGame && xoState.winner === "O" && <>Try again?</>}
                 {xoState.isDraw && xoState.boardSize < 6 && drawCountdown !== null && (
-                  <>Next level in {drawCountdown}s...</>
+                  <>Next in {drawCountdown}s</>
                 )}
               </p>
-              <div className="space-y-2">
-                {/* Next Round button - only show when human wins or non-bot game */}
+              <div className="space-y-1">
                 {xoState.boardSize < 6 && roundWinner && !(isBotGame && xoState.winner === "O") && (
                   <Button 
                     onClick={() => nextRoundMutation.mutate()}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600"
+                    className="w-full bg-green-600 hover:bg-green-700 text-xs py-1 h-7"
                     size="sm"
                     data-testid="button-next-round"
                   >
-                    <Zap size={16} className="mr-1" />
-                    Next Round
+                    Next
                   </Button>
                 )}
                 <Button 
                   variant="outline" 
                   onClick={() => resetGameMutation.mutate()}
-                  className="w-full"
+                  className="w-full text-xs py-1 h-7"
                   size="sm"
                   data-testid="button-play-again"
                 >
-                  Play Again
+                  Restart
                 </Button>
                 <Link href="/xo" className="block">
                   <Button 
                     variant="ghost" 
-                    className="w-full"
+                    className="w-full text-xs py-1 h-7"
                     size="sm"
                     data-testid="button-home"
                   >
-                    <ArrowLeft size={16} className="mr-1" />
                     Home
                   </Button>
                 </Link>
