@@ -5339,7 +5339,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         nickname: z.string().min(1).max(15),
       }).parse(req.body);
 
-      const room = await storage.getRoomByCode(code);
+      // Make code lookup case-insensitive
+      const room = await storage.getRoomByCode(code.toLowerCase());
       if (!room) {
         return res.status(404).json({ error: "Room not found" });
       }
