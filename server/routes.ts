@@ -5351,19 +5351,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const players = await storage.getPlayersByRoom(room.id);
       const activePlayers = players.filter(p => !p.hasLeft && !p.isSpectator);
       
-      if (activePlayers.length >= 2) {
-        return res.status(400).json({ error: "Room is full" });
-      }
+      const isRoomFull = activePlayers.length >= 2;
+      const isGameInProgress = room.status === "playing";
       
-      if (room.status === "playing") {
-        return res.status(400).json({ error: "Game already in progress" });
-      }
+      // If room is full or game in progress, join as spectator
+      const joinAsSpectator = isRoomFull || isGameInProgress;
 
       const player = await storage.createPlayer({
         nickname,
         roomId: room.id,
-        position: 1,
-        isSpectator: false,
+        position: joinAsSpectator ? -1 : 1,
+        isSpectator: joinAsSpectator,
       });
       
       const xoState = room.xoState as XOGameState;
@@ -5371,26 +5369,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Room not properly initialized" });
       }
       
-      const updatedXoState = {
-        ...xoState,
-        oPlayerId: player.id,
-      };
-      
-      await storage.updateRoom(room.id, {
-        xoState: updatedXoState
-      });
+      let updatedXoState = xoState;
+      if (!joinAsSpectator) {
+        updatedXoState = {
+          ...xoState,
+          oPlayerId: player.id,
+        };
+        await storage.updateRoom(room.id, {
+          xoState: updatedXoState
+        });
+      }
 
       const token = jwt.sign({ playerId: player.id, roomId: room.id }, JWT_SECRET, { expiresIn: "24h" });
 
       broadcastToRoom(room.id, {
-        type: "xo_player_joined",
-        player: { id: player.id, nickname: player.nickname },
+        type: joinAsSpectator ? "xo_spectator_joined" : "xo_player_joined",
+        player: { id: player.id, nickname: player.nickname, isSpectator: joinAsSpectator },
       });
 
       res.json({
         room: { ...room, xoState: updatedXoState },
         player,
         token,
+        isSpectator: joinAsSpectator,
       });
     } catch (error) {
       console.error("Error joining XO room:", error);
@@ -5449,6 +5450,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error starting XO game:", error);
       res.status(500).json({ error: "Failed to start game" });
+    }
+  });
+
+  // XO kick player
+  app.post("/api/xo/rooms/:roomId/kick", async (req, res) => {
+    try {
+      const { playerId: playerIdToKick, requesterId } = z.object({
+        playerId: z.string(),
+        requesterId: z.string(),
+      }).parse(req.body);
+
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      // Verify requester is the host
+      if (requesterId !== room.hostId) {
+        return res.status(403).json({ error: "Only the host can kick players" });
+      }
+
+      const player = await storage.getPlayer(playerIdToKick);
+      if (!player || player.roomId !== room.id) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      // Mark player as left
+      await storage.updatePlayer(playerIdToKick, { hasLeft: true });
+
+      // Update XO state if player was X or O
+      const xoState = room.xoState as XOGameState;
+      if (xoState) {
+        let updatedXoState = { ...xoState };
+        if (xoState.xPlayerId === playerIdToKick) {
+          updatedXoState.xPlayerId = null;
+        }
+        if (xoState.oPlayerId === playerIdToKick) {
+          updatedXoState.oPlayerId = null;
+        }
+        await storage.updateRoom(room.id, { xoState: updatedXoState });
+      }
+
+      // Broadcast to room
+      broadcastToRoom(room.id, {
+        type: "xo_player_kicked",
+        playerId: playerIdToKick,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error kicking XO player:", error);
+      res.status(500).json({ error: "Failed to kick player" });
+    }
+  });
+
+  // XO promote spectator to player
+  app.post("/api/xo/rooms/:roomId/promote", async (req, res) => {
+    try {
+      const { spectatorId, requesterId } = z.object({
+        spectatorId: z.string(),
+        requesterId: z.string(),
+      }).parse(req.body);
+
+      const room = await storage.getRoom(req.params.roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      // Verify requester is the host
+      if (requesterId !== room.hostId) {
+        return res.status(403).json({ error: "Only the host can promote spectators" });
+      }
+
+      const spectator = await storage.getPlayer(spectatorId);
+      if (!spectator || spectator.roomId !== room.id || !spectator.isSpectator) {
+        return res.status(404).json({ error: "Spectator not found" });
+      }
+
+      const players = await storage.getPlayersByRoom(room.id);
+      const activePlayers = players.filter(p => !p.hasLeft && !p.isSpectator);
+
+      if (activePlayers.length >= 2) {
+        return res.status(400).json({ error: "Room is full" });
+      }
+
+      // Determine the correct position and player assignment
+      const xoState = room.xoState as XOGameState;
+      let position = activePlayers.length;
+      
+      // Check if X or O slot is empty and assign accordingly
+      if (xoState) {
+        if (!xoState.xPlayerId || !activePlayers.some(p => p.id === xoState.xPlayerId)) {
+          position = 0; // X slot
+        } else if (!xoState.oPlayerId || !activePlayers.some(p => p.id === xoState.oPlayerId)) {
+          position = 1; // O slot
+        }
+      }
+
+      // Promote spectator to player
+      await storage.updatePlayer(spectatorId, { 
+        isSpectator: false, 
+        position 
+      });
+
+      // Update XO state with new player
+      if (xoState) {
+        const updatedXoState = {
+          ...xoState,
+          xPlayerId: position === 0 ? spectatorId : xoState.xPlayerId,
+          oPlayerId: position === 1 ? spectatorId : xoState.oPlayerId,
+        };
+        await storage.updateRoom(room.id, { xoState: updatedXoState });
+      }
+
+      // Broadcast to room
+      broadcastToRoom(room.id, {
+        type: "xo_spectator_promoted",
+        spectatorId,
+        position,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error promoting XO spectator:", error);
+      res.status(500).json({ error: "Failed to promote spectator" });
     }
   });
 

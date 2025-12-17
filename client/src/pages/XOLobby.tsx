@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Users, Play, Crown } from "lucide-react";
+import { ArrowLeft, Copy, Users, Play, Crown, UserMinus, UserPlus, Eye } from "lucide-react";
 import { Link } from "wouter";
 import QRCode from "qrcode";
 
@@ -82,6 +82,54 @@ export default function XOLobby() {
     },
   });
 
+  const kickPlayerMutation = useMutation({
+    mutationFn: async (playerIdToKick: string) => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/kick`, { 
+        playerId: playerIdToKick,
+        requesterId: playerId 
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+      toast({
+        title: "Player Removed",
+        description: "Player has been removed from the room",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to kick player",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const promoteSpectatorMutation = useMutation({
+    mutationFn: async (spectatorId: string) => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${roomId}/promote`, { 
+        spectatorId,
+        requesterId: playerId 
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
+      toast({
+        title: "Spectator Promoted",
+        description: "Spectator is now a player",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to promote spectator",
+        variant: "destructive",
+      });
+    },
+  });
+
   const copyRoomCode = () => {
     navigator.clipboard.writeText(roomCode);
     toast({
@@ -108,6 +156,7 @@ export default function XOLobby() {
   }
 
   const activePlayers = players.filter(p => !p.hasLeft && !p.isSpectator);
+  const spectators = players.filter(p => !p.hasLeft && p.isSpectator);
   const canStart = activePlayers.length >= 2;
 
   return (
@@ -167,6 +216,19 @@ export default function XOLobby() {
                     {room?.hostId === player.id && (
                       <Crown size={16} className="text-yellow-500" />
                     )}
+                    {isHost && player.id !== playerId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => kickPlayerMutation.mutate(player.id)}
+                        disabled={kickPlayerMutation.isPending}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
+                        data-testid={`button-kick-${player.id}`}
+                        title="Remove player"
+                      >
+                        <UserMinus size={16} />
+                      </Button>
+                    )}
                   </div>
                 ))}
                 {activePlayers.length < 2 && (
@@ -179,6 +241,55 @@ export default function XOLobby() {
             </div>
           </div>
         </Card>
+
+        {/* Spectators Section */}
+        {spectators.length > 0 && (
+          <Card className="p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl mb-6">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-2">
+              <Eye size={16} />
+              Spectators ({spectators.length})
+            </h3>
+            <div className="space-y-2">
+              {spectators.map((spectator) => (
+                <div
+                  key={spectator.id}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+                  data-testid={`spectator-${spectator.id}`}
+                >
+                  <span className="text-lg">👁️</span>
+                  <span className="font-medium flex-1">{spectator.nickname}</span>
+                  {isHost && activePlayers.length < 2 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => promoteSpectatorMutation.mutate(spectator.id)}
+                      disabled={promoteSpectatorMutation.isPending}
+                      className="text-green-600 hover:text-green-700 hover:bg-green-50 p-1 h-8"
+                      data-testid={`button-promote-${spectator.id}`}
+                      title="Promote to player"
+                    >
+                      <UserPlus size={16} className="mr-1" />
+                      <span className="text-xs">Make Player</span>
+                    </Button>
+                  )}
+                  {isHost && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => kickPlayerMutation.mutate(spectator.id)}
+                      disabled={kickPlayerMutation.isPending}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
+                      data-testid={`button-kick-spectator-${spectator.id}`}
+                      title="Remove spectator"
+                    >
+                      <UserMinus size={16} />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Start Game Button */}
         {isHost && (
