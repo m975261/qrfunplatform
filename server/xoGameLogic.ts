@@ -420,8 +420,10 @@ export class XOMinimaxAI {
 
 export class XOMCTSAI {
   private simulations: number;
+  private difficulty: string;
 
   constructor(difficulty: "easy" | "medium" | "hard" | "hardest") {
+    this.difficulty = difficulty;
     switch (difficulty) {
       case "easy": this.simulations = 200; break;
       case "medium": this.simulations = 800; break;
@@ -434,6 +436,29 @@ export class XOMCTSAI {
     const availableMoves = XOGameLogic.getAvailableMoves(state.board);
     if (availableMoves.length === 0) return null;
 
+    const aiPlayer = state.currentPlayer;
+    const opponent: XOPlayer = aiPlayer === "X" ? "O" : "X";
+
+    // CRITICAL: Always check for immediate win first
+    const winningMove = this.findWinningMove(state.board, aiPlayer, state.winLength);
+    if (winningMove) return winningMove;
+
+    // CRITICAL: Always block opponent's winning move
+    const blockingMove = this.findWinningMove(state.board, opponent, state.winLength);
+    if (blockingMove) return blockingMove;
+
+    // For hard/hardest: Also check for "almost winning" threats (winLength-1 in a row)
+    if (this.difficulty === "hard" || this.difficulty === "hardest") {
+      // Check for creating a winning threat
+      const threatMove = this.findThreatMove(state.board, aiPlayer, state.winLength);
+      if (threatMove) return threatMove;
+
+      // Check for blocking opponent's threat
+      const blockThreatMove = this.findThreatMove(state.board, opponent, state.winLength);
+      if (blockThreatMove) return blockThreatMove;
+    }
+
+    // Fall back to MCTS for non-critical moves
     const moveScores = new Map<string, { wins: number; visits: number }>();
     
     for (const move of availableMoves) {
@@ -469,6 +494,82 @@ export class XOMCTSAI {
     }
 
     return bestMove;
+  }
+
+  private findWinningMove(board: XOBoard, player: XOPlayer, winLength: number): XOMove | null {
+    const moves = XOGameLogic.getAvailableMoves(board);
+    for (const move of moves) {
+      const newBoard = XOGameLogic.cloneBoard(board);
+      newBoard[move.row][move.col] = player;
+      if (XOGameLogic.checkWin(newBoard, winLength)) {
+        return move;
+      }
+    }
+    return null;
+  }
+
+  private findThreatMove(board: XOBoard, player: XOPlayer, winLength: number): XOMove | null {
+    const moves = XOGameLogic.getAvailableMoves(board);
+    const size = board.length;
+    
+    for (const move of moves) {
+      const newBoard = XOGameLogic.cloneBoard(board);
+      newBoard[move.row][move.col] = player;
+      
+      // Check if this creates a threat (winLength-1 in a row with open space)
+      if (this.countThreats(newBoard, player, winLength) > this.countThreats(board, player, winLength)) {
+        return move;
+      }
+    }
+    return null;
+  }
+
+  private countThreats(board: XOBoard, player: XOPlayer, winLength: number): number {
+    const size = board.length;
+    let threats = 0;
+    const needed = winLength - 1;
+
+    // Check all lines for threats (winLength-1 pieces with empty space to complete)
+    const checkLine = (startRow: number, startCol: number, dRow: number, dCol: number): boolean => {
+      let count = 0;
+      let empty = 0;
+      for (let i = 0; i < winLength; i++) {
+        const r = startRow + i * dRow;
+        const c = startCol + i * dCol;
+        if (r < 0 || r >= size || c < 0 || c >= size) return false;
+        if (board[r][c] === player) count++;
+        else if (board[r][c] === null) empty++;
+        else return false; // Blocked by opponent
+      }
+      return count === needed && empty === 1;
+    };
+
+    // Horizontal
+    for (let row = 0; row < size; row++) {
+      for (let col = 0; col <= size - winLength; col++) {
+        if (checkLine(row, col, 0, 1)) threats++;
+      }
+    }
+    // Vertical
+    for (let row = 0; row <= size - winLength; row++) {
+      for (let col = 0; col < size; col++) {
+        if (checkLine(row, col, 1, 0)) threats++;
+      }
+    }
+    // Diagonal down-right
+    for (let row = 0; row <= size - winLength; row++) {
+      for (let col = 0; col <= size - winLength; col++) {
+        if (checkLine(row, col, 1, 1)) threats++;
+      }
+    }
+    // Diagonal down-left
+    for (let row = 0; row <= size - winLength; row++) {
+      for (let col = winLength - 1; col < size; col++) {
+        if (checkLine(row, col, 1, -1)) threats++;
+      }
+    }
+
+    return threats;
   }
 
   private simulate(state: XOGameState, firstMove: XOMove): XOPlayer | "draw" | null {
