@@ -6,7 +6,6 @@ import { CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, RotateCcw, Trophy, Zap, Eye, UserMinus, UserPlus, Pencil, Check, X, Play } from "lucide-react";
 import { Link } from "wouter";
 import { XOGameState, XOCell } from "@shared/schema";
@@ -34,7 +33,6 @@ interface Room {
 export default function XOGame() {
   const { roomId } = useParams<{ roomId: string }>();
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const [showRoundEnd, setShowRoundEnd] = useState(false);
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
   const [drawCountdown, setDrawCountdown] = useState<number | null>(null);
@@ -97,11 +95,7 @@ export default function XOGame() {
       }
     },
     onError: (error: any) => {
-      toast({
-        title: "Invalid Move",
-        description: error.message || "That move is not allowed",
-        variant: "destructive",
-      });
+      console.error("Invalid Move:", error.message || "That move is not allowed");
     },
   });
 
@@ -189,7 +183,6 @@ export default function XOGame() {
       return response.json();
     },
     onSuccess: () => {
-      toast({ title: "Player moved to spectators" });
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
     },
   });
@@ -205,7 +198,6 @@ export default function XOGame() {
     },
     onSuccess: () => {
       setShowContinuePrompt(false);
-      toast({ title: "Spectator promoted to player" });
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
     },
   });
@@ -222,7 +214,6 @@ export default function XOGame() {
     onSuccess: () => {
       setEditingPlayerId(null);
       setEditNickname("");
-      toast({ title: "Nickname updated" });
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
     },
   });
@@ -717,58 +708,52 @@ export default function XOGame() {
           </div>
         )}
 
-        {/* Round End Popup - small, positioned at 6 o'clock (bottom center) */}
+        {/* Round End Popup - horizontal layout */}
         {showRoundEnd && (
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-40 z-50">
-            <Card className="p-3 bg-white dark:bg-gray-800 shadow-lg text-center w-32">
-              <div className="text-2xl mb-1">
-                {roundWinner ? '🎉' : '🤝'}
-              </div>
-              <h3 className="text-sm font-bold mb-1">
-                {roundWinner ? `${roundWinner} Wins!` : "Draw!"}
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mb-2">
-                {xoState.boardSize < 6 && roundWinner && !(isBotGame && xoState.winner === "O") && (
-                  <>Next: {xoState.boardSize + 1}×{xoState.boardSize + 1}</>
-                )}
-                {xoState.boardSize >= 6 && roundWinner && <>Max size!</>}
-                {isBotGame && xoState.winner === "O" && <>Try again?</>}
-                {xoState.isDraw && xoState.boardSize < 6 && drawCountdown !== null && (
-                  <>Next in {drawCountdown}s</>
-                )}
-              </p>
-              <div className="space-y-1">
-                {xoState.boardSize < 6 && roundWinner && !(isBotGame && xoState.winner === "O") && (
-                  <Button 
-                    onClick={() => nextRoundMutation.mutate(xoState.gameNumber)}
-                    disabled={nextRoundMutation.isPending}
-                    className="w-full bg-green-600 hover:bg-green-700 text-xs py-1 h-7"
-                    size="sm"
-                    data-testid="button-next-round"
-                  >
-                    {nextRoundMutation.isPending ? "..." : "Next"}
-                  </Button>
-                )}
-                <Button 
-                  variant="outline" 
-                  onClick={() => resetGameMutation.mutate()}
-                  className="w-full text-xs py-1 h-7"
-                  size="sm"
-                  data-testid="button-play-again"
-                >
-                  Restart
-                </Button>
-                <Link href="/xo" className="block">
-                  <Button 
-                    variant="ghost" 
-                    className="w-full text-xs py-1 h-7"
-                    size="sm"
-                    data-testid="button-home"
-                  >
-                    Home
-                  </Button>
-                </Link>
-              </div>
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+            <Card className="px-6 py-4 bg-white dark:bg-gray-800 shadow-xl">
+              {roundWinner ? (
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl">🎉</span>
+                  <span className="font-bold text-lg">{roundWinner} Wins!</span>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => resetGameMutation.mutate()}
+                      className="bg-green-600 hover:bg-green-700 text-sm"
+                      size="sm"
+                      data-testid="button-play-again"
+                    >
+                      Play Again
+                    </Button>
+                    <Link href="/xo">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        data-testid="button-home"
+                      >
+                        Home
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl">🤝</span>
+                  <span className="font-bold text-lg">It's a Draw!</span>
+                  {drawCountdown !== null && (
+                    <span className="text-gray-500 dark:text-gray-400">Next in {drawCountdown}s</span>
+                  )}
+                  <Link href="/xo">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      data-testid="button-exit"
+                    >
+                      Exit
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </Card>
           </div>
         )}
