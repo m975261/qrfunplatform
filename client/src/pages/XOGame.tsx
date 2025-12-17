@@ -210,11 +210,11 @@ export default function XOGame() {
   }, [xoState?.winner, xoState?.isDraw, xoState?.gameNumber, lastProcessedGameNumber, showWinAnimation, showRoundEnd, drawCountdown, xPlayerName, oPlayerName]);
 
   useEffect(() => {
-    if (xoState && !xoState.isDraw && !xoState.winner && (showRoundEnd || drawCountdown !== null)) {
+    if (xoState && !xoState.isDraw && !xoState.winner && xoState.moveHistory.length === 0 && (showRoundEnd || drawCountdown !== null)) {
       setShowRoundEnd(false);
       setDrawCountdown(null);
     }
-  }, [xoState?.isDraw, xoState?.winner, showRoundEnd, drawCountdown]);
+  }, [xoState?.isDraw, xoState?.winner, xoState?.moveHistory?.length, showRoundEnd, drawCountdown]);
 
   const handleCellClick = (row: number, col: number) => {
     if (!isMyTurn || xoState?.board[row][col] || xoState?.winner || xoState?.isDraw) return;
