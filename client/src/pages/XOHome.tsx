@@ -143,7 +143,7 @@ export default function XOHome() {
             <ArrowLeft size={20} />
             Back to Games
           </Link>
-          <div className="text-6xl mb-4">⭕❌</div>
+          <div className="text-6xl mb-4">❌⭕</div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2" data-testid="title-xo">
             XO Game
           </h1>
