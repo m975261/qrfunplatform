@@ -197,12 +197,16 @@ export default function Home() {
         setLocation(`/game/${data.room.id}`);
       }
     },
-    onError: () => {
+    onError: (error: Error) => {
+      let description = "Failed to join room. Please check the room code.";
+      if (error.message.includes("409")) {
+        description = "This nickname is already taken in this room. Please choose a different one.";
+      }
       toast({
         title: "Error",
-        description: "Failed to join room. Please check the room code.",
+        description,
         variant: "destructive",
-        duration: 1000,
+        duration: 2000,
       });
     },
   });
@@ -242,14 +246,21 @@ export default function Home() {
         setLocation(`/game/${data.room.id}`);
       }
     },
-    onError: () => {
+    onError: (error: Error) => {
+      let description = "Failed to join room. The room might not exist or be full.";
+      const keepPopupOpen = error.message.includes("409");
+      if (keepPopupOpen) {
+        description = "This nickname is already taken in this room. Please choose a different one.";
+      }
       toast({
         title: "Error",
-        description: "Failed to join room. The room might not exist or be full.",
+        description,
         variant: "destructive",
-        duration: 1000,
+        duration: 2000,
       });
-      setShowNicknamePopup(false);
+      if (!keepPopupOpen) {
+        setShowNicknamePopup(false);
+      }
     },
   });
 

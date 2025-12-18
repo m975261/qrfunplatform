@@ -920,6 +920,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const existingPlayers = await storage.getPlayersByRoom(room.id);
+      
+      // Check for duplicate nickname (case-insensitive) - only block if an ACTIVE player has this name
+      const normalizedNickname = nickname.trim().toLowerCase();
+      const duplicatePlayer = existingPlayers.find(p => 
+        !p.hasLeft && p.isOnline && p.nickname.trim().toLowerCase() === normalizedNickname
+      );
+      if (duplicatePlayer) {
+        return res.status(409).json({ error: "This nickname is already taken in this room" });
+      }
+      
       const nonSpectatorPlayers = existingPlayers.filter(p => !p.isSpectator);
 
       let playerPosition = null;
@@ -5443,6 +5453,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const players = await storage.getPlayersByRoom(room.id);
+      
+      // Check for duplicate nickname (case-insensitive) - only block if an ACTIVE player has this name
+      const normalizedNickname = nickname.trim().toLowerCase();
+      const duplicatePlayer = players.find(p => 
+        !p.hasLeft && p.isOnline && p.nickname.trim().toLowerCase() === normalizedNickname
+      );
+      if (duplicatePlayer) {
+        return res.status(409).json({ error: "This nickname is already taken in this room" });
+      }
+      
       const activePlayers = players.filter(p => !p.hasLeft && !p.isSpectator);
       
       const isRoomFull = activePlayers.length >= 2;

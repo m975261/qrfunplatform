@@ -97,12 +97,21 @@ export default function XOHome() {
       setShowNicknamePopup(false);
       setLocation(`/xo/room/${data.room.id}?code=${data.room.code}`);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
+      let description = "Failed to join room.";
+      const keepPopupOpen = error.message?.includes("409");
+      if (keepPopupOpen) {
+        description = "This nickname is already taken in this room. Please choose a different one.";
+      }
       toast({
         title: "Error",
-        description: error.message || "Failed to join room.",
+        description,
         variant: "destructive",
+        duration: 2000,
       });
+      if (!keepPopupOpen) {
+        setShowNicknamePopup(false);
+      }
     },
   });
 
