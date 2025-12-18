@@ -144,8 +144,9 @@ export default function XOGame() {
       setShowWinAnimation(false);
       setWinCountdown(null);
       
-      // Update lastProcessedGameNumber to the new game number to prevent re-triggering
-      if (data.xoState?.gameNumber) {
+      // Only update lastProcessedGameNumber if we actually progressed (not if already progressed)
+      // This prevents blocking draw detection for the current round
+      if (data.xoState?.gameNumber && !data.alreadyProgressed) {
         setLastProcessedGameNumber(data.xoState.gameNumber);
       }
       
