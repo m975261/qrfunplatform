@@ -1936,20 +1936,17 @@ export default function VmodeGame() {
       )}
 
       {/* Viewers Panel - Draggable, Resizable, Hideable */}
-      {/* Protruding tab on right edge when hidden - always visible */}
+      {/* Protruding tab on right edge when hidden - positioned opposite slot 1 (top-right) */}
       {!showViewers && (
         <button
           onClick={() => setShowViewers(true)}
           className="fixed z-40 bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center gap-1 transition-all"
           style={{ 
-            top: '50%', 
+            top: '4.5rem', 
             right: 0,
-            transform: 'translateY(-50%)',
-            padding: '12px 6px 12px 10px',
+            padding: '8px 6px 8px 10px',
             borderTopLeftRadius: '12px',
-            borderBottomLeftRadius: '12px',
-            writingMode: 'vertical-rl',
-            textOrientation: 'mixed'
+            borderBottomLeftRadius: '12px'
           }}
           data-testid="button-show-viewers"
           title="Show Viewers Panel"
