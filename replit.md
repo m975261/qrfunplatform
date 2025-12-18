@@ -96,6 +96,30 @@ The platform is designed as a full-stack, real-time multiplayer gaming system wi
 - **Admin System**: Secure access for game and user management, including "guru user" creation.
 - **UNO Specifics**: Classic UNO rules, action cards, position-based card memory, enhanced UNO call system with visual/auditory feedback, and penalty animations.
 
+## Deployment & Platform Support
+
+### Development (Replit)
+- `npm run dev` - Starts development server with hot-reloading
+- Replit automatically injects PORT environment variable
+- All functionality works identically in Replit
+
+### Production Build
+- `npm run build` - Builds frontend and backend
+- `npm start` - Runs production server
+
+### Docker Deployment
+- **Dockerfile**: Multi-stage build with node:20-alpine
+- **Default Port**: 4322 (configurable via PORT env var)
+- **Data Path**: Configurable via DATA_PATH (default: ./data)
+- **Run**: `docker run -p 4322:4322 -v /path:/app/data qrfun`
+- **Unraid**: Zero-touch deployment with port 4322 and /app/data volume
+
+### Configuration (server/config.ts)
+- Centralized environment variable handling
+- PORT: process.env.PORT || 4322
+- DATA_PATH: process.env.DATA_PATH || './data'
+- Automatic data directory creation at startup
+
 ## External Dependencies
 - **Database**: Neon Database (PostgreSQL)
 - **UI Framework**: Radix UI
