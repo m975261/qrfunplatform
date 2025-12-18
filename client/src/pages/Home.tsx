@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Upload, Camera, ArrowRight, ArrowLeft, Radio, Eye } from "lucide-react";
+import { Plus, Upload, Camera, ArrowRight, ArrowLeft, Radio, Eye, Tv } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -29,8 +29,8 @@ export default function Home() {
   const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
   const [guruLoginError, setGuruLoginError] = useState("");
   
-  // Mode tabs for guru users (streaming removed)
-  const [selectedModeTab, setSelectedModeTab] = useState<'normal' | 'viewer'>('normal');
+  // Mode tabs for guru users
+  const [selectedModeTab, setSelectedModeTab] = useState<'normal' | 'viewer' | 'streaming'>('normal');
   const [isGuruUserLoggedIn, setIsGuruUserLoggedIn] = useState(false);
   
   // Viewer Mode state
@@ -102,9 +102,9 @@ export default function Home() {
   }, [toast, setLocation]);
 
   const createRoomMutation = useMutation({
-    mutationFn: async ({ hostNickname, viewerMode }: { hostNickname?: string; viewerMode?: boolean }) => {
+    mutationFn: async ({ hostNickname, viewerMode, streamingMode }: { hostNickname?: string; viewerMode?: boolean; streamingMode?: boolean }) => {
       const payload: { hostNickname?: string; isStreamingMode: boolean; isViewerMode?: boolean } = { 
-        isStreamingMode: false 
+        isStreamingMode: streamingMode || false 
       };
       if (hostNickname) {
         payload.hostNickname = hostNickname;
@@ -116,6 +116,17 @@ export default function Home() {
       return response.json();
     },
     onSuccess: (data) => {
+      // STREAMING MODE: Redirect to streaming lobby
+      if (data.isStreamingMode) {
+        setShowHostPopup(false);
+        localStorage.setItem("currentRoomId", data.room.id);
+        localStorage.removeItem("playerId");
+        localStorage.removeItem("playerNickname");
+        // Navigate to Stream Lobby page
+        setLocation(data.streamLobbyUrl || `/stream/${data.room.id}/lobby?code=${data.room.code}`);
+        return;
+      }
+      
       // VIEWER MODE: Create empty lobby - no host player, redirect to viewer mode lobby
       if (data.isViewerMode) {
         setShowHostPopup(false);
@@ -318,10 +329,14 @@ export default function Home() {
         setPopupNickname(data.guruUser.playerName);
         
         if (pendingAction === 'create') {
-          // Guru users use the tab selection for viewer mode
+          // Guru users use the tab selection for viewer/streaming mode
           const viewerMode = selectedModeTab === 'viewer';
+          const streamingMode = selectedModeTab === 'streaming';
           setIsGuruUserLoggedIn(true);
-          if (viewerMode) {
+          if (streamingMode) {
+            // Streaming mode - no nickname needed, creates streaming lobby
+            createRoomMutation.mutate({ streamingMode: true });
+          } else if (viewerMode) {
             // Viewer mode - no nickname needed, creates empty lobby (first joiner becomes host)
             createRoomMutation.mutate({ viewerMode: true });
           } else {
@@ -348,6 +363,13 @@ export default function Home() {
   const handleHostRoom = async () => {
     // Determine mode based on user type
     const viewerMode = isGuruUserLoggedIn ? (selectedModeTab === 'viewer') : isViewerMode;
+    const streamingMode = isGuruUserLoggedIn && selectedModeTab === 'streaming';
+    
+    // Streaming mode doesn't need nickname - create streaming lobby immediately
+    if (streamingMode) {
+      createRoomMutation.mutate({ streamingMode: true });
+      return;
+    }
     
     // Viewer mode doesn't need nickname - create empty lobby immediately
     if (viewerMode) {
@@ -755,15 +777,19 @@ export default function Home() {
           
           {/* GURU USER: Show Mode Tabs */}
           {isGuruUserLoggedIn && (
-            <Tabs value={selectedModeTab} onValueChange={(v) => setSelectedModeTab(v as 'normal' | 'viewer')} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="normal" className="flex items-center gap-2">
-                  <Radio className="h-4 w-4" />
+            <Tabs value={selectedModeTab} onValueChange={(v) => setSelectedModeTab(v as 'normal' | 'viewer' | 'streaming')} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="normal" className="flex items-center gap-1 text-xs">
+                  <Radio className="h-3 w-3" />
                   Normal
                 </TabsTrigger>
-                <TabsTrigger value="viewer" className="flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
+                <TabsTrigger value="viewer" className="flex items-center gap-1 text-xs">
+                  <Eye className="h-3 w-3" />
                   Viewer
+                </TabsTrigger>
+                <TabsTrigger value="streaming" className="flex items-center gap-1 text-xs">
+                  <Tv className="h-3 w-3" />
+                  Stream
                 </TabsTrigger>
               </TabsList>
               
@@ -771,6 +797,13 @@ export default function Home() {
                 <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 mb-4 text-sm text-teal-700">
                   <p className="font-medium mb-1">Viewer Mode Active</p>
                   <p className="text-xs">Same as Normal Mode but uses separate routes for development/testing purposes.</p>
+                </div>
+              )}
+              
+              {selectedModeTab === 'streaming' && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4 text-sm text-purple-700">
+                  <p className="font-medium mb-1">Streaming Mode Active</p>
+                  <p className="text-xs">Perfect for OBS/streaming. Players join via QR code, spectators can watch the game.</p>
                 </div>
               )}
             </Tabs>
