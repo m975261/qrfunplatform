@@ -274,7 +274,11 @@ export default function XOGame() {
     
     const gameId = xoState.gameNumber;
     
-    if (lastProcessedGameNumber !== gameId) {
+    // Only process if this is a NEW game number we haven't seen yet
+    // (must be greater than lastProcessedGameNumber, not just different)
+    const isNewGame = lastProcessedGameNumber === null || gameId > lastProcessedGameNumber;
+    
+    if (isNewGame && (xoState.winner || xoState.isDraw)) {
       if (xoState.winner && !showWinAnimation && !showRoundEnd) {
         const winnerName = xoState.winner === "X" ? xPlayerName : oPlayerName;
         setRoundWinner(winnerName);
