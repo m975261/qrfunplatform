@@ -243,7 +243,13 @@ export default function XOGame() {
     }
   }, [isBotGame, xoState?.currentPlayer, triggerBotMove]);
 
+  // Check if current round is the final round (round 7)
+  const isFinalRound = xoState?.gameNumber === 7;
+
   useEffect(() => {
+    // Don't auto-progress if this is the final round
+    if (isFinalRound) return;
+    
     if (drawCountdown !== null && drawCountdown > 0) {
       const timer = setTimeout(() => {
         setDrawCountdown(drawCountdown - 1);
@@ -254,7 +260,7 @@ export default function XOGame() {
       // Pass current game number to prevent duplicate progressions
       nextRoundMutation.mutate(xoState.gameNumber);
     }
-  }, [drawCountdown, xoState?.isDraw, xoState?.gameNumber, nextRoundMutation.isPending]);
+  }, [drawCountdown, xoState?.isDraw, xoState?.gameNumber, nextRoundMutation.isPending, isFinalRound]);
 
   useEffect(() => {
     if (winCountdown !== null && winCountdown > 0) {
@@ -288,7 +294,10 @@ export default function XOGame() {
       } else if (xoState.isDraw && !showRoundEnd && drawCountdown === null) {
         setRoundWinner(null);
         setShowRoundEnd(true);
-        setDrawCountdown(5);
+        // Only start countdown for non-final rounds
+        if (gameId < 7) {
+          setDrawCountdown(5);
+        }
         setLastProcessedGameNumber(gameId);
       }
     }
@@ -695,6 +704,30 @@ export default function XOGame() {
                 <div className="flex items-center gap-4">
                   <span className="text-2xl">🎉</span>
                   <span className="font-bold text-lg">{roundWinner} Wins!</span>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => resetGameMutation.mutate()}
+                      className="bg-green-600 hover:bg-green-700 text-sm"
+                      size="sm"
+                      data-testid="button-play-again"
+                    >
+                      Play Again
+                    </Button>
+                    <Link href="/xo">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        data-testid="button-home"
+                      >
+                        Home
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ) : isFinalRound ? (
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl">🏁</span>
+                  <span className="font-bold text-lg">Game Over - Final Draw!</span>
                   <div className="flex gap-2">
                     <Button 
                       onClick={() => resetGameMutation.mutate()}

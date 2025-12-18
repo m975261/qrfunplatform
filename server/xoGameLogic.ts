@@ -179,35 +179,79 @@ export class XOGameLogic {
   static progressBoard(state: XOGameState): XOGameState {
     const currentIndex = BOARD_PROGRESSIONS.findIndex(p => p.size === state.boardSize);
     const nextIndex = currentIndex + 1;
+    const newGameNumber = state.gameNumber + 1;
+    
+    // Alternate starting player based on game number
+    const nextPlayer: XOPlayer = state.gameNumber % 2 === 0 ? "X" : "O";
 
-    if (nextIndex >= BOARD_PROGRESSIONS.length) {
+    // Rounds 1-4: Progress through board sizes (3x3 → 4x4 → 5x5 → 6x6)
+    if (nextIndex < BOARD_PROGRESSIONS.length) {
+      const nextProgression = BOARD_PROGRESSIONS[nextIndex];
+      return {
+        ...state,
+        board: this.createEmptyBoard(nextProgression.size),
+        boardSize: nextProgression.size,
+        winLength: nextProgression.winLength,
+        currentPlayer: nextPlayer,
+        winner: null,
+        winningLine: null,
+        moveHistory: [],
+        isDraw: false,
+        gameNumber: newGameNumber,
+      };
+    }
+    
+    // Round 5: 6x6 with 5-in-a-row (after round 4 draw)
+    if (state.gameNumber === 4) {
       return {
         ...state,
         board: this.createEmptyBoard(6),
         boardSize: 6,
         winLength: 5,
-        currentPlayer: state.gameNumber % 2 === 0 ? "X" : "O",
+        currentPlayer: nextPlayer,
         winner: null,
         winningLine: null,
         moveHistory: [],
         isDraw: false,
-        gameNumber: state.gameNumber + 1,
+        gameNumber: 5,
       };
     }
-
-    const nextProgression = BOARD_PROGRESSIONS[nextIndex];
+    
+    // Rounds 6-7: 6x6 with 4-in-a-row (tiebreaker rounds)
+    if (state.gameNumber === 5 || state.gameNumber === 6) {
+      return {
+        ...state,
+        board: this.createEmptyBoard(6),
+        boardSize: 6,
+        winLength: 4,  // 4-in-a-row for tiebreaker rounds
+        currentPlayer: nextPlayer,
+        winner: null,
+        winningLine: null,
+        moveHistory: [],
+        isDraw: false,
+        gameNumber: newGameNumber,
+      };
+    }
+    
+    // Round 7 is the final round - if we somehow get here, stay at round 7
+    // (This shouldn't happen as round 7 draws should show "Game Over")
     return {
       ...state,
-      board: this.createEmptyBoard(nextProgression.size),
-      boardSize: nextProgression.size,
-      winLength: nextProgression.winLength,
-      currentPlayer: state.gameNumber % 2 === 0 ? "X" : "O",
+      board: this.createEmptyBoard(6),
+      boardSize: 6,
+      winLength: 4,
+      currentPlayer: nextPlayer,
       winner: null,
       winningLine: null,
       moveHistory: [],
       isDraw: false,
-      gameNumber: state.gameNumber + 1,
+      gameNumber: 7,
     };
+  }
+  
+  // Check if game can progress to next round (rounds 1-6 can progress, round 7 is final)
+  static canProgressBoard(state: XOGameState): boolean {
+    return state.gameNumber < 7;
   }
 
   static resetGame(state: XOGameState, swapPlayers: boolean = true): XOGameState {

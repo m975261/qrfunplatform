@@ -5286,8 +5286,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (currentPlayerId !== xoSettings.guruPlayerId) return;
       
-      // Add a small delay before AI moves (500ms) for natural feel
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Add a delay before guru AI moves (1500ms) for natural feel
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Make AI move with hardest difficulty
       const aiMove = XOAIManager.getMove(xoState, { ...xoSettings, difficulty: 'hardest' });
@@ -5902,6 +5902,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Only allow progression if game is actually finished
       if (!xoState.winner && !xoState.isDraw) {
         return res.status(400).json({ error: "Game not finished yet" });
+      }
+      
+      // Check if we can progress (round 7 is final round)
+      if (!XOGameLogic.canProgressBoard(xoState)) {
+        return res.json({ success: true, xoState, isFinalRound: true });
       }
       
       const newState = XOGameLogic.progressBoard(xoState);
