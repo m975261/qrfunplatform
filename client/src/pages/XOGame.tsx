@@ -137,17 +137,18 @@ export default function XOGame() {
       return response.json();
     },
     onSuccess: (data) => {
-      // If already progressed by another player, just refresh state
-      if (data.alreadyProgressed) {
-        queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
-        return;
-      }
+      // Always clear popup states when progressing (even if already progressed)
       setShowRoundEnd(false);
       setRoundWinner(null);
       setDrawCountdown(null);
       setShowWinAnimation(false);
       setWinCountdown(null);
-      setLastProcessedGameNumber(null);
+      
+      // Update lastProcessedGameNumber to the new game number to prevent re-triggering
+      if (data.xoState?.gameNumber) {
+        setLastProcessedGameNumber(data.xoState.gameNumber);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/xo/rooms', roomId] });
       
       if (isBotGame && data.xoState?.currentPlayer === "O") {
