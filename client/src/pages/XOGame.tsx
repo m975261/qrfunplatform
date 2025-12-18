@@ -295,8 +295,8 @@ export default function XOGame() {
       } else if (xoState.isDraw && !showRoundEnd && drawCountdown === null) {
         setRoundWinner(null);
         setShowRoundEnd(true);
-        // Only start countdown for non-final rounds
-        if (gameId < 7) {
+        // Only start countdown for non-final rounds (rounds 1-8, not round 9)
+        if (gameId < 9) {
           setDrawCountdown(5);
         }
         setLastProcessedGameNumber(gameId);
