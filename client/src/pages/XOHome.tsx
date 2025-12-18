@@ -52,11 +52,12 @@ export default function XOHome() {
   }, []);
 
   const createRoomMutation = useMutation({
-    mutationFn: async ({ hostNickname, isBotGame, difficulty }: { hostNickname: string; isBotGame: boolean; difficulty?: string }) => {
+    mutationFn: async ({ hostNickname, isBotGame, difficulty, isGuruUser }: { hostNickname: string; isBotGame: boolean; difficulty?: string; isGuruUser?: boolean }) => {
       const response = await apiRequest("POST", "/api/xo/rooms", { 
         hostNickname,
         isBotGame,
-        difficulty: difficulty || 'medium'
+        difficulty: difficulty || 'medium',
+        isGuruUser: isGuruUser || false
       });
       return response.json();
     },
@@ -84,8 +85,8 @@ export default function XOHome() {
   });
 
   const joinRoomMutation = useMutation({
-    mutationFn: async ({ code, nickname }: { code: string; nickname: string }) => {
-      const response = await apiRequest("POST", `/api/xo/rooms/${code}/join`, { nickname });
+    mutationFn: async ({ code, nickname, isGuruUser }: { code: string; nickname: string; isGuruUser?: boolean }) => {
+      const response = await apiRequest("POST", `/api/xo/rooms/${code}/join`, { nickname, isGuruUser: isGuruUser || false });
       return response.json();
     },
     onSuccess: (data) => {
@@ -175,10 +176,11 @@ export default function XOHome() {
           createRoomMutation.mutate({ 
             hostNickname: displayName, 
             isBotGame: gameMode === 'bot',
-            difficulty: botDifficulty
+            difficulty: botDifficulty,
+            isGuruUser: true
           });
         } else if (pendingAction === 'join') {
-          joinRoomMutation.mutate({ code: pendingCode, nickname: displayName });
+          joinRoomMutation.mutate({ code: pendingCode, nickname: displayName, isGuruUser: true });
         }
         setPendingAction(null);
       } else {
