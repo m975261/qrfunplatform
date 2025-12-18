@@ -329,10 +329,9 @@ export default function Home() {
           setShowHostPopup(true);
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
-            // For joining, use lastNickname pre-filled (not guru username), show popup
-            const lastNickname = localStorage.getItem("lastNickname") || "";
-            setPopupNickname(lastNickname);
-            setShowNicknamePopup(true);
+            // Guru authenticated - auto-join immediately with the nickname they entered
+            // No need to reopen nickname popup, use popupNickname directly
+            directJoinMutation.mutate({ code: qrDetectedCode, nickname: popupNickname });
           }
         }
         setPendingAction(null);

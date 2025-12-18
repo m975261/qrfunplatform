@@ -98,6 +98,13 @@ export default function VmodeGame() {
   
   // Viewer panel toggle state
   const [showViewers, setShowViewers] = useState(true);
+  const [viewerPanelPosition, setViewerPanelPosition] = useState({ x: -1, y: -1 }); // -1 means use default position
+  const [viewerPanelSize, setViewerPanelSize] = useState({ width: 280, height: 300 });
+  const [isDraggingViewerPanel, setIsDraggingViewerPanel] = useState(false);
+  const [isResizingViewerPanel, setIsResizingViewerPanel] = useState(false);
+  const [viewerPanelDragStart, setViewerPanelDragStart] = useState({ x: 0, y: 0, panelX: 0, panelY: 0 });
+  const [viewerPanelResizeStart, setViewerPanelResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const viewerPanelRef = useRef<HTMLDivElement>(null);
   const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
   const [isDraggingQR, setIsDraggingQR] = useState(false);
   const [dragStartPosQR, setDragStartPosQR] = useState({ x: 0, y: 0 });
@@ -625,6 +632,64 @@ export default function VmodeGame() {
     setGuruSelectedColor(null);
     setShowGuruCardPicker(false);
   };
+
+  // Viewer panel drag handlers
+  const handleViewerPanelDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const rect = viewerPanelRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setIsDraggingViewerPanel(true);
+    setViewerPanelDragStart({ 
+      x: e.clientX, 
+      y: e.clientY, 
+      panelX: viewerPanelPosition.x === -1 ? rect.left : viewerPanelPosition.x,
+      panelY: viewerPanelPosition.y === -1 ? rect.top : viewerPanelPosition.y
+    });
+  };
+
+  // Viewer panel resize handlers
+  const handleViewerPanelResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizingViewerPanel(true);
+    setViewerPanelResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: viewerPanelSize.width,
+      height: viewerPanelSize.height
+    });
+  };
+
+  // Mouse move and up handlers for viewer panel
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingViewerPanel) {
+        const newX = viewerPanelDragStart.panelX + (e.clientX - viewerPanelDragStart.x);
+        const newY = viewerPanelDragStart.panelY + (e.clientY - viewerPanelDragStart.y);
+        setViewerPanelPosition({ x: newX, y: newY });
+      }
+      if (isResizingViewerPanel) {
+        const newWidth = Math.max(200, viewerPanelResizeStart.width + (e.clientX - viewerPanelResizeStart.x));
+        const newHeight = Math.max(150, viewerPanelResizeStart.height + (e.clientY - viewerPanelResizeStart.y));
+        setViewerPanelSize({ width: newWidth, height: newHeight });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingViewerPanel(false);
+      setIsResizingViewerPanel(false);
+    };
+
+    if (isDraggingViewerPanel || isResizingViewerPanel) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingViewerPanel, isResizingViewerPanel, viewerPanelDragStart, viewerPanelResizeStart]);
 
   // Host spectator assignment for active games - with robust player state handling
   // Also allows self-assignment during election (for old host to return)
@@ -1817,108 +1882,126 @@ export default function VmodeGame() {
         </div>
       )}
 
-      {/* Viewers Area - Extended height from home/exit buttons to 6 o'clock avatar line */}
-      <div className="absolute z-20" style={{
-        top: '4rem', // Start under home/exit buttons
-        bottom: 'calc(50% - var(--r) + var(--avatar) / 2 + 8px)', // End at bottom edge of 6 o'clock avatar
-        right: 'max(0.25rem, min(15vw, 0.75rem))', // Closer to edge on mobile
-        width: 'min(18rem, 20vw)' // Original width restored
-      }}>
-        {/* Toggle button - always visible */}
+      {/* Viewers Panel - Draggable, Resizable, Hideable */}
+      {/* Toggle button - always visible in corner when hidden */}
+      {!showViewers && (
         <button
-          onClick={() => setShowViewers(!showViewers)}
-          className="absolute -left-8 top-2 bg-white/90 hover:bg-white text-gray-600 hover:text-gray-800 rounded-l-lg px-1.5 py-2 shadow-md border border-r-0 border-gray-200 text-xs font-medium z-10"
-          data-testid="button-toggle-viewers"
-          title={showViewers ? "Hide Viewers" : "Show Viewers"}
+          onClick={() => setShowViewers(true)}
+          className="fixed z-30 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2 shadow-lg text-sm font-medium"
+          style={{ top: '4.5rem', right: '0.5rem' }}
+          data-testid="button-show-viewers"
+          title="Show Viewers Panel"
         >
-          {showViewers ? '◀' : '▶'}
+          👥 {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length}
         </button>
-        
-        {showViewers && (
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg h-full flex flex-col">
-          <div className="text-xs font-semibold text-gray-700 mb-3 flex-shrink-0">
-            Viewers ({players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length})
+      )}
+      
+      {showViewers && (
+        <div 
+          ref={viewerPanelRef}
+          className="fixed z-30 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 flex flex-col select-none"
+          style={{
+            top: viewerPanelPosition.y === -1 ? '4rem' : viewerPanelPosition.y,
+            right: viewerPanelPosition.x === -1 ? '0.5rem' : 'auto',
+            left: viewerPanelPosition.x === -1 ? 'auto' : viewerPanelPosition.x,
+            width: viewerPanelSize.width,
+            height: viewerPanelSize.height,
+            cursor: isDraggingViewerPanel ? 'grabbing' : 'auto'
+          }}
+          data-testid="panel-viewers"
+        >
+          {/* Drag handle / Header */}
+          <div 
+            className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl cursor-grab active:cursor-grabbing"
+            onMouseDown={handleViewerPanelDragStart}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold">
+                👥 Viewers ({players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length})
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              {/* Minimize button */}
+              <button
+                onClick={() => setShowViewers(false)}
+                className="p-1 hover:bg-white/20 rounded transition-colors"
+                title="Hide Panel"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <div className="space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length > 0 ? (
               players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).map((spectator: any, index: number, arr: any[]) => {
-                // Allow clicking if: host, OR this is the current player AND election is active
                 const isOwnNameDuringElection = spectator.id === playerId && hostDisconnectedWarning;
                 const canClick = isHost || isOwnNameDuringElection;
                 
                 return (
-                <div key={spectator.id}>
-                  <div 
-                    className={`flex items-center space-x-2 p-2 rounded-lg transition-colors ${
-                      canClick 
-                        ? 'hover:bg-blue-50 cursor-pointer' 
-                        : ''
-                    }`}
-                    onClick={
-                      canClick
-                        ? () => handleHostAssignSpectatorToGame(spectator.id)
-                        : undefined
-                    }
-                    title={
-                      isOwnNameDuringElection
-                        ? "Click to rejoin the game"
-                        : isHost
-                        ? "Click to assign to next available slot"
-                        : ""
-                    }
-                  >
-                    <span className="text-sm text-gray-700 truncate flex-1 font-medium">{spectator.nickname}</span>
-                    {/* Edit own nickname button for spectators */}
-                    {spectator.id === playerId && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowNicknameEditor(true);
-                        }}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
-                        title="Edit your nickname"
-                      >
-                        <Pencil className="w-3 h-3 text-gray-500" />
-                      </button>
-                    )}
-                    {/* Show assignment indicator for host */}
-                    {isHost && (
-                      <div className="text-blue-600 text-sm font-bold bg-blue-100 rounded-full w-6 h-6 flex items-center justify-center">+</div>
-                    )}
+                  <div key={spectator.id}>
+                    <div 
+                      className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
+                        canClick ? 'hover:bg-blue-50 cursor-pointer' : ''
+                      }`}
+                      onClick={canClick ? () => handleHostAssignSpectatorToGame(spectator.id) : undefined}
+                      title={isOwnNameDuringElection ? "Click to rejoin the game" : isHost ? "Click to assign to next available slot" : ""}
+                    >
+                      <span className="text-sm text-gray-700 font-medium flex-1">{spectator.nickname}</span>
+                      {spectator.id === playerId && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowNicknameEditor(true);
+                          }}
+                          className="p-1 hover:bg-gray-200 rounded transition-colors"
+                          title="Edit your nickname"
+                        >
+                          <Pencil className="w-3 h-3 text-gray-500" />
+                        </button>
+                      )}
+                      {isHost && (
+                        <div className="text-blue-600 text-sm font-bold bg-blue-100 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0">+</div>
+                      )}
+                    </div>
+                    {index < arr.length - 1 && <hr className="border-gray-200 mx-1 my-1" />}
                   </div>
-                  {/* Separator line between spectators */}
-                  {index < arr.length - 1 && (
-                    <hr className="border-gray-200 mx-1 my-1" />
-                  )}
-                </div>
-              );
+                );
               })
             ) : (
-              <div className="flex items-center justify-center h-16 text-gray-400 text-xs">
+              <div className="flex items-center justify-center h-16 text-gray-400 text-sm">
                 No viewers watching
               </div>
             )}
           </div>
-          {/* Instructions for host - Always show if host */}
+          
+          {/* Host Controls Footer */}
           {isHost && (
-            <div className="mt-2 pt-2 border-t border-gray-200">
-              <div className="text-xs text-blue-600 text-center font-medium">
-                Host Controls
-              </div>
-              <div className="text-xs text-gray-500 text-center mt-1">
+            <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+              <div className="text-xs text-blue-600 font-medium">Host Controls</div>
+              <div className="text-xs text-gray-500 mt-0.5">
                 {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length > 0 
-                  ? "Click viewers to assign to empty slots"
-                  : "Viewers will appear here when they join"
-                }
+                  ? "Click viewers to assign" : "Viewers will appear here"}
               </div>
-              <div className="text-xs text-gray-400 text-center">
+              <div className="text-xs text-gray-400">
                 Available slots: {4 - players.filter((p: any) => !p.isSpectator && !p.hasLeft).length}
               </div>
             </div>
           )}
+          
+          {/* Resize Handle */}
+          <div 
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+            onMouseDown={handleViewerPanelResizeStart}
+            style={{
+              background: 'linear-gradient(135deg, transparent 50%, rgba(100,100,100,0.3) 50%)',
+              borderBottomRightRadius: '0.75rem'
+            }}
+            title="Drag to resize"
+          />
         </div>
-        )}
-      </div>
+      )}
 
       {/* Chat Panel */}
       {showChat && (
