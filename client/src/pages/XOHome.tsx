@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ArrowLeft, Bot, Users } from "lucide-react";
+import { Plus, ArrowLeft, Bot, Users, Shield, Lock } from "lucide-react";
 import { Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -22,6 +22,11 @@ export default function XOHome() {
   const [gameMode, setGameMode] = useState<'multiplayer' | 'bot'>('multiplayer');
   const [botDifficulty, setBotDifficulty] = useState<'easy' | 'medium' | 'hard' | 'hardest'>('medium');
   const [pendingCode, setPendingCode] = useState("");
+  
+  const [showGuruLogin, setShowGuruLogin] = useState(false);
+  const [guruPassword, setGuruPassword] = useState("");
+  const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
+  const [guruLoginError, setGuruLoginError] = useState("");
 
   const { toast } = useToast();
 
@@ -117,7 +122,72 @@ export default function XOHome() {
     setShowNicknamePopup(true);
   };
 
-  const handleConfirmCreate = () => {
+  const checkGuruUser = async (nickname: string, action: 'create' | 'join') => {
+    try {
+      const response = await fetch('/api/guru-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerName: nickname, password: 'check' })
+      });
+      
+      if (response.status === 404) {
+        return false;
+      }
+      
+      const data = await response.json();
+      if (data.requiresPassword) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error checking guru user:", error);
+      return false;
+    }
+  };
+
+  const handleGuruAuthentication = async () => {
+    if (!guruPassword.trim()) {
+      setGuruLoginError("Please enter your password.");
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/guru-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerName: popupNickname, password: guruPassword })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("xo_isGuruUser", "true");
+        localStorage.setItem("xo_guruUserData", JSON.stringify(data.guruUser));
+        localStorage.setItem("xo_nickname", data.guruUser.playerName);
+        
+        setShowGuruLogin(false);
+        setGuruPassword("");
+        setGuruLoginError("");
+        
+        if (pendingAction === 'create') {
+          createRoomMutation.mutate({ 
+            hostNickname: popupNickname.trim(), 
+            isBotGame: gameMode === 'bot',
+            difficulty: botDifficulty
+          });
+        } else if (pendingAction === 'join') {
+          joinRoomMutation.mutate({ code: pendingCode, nickname: popupNickname.trim() });
+        }
+        setPendingAction(null);
+      } else {
+        setGuruLoginError("Invalid password. Please try again.");
+      }
+    } catch (error) {
+      console.error("Guru authentication error:", error);
+      setGuruLoginError("Authentication failed. Please try again.");
+    }
+  };
+
+  const handleConfirmCreate = async () => {
     if (!popupNickname.trim()) {
       toast({
         title: "Nickname Required",
@@ -126,6 +196,18 @@ export default function XOHome() {
       });
       return;
     }
+    
+    const isGuruUser = await checkGuruUser(popupNickname.trim(), 'create');
+    if (isGuruUser) {
+      setPendingAction('create');
+      setShowHostPopup(false);
+      setShowGuruLogin(true);
+      return;
+    }
+    
+    localStorage.removeItem("xo_isGuruUser");
+    localStorage.removeItem("xo_guruUserData");
+    
     createRoomMutation.mutate({ 
       hostNickname: popupNickname.trim(), 
       isBotGame: gameMode === 'bot',
@@ -133,7 +215,7 @@ export default function XOHome() {
     });
   };
 
-  const handleConfirmJoin = () => {
+  const handleConfirmJoin = async () => {
     if (!popupNickname.trim()) {
       toast({
         title: "Nickname Required",
@@ -142,6 +224,18 @@ export default function XOHome() {
       });
       return;
     }
+    
+    const isGuruUser = await checkGuruUser(popupNickname.trim(), 'join');
+    if (isGuruUser) {
+      setPendingAction('join');
+      setShowNicknamePopup(false);
+      setShowGuruLogin(true);
+      return;
+    }
+    
+    localStorage.removeItem("xo_isGuruUser");
+    localStorage.removeItem("xo_guruUserData");
+    
     joinRoomMutation.mutate({ code: pendingCode, nickname: popupNickname.trim() });
   };
 
@@ -370,6 +464,79 @@ export default function XOHome() {
             >
               {joinRoomMutation.isPending ? "Joining..." : "Join Game"}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guru User Login Dialog */}
+      <Dialog open={showGuruLogin} onOpenChange={(open) => {
+        if (!open) {
+          setShowGuruLogin(false);
+          setGuruPassword("");
+          setGuruLoginError("");
+          setPendingAction(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="text-purple-600" size={24} />
+              Guru Authentication
+            </DialogTitle>
+            <DialogDescription>
+              This nickname is registered as a Guru user. Please enter your password to continue.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="guru-password">Password</Label>
+              <div className="relative mt-1">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <Input
+                  id="guru-password"
+                  type="password"
+                  placeholder="Enter your password..."
+                  value={guruPassword}
+                  onChange={(e) => {
+                    setGuruPassword(e.target.value);
+                    setGuruLoginError("");
+                  }}
+                  className="pl-10"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleGuruAuthentication();
+                    }
+                  }}
+                  data-testid="input-guru-password"
+                />
+              </div>
+              {guruLoginError && (
+                <p className="text-sm text-red-500 mt-1">{guruLoginError}</p>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowGuruLogin(false);
+                  setGuruPassword("");
+                  setGuruLoginError("");
+                  setPendingAction(null);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGuruAuthentication}
+                disabled={!guruPassword.trim()}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                data-testid="button-guru-authenticate"
+              >
+                Authenticate
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
