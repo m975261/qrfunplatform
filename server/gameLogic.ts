@@ -244,14 +244,18 @@ export class UnoGameLogic {
   }
   
   static generateRoomCode(): string {
-    // Generate codes in format AA1BB - letters + 1 + letters for UNO
-    const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    // Generate codes in format XX1YY - first pair same, 1 in middle, last pair same but different from first
+    // Examples: 22133, 44166, 99122
+    const digits = "0123456789";
     
-    const first = letters.charAt(Math.floor(Math.random() * letters.length));
-    const second = letters.charAt(Math.floor(Math.random() * letters.length));
-    const fourth = letters.charAt(Math.floor(Math.random() * letters.length));
-    const fifth = letters.charAt(Math.floor(Math.random() * letters.length));
+    const firstPair = digits.charAt(Math.floor(Math.random() * digits.length));
+    let lastPair = digits.charAt(Math.floor(Math.random() * digits.length));
     
-    return `${first}${second}1${fourth}${fifth}`;
+    // Ensure last pair is different from first pair
+    while (lastPair === firstPair) {
+      lastPair = digits.charAt(Math.floor(Math.random() * digits.length));
+    }
+    
+    return `${firstPair}${firstPair}1${lastPair}${lastPair}`;
   }
 }
