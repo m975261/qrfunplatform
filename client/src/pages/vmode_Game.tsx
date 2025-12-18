@@ -97,7 +97,7 @@ export default function VmodeGame() {
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   
   // Viewer panel toggle state
-  const [showViewers, setShowViewers] = useState(true);
+  const [showViewers, setShowViewers] = useState(false);
   const [viewerPanelPosition, setViewerPanelPosition] = useState({ x: -1, y: -1 }); // -1 means use default position
   const [viewerPanelSize, setViewerPanelSize] = useState({ width: 210, height: 280 });
   const [isDraggingViewerPanel, setIsDraggingViewerPanel] = useState(false);
@@ -112,14 +112,6 @@ export default function VmodeGame() {
   const qrPanelRef = useRef<HTMLDivElement>(null);
 
   // Debug logs for troubleshooting
-  console.log("🚨 WHITE PAGE DEBUG:", {
-    gameState: !!gameState,
-    room: !!gameState?.room,
-    isConnected,
-    roomId,
-    playerId,
-    timestamp: new Date().toISOString()
-  });
 
   useEffect(() => {
     if (roomId && isConnected) {
@@ -129,7 +121,6 @@ export default function VmodeGame() {
       } else {
         // Room creator subscribing as viewer (no playerId)
         const roomCode = new URLSearchParams(window.location.search).get('code');
-        console.log("Subscribing to game as viewer:", { roomId, roomCode });
         streamSubscribe(roomId, roomCode || undefined);
       }
     }
@@ -207,7 +198,6 @@ export default function VmodeGame() {
       // Additional fix for disconnected players - force modal show after delay
       setTimeout(() => {
         if (mappedData && !showWinnerModal) {
-          console.log("🏆 Force showing winner modal for potentially disconnected player");
           setShowWinnerModal(true);
         }
       }, 1000);
@@ -215,7 +205,6 @@ export default function VmodeGame() {
     
     // CRITICAL FIX: Check if room is finished but no gameEndData (disconnected player case)
     if (gameState?.room?.status === 'finished' && !gameState?.gameEndData && !showWinnerModal) {
-      console.log("🏆 Detected finished game without gameEndData - requesting game end data");
       // Request game end data from server for this specific case
       if (roomId) {
         fetch(`/api/rooms/${roomId}/game-end-data`, {
@@ -224,7 +213,6 @@ export default function VmodeGame() {
         .then(res => res.json())
         .then(data => {
           if (data.winner && data.rankings) {
-            console.log("🏆 Retrieved game end data for disconnected player:", data);
             setWinnerData({
               winner: data.winner,
               finalRankings: data.rankings,
@@ -293,7 +281,6 @@ export default function VmodeGame() {
   // Handle active color updates for visual refresh
   useEffect(() => {
     if (gameState?.colorUpdate || gameState?.activeColorUpdate || gameState?.colorUpdateTimestamp) {
-      console.log(`🎨 ACTIVE COLOR UPDATE DETECTED: ${gameState?.room?.currentColor}`);
       // Force component refresh when color changes
       setHandRefreshKey(prev => prev + 1);
     }
@@ -302,7 +289,6 @@ export default function VmodeGame() {
   // Handle host election messages
   useEffect(() => {
     if (gameState?.hostDisconnectedWarning) {
-      console.log("🔴 Host disconnection warning - starting election countdown");
       setHostDisconnectedWarning(gameState.hostDisconnectedWarning);
       setElectionCountdown(gameState.electionStartsIn || 30);
       
@@ -333,7 +319,6 @@ export default function VmodeGame() {
       };
     } else {
       // Host has returned - clear election state immediately and stop timer
-      console.log("🟢 Host returned - clearing election state and stopping timer");
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
         countdownIntervalRef.current = null;
@@ -355,7 +340,6 @@ export default function VmodeGame() {
       // Don't reset hasVoted here - let it persist until election ends
     } else {
       // Reset all election state when election ends or host returns
-      console.log("🟢 Election ended - clearing all voting state");
       setHasVoted(false);
       setElectionCandidates([]);
       setElectionVotes({});
@@ -377,20 +361,15 @@ export default function VmodeGame() {
     }
   }, [gameState?.electionVotes]);
 
-  // Show toast when new host is elected
+  // Clear newHostName when new host is elected
   useEffect(() => {
     if (gameState?.newHostName) {
-      toast({
-        title: "New Host Elected!",
-        description: `${gameState.newHostName} is now the host.`,
-      });
-      // Clear newHostName after showing toast
       setGameState((prev: any) => ({
         ...prev,
         newHostName: null
       }));
     }
-  }, [gameState?.newHostName, toast]);
+  }, [gameState?.newHostName]);
 
   const handleVoteForHost = (candidateId: string) => {
     if (hasVoted) return;
@@ -481,11 +460,8 @@ export default function VmodeGame() {
           }
         });
         
-        if (response.ok) {
-          console.log("End-game reset completed - navigating to lobby");
-        }
       } catch (error) {
-        console.error("Failed to reset game:", error);
+        // Silent error handling
       }
       
       // Navigate back to room lobby
@@ -525,27 +501,10 @@ export default function VmodeGame() {
       const result = await response.json();
       
       if (response.ok) {
-        console.log(`✅ Guru Wild4 response successful - stacked to ${result.newPendingDraw} cards`);
-        toast({
-          title: "GURU POWER! +4",
-          description: `Wild Draw 4 played! Total penalty: ${result.newPendingDraw} cards`,
-        });
         setShowGuruWild4ColorPicker(false);
-      } else {
-        console.error("Guru Wild4 response failed:", result.error);
-        toast({
-          title: "Failed",
-          description: result.error || "Could not play Wild Draw 4",
-          variant: "destructive"
-        });
       }
     } catch (error) {
-      console.error("Error with Guru Wild4 response:", error);
-      toast({
-        title: "Error",
-        description: "Network error",
-        variant: "destructive"
-      });
+      // Silent error handling
     }
   };
 
@@ -591,38 +550,12 @@ export default function VmodeGame() {
       const result = await response.json();
       
       if (response.ok) {
-        if (guruCardMode === 'color') {
-          console.log(`✅ Guru Color change successful - new color: ${guruSelectedColor}`);
-          toast({
-            title: `GURU POWER! Color`,
-            description: `Color changed to ${guruSelectedColor}!`,
-          });
-        } else {
-          console.log(`✅ Guru ${guruCardMode} successful - stacked to ${result.newPendingDraw} cards`);
-          toast({
-            title: `GURU POWER! ${guruCardMode}`,
-            description: `${guruCardMode} played! Total penalty: ${result.newPendingDraw} cards`,
-          });
-        }
-        // Reset state
         setGuruCardMode(null);
         setGuruSelectedColor(null);
         setShowGuruCardPicker(false);
-      } else {
-        console.error(`Guru ${guruCardMode} failed:`, result.error);
-        toast({
-          title: "Failed",
-          description: result.error || `Could not play ${guruCardMode}`,
-          variant: "destructive"
-        });
       }
     } catch (error) {
-      console.error(`Error with Guru ${guruCardMode}:`, error);
-      toast({
-        title: "Error",
-        description: "Network error",
-        variant: "destructive"
-      });
+      // Silent error handling
     }
   };
 
@@ -752,18 +685,8 @@ export default function VmodeGame() {
     
     try {
       const spectator = players.find((p: any) => p.id === spectatorId);
-      if (!spectator) {
-        toast({
-          title: "Error",
-          description: "Spectator not found",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (!spectator) return;
       
-      console.log(`Host assigning spectator ${spectator.nickname} (${spectatorId}) to active game`);
-      
-      // Find available positions excluding left players and spectators
       const activeGamePlayers = players.filter((p: any) => 
         !p.isSpectator && 
         !p.hasLeft && 
@@ -780,27 +703,13 @@ export default function VmodeGame() {
         }
       }
       
-      if (availablePosition === null) {
-        toast({
-          title: "Error",
-          description: "All player slots are taken",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (availablePosition === null) return;
       
-      // Show assignment intent before API call
-      toast({
-        title: "Assigning Player",
-        description: `Adding ${spectator.nickname} to position ${availablePosition + 1}...`,
-      });
-      
-      // Use the correct endpoint based on room status
       const endpoint = room.status === 'playing' 
         ? `/api/rooms/${roomId}/assign-spectator-to-game`
         : `/api/rooms/${roomId}/assign-spectator`;
         
-      const response = await fetch(endpoint, {
+      await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -811,26 +720,8 @@ export default function VmodeGame() {
           position: availablePosition
         })
       });
-      
-      const result = await response.json();
-      
-      if (response.ok) {
-        console.log(`Successfully assigned spectator ${spectator.nickname} to position ${availablePosition}`);
-        toast({
-          title: "Success",
-          description: `${spectator.nickname} joined the game at position ${availablePosition + 1}`,
-        });
-      } else {
-        console.error("Server error:", result.error);
-        throw new Error(result.error || 'Failed to assign player');
-      }
     } catch (error) {
-      console.error("Error assigning spectator:", error);
-      toast({
-        title: "Assignment Failed", 
-        description: error instanceof Error ? error.message : "Failed to assign player to game",
-        variant: "destructive",
-      });
+      // Silent error handling
     }
   };
 
@@ -838,13 +729,6 @@ export default function VmodeGame() {
     if (selectedCardIndex === null || !currentPlayer) return;
     
     try {
-      console.log("🔧 Guru replacing card:", {
-        cardIndex: selectedCardIndex,
-        newCard,
-        roomId,
-        playerId
-      });
-      
       const response = await fetch(`/api/rooms/${roomId}/guru-replace-card`, {
         method: 'POST',
         headers: {
@@ -860,8 +744,6 @@ export default function VmodeGame() {
       const result = await response.json();
       
       if (response.ok) {
-        console.log("✅ Card replaced successfully");
-        // Remove success notification as requested
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
         
@@ -886,17 +768,9 @@ export default function VmodeGame() {
         
         // Force immediate component re-render triggers
         setHandRefreshKey(prev => prev + Math.random()); // Additional random trigger
-      } else {
-        console.error("❌ Server error:", result.error);
-        throw new Error(result.error || 'Failed to replace card');
       }
     } catch (error) {
-      console.error("❌ Error replacing card:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to replace card",
-        variant: "destructive",
-      });
+      // Silent error handling
     }
   };
 
@@ -914,15 +788,6 @@ export default function VmodeGame() {
   // Only redirect if NOT the room creator in viewer mode
 
   if (!gameState || !gameState.room) {
-    console.log("🚨 WHITE PAGE DEBUG:", {
-      gameState: !!gameState,
-      room: !!gameState?.room,
-      isConnected,
-      roomId,
-      playerId,
-      timestamp: new Date().toISOString()
-    });
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center">
         <div className="text-center">
@@ -979,28 +844,8 @@ export default function VmodeGame() {
     return '👨'; // Default to male avatar instead of first letter
   };
   
-  // Debug guru user status
-  console.log("🔧 Guru Debug:", {
-    isGuruUser,
-    localStorage_isGuruUser: localStorage.getItem("isGuruUser"),
-    currentPlayer: currentPlayer?.nickname,
-    playerHand: currentPlayer?.hand?.length
-  });
-  
-  // Debug spectator/viewer status
   const spectators = players.filter((p: any) => p.isSpectator);
   const onlineSpectators = spectators.filter((p: any) => isPlayerOnline(p));
-  console.log("👥 Viewer Debug:", {
-    totalPlayers: players.length,
-    spectators: spectators.length,
-    onlineSpectators: onlineSpectators.length,
-    spectatorList: spectators.map((p: any) => ({
-      nickname: p.nickname,
-      isSpectator: p.isSpectator,
-      isOnline: isPlayerOnline(p),
-      hasLeft: p.hasLeft
-    }))
-  });
   const activePositions = room.activePositions || []; // Positions that were active when game started
 
   // Helper functions for circular avatar layout
@@ -1278,18 +1123,7 @@ export default function VmodeGame() {
               onClick={() => {
                 const baseUrl = window.location.origin;
                 const joinUrl = `${baseUrl}?room=${room.code}`;
-                navigator.clipboard.writeText(joinUrl).then(() => {
-                  toast({
-                    title: "Link Copied!",
-                    description: "Room join link copied to clipboard",
-                  });
-                }).catch(() => {
-                  toast({
-                    title: "Copy Failed",
-                    description: "Could not copy link",
-                    variant: "destructive",
-                  });
-                });
+                navigator.clipboard.writeText(joinUrl);
               }}
             >
               <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1619,7 +1453,6 @@ export default function VmodeGame() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            console.log('Edit button clicked for player:', player.id);
                             setShowNicknameEditor(true);
                           }}
                           className={`absolute w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto z-30 cursor-pointer ${
@@ -1645,7 +1478,6 @@ export default function VmodeGame() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('Kick button clicked for player:', player.id);
                               kickPlayer(player.id);
                             }}
                             className="w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white cursor-pointer"
@@ -1658,7 +1490,6 @@ export default function VmodeGame() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('Make Host button clicked for player:', player.id);
                               assignHost(player.id);
                             }}
                             className="w-5 h-5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white cursor-pointer"
@@ -1693,7 +1524,6 @@ export default function VmodeGame() {
                           onClick={() => {
                             // Host returning to their slot
                             if (canHostReturn) {
-                              console.log('Host returning to slot', position);
                               replacePlayer(position);
                               return;
                             }
@@ -2223,9 +2053,7 @@ export default function VmodeGame() {
           playerId={playerId!}
           isOpen={showNicknameEditor}
           onClose={() => setShowNicknameEditor(false)}
-          onNicknameChanged={(newNickname) => {
-            console.log("Nickname updated to:", newNickname);
-          }}
+          onNicknameChanged={() => {}}
         />
       )}
 

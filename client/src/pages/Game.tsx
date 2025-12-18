@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRoute } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle } from "lucide-react";
+import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle, X, Pencil } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import PlayerArea from "@/components/game/PlayerArea";
@@ -52,6 +52,16 @@ export default function Game() {
     to: 'discard' | 'player';
     show: boolean;
   } | null>(null);
+  
+  // Viewer panel state (hidden by default)
+  const [showViewers, setShowViewers] = useState(false);
+  const [viewerPanelPosition, setViewerPanelPosition] = useState({ x: -1, y: -1 });
+  const [viewerPanelSize, setViewerPanelSize] = useState({ width: 210, height: 280 });
+  const [isDraggingViewerPanel, setIsDraggingViewerPanel] = useState(false);
+  const [isResizingViewerPanel, setIsResizingViewerPanel] = useState(false);
+  const [viewerPanelDragStart, setViewerPanelDragStart] = useState({ x: 0, y: 0, panelX: 0, panelY: 0 });
+  const [viewerPanelResizeStart, setViewerPanelResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const viewerPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
@@ -93,21 +103,11 @@ export default function Game() {
 
 
   useEffect(() => {
-    console.log("🏆 Game state changed:", {
-      roomStatus: gameState?.room?.status,
-      hasGameEndData: !!gameState?.gameEndData,
-      gameEndData: gameState?.gameEndData,
-      showGameEnd,
-      needsContinue: gameState?.needsContinue
-    });
-    
     if (gameState?.room?.status === "finished") {
-      console.log("🏆 Room status is finished - setting showGameEnd to true");
       setShowGameEnd(true);
     }
     
     if (gameState?.gameEndData) {
-      console.log("🏆 GameEndData found - setting modal data and show", gameState.gameEndData);
       setGameEndData(gameState.gameEndData);
       setShowGameEnd(true);
     }
@@ -167,6 +167,114 @@ export default function Game() {
   const getCardSize = () => {
     return "md"; // Default medium size for Game.tsx
   };
+
+  // Viewer panel drag handlers
+  const handleViewerPanelDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const rect = viewerPanelRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setIsDraggingViewerPanel(true);
+    setViewerPanelDragStart({ 
+      x: e.clientX, 
+      y: e.clientY, 
+      panelX: viewerPanelPosition.x === -1 ? rect.left : viewerPanelPosition.x,
+      panelY: viewerPanelPosition.y === -1 ? rect.top : viewerPanelPosition.y
+    });
+  };
+
+  const handleViewerPanelTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const rect = viewerPanelRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setIsDraggingViewerPanel(true);
+    setViewerPanelDragStart({ 
+      x: touch.clientX, 
+      y: touch.clientY, 
+      panelX: viewerPanelPosition.x === -1 ? rect.left : viewerPanelPosition.x,
+      panelY: viewerPanelPosition.y === -1 ? rect.top : viewerPanelPosition.y
+    });
+  };
+
+  const handleViewerPanelResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizingViewerPanel(true);
+    setViewerPanelResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: viewerPanelSize.width,
+      height: viewerPanelSize.height
+    });
+  };
+
+  const handleViewerPanelResizeTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    e.stopPropagation();
+    const touch = e.touches[0];
+    setIsResizingViewerPanel(true);
+    setViewerPanelResizeStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      width: viewerPanelSize.width,
+      height: viewerPanelSize.height
+    });
+  };
+
+  // Viewer panel drag/resize effect
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingViewerPanel) {
+        const newX = viewerPanelDragStart.panelX + (e.clientX - viewerPanelDragStart.x);
+        const newY = viewerPanelDragStart.panelY + (e.clientY - viewerPanelDragStart.y);
+        setViewerPanelPosition({ x: newX, y: newY });
+      }
+      if (isResizingViewerPanel) {
+        const newWidth = Math.max(160, viewerPanelResizeStart.width + (e.clientX - viewerPanelResizeStart.x));
+        const newHeight = Math.max(120, viewerPanelResizeStart.height + (e.clientY - viewerPanelResizeStart.y));
+        setViewerPanelSize({ width: newWidth, height: newHeight });
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      if (isDraggingViewerPanel) {
+        const newX = viewerPanelDragStart.panelX + (touch.clientX - viewerPanelDragStart.x);
+        const newY = viewerPanelDragStart.panelY + (touch.clientY - viewerPanelDragStart.y);
+        setViewerPanelPosition({ x: newX, y: newY });
+      }
+      if (isResizingViewerPanel) {
+        const newWidth = Math.max(160, viewerPanelResizeStart.width + (touch.clientX - viewerPanelResizeStart.x));
+        const newHeight = Math.max(120, viewerPanelResizeStart.height + (touch.clientY - viewerPanelResizeStart.y));
+        setViewerPanelSize({ width: newWidth, height: newHeight });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingViewerPanel(false);
+      setIsResizingViewerPanel(false);
+    };
+
+    const handleTouchEnd = () => {
+      setIsDraggingViewerPanel(false);
+      setIsResizingViewerPanel(false);
+    };
+
+    if (isDraggingViewerPanel || isResizingViewerPanel) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDraggingViewerPanel, isResizingViewerPanel, viewerPanelDragStart, viewerPanelResizeStart]);
 
   const handlePlayCardWithUnoCheck = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
@@ -481,6 +589,17 @@ export default function Game() {
         </div>
       )}
 
+      {/* Draw Pile - positioned between 6 o'clock (bottom) and 10 o'clock (upper-left) */}
+      <div className="absolute z-20" style={{ left: '21%', bottom: '22%' }}>
+        <div className="relative cursor-pointer group" onClick={drawCard}>
+          <div className="bg-gradient-to-br from-amber-600 to-orange-700 rounded-lg border-2 border-amber-500 shadow-xl group-hover:shadow-amber-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
+          <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg border-2 border-amber-400 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-white font-bold text-xs sm:text-sm drop-shadow-lg">Draw</span>
+          </div>
+        </div>
+      </div>
+
       {/* Circular Game Area - Responsive */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative">
@@ -489,16 +608,6 @@ export default function Game() {
             
             {/* Inner Circle */}
             <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full bg-gradient-to-br from-yellow-200 to-orange-300 shadow-inner flex items-center justify-center relative border-2 border-white/50">
-              
-              {/* Draw Pile - Left Side */}
-              <div className="absolute -left-6 sm:-left-8 md:-left-12 top-1/2 transform -translate-y-1/2">
-                <div className="relative cursor-pointer" onClick={drawCard}>
-                  <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-14 md:h-18 bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-white shadow-xl"></div>
-                  <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-14 md:h-18 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-white shadow-xl absolute -top-0.5 -left-0.5"></div>
-                  <div className="w-8 h-12 sm:w-10 sm:h-14 md:w-14 md:h-18 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg border-2 border-white shadow-xl absolute -top-1 -left-1"></div>
-                </div>
-                <div className="text-xs text-center mt-1 text-white font-bold">DRAW</div>
-              </div>
 
               {/* Current Card - Center with compact size to prevent overlap */}
               <div className="flex flex-col items-center">
@@ -584,24 +693,84 @@ export default function Game() {
         </div>
       )}
 
-      {/* Spectators Panel */}
-      {spectators.length > 0 && (
-        <div className="absolute top-20 right-4 z-20">
-          <UICard className="bg-white/95 backdrop-blur-sm shadow-lg">
-            <CardContent className="p-3">
-              <div className="text-sm font-medium text-gray-700 mb-2">Spectators ({spectators.length})</div>
-              <div className="space-y-2">
-                {spectators.map((spectator: any) => (
-                  <div key={spectator.id} className="flex items-center space-x-2">
-                    <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+      {/* Viewers Panel - Draggable, Resizable, Hideable (hidden by default) */}
+      {!showViewers && (
+        <button
+          onClick={() => setShowViewers(true)}
+          className="fixed z-40 bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center gap-1 transition-all"
+          style={{ 
+            top: '4.5rem', 
+            right: 0,
+            padding: '8px 6px 8px 10px',
+            borderTopLeftRadius: '12px',
+            borderBottomLeftRadius: '12px'
+          }}
+          data-testid="button-show-viewers"
+          title="Show Viewers Panel"
+        >
+          <span className="text-sm font-bold">👥 {spectators.length}</span>
+        </button>
+      )}
+      
+      {showViewers && (
+        <div 
+          ref={viewerPanelRef}
+          className="fixed z-30 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 flex flex-col select-none"
+          style={{
+            top: viewerPanelPosition.y === -1 ? '4rem' : viewerPanelPosition.y,
+            right: viewerPanelPosition.x === -1 ? '0.5rem' : 'auto',
+            left: viewerPanelPosition.x === -1 ? 'auto' : viewerPanelPosition.x,
+            width: viewerPanelSize.width,
+            height: viewerPanelSize.height,
+            cursor: isDraggingViewerPanel ? 'grabbing' : 'auto'
+          }}
+          data-testid="panel-viewers"
+        >
+          <div 
+            className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl cursor-grab active:cursor-grabbing touch-none"
+            onMouseDown={handleViewerPanelDragStart}
+            onTouchStart={handleViewerPanelTouchStart}
+          >
+            <span className="text-sm font-semibold">👥 Viewers ({spectators.length})</span>
+            <button
+              onClick={() => setShowViewers(false)}
+              className="p-1 hover:bg-white/20 rounded transition-colors"
+              title="Hide Panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {spectators.length > 0 ? (
+              spectators.map((spectator: any, index: number) => (
+                <div key={spectator.id}>
+                  <div className="flex items-center gap-2 p-2 rounded-lg">
+                    <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                       {spectator.nickname[0].toUpperCase()}
                     </div>
-                    <span className="text-sm text-gray-600">{spectator.nickname}</span>
+                    <span className="text-sm text-gray-700 font-medium flex-1">{spectator.nickname}</span>
                   </div>
-                ))}
+                  {index < spectators.length - 1 && <hr className="border-gray-200 mx-1 my-1" />}
+                </div>
+              ))
+            ) : (
+              <div className="flex items-center justify-center h-16 text-gray-400 text-sm">
+                No viewers watching
               </div>
-            </CardContent>
-          </UICard>
+            )}
+          </div>
+          
+          <div 
+            className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize touch-none"
+            onMouseDown={handleViewerPanelResizeStart}
+            onTouchStart={handleViewerPanelResizeTouchStart}
+            style={{
+              background: 'linear-gradient(135deg, transparent 50%, rgba(100,100,100,0.4) 50%)',
+              borderBottomRightRadius: '0.75rem'
+            }}
+            title="Drag to resize"
+          />
         </div>
       )}
 
