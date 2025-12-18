@@ -2232,6 +2232,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     connection.isStreamViewer = true;
     connection.streamViewerId = streamViewerId; // Track unique stream viewer ID
     
+    // VIEWER MODE: Track the room creator (first stream viewer with no playerId)
+    // This allows them to have host controls without being a player
+    // Uses streamViewerId (stable across reconnections) instead of transient connectionId
+    let isViewerModeHost = false;
+    if (room.isViewerMode && !hadExistingPlayerId && streamViewerId) {
+      if (!room.streamPageConnectionId) {
+        // First stream viewer in viewer mode becomes the "host" (room creator)
+        // Store the streamViewerId as the host identifier (stable across reconnections)
+        await storage.updateRoom(room.id, { streamPageConnectionId: streamViewerId });
+        isViewerModeHost = true;
+        console.log(`📺 First stream viewer ${streamViewerId} becomes viewer mode host for room ${room.code}`);
+      } else if (room.streamPageConnectionId === streamViewerId) {
+        // Reconnecting host - verify by matching streamViewerId
+        isViewerModeHost = true;
+        console.log(`📺 Stream viewer ${streamViewerId} reconnected as host for room ${room.code}`);
+      }
+    }
+    connection.isViewerModeHost = isViewerModeHost;
+    
     // CRITICAL: Only null out playerId if this was never a player connection
     // This prevents breaking the player's connection state when they open stream page
     if (!hadExistingPlayerId) {
@@ -2408,7 +2427,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const players = await storage.getPlayersByRoom(connection.roomId);
     const gamePlayers = players.filter(p => !p.isSpectator);
     
-    if (!room || room.hostId !== connection.playerId || gamePlayers.length < 2) {
+    if (!room || gamePlayers.length < 2) {
+      return;
+    }
+    
+    // Allow start if:
+    // 1. Normal mode: connection playerId matches room hostId
+    // 2. Viewer mode: connection is a stream viewer (room creator)
+    let isAuthorized = false;
+    if (connection.playerId && room.hostId === connection.playerId) {
+      isAuthorized = true;
+    } else if ((connection as any).isViewerModeHost) {
+      // Viewer mode host: verified room creator (not just any stream viewer)
+      isAuthorized = true;
+      console.log(`📺 Viewer mode host starting game via stream connection`);
+    }
+    
+    if (!isAuthorized) {
       return;
     }
     
@@ -3561,18 +3596,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   async function handleKickPlayer(connection: SocketConnection, message: any) {
-    if (!connection.roomId || !connection.playerId) return;
+    if (!connection.roomId) return;
     
     const { targetPlayerId } = message;
     const room = await storage.getRoom(connection.roomId);
-    const hostPlayer = await storage.getPlayer(connection.playerId);
     const targetPlayer = await storage.getPlayer(targetPlayerId);
     const players = await storage.getPlayersByRoom(connection.roomId);
     
-    if (!room || !hostPlayer || !targetPlayer) return;
+    if (!room || !targetPlayer) return;
     
-    // Only host can kick players
-    if (room.hostId !== connection.playerId) return;
+    // Allow kick if:
+    // 1. Normal mode: connection playerId matches room hostId
+    // 2. Viewer mode: connection is a stream viewer (room creator)
+    let isAuthorized = false;
+    if (connection.playerId) {
+      const hostPlayer = await storage.getPlayer(connection.playerId);
+      if (hostPlayer && room.hostId === connection.playerId) {
+        isAuthorized = true;
+      }
+    } else if ((connection as any).isViewerModeHost) {
+      // Viewer mode host: verified room creator (not just any stream viewer)
+      isAuthorized = true;
+      console.log(`📺 Viewer mode host kicking player via stream connection`);
+    }
+    
+    if (!isAuthorized) return;
     
     console.log(`WebSocket kick: Converting player ${targetPlayerId} (${targetPlayer.nickname}) to spectator`);
     
@@ -3667,17 +3715,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   async function handleAssignSpectator(connection: SocketConnection, message: any) {
-    if (!connection.roomId || !connection.playerId) return;
+    if (!connection.roomId) return;
     
     const { spectatorId, position } = message;
     const room = await storage.getRoom(connection.roomId);
-    const hostPlayer = await storage.getPlayer(connection.playerId);
     const spectator = await storage.getPlayer(spectatorId);
     
-    if (!room || !hostPlayer || !spectator) return;
+    if (!room || !spectator) return;
     
-    // Only host can assign spectators
-    if (room.hostId !== connection.playerId) return;
+    // Allow assignment if:
+    // 1. Normal mode: connection has playerId and is the host
+    // 2. Viewer mode: connection is a stream viewer (room creator without playerId)
+    let isAuthorized = false;
+    
+    if (connection.playerId) {
+      // Normal mode: check if this player is the host
+      const hostPlayer = await storage.getPlayer(connection.playerId);
+      if (hostPlayer && room.hostId === connection.playerId) {
+        isAuthorized = true;
+      }
+    } else if ((connection as any).isViewerModeHost) {
+      // Viewer mode host: verified room creator (not just any stream viewer)
+      isAuthorized = true;
+      console.log(`📺 Viewer mode host assigning spectator via stream connection`);
+    }
+    
+    if (!isAuthorized) {
+      console.log(`Assign spectator rejected: not authorized`);
+      return;
+    }
     
     console.log(`WebSocket assign spectator: ${spectator.nickname} to position ${position}`);
     
