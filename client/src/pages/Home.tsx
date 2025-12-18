@@ -268,7 +268,7 @@ export default function Home() {
       const response = await fetch('/api/guru-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerName: nickname, password: 'check' })
+        body: JSON.stringify({ playerName: nickname, password: 'check', gameType: 'uno' })
       });
       
       if (response.status === 404) {
@@ -298,7 +298,7 @@ export default function Home() {
       const response = await fetch('/api/guru-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerName: popupNickname, password: guruPassword })
+        body: JSON.stringify({ playerName: popupNickname, password: guruPassword, gameType: 'uno' })
       });
 
       if (response.ok) {

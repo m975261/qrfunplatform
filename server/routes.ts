@@ -451,19 +451,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Guru user login validation endpoint
   app.post("/api/guru-login", async (req, res) => {
     try {
-      const { playerName, password } = z.object({
+      const { playerName, password, gameType } = z.object({
         playerName: z.string().min(1),
-        password: z.string().min(1)
+        password: z.string().min(1),
+        gameType: z.enum(["uno", "xo"]).optional()
       }).parse(req.body);
 
       // Check if playerName exists as a guru user (check ONLY by username, trim spaces)
+      // Also filter by gameType if provided - guru users only valid for their assigned game
       const trimmedPlayerName = playerName.trim();
+      const whereConditions = [
+        eq(guruUsers.username, trimmedPlayerName),
+        eq(guruUsers.isActive, true)
+      ];
+      
+      // If gameType is specified, only match guru users for that specific game
+      if (gameType) {
+        whereConditions.push(eq(guruUsers.gameType, gameType));
+      }
+      
       const [guruUser] = await db.select()
         .from(guruUsers)
-        .where(and(
-          eq(guruUsers.username, trimmedPlayerName),
-          eq(guruUsers.isActive, true)
-        ))
+        .where(and(...whereConditions))
         .limit(1);
 
       if (!guruUser) {

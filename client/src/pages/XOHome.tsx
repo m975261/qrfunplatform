@@ -128,7 +128,7 @@ export default function XOHome() {
       const response = await fetch('/api/guru-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerName: nickname, password: 'check' })
+        body: JSON.stringify({ playerName: nickname, password: 'check', gameType: 'xo' })
       });
       
       if (response.status === 404) {
@@ -156,7 +156,7 @@ export default function XOHome() {
       const response = await fetch('/api/guru-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerName: popupNickname, password: guruPassword })
+        body: JSON.stringify({ playerName: popupNickname, password: guruPassword, gameType: 'xo' })
       });
 
       if (response.ok) {
