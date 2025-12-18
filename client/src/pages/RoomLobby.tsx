@@ -17,6 +17,9 @@ export default function RoomLobby() {
   // State for editing spectator nicknames (host only in streaming mode)
   const [editingSpectatorId, setEditingSpectatorId] = useState<string | null>(null);
   const [editingSpectatorNickname, setEditingSpectatorNickname] = useState<string>("");
+  // State for host editing player nicknames
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [editingPlayerNickname, setEditingPlayerNickname] = useState<string>("");
   
   // Draggable QR code panel state
   const [qrPosition, setQrPosition] = useState({ x: 20, y: 100 });
@@ -51,7 +54,6 @@ export default function RoomLobby() {
 
   useEffect(() => {
     if (roomId && playerId && isConnected) {
-      console.log("Joining room via WebSocket:", { playerId, roomId });
       joinRoom(playerId, roomId);
     }
   }, [roomId, playerId, isConnected, joinRoom]);
@@ -77,11 +79,8 @@ export default function RoomLobby() {
             }
           });
           
-          if (response.ok) {
-            console.log("End-game reset completed - all players except host converted to spectators");
-          }
         } catch (error) {
-          console.error("Failed to reset game:", error);
+          // Silent error handling
         }
       }, 1000);
     }
@@ -105,7 +104,6 @@ export default function RoomLobby() {
 
   const handleStartGame = () => {
     const players = gameState?.players?.filter((p: any) => !p.isSpectator) || [];
-    console.log("Starting game with players:", players);
     if (players.length < 2) {
       toast({
         title: "Not Enough Players",
@@ -204,19 +202,45 @@ export default function RoomLobby() {
     }
     
     if (nextPosition === null) {
-      console.log("No available slots to assign spectator");
       return;
     }
     
     // Use WebSocket for real-time sync instead of HTTP API
     assignSpectator(spectatorId, nextPosition);
-    console.log(`✅ Assigning spectator to position ${nextPosition} via WebSocket`);
+  };
+
+  // Host editing player nickname
+  const handleHostEditPlayer = (playerToEdit: any) => {
+    setEditingPlayerId(playerToEdit.id);
+    setEditingPlayerNickname(playerToEdit.nickname);
+  };
+
+  const handleSavePlayerNickname = async () => {
+    if (!editingPlayerId || !editingPlayerNickname.trim()) return;
+    
+    try {
+      await fetch(`/api/rooms/${roomId}/rename-player`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${playerId}`
+        },
+        body: JSON.stringify({
+          targetPlayerId: editingPlayerId,
+          newNickname: editingPlayerNickname.trim()
+        })
+      });
+    } catch (error) {
+      // Silent error handling
+    }
+    
+    setEditingPlayerId(null);
+    setEditingPlayerNickname("");
   };
 
   // Handle case where room/player data is stale (server restart)
   useEffect(() => {
     if (roomError && roomId && playerId) {
-      console.log("Room not found, clearing stale data and redirecting to home");
       localStorage.removeItem("currentRoomId");
       localStorage.removeItem("playerId");
       setLocation("/");
@@ -241,16 +265,6 @@ export default function RoomLobby() {
   const currentPlayer = players.find((p: any) => p.id === playerId);
   const isHost = currentPlayer?.isHost || currentPlayer?.id === room?.hostId;
   const isStreamingMode = room?.isStreamingMode || false;
-
-  // Debug logging
-  console.log("RoomLobby state:", {
-    room,
-    players: players.length,
-    gamePlayers: gamePlayers.length,
-    currentPlayer: currentPlayer?.nickname,
-    isHost,
-    playerId
-  });
 
   const getPlayerSlots = () => {
     const slots = Array(4).fill(null);
@@ -394,7 +408,33 @@ export default function RoomLobby() {
                     // Player Avatar
                     <div className="w-20 h-20 bg-gradient-to-br from-uno-blue to-uno-purple rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 border-white/20">
                       <div className="text-lg">{player.nickname[0].toUpperCase()}</div>
-                      <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
+                      {editingPlayerId === player.id ? (
+                        <div className="flex items-center gap-1 px-1">
+                          <input
+                            type="text"
+                            value={editingPlayerNickname}
+                            onChange={(e) => setEditingPlayerNickname(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSavePlayerNickname();
+                              if (e.key === 'Escape') {
+                                setEditingPlayerId(null);
+                                setEditingPlayerNickname("");
+                              }
+                            }}
+                            className="w-14 text-xs px-1 py-0.5 rounded text-black"
+                            autoFocus
+                            maxLength={15}
+                          />
+                          <button
+                            onClick={handleSavePlayerNickname}
+                            className="text-green-300 hover:text-green-100 text-xs font-bold"
+                          >
+                            ✓
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="text-xs font-semibold truncate max-w-full px-1 leading-tight">{player.nickname}</div>
+                      )}
                       {/* Online/Offline indicator */}
                       <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full border-2 border-white ${
                         isOnline ? 'bg-green-500' : 'bg-red-500'
@@ -486,15 +526,24 @@ export default function RoomLobby() {
                         </button>
                       )}
                       
-                      {/* Kick Button for Host - Bottom Left of Avatar */}
+                      {/* Host Controls - Bottom Left of Avatar */}
                       {isHost && player.id !== playerId && (
-                        <button
-                          onClick={() => kickPlayerLocal(player.id)}
-                          className="absolute bottom-1 left-1 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
-                          title={isOnline ? "Remove player" : "Remove offline player"}
-                        >
-                          K
-                        </button>
+                        <div className="absolute bottom-1 left-1 flex gap-1">
+                          <button
+                            onClick={() => handleHostEditPlayer(player)}
+                            className="w-4 h-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
+                            title="Edit nickname"
+                          >
+                            E
+                          </button>
+                          <button
+                            onClick={() => kickPlayerLocal(player.id)}
+                            className="w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors border border-white"
+                            title={isOnline ? "Remove player" : "Remove offline player"}
+                          >
+                            K
+                          </button>
+                        </div>
                       )}
                     </>
                   )}

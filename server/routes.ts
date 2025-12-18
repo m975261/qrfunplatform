@@ -1140,6 +1140,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Host rename player (host only)
+  app.post("/api/rooms/:roomId/rename-player", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { targetPlayerId, newNickname } = req.body;
+      const hostId = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!hostId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      if (!newNickname || typeof newNickname !== 'string' || newNickname.trim().length === 0) {
+        return res.status(400).json({ error: "Invalid nickname" });
+      }
+
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      if (room.hostId !== hostId) {
+        return res.status(403).json({ error: "Only the host can rename players" });
+      }
+
+      const targetPlayer = await storage.getPlayer(targetPlayerId);
+      if (!targetPlayer || targetPlayer.roomId !== roomId) {
+        return res.status(404).json({ error: "Player not found in this room" });
+      }
+
+      await storage.updatePlayer(targetPlayerId, { nickname: newNickname.trim() });
+
+      // Broadcast updated room state
+      await broadcastRoomState(roomId);
+      
+      res.json({ success: true, message: "Player renamed successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to rename player" });
+    }
+  });
+
   // Kick player from room (host only) - DELETE endpoint (legacy)
   app.delete("/api/rooms/:roomId/players/:playerId", async (req, res) => {
     try {

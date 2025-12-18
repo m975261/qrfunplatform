@@ -2,9 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle, Share2 } from "lucide-react";
+import { BarChart3, Menu, ArrowRight, ArrowLeft, Users, MessageCircle, Share2, X } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
-import { useToast } from "@/hooks/use-toast";
 import PlayerArea from "@/components/game/PlayerArea";
 import GameCard from "@/components/game/Card";
 import ChatPanel from "@/components/game/ChatPanel";
@@ -20,9 +19,6 @@ export default function Game() {
   const [, setLocation] = useLocation();
   const roomId = params?.roomId;
   const playerId = localStorage.getItem("playerId") || localStorage.getItem("userId");
-  const { toast } = useToast();
-  
-
   
   const {
     gameState,
@@ -87,21 +83,14 @@ export default function Game() {
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [showVotingWindow, setShowVotingWindow] = useState(false);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Viewer panel toggle state (hidden by default)
+  const [showViewers, setShowViewers] = useState(false);
 
-  // Debug logs for troubleshooting
-  console.log("🚨 WHITE PAGE DEBUG:", {
-    gameState: !!gameState,
-    room: !!gameState?.room,
-    isConnected,
-    roomId,
-    playerId,
-    timestamp: new Date().toISOString()
-  });
 
   useEffect(() => {
     // If no playerId exists, redirect to home to join properly
     if (!playerId && roomId) {
-      console.log("No playerId found, redirecting to home");
       setLocation(`/?room=${roomId}`);
       return;
     }
@@ -133,7 +122,6 @@ export default function Game() {
       // Additional fix for disconnected players - force modal show after delay
       setTimeout(() => {
         if (mappedData && !showWinnerModal) {
-          console.log("🏆 Force showing winner modal for potentially disconnected player");
           setShowWinnerModal(true);
         }
       }, 1000);
@@ -141,7 +129,6 @@ export default function Game() {
     
     // CRITICAL FIX: Check if room is finished but no gameEndData (disconnected player case)
     if (gameState?.room?.status === 'finished' && !gameState?.gameEndData && !showWinnerModal) {
-      console.log("🏆 Detected finished game without gameEndData - requesting game end data");
       // Request game end data from server for this specific case
       if (roomId) {
         fetch(`/api/rooms/${roomId}/game-end-data`, {
@@ -150,7 +137,6 @@ export default function Game() {
         .then(res => res.json())
         .then(data => {
           if (data.winner && data.rankings) {
-            console.log("🏆 Retrieved game end data for disconnected player:", data);
             setWinnerData({
               winner: data.winner,
               finalRankings: data.rankings,
@@ -198,7 +184,6 @@ export default function Game() {
   // Handle active color updates for visual refresh
   useEffect(() => {
     if (gameState?.colorUpdate || gameState?.activeColorUpdate || gameState?.colorUpdateTimestamp) {
-      console.log(`🎨 ACTIVE COLOR UPDATE DETECTED: ${gameState?.room?.currentColor}`);
       // Force component refresh when color changes
       setHandRefreshKey(prev => prev + 1);
     }
@@ -207,7 +192,6 @@ export default function Game() {
   // Handle host election messages
   useEffect(() => {
     if (gameState?.hostDisconnectedWarning) {
-      console.log("🔴 Host disconnection warning - starting election countdown");
       setHostDisconnectedWarning(gameState.hostDisconnectedWarning);
       setElectionCountdown(gameState.electionStartsIn || 30);
       
@@ -238,7 +222,6 @@ export default function Game() {
       };
     } else {
       // Host has returned - clear election state immediately and stop timer
-      console.log("🟢 Host returned - clearing election state and stopping timer");
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
         countdownIntervalRef.current = null;
@@ -260,7 +243,6 @@ export default function Game() {
       // Don't reset hasVoted here - let it persist until election ends
     } else {
       // Reset all election state when election ends or host returns
-      console.log("🟢 Election ended - clearing all voting state");
       setHasVoted(false);
       setElectionCandidates([]);
       setElectionVotes({});
@@ -282,20 +264,15 @@ export default function Game() {
     }
   }, [gameState?.electionVotes]);
 
-  // Show toast when new host is elected
+  // Clear newHostName state when host changes (no notification)
   useEffect(() => {
     if (gameState?.newHostName) {
-      toast({
-        title: "New Host Elected!",
-        description: `${gameState.newHostName} is now the host.`,
-      });
-      // Clear newHostName after showing toast
       setGameState((prev: any) => ({
         ...prev,
         newHostName: null
       }));
     }
-  }, [gameState?.newHostName, toast]);
+  }, [gameState?.newHostName]);
 
   const handleVoteForHost = (candidateId: string) => {
     if (hasVoted) return;
@@ -386,11 +363,8 @@ export default function Game() {
           }
         });
         
-        if (response.ok) {
-          console.log("End-game reset completed - navigating to lobby");
-        }
       } catch (error) {
-        console.error("Failed to reset game:", error);
+        // Silent error handling
       }
       
       // Navigate back to room lobby
@@ -430,27 +404,10 @@ export default function Game() {
       const result = await response.json();
       
       if (response.ok) {
-        console.log(`✅ Guru Wild4 response successful - stacked to ${result.newPendingDraw} cards`);
-        toast({
-          title: "GURU POWER! +4",
-          description: `Wild Draw 4 played! Total penalty: ${result.newPendingDraw} cards`,
-        });
         setShowGuruWild4ColorPicker(false);
-      } else {
-        console.error("Guru Wild4 response failed:", result.error);
-        toast({
-          title: "Failed",
-          description: result.error || "Could not play Wild Draw 4",
-          variant: "destructive"
-        });
       }
     } catch (error) {
-      console.error("Error with Guru Wild4 response:", error);
-      toast({
-        title: "Error",
-        description: "Network error",
-        variant: "destructive"
-      });
+      // Silent error handling
     }
   };
 
@@ -491,30 +448,12 @@ export default function Game() {
       const result = await response.json();
       
       if (response.ok) {
-        console.log(`✅ Guru ${guruCardMode} successful - stacked to ${result.newPendingDraw} cards`);
-        toast({
-          title: `GURU POWER! ${guruCardMode}`,
-          description: `${guruCardMode} played! Total penalty: ${result.newPendingDraw} cards`,
-        });
-        // Reset state
         setGuruCardMode(null);
         setGuruSelectedColor(null);
         setShowGuruCardPicker(false);
-      } else {
-        console.error(`Guru ${guruCardMode} failed:`, result.error);
-        toast({
-          title: "Failed",
-          description: result.error || `Could not play ${guruCardMode}`,
-          variant: "destructive"
-        });
       }
     } catch (error) {
-      console.error(`Error with Guru ${guruCardMode}:`, error);
-      toast({
-        title: "Error",
-        description: "Network error",
-        variant: "destructive"
-      });
+      // Silent error handling
     }
   };
 
@@ -533,18 +472,8 @@ export default function Game() {
     
     try {
       const spectator = players.find((p: any) => p.id === spectatorId);
-      if (!spectator) {
-        toast({
-          title: "Error",
-          description: "Spectator not found",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (!spectator) return;
       
-      console.log(`Host assigning spectator ${spectator.nickname} (${spectatorId}) to active game`);
-      
-      // Find available positions excluding left players and spectators
       const activeGamePlayers = players.filter((p: any) => 
         !p.isSpectator && 
         !p.hasLeft && 
@@ -561,27 +490,13 @@ export default function Game() {
         }
       }
       
-      if (availablePosition === null) {
-        toast({
-          title: "Error",
-          description: "All player slots are taken",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (availablePosition === null) return;
       
-      // Show assignment intent before API call
-      toast({
-        title: "Assigning Player",
-        description: `Adding ${spectator.nickname} to position ${availablePosition + 1}...`,
-      });
-      
-      // Use the correct endpoint based on room status
       const endpoint = room.status === 'playing' 
         ? `/api/rooms/${roomId}/assign-spectator-to-game`
         : `/api/rooms/${roomId}/assign-spectator`;
         
-      const response = await fetch(endpoint, {
+      await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -592,26 +507,8 @@ export default function Game() {
           position: availablePosition
         })
       });
-      
-      const result = await response.json();
-      
-      if (response.ok) {
-        console.log(`Successfully assigned spectator ${spectator.nickname} to position ${availablePosition}`);
-        toast({
-          title: "Success",
-          description: `${spectator.nickname} joined the game at position ${availablePosition + 1}`,
-        });
-      } else {
-        console.error("Server error:", result.error);
-        throw new Error(result.error || 'Failed to assign player');
-      }
     } catch (error) {
-      console.error("Error assigning spectator:", error);
-      toast({
-        title: "Assignment Failed", 
-        description: error instanceof Error ? error.message : "Failed to assign player to game",
-        variant: "destructive",
-      });
+      // Silent error handling
     }
   };
 
@@ -619,13 +516,6 @@ export default function Game() {
     if (selectedCardIndex === null || !currentPlayer) return;
     
     try {
-      console.log("🔧 Guru replacing card:", {
-        cardIndex: selectedCardIndex,
-        newCard,
-        roomId,
-        playerId
-      });
-      
       const response = await fetch(`/api/rooms/${roomId}/guru-replace-card`, {
         method: 'POST',
         headers: {
@@ -641,8 +531,6 @@ export default function Game() {
       const result = await response.json();
       
       if (response.ok) {
-        console.log("✅ Card replaced successfully");
-        // Remove success notification as requested
         setShowGuruReplaceModal(false);
         setSelectedCardIndex(null);
         
@@ -667,17 +555,9 @@ export default function Game() {
         
         // Force immediate component re-render triggers
         setHandRefreshKey(prev => prev + Math.random()); // Additional random trigger
-      } else {
-        console.error("❌ Server error:", result.error);
-        throw new Error(result.error || 'Failed to replace card');
       }
     } catch (error) {
-      console.error("❌ Error replacing card:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to replace card",
-        variant: "destructive",
-      });
+      // Silent error handling
     }
   };
 
@@ -704,15 +584,6 @@ export default function Game() {
   }
 
   if (!gameState || !gameState.room) {
-    console.log("🚨 WHITE PAGE DEBUG:", {
-      gameState: !!gameState,
-      room: !!gameState?.room,
-      isConnected,
-      roomId,
-      playerId,
-      timestamp: new Date().toISOString()
-    });
-    
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-red-600 flex items-center justify-center">
         <div className="text-center">
@@ -765,28 +636,8 @@ export default function Game() {
     return '👨'; // Default to male avatar instead of first letter
   };
   
-  // Debug guru user status
-  console.log("🔧 Guru Debug:", {
-    isGuruUser,
-    localStorage_isGuruUser: localStorage.getItem("isGuruUser"),
-    currentPlayer: currentPlayer?.nickname,
-    playerHand: currentPlayer?.hand?.length
-  });
-  
-  // Debug spectator/viewer status
   const spectators = players.filter((p: any) => p.isSpectator);
   const onlineSpectators = spectators.filter((p: any) => isPlayerOnline(p));
-  console.log("👥 Viewer Debug:", {
-    totalPlayers: players.length,
-    spectators: spectators.length,
-    onlineSpectators: onlineSpectators.length,
-    spectatorList: spectators.map((p: any) => ({
-      nickname: p.nickname,
-      isSpectator: p.isSpectator,
-      isOnline: isPlayerOnline(p),
-      hasLeft: p.hasLeft
-    }))
-  });
   const activePositions = room.activePositions || []; // Positions that were active when game started
 
   // Helper functions for circular avatar layout
@@ -1099,18 +950,7 @@ export default function Game() {
               onClick={() => {
                 const baseUrl = window.location.origin;
                 const joinUrl = `${baseUrl}?room=${room.code}`;
-                navigator.clipboard.writeText(joinUrl).then(() => {
-                  toast({
-                    title: "Link Copied!",
-                    description: "Room join link copied to clipboard",
-                  });
-                }).catch(() => {
-                  toast({
-                    title: "Copy Failed",
-                    description: "Could not copy link",
-                    variant: "destructive",
-                  });
-                });
+                navigator.clipboard.writeText(joinUrl).catch(() => {});
               }}
             >
               <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1384,7 +1224,6 @@ export default function Game() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            console.log('Edit button clicked for player:', player.id);
                             setShowNicknameEditor(true);
                           }}
                           className={`absolute w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white pointer-events-auto z-30 cursor-pointer ${
@@ -1410,7 +1249,6 @@ export default function Game() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('Kick button clicked for player:', player.id);
                               kickPlayer(player.id);
                             }}
                             className="w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white cursor-pointer"
@@ -1423,7 +1261,6 @@ export default function Game() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('Make Host button clicked for player:', player.id);
                               assignHost(player.id);
                             }}
                             className="w-5 h-5 bg-yellow-500 hover:bg-yellow-600 text-black rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg border border-white cursor-pointer"
@@ -1458,7 +1295,6 @@ export default function Game() {
                           onClick={() => {
                             // Host returning to their slot
                             if (canHostReturn) {
-                              console.log('Host returning to slot', position);
                               replacePlayer(position);
                               return;
                             }
@@ -1527,8 +1363,8 @@ export default function Game() {
             </div>
           )}
 
-          {/* === DRAW PILE (bottom-left of board) === */}
-          <div className="absolute z-20 bottom-2 left-2">
+          {/* === DRAW PILE (between 6 o'clock and 10 o'clock) === */}
+          <div className="absolute z-20" style={{ left: '21%', bottom: '22%', transform: 'translate(-50%, 50%)' }}>
             {/* Guru +2/+4 Buttons - Above draw pile, only for guru users */}
             {isGuruUser && isMyTurn && (
               <div className="absolute bottom-full left-0 mb-2 flex flex-col gap-1">
@@ -1579,15 +1415,12 @@ export default function Game() {
               </div>
             )}
             
-            <div className="relative cursor-pointer group" onClick={drawCard}>
+            <div className="relative cursor-pointer group" onClick={drawCard} data-testid="button-draw-card">
               <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
               <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="text-white font-bold text-xs">CARDS</div>
+                <div className="text-white font-bold text-xs">Draw</div>
               </div>
-            </div>
-            <div className="text-center mt-1">
-              <div className="text-blue-300 font-bold text-xs">DRAW</div>
             </div>
           </div>
         </div>
@@ -1685,7 +1518,26 @@ export default function Game() {
         </div>
       )}
 
-      {/* Viewers Area - Extended height from home/exit buttons to 6 o'clock avatar line */}
+      {/* Viewer Panel Toggle Button - Always visible */}
+      {!showViewers && (
+        <button
+          onClick={() => setShowViewers(true)}
+          className="absolute z-20 bg-white/90 backdrop-blur-sm rounded-l-lg px-2 py-3 shadow-lg flex items-center gap-1 hover:bg-white transition-colors"
+          style={{
+            top: '4rem',
+            right: 0
+          }}
+          title="Show viewers"
+        >
+          <Users className="h-4 w-4 text-gray-600" />
+          <span className="text-xs font-semibold text-gray-600">
+            {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length}
+          </span>
+        </button>
+      )}
+
+      {/* Viewers Area - Hidden by default, toggleable */}
+      {showViewers && (
       <div className="absolute z-20" style={{
         top: '4rem', // Start under home/exit buttons
         bottom: 'calc(50% - var(--r) + var(--avatar) / 2 + 8px)', // End at bottom edge of 6 o'clock avatar
@@ -1693,8 +1545,17 @@ export default function Game() {
         width: 'min(18rem, 20vw)' // Original width restored
       }}>
         <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg h-full flex flex-col">
-          <div className="text-xs font-semibold text-gray-700 mb-3 flex-shrink-0">
-            Viewers ({players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length})
+          <div className="flex items-center justify-between mb-3 flex-shrink-0">
+            <div className="text-xs font-semibold text-gray-700">
+              Viewers ({players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length})
+            </div>
+            <button
+              onClick={() => setShowViewers(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              title="Hide viewers"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
           <div className="space-y-2 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length > 0 ? (
@@ -1762,6 +1623,7 @@ export default function Game() {
           )}
         </div>
       </div>
+      )}
 
       {/* Chat Panel */}
       {showChat && (
@@ -1936,9 +1798,7 @@ export default function Game() {
           playerId={playerId!}
           isOpen={showNicknameEditor}
           onClose={() => setShowNicknameEditor(false)}
-          onNicknameChanged={(newNickname) => {
-            console.log("Nickname updated to:", newNickname);
-          }}
+          onNicknameChanged={() => {}}
         />
       )}
 
