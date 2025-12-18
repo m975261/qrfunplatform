@@ -99,7 +99,7 @@ export default function VmodeGame() {
   // Viewer panel toggle state
   const [showViewers, setShowViewers] = useState(true);
   const [viewerPanelPosition, setViewerPanelPosition] = useState({ x: -1, y: -1 }); // -1 means use default position
-  const [viewerPanelSize, setViewerPanelSize] = useState({ width: 280, height: 300 });
+  const [viewerPanelSize, setViewerPanelSize] = useState({ width: 210, height: 280 });
   const [isDraggingViewerPanel, setIsDraggingViewerPanel] = useState(false);
   const [isResizingViewerPanel, setIsResizingViewerPanel] = useState(false);
   const [viewerPanelDragStart, setViewerPanelDragStart] = useState({ x: 0, y: 0, panelX: 0, panelY: 0 });
@@ -633,7 +633,7 @@ export default function VmodeGame() {
     setShowGuruCardPicker(false);
   };
 
-  // Viewer panel drag handlers
+  // Viewer panel drag handlers (mouse)
   const handleViewerPanelDragStart = (e: React.MouseEvent) => {
     e.preventDefault();
     const rect = viewerPanelRef.current?.getBoundingClientRect();
@@ -647,7 +647,22 @@ export default function VmodeGame() {
     });
   };
 
-  // Viewer panel resize handlers
+  // Viewer panel drag handlers (touch for mobile)
+  const handleViewerPanelTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const rect = viewerPanelRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setIsDraggingViewerPanel(true);
+    setViewerPanelDragStart({ 
+      x: touch.clientX, 
+      y: touch.clientY, 
+      panelX: viewerPanelPosition.x === -1 ? rect.left : viewerPanelPosition.x,
+      panelY: viewerPanelPosition.y === -1 ? rect.top : viewerPanelPosition.y
+    });
+  };
+
+  // Viewer panel resize handlers (mouse)
   const handleViewerPanelResizeStart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -660,7 +675,21 @@ export default function VmodeGame() {
     });
   };
 
-  // Mouse move and up handlers for viewer panel
+  // Viewer panel resize handlers (touch for mobile)
+  const handleViewerPanelResizeTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    e.stopPropagation();
+    const touch = e.touches[0];
+    setIsResizingViewerPanel(true);
+    setViewerPanelResizeStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      width: viewerPanelSize.width,
+      height: viewerPanelSize.height
+    });
+  };
+
+  // Mouse and touch move/up handlers for viewer panel
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDraggingViewerPanel) {
@@ -669,8 +698,23 @@ export default function VmodeGame() {
         setViewerPanelPosition({ x: newX, y: newY });
       }
       if (isResizingViewerPanel) {
-        const newWidth = Math.max(200, viewerPanelResizeStart.width + (e.clientX - viewerPanelResizeStart.x));
-        const newHeight = Math.max(150, viewerPanelResizeStart.height + (e.clientY - viewerPanelResizeStart.y));
+        const newWidth = Math.max(160, viewerPanelResizeStart.width + (e.clientX - viewerPanelResizeStart.x));
+        const newHeight = Math.max(120, viewerPanelResizeStart.height + (e.clientY - viewerPanelResizeStart.y));
+        setViewerPanelSize({ width: newWidth, height: newHeight });
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      if (isDraggingViewerPanel) {
+        const newX = viewerPanelDragStart.panelX + (touch.clientX - viewerPanelDragStart.x);
+        const newY = viewerPanelDragStart.panelY + (touch.clientY - viewerPanelDragStart.y);
+        setViewerPanelPosition({ x: newX, y: newY });
+      }
+      if (isResizingViewerPanel) {
+        const newWidth = Math.max(160, viewerPanelResizeStart.width + (touch.clientX - viewerPanelResizeStart.x));
+        const newHeight = Math.max(120, viewerPanelResizeStart.height + (touch.clientY - viewerPanelResizeStart.y));
         setViewerPanelSize({ width: newWidth, height: newHeight });
       }
     };
@@ -680,14 +724,23 @@ export default function VmodeGame() {
       setIsResizingViewerPanel(false);
     };
 
+    const handleTouchEnd = () => {
+      setIsDraggingViewerPanel(false);
+      setIsResizingViewerPanel(false);
+    };
+
     if (isDraggingViewerPanel || isResizingViewerPanel) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
   }, [isDraggingViewerPanel, isResizingViewerPanel, viewerPanelDragStart, viewerPanelResizeStart]);
 
@@ -1883,16 +1936,25 @@ export default function VmodeGame() {
       )}
 
       {/* Viewers Panel - Draggable, Resizable, Hideable */}
-      {/* Toggle button - always visible in corner when hidden */}
+      {/* Protruding tab on right edge when hidden - always visible */}
       {!showViewers && (
         <button
           onClick={() => setShowViewers(true)}
-          className="fixed z-30 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2 shadow-lg text-sm font-medium"
-          style={{ top: '4.5rem', right: '0.5rem' }}
+          className="fixed z-40 bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center gap-1 transition-all"
+          style={{ 
+            top: '50%', 
+            right: 0,
+            transform: 'translateY(-50%)',
+            padding: '12px 6px 12px 10px',
+            borderTopLeftRadius: '12px',
+            borderBottomLeftRadius: '12px',
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed'
+          }}
           data-testid="button-show-viewers"
           title="Show Viewers Panel"
         >
-          👥 {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length}
+          <span className="text-sm font-bold">👥 {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length}</span>
         </button>
       )}
       
@@ -1912,8 +1974,9 @@ export default function VmodeGame() {
         >
           {/* Drag handle / Header */}
           <div 
-            className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl cursor-grab active:cursor-grabbing"
+            className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl cursor-grab active:cursor-grabbing touch-none"
             onMouseDown={handleViewerPanelDragStart}
+            onTouchStart={handleViewerPanelTouchStart}
           >
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">
@@ -1976,26 +2039,13 @@ export default function VmodeGame() {
             )}
           </div>
           
-          {/* Host Controls Footer */}
-          {isHost && (
-            <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-              <div className="text-xs text-blue-600 font-medium">Host Controls</div>
-              <div className="text-xs text-gray-500 mt-0.5">
-                {players.filter((p: any) => p.isSpectator && isPlayerOnline(p)).length > 0 
-                  ? "Click viewers to assign" : "Viewers will appear here"}
-              </div>
-              <div className="text-xs text-gray-400">
-                Available slots: {4 - players.filter((p: any) => !p.isSpectator && !p.hasLeft).length}
-              </div>
-            </div>
-          )}
-          
           {/* Resize Handle */}
           <div 
-            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+            className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize touch-none"
             onMouseDown={handleViewerPanelResizeStart}
+            onTouchStart={handleViewerPanelResizeTouchStart}
             style={{
-              background: 'linear-gradient(135deg, transparent 50%, rgba(100,100,100,0.3) 50%)',
+              background: 'linear-gradient(135deg, transparent 50%, rgba(100,100,100,0.4) 50%)',
               borderBottomRightRadius: '0.75rem'
             }}
             title="Drag to resize"
