@@ -1,0 +1,15 @@
+node_modules
+.git
+.gitignore
+.replit
+replit.nix
+.env
+.env.local
+logs
+tmp
+*.log
+.DS_Store
+.vscode
+.idea
+dist
+attached_assets

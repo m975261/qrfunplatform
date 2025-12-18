@@ -1,0 +1,205 @@
+Prepare the qrfun platform (UNO + XO games) so it is fully Docker-ready while continuing to function normally inside Replit without any loss of functionality.
+
+These changes must be additive and platform-neutral, not Docker-exclusive.
+
+1. Core Requirement (MOST IMPORTANT)
+
+The application must continue to work in Replit exactly as it does now
+
+Do not remove or alter:
+
+Replit development scripts
+
+Replit runtime behavior
+
+Replit automatic port handling
+
+Docker support must be added without breaking Replit
+
+2. Platform Neutrality (MANDATORY)
+
+Remove Replit-specific assumptions, not Replit compatibility
+
+The app must run identically in:
+
+Replit
+
+Local Node.js
+
+Docker
+
+Unraid Docker
+
+Do not detect Docker explicitly in code
+
+3. Startup Scripts (CRITICAL)
+
+Keep all existing scripts, especially:
+
+npm run dev → must continue to work in Replit
+
+npm start → must start the production server
+
+Do not remove or replace dev scripts.
+
+4. Network Binding & Port Handling (SAFE FOR REPLIT)
+
+The server must bind to:
+
+0.0.0.0
+
+
+Port selection must be dynamic:
+
+const PORT = process.env.PORT || 4322;
+
+
+Never hardcode ports
+
+Replit must still be able to inject its own PORT
+
+5. Filesystem Handling (REPLIT-SAFE)
+
+Abstract file paths using an environment variable:
+
+DATA_PATH = process.env.DATA_PATH || "./data"
+
+
+In Docker/Unraid:
+
+DATA_PATH = /app/data
+
+In Replit:
+
+Default local folder (./data) must work
+
+Create directories automatically if missing
+
+Do not assume /app/data exists in Replit
+
+6. Docker Artifacts (Ignored by Replit)
+
+Add the following files without affecting Replit:
+
+A. Dockerfile
+
+Base image: node:20-alpine
+
+Install required system dependencies only
+
+Expose port 4322
+
+Start using:
+
+CMD ["npm","start"]
+
+B. .dockerignore
+
+Exclude:
+
+node_modules
+.git
+.replit
+replit.nix
+.env
+logs
+tmp
+
+
+These files must not interfere with Replit.
+
+7. Build Strategy (REPLIT-COMPATIBLE)
+
+If the project uses TypeScript, Vite, tsx, or build steps:
+
+Keep build logic unchanged
+
+Ensure:
+
+Build runs in Docker
+
+Dev mode still runs in Replit
+
+Do not remove devDependencies needed by Replit
+
+8. Real-Time / WebSocket Safety
+
+Ensure WebSockets:
+
+Bind to the same server/port
+
+Work behind Docker bridge networking
+
+Continue working in Replit
+
+No hostname hardcoding.
+
+9. Environment Variables (SAFE)
+
+All configuration must use process.env with sensible defaults
+
+Provide .env.example
+
+Do not commit .env
+
+No secrets in code
+
+10. Unraid Zero-Touch Requirement
+
+The Docker image must run on Unraid with only:
+
+Port mapping: 4322 → 4322
+
+Volume mapping: /app/data
+
+No extra flags
+
+No post-deployment steps
+
+11. README Update
+
+Add a section explaining:
+
+Replit development remains unchanged
+
+Docker is for deployment only
+
+Docker run example:
+
+docker run -p 4322:4322 -v /path:/app/data qrfun
+
+
+Explicit compatibility note:
+
+Works in Replit and Unraid 7.0.1
+
+Non-Negotiable Constraints
+
+UNO and XO must remain fully functional
+
+Multiplayer logic must not break
+
+Replit behavior must remain unchanged
+
+No Ubuntu VM dependency
+
+One codebase for all environments
+
+Output Expected
+
+App works in Replit as before
+
+App builds successfully in Docker Hub
+
+App runs first time on Unraid
+
+Port 4322 exposed
+
+No manual fixes required
+
+Final Instruction
+
+Apply all changes carefully and incrementally, ensuring Replit continues to run the app correctly before pushing to GitHub.
+
+Do not remove Replit support.
+Docker support must be additive, not destructive.
