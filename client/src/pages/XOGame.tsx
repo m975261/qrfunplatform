@@ -248,12 +248,12 @@ export default function XOGame() {
         setDrawCountdown(drawCountdown - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (drawCountdown === 0 && xoState?.isDraw && xoState?.boardSize < 6 && !nextRoundMutation.isPending) {
+    } else if (drawCountdown === 0 && xoState?.isDraw && !nextRoundMutation.isPending) {
       setDrawCountdown(null);
       // Pass current game number to prevent duplicate progressions
       nextRoundMutation.mutate(xoState.gameNumber);
     }
-  }, [drawCountdown, xoState?.isDraw, xoState?.boardSize, xoState?.gameNumber, nextRoundMutation.isPending]);
+  }, [drawCountdown, xoState?.isDraw, xoState?.gameNumber, nextRoundMutation.isPending]);
 
   useEffect(() => {
     if (winCountdown !== null && winCountdown > 0) {
@@ -544,14 +544,15 @@ export default function XOGame() {
         </div>
 
         {/* Game Board */}
-        <Card className="p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl">
+        <Card className="p-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-xl flex items-center justify-center">
           <div 
-            className="mx-auto relative"
+            className="relative"
             style={{
               display: 'grid',
               gridTemplateColumns: `repeat(${boardSize}, ${cellSize}px)`,
               gap: '4px',
               width: 'fit-content',
+              margin: '0 auto',
             }}
           >
             {xoState.board.map((row, rowIndex) =>
