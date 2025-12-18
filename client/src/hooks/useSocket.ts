@@ -930,8 +930,14 @@ export function useSocket(autoConnect: boolean = true) {
   // Stream subscribe - for read-only stream viewers (no player needed)
   // Uses a unique stream viewer ID to avoid conflicting with player connections
   const streamSubscribe = useCallback((roomId: string, roomCode?: string) => {
-    // Generate a unique stream viewer ID (separate from player session)
-    const streamViewerId = `stream_${Math.random().toString(36).substring(7)}_${Date.now()}`;
+    // Get or create a persistent stream viewer ID (stored in sessionStorage)
+    // This ensures the same ID is used across reconnections for host verification
+    const storageKey = `streamViewerId_${roomId}`;
+    let streamViewerId = sessionStorage.getItem(storageKey);
+    if (!streamViewerId) {
+      streamViewerId = `stream_${Math.random().toString(36).substring(7)}_${Date.now()}`;
+      sessionStorage.setItem(storageKey, streamViewerId);
+    }
     
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       console.log("📺 Subscribing to room stream:", { roomId, roomCode, streamViewerId });
