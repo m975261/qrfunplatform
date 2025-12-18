@@ -37,10 +37,13 @@ export default function Home() {
   
   const { toast } = useToast();
   
-  // Check if user is already logged in as guru
+  // Clear guru session when returning to home page (requires fresh login each time)
   useEffect(() => {
-    const guruStatus = localStorage.getItem("isGuruUser");
-    setIsGuruUserLoggedIn(guruStatus === "true");
+    // Clear guru session on every visit to Home page
+    localStorage.removeItem("isGuruUser");
+    localStorage.removeItem("guruUserData");
+    setIsGuruUserLoggedIn(false);
+    console.log("Guru session cleared - fresh authentication required");
   }, []);
 
   // Smart session and nickname management
@@ -304,30 +307,20 @@ export default function Home() {
         // Store guru user status
         localStorage.setItem("isGuruUser", "true");
         localStorage.setItem("guruUserData", JSON.stringify(data.guruUser));
-        // Store the guru user's actual playerName as the nickname to use
-        localStorage.setItem("playerNickname", data.guruUser.playerName);
         
-        // Close guru login and proceed with original action
+        // Close guru login popup
         setShowGuruLogin(false);
         setGuruPassword("");
         setGuruLoginError("");
-        
-        // Update the nickname to use guru user's playerName for display
-        setPopupNickname(data.guruUser.playerName);
+        setIsGuruUserLoggedIn(true);
         
         if (pendingAction === 'create') {
-          setIsGuruUserLoggedIn(true);
-          // After guru login, use viewer mode if checkbox was selected, otherwise normal mode
-          if (isViewerMode) {
-            // Viewer mode - no nickname needed, creates empty lobby (first joiner becomes host)
-            createRoomMutation.mutate({ viewerMode: true });
-          } else {
-            // Normal mode - use guru user's playerName
-            createRoomMutation.mutate({ hostNickname: data.guruUser.playerName });
-          }
+          // After guru login, ask for a NEW nickname - reopen host popup with empty field
+          setPopupNickname(""); // Clear nickname for fresh input
+          setShowHostPopup(true);
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
-            // Use guru user's playerName instead of entered nickname
+            // For joining, use guru's playerName
             directJoinMutation.mutate({ code: qrDetectedCode, nickname: data.guruUser.playerName });
           }
         }
@@ -357,6 +350,12 @@ export default function Home() {
         variant: "destructive",
         duration: 1000,
       });
+      return;
+    }
+
+    // If already authenticated as guru, skip check and create room with new nickname
+    if (isGuruUserLoggedIn) {
+      createRoomMutation.mutate({ hostNickname: popupNickname });
       return;
     }
 
