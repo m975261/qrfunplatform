@@ -65,6 +65,9 @@ export interface XOSettings {
   botPlayer: "X" | "O" | null;
   isGuruPlayer: boolean;
   guruPlayerId: string | null;
+  // Support for two guru players (AI vs AI)
+  guruPlayerXId: string | null;
+  guruPlayerOId: string | null;
 }
 
 export const players = pgTable("players", {

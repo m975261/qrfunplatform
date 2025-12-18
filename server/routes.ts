@@ -5277,7 +5277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // XO GAME ROUTES
   // =====================================================
   
-  // Helper function to trigger AI move for guru players
+  // Helper function to trigger AI move for guru players (supports both players being gurus)
   async function triggerGuruAIMove(roomId: string) {
     try {
       const room = await storage.getRoom(roomId);
@@ -5286,24 +5286,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const xoSettings = room.xoSettings as XOSettings | null;
       const xoState = room.xoState as XOGameState | null;
       
-      if (!xoSettings?.isGuruPlayer || !xoSettings?.guruPlayerId || !xoState) return;
+      if (!xoSettings || !xoState) return;
       if (xoState.winner || xoState.isDraw) return;
       
-      // Determine if it's the guru's turn
+      // Determine if current player is a guru
       const currentPlayerMark = xoState.currentPlayer;
       const currentPlayerId = currentPlayerMark === "X" ? xoState.xPlayerId : xoState.oPlayerId;
       
-      if (currentPlayerId !== xoSettings.guruPlayerId) return;
+      // Check if current player is a guru (check both new fields and legacy field)
+      const isCurrentPlayerGuru = 
+        (currentPlayerMark === "X" && xoSettings.guruPlayerXId === currentPlayerId) ||
+        (currentPlayerMark === "O" && xoSettings.guruPlayerOId === currentPlayerId) ||
+        (xoSettings.guruPlayerId === currentPlayerId); // Legacy support
+      
+      if (!isCurrentPlayerGuru) return;
       
       // Add a delay before guru AI moves (2000ms) for natural feel
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Re-fetch room state after delay to ensure we have latest state
+      const updatedRoom = await storage.getRoom(roomId);
+      if (!updatedRoom) return;
+      const updatedXoState = updatedRoom.xoState as XOGameState | null;
+      if (!updatedXoState || updatedXoState.winner || updatedXoState.isDraw) return;
+      
+      // Make sure it's still the same player's turn after delay
+      if (updatedXoState.currentPlayer !== currentPlayerMark) return;
+      
       // Make AI move with hardest difficulty
-      const aiMove = XOAIManager.getMove(xoState, { ...xoSettings, difficulty: 'hardest' });
+      const aiMove = XOAIManager.getMove(updatedXoState, { ...xoSettings, difficulty: 'hardest' });
       
       if (!aiMove) return;
       
-      const newState = XOGameLogic.makeMove(xoState, aiMove.row, aiMove.col);
+      const newState = XOGameLogic.makeMove(updatedXoState, aiMove.row, aiMove.col);
       if (!newState) return;
       
       await storage.updateRoom(roomId, { xoState: newState });
@@ -5328,8 +5343,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           scores: newState.scores,
         });
       } else {
-        // If still playing and now it's opponent's turn, they play
-        // If it's still guru's turn (shouldn't happen), don't recurse
+        // If still playing, check if next player is also a guru and trigger their move
+        triggerGuruAIMove(roomId);
       }
     } catch (error) {
       console.error("Error triggering guru AI move:", error);
@@ -5379,6 +5394,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         botPlayer: isBotGame ? "O" : null,
         isGuruPlayer: isGuruUser || false,
         guruPlayerId: isGuruUser ? player.id : null,
+        // Track guru players by their role (X or O)
+        guruPlayerXId: isGuruUser ? player.id : null, // Host is always X
+        guruPlayerOId: null, // Set when second player joins
       };
       
       const initialState = XOGameLogic.createInitialState(player.id, isBotGame ? "bot" : null);
@@ -5459,7 +5477,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedXoSettings = {
             ...updatedXoSettings,
             isGuruPlayer: true,
-            guruPlayerId: player.id,
+            guruPlayerId: updatedXoSettings.guruPlayerId || player.id, // Keep existing if set
+            guruPlayerOId: player.id, // Joining player is always O
             difficulty: 'hardest',
           };
         }
