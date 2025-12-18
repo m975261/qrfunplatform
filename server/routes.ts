@@ -5286,8 +5286,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (currentPlayerId !== xoSettings.guruPlayerId) return;
       
-      // Add a delay before guru AI moves (1500ms) for natural feel
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Add a delay before guru AI moves (2000ms) for natural feel
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Make AI move with hardest difficulty
       const aiMove = XOAIManager.getMove(xoState, { ...xoSettings, difficulty: 'hardest' });
