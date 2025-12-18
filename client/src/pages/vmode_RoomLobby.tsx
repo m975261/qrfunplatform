@@ -188,7 +188,8 @@ export default function VmodeRoomLobby() {
   }, [isDraggingQR, dragStartPos]);
 
   const kickPlayerLocal = async (playerIdToKick: string) => {
-    if (!playerId || !gameState?.room?.id) return;
+    // In viewer mode, host has no playerId but can still kick via stream connection
+    if (!gameState?.room?.id) return;
     
     // Use WebSocket for real-time sync instead of HTTP API
     kickPlayerWS(playerIdToKick);
