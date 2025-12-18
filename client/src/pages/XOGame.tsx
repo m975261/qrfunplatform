@@ -244,8 +244,8 @@ export default function XOGame() {
     }
   }, [isBotGame, xoState?.currentPlayer, triggerBotMove]);
 
-  // Check if current round is the final round (round 7)
-  const isFinalRound = xoState?.gameNumber === 7;
+  // Check if current round is the final round (round 9)
+  const isFinalRound = xoState?.gameNumber === 9;
 
   useEffect(() => {
     // Don't auto-progress if this is the final round

@@ -233,25 +233,41 @@ export class XOGameLogic {
       };
     }
     
-    // Round 7 is the final round - if we somehow get here, stay at round 7
-    // (This shouldn't happen as round 7 draws should show "Game Over")
+    // Rounds 8-9: 6x6 with 3-in-a-row (final tiebreaker rounds)
+    if (state.gameNumber === 7 || state.gameNumber === 8) {
+      return {
+        ...state,
+        board: this.createEmptyBoard(6),
+        boardSize: 6,
+        winLength: 3,  // 3-in-a-row for final tiebreaker rounds
+        currentPlayer: nextPlayer,
+        winner: null,
+        winningLine: null,
+        moveHistory: [],
+        isDraw: false,
+        gameNumber: newGameNumber,
+      };
+    }
+    
+    // Round 9 is the final round - if we somehow get here, stay at round 9
+    // (This shouldn't happen as round 9 draws should show "Game Over")
     return {
       ...state,
       board: this.createEmptyBoard(6),
       boardSize: 6,
-      winLength: 4,
+      winLength: 3,
       currentPlayer: nextPlayer,
       winner: null,
       winningLine: null,
       moveHistory: [],
       isDraw: false,
-      gameNumber: 7,
+      gameNumber: 9,
     };
   }
   
-  // Check if game can progress to next round (rounds 1-6 can progress, round 7 is final)
+  // Check if game can progress to next round (rounds 1-8 can progress, round 9 is final)
   static canProgressBoard(state: XOGameState): boolean {
-    return state.gameNumber < 7;
+    return state.gameNumber < 9;
   }
 
   static resetGame(state: XOGameState, swapPlayers: boolean = true): XOGameState {
