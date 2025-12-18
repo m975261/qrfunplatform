@@ -160,22 +160,25 @@ export default function XOHome() {
 
       if (response.ok) {
         const data = await response.json();
+        const displayName = data.guruUser.playerName;
+        
         localStorage.setItem("xo_isGuruUser", "true");
         localStorage.setItem("xo_guruUserData", JSON.stringify(data.guruUser));
-        localStorage.setItem("xo_nickname", data.guruUser.playerName);
+        localStorage.setItem("xo_nickname", displayName);
         
+        setPopupNickname(displayName);
         setShowGuruLogin(false);
         setGuruPassword("");
         setGuruLoginError("");
         
         if (pendingAction === 'create') {
           createRoomMutation.mutate({ 
-            hostNickname: popupNickname.trim(), 
+            hostNickname: displayName, 
             isBotGame: gameMode === 'bot',
             difficulty: botDifficulty
           });
         } else if (pendingAction === 'join') {
-          joinRoomMutation.mutate({ code: pendingCode, nickname: popupNickname.trim() });
+          joinRoomMutation.mutate({ code: pendingCode, nickname: displayName });
         }
         setPendingAction(null);
       } else {
