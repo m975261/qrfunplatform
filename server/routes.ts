@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 import { Card, guruUsers, gameSessions, XOGameState, XOSettings } from "@shared/schema";
 import { adminAuthService } from "./adminAuth";
 import { db } from "./db";
-import { eq, and, or, ne } from "drizzle-orm";
+import { eq, and, or, ne, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { generateImage, generateGameAssets, checkApiStatus } from "./leonardo";
 
@@ -459,9 +459,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if playerName exists as a guru user (check ONLY by username, trim spaces)
       // Also filter by gameType if provided - guru users only valid for their assigned game
-      const trimmedPlayerName = playerName.trim();
+      // Case-insensitive comparison to handle "Unom975261" matching "unom975261"
+      const trimmedPlayerName = playerName.trim().toLowerCase();
       const whereConditions = [
-        eq(guruUsers.username, trimmedPlayerName),
+        sql`lower(${guruUsers.username}) = ${trimmedPlayerName}`,
         eq(guruUsers.isActive, true)
       ];
       
