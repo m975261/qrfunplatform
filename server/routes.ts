@@ -5271,10 +5271,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create XO room
   app.post("/api/xo/rooms", async (req, res) => {
     try {
-      const { hostNickname, isBotGame, difficulty } = z.object({
+      const { hostNickname, isBotGame, difficulty, isGuruUser } = z.object({
         hostNickname: z.string().min(1).max(15),
         isBotGame: z.boolean().optional().default(false),
         difficulty: z.enum(['easy', 'medium', 'hard', 'hardest']).optional().default('medium'),
+        isGuruUser: z.boolean().optional().default(false),
       }).parse(req.body);
 
       // Generate unique code with format AA2BB for XO
@@ -5285,37 +5286,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         existingRoom = await storage.getRoomByCode(code);
       } while (existingRoom);
       
-      const xoSettings: XOSettings = {
-        difficulty: difficulty || 'medium',
-        isBotGame: isBotGame || false,
-        botPlayer: isBotGame ? "O" : null,
-        isGuruPlayer: false,
-        guruPlayerId: null,
-      };
-      
-      const room = await storage.createRoom({
+      // Create a temporary room first to get an ID
+      const tempRoom = await storage.createRoom({
         code,
         hostId: null,
         gameType: "xo",
         status: isBotGame ? "playing" : "waiting",
         maxPlayers: 2,
         xoState: null,
-        xoSettings,
+        xoSettings: null,
       });
       
       const player = await storage.createPlayer({
         nickname: hostNickname,
-        roomId: room.id,
+        roomId: tempRoom.id,
         position: 0,
         isSpectator: false,
       });
       
+      // Now create xoSettings with the player ID for guru tracking
+      const xoSettings: XOSettings = {
+        difficulty: isGuruUser ? 'hardest' : (difficulty || 'medium'),
+        isBotGame: isBotGame || false,
+        botPlayer: isBotGame ? "O" : null,
+        isGuruPlayer: isGuruUser || false,
+        guruPlayerId: isGuruUser ? player.id : null,
+      };
+      
       const initialState = XOGameLogic.createInitialState(player.id, isBotGame ? "bot" : null);
       
-      await storage.updateRoom(room.id, { 
+      await storage.updateRoom(tempRoom.id, { 
         hostId: player.id,
-        xoState: initialState
+        xoState: initialState,
+        xoSettings: xoSettings,
       });
+      
+      const room = { ...tempRoom, hostId: player.id, xoState: initialState, xoSettings };
 
       const token = jwt.sign({ playerId: player.id, roomId: room.id }, JWT_SECRET, { expiresIn: "24h" });
 
@@ -5335,8 +5341,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/xo/rooms/:code/join", async (req, res) => {
     try {
       const { code } = req.params;
-      const { nickname } = z.object({
+      const { nickname, isGuruUser } = z.object({
         nickname: z.string().min(1).max(15),
+        isGuruUser: z.boolean().optional().default(false),
       }).parse(req.body);
 
       // Make code lookup case-insensitive (codes are stored uppercase)
@@ -5371,13 +5378,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       let updatedXoState = xoState;
+      let updatedXoSettings = room.xoSettings as XOSettings | null;
+      
       if (!joinAsSpectator) {
         updatedXoState = {
           ...xoState,
           oPlayerId: player.id,
         };
+        
+        // If joining player is a guru, update xoSettings
+        if (isGuruUser && updatedXoSettings) {
+          updatedXoSettings = {
+            ...updatedXoSettings,
+            isGuruPlayer: true,
+            guruPlayerId: player.id,
+            difficulty: 'hardest',
+          };
+        }
+        
         await storage.updateRoom(room.id, {
-          xoState: updatedXoState
+          xoState: updatedXoState,
+          xoSettings: updatedXoSettings,
         });
       }
 
@@ -5389,7 +5410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({
-        room: { ...room, xoState: updatedXoState },
+        room: { ...room, xoState: updatedXoState, xoSettings: updatedXoSettings },
         player,
         token,
         isSpectator: joinAsSpectator,
