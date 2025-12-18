@@ -317,6 +317,7 @@ export default function Home() {
         if (pendingAction === 'create') {
           // After guru login, ask for a NEW nickname - reopen host popup with empty field
           setPopupNickname(""); // Clear nickname for fresh input
+          localStorage.removeItem("playerNickname"); // Also clear stored nickname
           setShowHostPopup(true);
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
