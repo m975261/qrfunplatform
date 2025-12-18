@@ -5268,6 +5268,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // XO GAME ROUTES
   // =====================================================
   
+  // Helper function to trigger AI move for guru players
+  async function triggerGuruAIMove(roomId: string) {
+    try {
+      const room = await storage.getRoom(roomId);
+      if (!room || room.gameType !== "xo") return;
+      
+      const xoSettings = room.xoSettings as XOSettings | null;
+      const xoState = room.xoState as XOGameState | null;
+      
+      if (!xoSettings?.isGuruPlayer || !xoSettings?.guruPlayerId || !xoState) return;
+      if (xoState.winner || xoState.isDraw) return;
+      
+      // Determine if it's the guru's turn
+      const currentPlayerMark = xoState.currentPlayer;
+      const currentPlayerId = currentPlayerMark === "X" ? xoState.xPlayerId : xoState.oPlayerId;
+      
+      if (currentPlayerId !== xoSettings.guruPlayerId) return;
+      
+      // Add a small delay before AI moves (500ms) for natural feel
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Make AI move with hardest difficulty
+      const aiMove = XOAIManager.getMove(xoState, { ...xoSettings, difficulty: 'hardest' });
+      
+      if (!aiMove) return;
+      
+      const newState = XOGameLogic.makeMove(xoState, aiMove.row, aiMove.col);
+      if (!newState) return;
+      
+      await storage.updateRoom(roomId, { xoState: newState });
+      
+      broadcastToRoom(roomId, {
+        type: "xo_state_update",
+        xoState: newState,
+        lastMove: { row: aiMove.row, col: aiMove.col, player: currentPlayerMark },
+        isGuruMove: true,
+      });
+      
+      if (newState.winner) {
+        broadcastToRoom(roomId, {
+          type: "xo_round_end",
+          winner: newState.winner,
+          winningLine: newState.winningLine,
+          scores: newState.scores,
+        });
+      } else if (newState.isDraw) {
+        broadcastToRoom(roomId, {
+          type: "xo_round_draw",
+          scores: newState.scores,
+        });
+      } else {
+        // If still playing and now it's opponent's turn, they play
+        // If it's still guru's turn (shouldn't happen), don't recurse
+      }
+    } catch (error) {
+      console.error("Error triggering guru AI move:", error);
+    }
+  }
+  
   // Create XO room
   app.post("/api/xo/rooms", async (req, res) => {
     try {
@@ -5502,6 +5561,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({ success: true });
+      
+      // After game starts, check if it's guru's turn and trigger AI move
+      triggerGuruAIMove(room.id);
     } catch (error) {
       console.error("Error starting XO game:", error);
       res.status(500).json({ error: "Failed to start game" });
@@ -5805,6 +5867,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({ success: true, xoState: newState });
+      
+      // After a player moves, check if it's now guru's turn and trigger AI move
+      if (!newState.winner && !newState.isDraw) {
+        triggerGuruAIMove(room.id);
+      }
     } catch (error) {
       console.error("Error making XO move:", error);
       res.status(500).json({ error: "Failed to make move" });
@@ -5850,6 +5917,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({ success: true, xoState: newState });
+      
+      // After new round starts, check if it's guru's turn
+      triggerGuruAIMove(room.id);
     } catch (error) {
       console.error("Error progressing XO round:", error);
       res.status(500).json({ error: "Failed to progress round" });
@@ -5878,6 +5948,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({ success: true, xoState: newState });
+      
+      // After reset, check if it's guru's turn
+      triggerGuruAIMove(room.id);
     } catch (error) {
       console.error("Error resetting XO game:", error);
       res.status(500).json({ error: "Failed to reset game" });
@@ -5914,8 +5987,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       broadcastToRoom(room.id, {
         type: "xo_game_continued",
       });
-
+      
       res.json({ success: true });
+      
+      // After continue, check if it's guru's turn
+      triggerGuruAIMove(room.id);
     } catch (error) {
       console.error("Error continuing XO game:", error);
       res.status(500).json({ error: "Failed to continue game" });
