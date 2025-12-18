@@ -79,17 +79,10 @@ export default function Home() {
           localStorage.setItem("preferredPosition", preferredPosition);
         }
         
-        // If user already has a nickname from previous session, auto-join without popup
-        if (existingNickname) {
-          console.log("Auto-joining with saved nickname:", existingNickname);
-          setQrDetectedCode(cleanCode);
-          setPopupNickname(existingNickname);
-          directJoinMutation.mutate({ code: cleanCode, nickname: existingNickname });
-          return;
-        }
-        
-        // First time user - show nickname popup
+        // Always show nickname popup with last used nickname pre-filled
+        const lastNickname = localStorage.getItem("lastNickname") || "";
         setQrDetectedCode(cleanCode);
+        setPopupNickname(lastNickname);
         setShowNicknamePopup(true);
         // Clear the URL parameter after extracting it
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -136,6 +129,8 @@ export default function Home() {
       localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", data.hostNickname || popupNickname);
       localStorage.setItem("currentRoomId", data.room.id);
+      // Save last used nickname for future sessions (play nickname, not guru username)
+      localStorage.setItem("lastNickname", data.hostNickname || popupNickname);
       // Save selected avatar
       localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
       setShowHostPopup(false);
@@ -162,6 +157,8 @@ export default function Home() {
       localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", data.player.nickname);
       localStorage.setItem("currentRoomId", data.room.id);
+      // Save last used nickname for future sessions
+      localStorage.setItem("lastNickname", data.player.nickname);
       // Save selected avatar (but use existing saved nickname for manual joins)
       const existingNickname = localStorage.getItem("playerNickname");
       if (existingNickname) {
@@ -220,6 +217,8 @@ export default function Home() {
       localStorage.setItem("playerId", data.player.id);
       localStorage.setItem("playerNickname", data.player.nickname);
       localStorage.setItem("currentRoomId", data.room.id);
+      // Save last used nickname for future sessions
+      localStorage.setItem("lastNickname", data.player.nickname);
       // Save selected avatar
       localStorage.setItem(`avatar_${data.player.id}`, selectedAvatar);
       setShowNicknamePopup(false);
@@ -255,11 +254,9 @@ export default function Home() {
   });
 
   const handleCreateRoom = () => {
-    const existingNickname = localStorage.getItem("playerNickname");
-    if (existingNickname) {
-      // Use saved nickname automatically
-      setPopupNickname(existingNickname);
-    }
+    // Pre-fill with last used nickname (play nickname, not guru username)
+    const lastNickname = localStorage.getItem("lastNickname") || "";
+    setPopupNickname(lastNickname);
     setShowHostPopup(true);
   };
 
@@ -315,14 +312,16 @@ export default function Home() {
         setIsGuruUserLoggedIn(true);
         
         if (pendingAction === 'create') {
-          // After guru login, ask for a NEW nickname - reopen host popup with empty field
-          setPopupNickname(""); // Clear nickname for fresh input
-          localStorage.removeItem("playerNickname"); // Also clear stored nickname
+          // After guru login, reopen host popup with lastNickname pre-filled (not guru username)
+          const lastNickname = localStorage.getItem("lastNickname") || "";
+          setPopupNickname(lastNickname);
           setShowHostPopup(true);
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
-            // For joining, use guru's playerName
-            directJoinMutation.mutate({ code: qrDetectedCode, nickname: data.guruUser.playerName });
+            // For joining, use lastNickname pre-filled (not guru username), show popup
+            const lastNickname = localStorage.getItem("lastNickname") || "";
+            setPopupNickname(lastNickname);
+            setShowNicknamePopup(true);
           }
         }
         setPendingAction(null);
@@ -398,26 +397,10 @@ export default function Home() {
       return;
     }
     
-    const existingNickname = localStorage.getItem("playerNickname");
-    if (existingNickname) {
-      // Check if saved nickname is a guru user
-      const isGuruUser = await checkGuruUser(existingNickname, 'join');
-      if (!isGuruUser) {
-        // Regular user - clear any previous guru status
-        localStorage.removeItem("isGuruUser");
-        localStorage.removeItem("guruUserData");
-      }
-      
-      // Auto-join with saved nickname (works for both regular and guru users)
-      console.log("Auto-joining with saved nickname:", existingNickname);
-      setQrDetectedCode(roomCode);
-      setPopupNickname(existingNickname);
-      joinRoomMutation.mutate({ code: roomCode, nickname: existingNickname });
-      return;
-    }
-    
-    // First time user - show nickname popup
+    // Always show nickname popup with lastNickname pre-filled
+    const lastNickname = localStorage.getItem("lastNickname") || "";
     setQrDetectedCode(roomCode);
+    setPopupNickname(lastNickname);
     setShowNicknamePopup(true);
   };
 
@@ -429,6 +412,12 @@ export default function Home() {
         variant: "destructive",
         duration: 1000,
       });
+      return;
+    }
+
+    // If already authenticated as guru, skip check and join with nickname
+    if (isGuruUserLoggedIn) {
+      directJoinMutation.mutate({ code: qrDetectedCode, nickname: popupNickname });
       return;
     }
 
@@ -495,7 +484,9 @@ export default function Home() {
         }
         
         if (roomCode) {
+          const lastNickname = localStorage.getItem("lastNickname") || "";
           setQrDetectedCode(roomCode);
+          setPopupNickname(lastNickname);
           setShowNicknamePopup(true);
         } else {
           toast({
@@ -541,7 +532,9 @@ export default function Home() {
     }
     
     if (roomCode) {
+      const lastNickname = localStorage.getItem("lastNickname") || "";
       setQrDetectedCode(roomCode);
+      setPopupNickname(lastNickname);
       setShowQRScanner(false);
       setShowNicknamePopup(true);
     } else {
