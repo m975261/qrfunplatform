@@ -1,4 +1,4 @@
-import { XOGameState, XOSettings, XOPlayer, XOCell } from "@shared/schema";
+import { XOGameState, XOSettings, XOPlayer, XOCell } from "@shared/types";
 
 export type XOBoard = XOCell[][];
 

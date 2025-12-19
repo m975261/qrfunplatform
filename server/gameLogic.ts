@@ -1,4 +1,4 @@
-import { Card } from "@shared/schema";
+import { Card } from "@shared/types";
 
 export class UnoGameLogic {
   static createDeck(): Card[] {

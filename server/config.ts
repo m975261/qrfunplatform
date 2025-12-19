@@ -7,6 +7,7 @@ export const config = {
   dataPath: process.env.DATA_PATH || './data',
   databaseUrl: process.env.DATABASE_URL,
   sessionSecret: process.env.SESSION_SECRET || 'dev-session-secret',
+  useSqlite: !process.env.DATABASE_URL,
 };
 
 export function ensureDataDirectory(): void {

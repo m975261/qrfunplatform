@@ -1,4 +1,5 @@
-import { type Room, type InsertRoom, type Player, type InsertPlayer, type GameMessage, type InsertGameMessage, type XOGameState, type XOSettings } from "@shared/schema";
+import { type XOGameState, type XOSettings } from "@shared/types";
+import { type Room, type InsertRoom, type Player, type InsertPlayer, type GameMessage, type InsertGameMessage } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {

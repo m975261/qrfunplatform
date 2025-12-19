@@ -4,8 +4,7 @@ import QRCode from "qrcode";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import { db } from "./db";
-import { admins, passwordResetTokens, adminSessions } from "@shared/schema";
+import { db, admins, passwordResetTokens, adminSessions } from "./db";
 import { eq, and } from "drizzle-orm";
 
 const JWT_SECRET = process.env.JWT_SECRET || "admin-jwt-secret";
