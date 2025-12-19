@@ -13,6 +13,7 @@ import { db } from "./db";
 import { eq, and, or, ne, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { generateImage, generateGameAssets, checkApiStatus } from "./leonardo";
+import { config } from "./config";
 
 interface SocketConnection {
   ws: WebSocket;
@@ -714,7 +715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (process.env.REPLIT_DOMAINS) {
           domain = process.env.REPLIT_DOMAINS.split(',')[0].replace(/^https?:\/\//, '');
         } else {
-          domain = req.get('host') || 'localhost:5000';
+          domain = req.get('host') || `localhost:${config.port}`;
         }
         
         roomLink = `https://${domain}?room=${code}`;
@@ -776,7 +777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (process.env.REPLIT_DOMAINS) {
         domain = process.env.REPLIT_DOMAINS.split(',')[0].replace(/^https?:\/\//, '');
       } else {
-        domain = req.get('host') || 'localhost:5000';
+        domain = req.get('host') || `localhost:${config.port}`;
       }
       
       // Create URL with HTTPS for iOS recognition
@@ -1033,7 +1034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const domain = process.env.REPLIT_DOMAINS.split(',')[0];
         baseUrl = `https://${domain.replace(/^https?:\/\//, '')}`;
       } else {
-        const host = req.get('host') || 'localhost:5000';
+        const host = req.get('host') || `localhost:${config.port}`;
         baseUrl = `https://${host}`;
       }
       const roomLink = `${baseUrl}?room=${room.code}`;

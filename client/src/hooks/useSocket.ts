@@ -22,10 +22,10 @@ export function useSocket(autoConnect: boolean = true) {
     const hostname = window.location.hostname;
     const port = window.location.port;
     
-    // Build proper WebSocket URL - always use current hostname
+    // Build proper WebSocket URL - always use current hostname and port
     let wsHost;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      wsHost = 'localhost:5000';
+      wsHost = port ? `${hostname}:${port}` : hostname;
     } else {
       // For production/Replit, use the current hostname without port (defaults to 443/80)
       wsHost = hostname;

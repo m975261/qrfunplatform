@@ -318,7 +318,8 @@ class AdminAuthServiceImpl implements AdminAuthService {
   }
 
   async sendResetEmail(email: string, resetToken: string): Promise<void> {
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/man/reset-password?token=${resetToken}`;
+    const { config } = await import('./config');
+    const resetUrl = `${process.env.FRONTEND_URL || `http://localhost:${config.port}`}/man/reset-password?token=${resetToken}`;
     
     const mailOptions = {
       from: process.env.GMAIL_USER || 'noreply@gmail.com',
