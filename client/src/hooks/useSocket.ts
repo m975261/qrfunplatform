@@ -473,6 +473,16 @@ export function useSocket(autoConnect: boolean = true) {
               penaltyAnimation: null
             }));
             break;
+          case 'play_card_failed':
+            console.log("Card play rejected by server:", message.message);
+            // Force a refresh to sync with server state
+            setGameState((prev: any) => ({
+              ...prev,
+              cardPlayFailed: true,
+              cardPlayFailedTimestamp: Date.now(),
+              forceRefresh: Math.random()
+            }));
+            break;
           case 'host_left_redirect':
             // Host left during play again flow - redirect to main page
             console.log("Host left game:", message.message);

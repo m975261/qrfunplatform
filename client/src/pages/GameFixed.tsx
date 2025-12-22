@@ -283,9 +283,21 @@ export default function Game() {
   const handlePlayCard = (cardIndex: number) => {
     const player = gameState?.players?.find((p: any) => p.id === playerId);
     const card = player?.hand?.[cardIndex];
+    const room = gameState?.room;
+    const topCard = room?.discardPile?.[0];
     
-    // Show card animation
-    if (card) {
+    // Client-side validation before showing animation
+    const canPlay = card && (
+      card.type === 'wild' || 
+      card.type === 'wild4' ||
+      card.color === room?.currentColor ||
+      card.color === topCard?.color ||
+      (card.type === 'number' && card.number === topCard?.number) ||
+      (card.type !== 'number' && card.type === topCard?.type)
+    );
+    
+    // Only show animation if card appears playable
+    if (card && canPlay) {
       setCardAnimation({
         card: { ...card },
         from: 'player',
@@ -295,12 +307,8 @@ export default function Game() {
       setTimeout(() => setCardAnimation(null), 400);
     }
     
-    if (card?.type === "wild" || card?.type === "wild4") {
-      // Play the wild card first, server will request color choice
-      playCard(cardIndex);
-    } else {
-      playCard(cardIndex);
-    }
+    // Always send to server - let server be the final validator
+    playCard(cardIndex);
   };
 
   const handleColorChoice = (color: string) => {

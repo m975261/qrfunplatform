@@ -2671,6 +2671,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (card?.type === 'wild4') {
         console.log(`🃏 Wild4 card rejected - Type: ${card.type}, PendingDraw: ${room.pendingDraw}, TopCard: ${topCard?.type}`);
       }
+      // Send error to client so they can revert optimistic UI
+      connection.ws.send(JSON.stringify({
+        type: 'play_card_failed',
+        message: 'Cannot play this card',
+        cardIndex
+      }));
+      // Also broadcast room state to ensure client syncs with server
+      await broadcastRoomState(connection.roomId);
       return;
     }
     
