@@ -1307,7 +1307,7 @@ export default function VmodeGame() {
           {room.status === "playing" && currentGamePlayer && (
             <div 
               className="absolute z-30 left-1/2 -translate-x-1/2"
-              style={{ top: 'calc(50% - var(--r) - 70px)' }}
+              style={{ top: 'calc(50% - var(--r) - 110px)' }}
             >
               <div className={`px-3 py-1.5 rounded-full shadow-lg border-2 ${
                 room.pendingDraw > 0 
