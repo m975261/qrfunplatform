@@ -1052,9 +1052,9 @@ export default function Game() {
 
       {/* === UNO TABLE (Centered + Responsive) === */}
       <section className="relative w-full h-full flex items-center justify-center bg-transparent p-4 pb-32">
-        {/* Responsive square board centered in viewport - slight left offset for viewer panel on desktop */}
+        {/* Responsive square board centered in viewport - slight left offset for viewer panel on desktop, moved down ~1cm (10px) */}
         <div
-          className="relative aspect-square w-[min(80vmin,450px)] sm:-ml-4 md:-ml-8"
+          className="relative aspect-square w-[min(80vmin,450px)] sm:-ml-4 md:-ml-8 mt-10"
           style={{
             // Board ring radius - Attached to circle edge with proper spacing (center radius + avatar radius + gap)
             ['--r' as any]: 'calc(var(--center) / 2 + var(--avatar) / 2 + 8px)',
