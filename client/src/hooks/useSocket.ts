@@ -264,6 +264,44 @@ export function useSocket(autoConnect: boolean = true) {
               }
             }));
             break;
+          // LOBBY MODE - Host changes
+          case 'host_changed':
+            console.log("[Lobby] Host changed:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              hostElectionActive: false,
+              hostDisconnectedWarning: null,
+              newHostName: message.newHostName,
+              hostChangedMessage: message.message,
+              room: {
+                ...prev?.room,
+                hostId: message.newHostId,
+                hostElectionActive: false,
+                hostDisconnectedAt: null
+              }
+            }));
+            break;
+          case 'host_left_no_players':
+            console.log("[Lobby] Host left with no players:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              hostLeftNoPlayers: true,
+              hostLeftMessage: message.message
+            }));
+            break;
+          case 'room_closed_host_left':
+            console.log("[Lobby] Room closed - host left:", message);
+            setGameState((prev: any) => ({
+              ...prev,
+              roomClosedHostLeft: true,
+              roomClosedMessage: message.message,
+              roomClosedRedirectDelay: message.redirectDelay
+            }));
+            // Auto-redirect after 5 seconds
+            setTimeout(() => {
+              window.location.href = '/';
+            }, message.redirectDelay || 5000);
+            break;
           // STREAMING MODE - Host disconnect/reconnect events
           case 'streaming_host_disconnected':
             console.log("[Streaming] Host disconnected:", message);

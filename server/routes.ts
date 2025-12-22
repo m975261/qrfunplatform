@@ -3384,6 +3384,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // If host is leaving and there are other players, handle disconnect
     if (isHost && activePlayersBefore.length > 0) {
+      // LOBBY MODE: Immediately auto-promote host by position priority (no elections)
+      if (room.status === 'waiting') {
+        console.log(`[Lobby] Host ${player.nickname} left lobby - auto-promoting next player by position`);
+        
+        // Get next host by position priority: 2nd slot (pos 1), 3rd (pos 2), 4th (pos 3)
+        const getNextHost = () => {
+          for (const pos of [1, 2, 3, 0]) {
+            const nextPlayer = activePlayersBefore.find(p => p.position === pos);
+            if (nextPlayer) return nextPlayer;
+          }
+          return activePlayersBefore[0];
+        };
+        
+        const newHost = getNextHost();
+        if (newHost) {
+          await storage.updateRoom(connection.roomId, { 
+            hostId: newHost.id,
+            hostDisconnectedAt: null,
+            hostElectionActive: false
+          });
+          
+          broadcastToRoom(connection.roomId, {
+            type: 'host_changed',
+            newHostId: newHost.id,
+            newHostName: newHost.nickname,
+            message: `${newHost.nickname} is now the host!`
+          });
+          
+          console.log(`[Lobby] New host assigned: ${newHost.nickname} (position ${newHost.position})`);
+          await broadcastRoomState(connection.roomId);
+        }
+        return;
+      }
+      
       // STREAMING MODE: Simple countdown, no election - redirect all if host doesn't return
       if (room.isStreamingMode) {
         console.log(`[Streaming] Host ${player.nickname} disconnected - starting 30s countdown`);
@@ -3636,6 +3670,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hostDisconnectTimers.set(connection.roomId, timer);
       } // Close else block (normal mode)
     } // Close if (isHost && activePlayersBefore.length > 0)
+    
+    // LOBBY ONLY: Host left with NO other players - start 1-minute room closure timer
+    if (isHost && activePlayersBefore.length === 0 && room.status === 'waiting') {
+      console.log(`[Lobby] Host ${player.nickname} left with no other players - starting 1-minute closure timer`);
+      
+      await storage.updateRoom(connection.roomId, { 
+        hostDisconnectedAt: new Date(),
+        hostElectionActive: false
+      });
+      
+      // Notify any spectators in the room
+      broadcastToRoom(connection.roomId, {
+        type: 'host_left_no_players',
+        message: 'Host left the room. Room will close in 1 minute if no players join...'
+      });
+      
+      const roomId = connection.roomId;
+      const timer = setTimeout(async () => {
+        const currentRoom = await storage.getRoom(roomId);
+        if (!currentRoom) return;
+        
+        // Check if a new host was assigned (someone joined)
+        if (currentRoom.hostId && !currentRoom.hostDisconnectedAt) {
+          console.log(`[Lobby] New host joined, canceling room closure`);
+          hostDisconnectTimers.delete(roomId);
+          return;
+        }
+        
+        console.log(`[Lobby] 1-minute timeout reached - closing room ${roomId}`);
+        
+        // Mark room as finished/closed
+        await storage.updateRoom(roomId, { 
+          status: 'finished',
+          hostDisconnectedAt: null
+        });
+        
+        // Broadcast room closure with 5-second redirect countdown
+        broadcastToRoom(roomId, {
+          type: 'room_closed_host_left',
+          message: 'Host left the room. Redirecting in 5 seconds...',
+          redirectDelay: 5000
+        });
+        
+        hostDisconnectTimers.delete(roomId);
+      }, 60000); // 1 minute
+      
+      hostDisconnectTimers.set(roomId, timer);
+    }
     
     // If game is in progress
     if (room.status === "playing") {
