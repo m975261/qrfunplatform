@@ -919,24 +919,6 @@ export default function VmodeGame() {
         .animate-card-draw-player { animation: cardDrawPlayer 0.35s ease-out forwards; }
       `}</style>
       
-      {/* VIEWER MODE: Prominent Turn Indicator - Always visible for stream viewers */}
-      {room.status === "playing" && currentGamePlayer && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50">
-          <div className={`px-6 py-3 rounded-full shadow-2xl border-4 transition-all ${
-            room.pendingDraw > 0 
-              ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-400 animate-pulse' 
-              : 'bg-gradient-to-r from-yellow-500 to-orange-500 border-yellow-300'
-          }`}>
-            <div className="text-white font-bold text-lg sm:text-xl text-center flex items-center gap-3">
-              {room.pendingDraw > 0 ? (
-                <span>⚠️ {currentGamePlayer.nickname} MUST DRAW {room.pendingDraw} CARDS! ⚠️</span>
-              ) : (
-                <span>🎮 {currentGamePlayer.nickname}'s TURN 🎮</span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Guru Wild4 Color Picker Modal */}
       {showGuruWild4ColorPicker && (
@@ -1320,6 +1302,28 @@ export default function VmodeGame() {
               </div>
             </div>
           </div>
+
+          {/* VIEWER MODE: Turn Indicator - Above 12 o'clock position */}
+          {room.status === "playing" && currentGamePlayer && (
+            <div 
+              className="absolute z-30 left-1/2 -translate-x-1/2"
+              style={{ top: 'calc(50% - var(--r) - 70px)' }}
+            >
+              <div className={`px-3 py-1.5 rounded-full shadow-lg border-2 ${
+                room.pendingDraw > 0 
+                  ? 'bg-red-600 border-red-400 animate-pulse' 
+                  : 'bg-yellow-500 border-yellow-300'
+              }`}>
+                <div className="text-white font-bold text-sm text-center whitespace-nowrap">
+                  {room.pendingDraw > 0 ? (
+                    <span>⚠️ {currentGamePlayer.nickname} draws {room.pendingDraw} ⚠️</span>
+                  ) : (
+                    <span>⭐ {currentGamePlayer.nickname}'s turn ⭐</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* === 4 AVATAR POSITIONS AROUND THE CIRCLE === */}
           {[0, 1, 2, 3].map((position) => {
