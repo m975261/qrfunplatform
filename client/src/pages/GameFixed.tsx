@@ -698,51 +698,6 @@ export default function Game() {
       `}</style>
       
 
-      {/* Turn Indicator Banner - Shows whose turn it is to all players */}
-      {room.status === "playing" && currentGamePlayer && (
-        <div className={`fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full shadow-lg border-2 transition-all ${
-          isMyTurn 
-            ? (room.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
-            : 'bg-yellow-600 border-yellow-400'
-        }`}>
-          <div className="text-white font-bold text-sm text-center flex items-center gap-2">
-            {isMyTurn ? (
-              room.pendingDraw > 0 ? (
-                <>
-                  <span>⚠️ MUST DRAW {room.pendingDraw} CARDS! ⚠️</span>
-                  {/* Guru Response Buttons - can respond with +2 or +4 */}
-                  {isGuruUser && (
-                    <div className="flex gap-1 ml-2">
-                      <button
-                        onClick={() => handleGuruStartCard('+2')}
-                        className="px-2 py-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-xs rounded-full border-2 border-white/50 shadow-lg animate-bounce"
-                        data-testid="button-guru-response-plus2"
-                      >
-                        🧙‍♂️ +2
-                      </button>
-                      <button
-                        onClick={() => handleGuruStartCard('+4')}
-                        className="px-2 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded-full border-2 border-white/50 shadow-lg animate-bounce"
-                        data-testid="button-guru-response-plus4"
-                      >
-                        🧙‍♂️ +4
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <span>⭐ YOUR TURN - Play or Draw! ⭐</span>
-              )
-            ) : (
-              room.pendingDraw > 0 ? (
-                <span>🎮 {currentGamePlayer.nickname} must draw {room.pendingDraw} cards</span>
-              ) : (
-                <span>🎮 {currentGamePlayer.nickname}'s turn</span>
-              )
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Guru Wild4 Color Picker Modal */}
       {showGuruWild4ColorPicker && (
@@ -1410,10 +1365,48 @@ export default function Game() {
             </div>
 
             {/* Turn Indicator - Centered in deck area, same line as UNO button */}
-            {isMyTurn && (
+            {room.status === "playing" && currentGamePlayer && (
               <div className="absolute top-2 left-1/2 -translate-x-1/2 z-40">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold border-2 border-white/50 shadow-lg animate-pulse">
-                  ⭐ YOUR TURN ⭐
+                <div className={`px-4 py-2 rounded-full shadow-lg border-2 transition-all ${
+                  isMyTurn 
+                    ? (room.pendingDraw > 0 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-green-600 border-green-400 animate-pulse')
+                    : 'bg-yellow-600 border-yellow-400'
+                }`}>
+                  <div className="text-white font-bold text-sm text-center flex items-center gap-2">
+                    {isMyTurn ? (
+                      room.pendingDraw > 0 ? (
+                        <>
+                          <span>⚠️ DRAW {room.pendingDraw}! ⚠️</span>
+                          {isGuruUser && (
+                            <div className="flex gap-1 ml-1">
+                              <button
+                                onClick={() => handleGuruStartCard('+2')}
+                                className="px-1.5 py-0.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-xs rounded-full border border-white/50"
+                                data-testid="button-guru-response-plus2"
+                              >
+                                +2
+                              </button>
+                              <button
+                                onClick={() => handleGuruStartCard('+4')}
+                                className="px-1.5 py-0.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded-full border border-white/50"
+                                data-testid="button-guru-response-plus4"
+                              >
+                                +4
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <span>⭐ YOUR TURN ⭐</span>
+                      )
+                    ) : (
+                      room.pendingDraw > 0 ? (
+                        <span>🎮 {currentGamePlayer.nickname} draws {room.pendingDraw}</span>
+                      ) : (
+                        <span>🎮 {currentGamePlayer.nickname}'s turn</span>
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
             )}
