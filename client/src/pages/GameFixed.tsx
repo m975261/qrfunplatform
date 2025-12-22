@@ -1406,15 +1406,17 @@ export default function Game() {
                     {currentPlayer.hand?.length || 0} cards
                   </div>
                 </div>
-                {isMyTurn && (
-                  <div className="ml-3">
-                    <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-bold border border-green-500/30">
-                      YOUR TURN ⭐
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
+
+            {/* Turn Indicator - Centered in deck area, same line as UNO button */}
+            {isMyTurn && (
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-40">
+                <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold border-2 border-white/50 shadow-lg animate-pulse">
+                  ⭐ YOUR TURN ⭐
+                </div>
+              </div>
+            )}
 
             {/* UNO Button - Positioned at top right for horizontal layout */}
             <div className="absolute top-2 right-2">
