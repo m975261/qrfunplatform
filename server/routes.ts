@@ -28,6 +28,10 @@ interface SocketConnection {
 
 const connections = new Map<string, SocketConnection>();
 
+// Track player auto-removal timers (10 second disconnect = remove from slot)
+// Declared globally so HTTP routes and WebSocket handlers can access
+const playerDisconnectTimers: Map<string, NodeJS.Timeout> = new Map();
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const JWT_SECRET = process.env.JWT_SECRET || "uno-game-secret";
   
@@ -923,11 +927,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const existingPlayers = await storage.getPlayersByRoom(room.id);
       
-      // Check for duplicate nickname (case-insensitive) - only block if an ACTIVE player has this name
+      // Check for duplicate nickname (case-insensitive)
       const normalizedNickname = nickname.trim().toLowerCase();
-      const duplicatePlayer = existingPlayers.find(p => 
-        !p.hasLeft && p.isOnline && p.nickname.trim().toLowerCase() === normalizedNickname
-      );
+      
+      // RECONNECTION LOGIC: Check if there's an OFFLINE player with this nickname who can be reconnected
+      // A player is offline if they have no active WebSocket connection
+      const offlinePlayerWithSameName = existingPlayers.find(p => {
+        if (p.hasLeft || p.nickname.trim().toLowerCase() !== normalizedNickname) return false;
+        // Check if player has any active WebSocket connection
+        const hasActiveConnection = Array.from(connections.values())
+          .some(conn => conn.playerId === p.id && conn.ws.readyState === WebSocket.OPEN);
+        return !hasActiveConnection; // Return true if offline (no active connection)
+      });
+      
+      if (offlinePlayerWithSameName) {
+        // Allow reconnection - update existing player instead of creating new one
+        console.log(`Reconnection: ${nickname} (offline) is reconnecting to room ${room.code}`);
+        
+        // Clear any auto-removal timer for this player
+        const existingTimer = playerDisconnectTimers.get(offlinePlayerWithSameName.id);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          playerDisconnectTimers.delete(offlinePlayerWithSameName.id);
+          console.log(`Cleared auto-removal timer for reconnecting player ${nickname}`);
+        }
+        
+        // Reactivate the player - just clear hasLeft, isOnline is computed from connection status
+        await storage.updatePlayer(offlinePlayerWithSameName.id, { 
+          socketId: null, // Will be set when WebSocket connects
+          hasLeft: false,
+          leftAt: null
+        });
+        
+        // Return the existing player as if they just joined
+        // WebSocket will handle broadcasting when player actually connects
+        return res.json({ 
+          player: { ...offlinePlayerWithSameName, hasLeft: false }, 
+          room, 
+          isReconnection: true 
+        });
+      }
+      
+      // Block if an ACTIVE (online) player has this name
+      const duplicatePlayer = existingPlayers.find(p => {
+        if (p.hasLeft || p.nickname.trim().toLowerCase() !== normalizedNickname) return false;
+        // Check if player has any active WebSocket connection
+        const hasActiveConnection = Array.from(connections.values())
+          .some(conn => conn.playerId === p.id && conn.ws.readyState === WebSocket.OPEN);
+        return hasActiveConnection; // Return true if online (has active connection)
+      });
       if (duplicatePlayer) {
         return res.status(409).json({ error: "This nickname is already taken in this room" });
       }
@@ -4568,14 +4616,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!room || !disconnectedPlayer) return;
     
-    // Mark player as offline
+    // Mark player as offline (red status) - socketId null indicates no connection
     await storage.updatePlayer(playerId, { 
       socketId: null
     });
     
-    // Check if the disconnected player is the host
+    // Start 10-second auto-removal timer for non-host players
+    // Host has separate 30-second countdown logic
     const isHost = room.hostId === playerId;
+    if (!disconnectedPlayer.isSpectator && disconnectedPlayer.position !== null) {
+      console.log(`Starting 10s auto-removal timer for ${disconnectedPlayer.nickname} (position ${disconnectedPlayer.position})`);
+      
+      // Clear any existing timer for this player
+      const existingTimer = playerDisconnectTimers.get(playerId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      
+      const removalTimer = setTimeout(async () => {
+        // Check if player reconnected
+        const currentPlayer = await storage.getPlayer(playerId);
+        if (!currentPlayer) {
+          playerDisconnectTimers.delete(playerId);
+          return;
+        }
+        
+        // Check if player has an active connection now
+        const hasActiveConnection = Array.from(connections.values())
+          .some(conn => conn.playerId === playerId && conn.ws.readyState === WebSocket.OPEN);
+        
+        if (hasActiveConnection) {
+          console.log(`Player ${currentPlayer.nickname} reconnected, not removing from slot`);
+          playerDisconnectTimers.delete(playerId);
+          return;
+        }
+        
+        console.log(`Auto-removing ${currentPlayer.nickname} from slot after 10s offline`);
+        
+        // Save cards to position before clearing (for mid-game disconnects)
+        const currentRoom = await storage.getRoom(roomId);
+        if (currentRoom?.status === "playing" && currentPlayer.position !== null && currentPlayer.hand && currentPlayer.hand.length > 0) {
+          const updatedPositionHands = { ...currentRoom.positionHands };
+          updatedPositionHands[currentPlayer.position.toString()] = currentPlayer.hand;
+          await storage.updateRoom(roomId, { positionHands: updatedPositionHands });
+          console.log(`Saved ${currentPlayer.hand.length} cards for position ${currentPlayer.position} (auto-removal)`);
+        }
+        
+        // Get the player's position before clearing
+        const removedPosition = currentPlayer.position;
+        const wasHost = currentRoom?.hostId === playerId;
+        
+        // Mark as left/spectator, clear position
+        await storage.updatePlayer(playerId, { 
+          hasLeft: true, 
+          leftAt: new Date(),
+          isSpectator: true,
+          position: null,
+          hand: []
+        });
+        
+        // If this was the host, auto-promote next player by position order
+        if (wasHost && currentRoom) {
+          const remainingPlayers = await storage.getPlayersByRoom(roomId);
+          const activePlayers = remainingPlayers
+            .filter(p => !p.isSpectator && !p.hasLeft && p.position !== null && p.id !== playerId)
+            .sort((a, b) => (a.position || 0) - (b.position || 0)); // Sort by position (2nd, 3rd, 4th)
+          
+          if (activePlayers.length > 0) {
+            const newHost = activePlayers[0]; // Next player by position
+            await storage.updateRoom(roomId, { 
+              hostId: newHost.id,
+              hostDisconnectedAt: null,
+              hostElectionActive: false
+            });
+            console.log(`Auto-promoted ${newHost.nickname} (position ${newHost.position}) to host`);
+            
+            broadcastToRoom(roomId, {
+              type: 'host_auto_promoted',
+              newHostId: newHost.id,
+              newHostName: newHost.nickname,
+              previousHost: currentPlayer.nickname,
+              message: `${newHost.nickname} is now the host (previous host disconnected)`
+            });
+          }
+        }
+        
+        // Broadcast player removal
+        broadcastToRoom(roomId, {
+          type: 'player_auto_removed',
+          playerId: playerId,
+          playerName: currentPlayer.nickname,
+          position: removedPosition,
+          message: `${currentPlayer.nickname} was removed after being offline for 10 seconds`
+        });
+        
+        await broadcastRoomState(roomId);
+        playerDisconnectTimers.delete(playerId);
+      }, 10000); // 10 seconds
+      
+      playerDisconnectTimers.set(playerId, removalTimer);
+    }
     
+    // Handle host-specific disconnect logic (30s election countdown)
     if (isHost) {
       console.log(`Host ${disconnectedPlayer.nickname} disconnected from room ${roomId}`);
       
