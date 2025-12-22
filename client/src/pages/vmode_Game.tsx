@@ -286,6 +286,20 @@ export default function VmodeGame() {
     }
   }, [gameState?.colorUpdate, gameState?.activeColorUpdate, gameState?.colorUpdateTimestamp, gameState?.room?.currentColor]);
 
+  // VIEWER AUTO-FOLLOW: When room status changes to 'waiting' (host reset game), 
+  // auto-close winner modal and redirect to lobby to follow host
+  useEffect(() => {
+    if (gameState?.room?.status === 'waiting' && showWinnerModal) {
+      // Host has reset the game - auto-close winner modal and follow to lobby
+      setShowWinnerModal(false);
+      setWinnerData(null);
+      // Redirect to lobby page to follow host
+      if (roomId) {
+        window.location.href = `/vmode/room/${roomId}`;
+      }
+    }
+  }, [gameState?.room?.status, showWinnerModal, roomId]);
+
   // Handle host election messages
   useEffect(() => {
     if (gameState?.hostDisconnectedWarning) {
@@ -905,8 +919,24 @@ export default function VmodeGame() {
         .animate-card-draw-player { animation: cardDrawPlayer 0.35s ease-out forwards; }
       `}</style>
       
-
-      {/* Top-center turn notification removed - turn indicator is now on player deck only */}
+      {/* VIEWER MODE: Prominent Turn Indicator - Always visible for stream viewers */}
+      {room.status === "playing" && currentGamePlayer && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50">
+          <div className={`px-6 py-3 rounded-full shadow-2xl border-4 transition-all ${
+            room.pendingDraw > 0 
+              ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-400 animate-pulse' 
+              : 'bg-gradient-to-r from-yellow-500 to-orange-500 border-yellow-300'
+          }`}>
+            <div className="text-white font-bold text-lg sm:text-xl text-center flex items-center gap-3">
+              {room.pendingDraw > 0 ? (
+                <span>⚠️ {currentGamePlayer.nickname} MUST DRAW {room.pendingDraw} CARDS! ⚠️</span>
+              ) : (
+                <span>🎮 {currentGamePlayer.nickname}'s TURN 🎮</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Guru Wild4 Color Picker Modal */}
       {showGuruWild4ColorPicker && (
