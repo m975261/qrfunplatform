@@ -2149,7 +2149,7 @@ export default function VmodeGame() {
                   <GripVertical className="h-4 w-4 text-white/70" />
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-white">Room {room?.code}</span>
-                    <span className="text-xs font-bold text-white">QrFun.org</span>
+                    <span className="text-xs font-bold text-white">QrFun.net</span>
                   </div>
                 </div>
                 <button onClick={() => setShowQRCode(false)} className="text-white/70 hover:text-white p-1">

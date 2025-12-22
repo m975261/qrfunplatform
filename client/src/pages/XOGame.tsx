@@ -365,7 +365,7 @@ export default function XOGame() {
             Room#: <span className="text-indigo-600 dark:text-indigo-400">{room?.code}</span>
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">
-            go to: <span className="font-semibold text-indigo-500 underline">QrFun.org</span>
+            go to: <span className="font-semibold text-indigo-500 underline">QrFun.net</span>
           </div>
         </div>
         
