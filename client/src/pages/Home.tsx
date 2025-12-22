@@ -316,6 +316,9 @@ export default function Home() {
         localStorage.setItem("isGuruUser", "true");
         localStorage.setItem("guruUserData", JSON.stringify(data.guruUser));
         
+        // Get the guru's registered player_name from the response
+        const guruPlayerName = data.guruUser?.playerName || popupNickname;
+        
         // Close guru login popup
         setShowGuruLogin(false);
         setGuruPassword("");
@@ -323,15 +326,13 @@ export default function Home() {
         setIsGuruUserLoggedIn(true);
         
         if (pendingAction === 'create') {
-          // After guru login, reopen host popup with lastNickname pre-filled (not guru username)
-          const lastNickname = localStorage.getItem("lastNickname") || "";
-          setPopupNickname(lastNickname);
+          // After guru login, use the guru's registered player_name
+          setPopupNickname(guruPlayerName);
           setShowHostPopup(true);
         } else if (pendingAction === 'join') {
           if (qrDetectedCode) {
-            // Guru authenticated - auto-join immediately with the nickname they entered
-            // No need to reopen nickname popup, use popupNickname directly
-            directJoinMutation.mutate({ code: qrDetectedCode, nickname: popupNickname });
+            // Guru authenticated - auto-join immediately with the guru's registered player_name
+            directJoinMutation.mutate({ code: qrDetectedCode, nickname: guruPlayerName });
           }
         }
         setPendingAction(null);

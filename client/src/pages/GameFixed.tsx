@@ -1052,9 +1052,9 @@ export default function Game() {
 
       {/* === UNO TABLE (Centered + Responsive) === */}
       <section className="relative w-full h-full flex items-center justify-center bg-transparent p-4 pb-32">
-        {/* Responsive square board centered in viewport - Slightly left-shifted to prevent overlap */}
+        {/* Responsive square board centered in viewport - slight left offset for viewer panel on desktop */}
         <div
-          className="relative aspect-square w-[min(80vmin,450px)] -ml-20 sm:-ml-12"
+          className="relative aspect-square w-[min(80vmin,450px)] sm:-ml-4 md:-ml-8"
           style={{
             // Board ring radius - Attached to circle edge with proper spacing (center radius + avatar radius + gap)
             ['--r' as any]: 'calc(var(--center) / 2 + var(--avatar) / 2 + 8px)',
@@ -1365,56 +1365,6 @@ export default function Game() {
 
           {/* === DRAW PILE (between 6 o'clock and 10 o'clock) === */}
           <div className="absolute z-20" style={{ left: '21%', bottom: '22%', transform: 'translate(-50%, 50%)' }}>
-            {/* Guru +2/+4 Buttons - Above draw pile, only for guru users */}
-            {isGuruUser && isMyTurn && (
-              <div className="absolute bottom-full left-0 mb-2 flex flex-col gap-1">
-                {guruCardMode === null ? (
-                  <>
-                    <button
-                      onClick={() => handleGuruStartCard('+2')}
-                      className="px-2 py-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-xs rounded border border-white/50 shadow-lg"
-                      data-testid="button-guru-plus2"
-                    >
-                      🧙‍♂️ +2
-                    </button>
-                    <button
-                      onClick={() => handleGuruStartCard('+4')}
-                      className="px-2 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded border border-white/50 shadow-lg"
-                      data-testid="button-guru-plus4"
-                    >
-                      🧙‍♂️ +4
-                    </button>
-                  </>
-                ) : (
-                  /* Color selection after clicking +2 or +4 */
-                  <div className="bg-slate-800/95 rounded-lg p-2 border border-purple-500/50">
-                    <div className="text-white text-xs font-bold mb-1 text-center">{guruCardMode} Color:</div>
-                    <div className="grid grid-cols-2 gap-1">
-                      {['red', 'blue', 'green', 'yellow'].map(color => (
-                        <button
-                          key={color}
-                          onClick={() => handleGuruColorSelect(color)}
-                          className={`w-6 h-6 rounded shadow-sm border-2 border-white/50 ${
-                            color === 'red' ? 'bg-red-500' :
-                            color === 'blue' ? 'bg-blue-500' :
-                            color === 'green' ? 'bg-green-500' :
-                            'bg-yellow-400'
-                          }`}
-                          data-testid={`button-guru-color-${color}`}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      onClick={handleGuruCardCancel}
-                      className="mt-1 w-full text-xs text-slate-400 hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            
             <div className="relative cursor-pointer group" onClick={drawCard} data-testid="button-draw-card">
               <div className="bg-gradient-to-br from-blue-800 to-blue-900 rounded-lg border-2 border-blue-600 shadow-xl group-hover:shadow-blue-500/50 transition-all w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
               <div className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg border-2 border-blue-500 shadow-xl absolute -top-0.5 -left-0.5 w-10 h-14 sm:w-11 sm:h-15 md:w-12 md:h-16"></div>
@@ -1477,6 +1427,55 @@ export default function Game() {
                 🔥 UNO! 🔥
               </Button>
             </div>
+
+            {/* Guru +2/+4 Buttons - Above player deck, only for guru users */}
+            {isGuruUser && isMyTurn && (
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex gap-2 z-40">
+                {guruCardMode === null ? (
+                  <>
+                    <button
+                      onClick={() => handleGuruStartCard('+2')}
+                      className="px-3 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold text-sm rounded-lg border-2 border-white/50 shadow-lg animate-bounce"
+                      data-testid="button-guru-plus2"
+                    >
+                      🧙‍♂️ +2
+                    </button>
+                    <button
+                      onClick={() => handleGuruStartCard('+4')}
+                      className="px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm rounded-lg border-2 border-white/50 shadow-lg animate-bounce"
+                      data-testid="button-guru-plus4"
+                    >
+                      🧙‍♂️ +4
+                    </button>
+                  </>
+                ) : (
+                  <div className="bg-slate-800/95 rounded-lg p-3 border border-purple-500/50 shadow-xl">
+                    <div className="text-white text-sm font-bold mb-2 text-center">{guruCardMode} Color:</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {['red', 'blue', 'green', 'yellow'].map(color => (
+                        <button
+                          key={color}
+                          onClick={() => handleGuruColorSelect(color)}
+                          className={`w-8 h-8 rounded-lg shadow-md border-2 border-white/50 hover:scale-110 transition-transform ${
+                            color === 'red' ? 'bg-red-500' :
+                            color === 'blue' ? 'bg-blue-500' :
+                            color === 'green' ? 'bg-green-500' :
+                            'bg-yellow-400'
+                          }`}
+                          data-testid={`button-guru-color-${color}`}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleGuruCardCancel}
+                      className="mt-2 w-full text-sm text-slate-400 hover:text-white py-1"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Player Cards - Horizontal layout centered at bottom */}
             <div className="overflow-x-auto overflow-y-visible px-1">
