@@ -22,12 +22,14 @@ export function useSocket(autoConnect: boolean = true) {
     const hostname = window.location.hostname;
     const port = window.location.port;
     
-    // Build proper WebSocket URL - always use current hostname and port
+    // Build proper WebSocket URL - include port when present
+    // For Replit (no port in URL), Docker/Unraid (custom port like 4322), or localhost
     let wsHost;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      wsHost = port ? `${hostname}:${port}` : hostname;
+    if (port && port !== '80' && port !== '443') {
+      // Custom port specified (localhost dev, Docker, Unraid, etc.)
+      wsHost = `${hostname}:${port}`;
     } else {
-      // For production/Replit, use the current hostname without port (defaults to 443/80)
+      // No port or default port (Replit production, standard HTTP/HTTPS)
       wsHost = hostname;
     }
     
