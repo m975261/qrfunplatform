@@ -1,0 +1,223 @@
+ Attempting WebSocket connection to: ws://192.168.1.200/ws
+ Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+ Protocol: ws: Host: 192.168.1.200
+ WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+ WebSocket error: Event
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+ Error timestamp: 2025-12-24T12:21:58.118Z
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket closed: code=1006, reason="", wasClean=false
+ Reset join state for reconnection
+ WebSocket closed abnormally (1006) - possible network issue or server termination
+ Attempting to reconnect in 3 seconds...
+ Failed to fetch chrome-extension://aeblfdkhhhdcdjpifhhbdiojplfjncoa/inline/injected.js, Import failed 3 times. Final error: window.crypto.randomUUID is not a function
+S @ inject-content-scripts.js:5
+ Attempting WebSocket connection to: ws://192.168.1.200/ws
+ Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+ Protocol: ws: Host: 192.168.1.200
+ WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+ WebSocket error: Event
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+ Error timestamp: 2025-12-24T12:22:01.351Z
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket closed: code=1006, reason="", wasClean=false
+ Reset join state for reconnection
+ WebSocket closed abnormally (1006) - possible network issue or server termination
+ Attempting to reconnect in 3 seconds...
+ Attempting WebSocket connection to: ws://192.168.1.200/ws
+ Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+ Protocol: ws: Host: 192.168.1.200
+ WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+ WebSocket error: Event
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+ Error timestamp: 2025-12-24T12:22:04.479Z
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket closed: code=1006, reason="", wasClean=false
+ Reset join state for reconnection
+ WebSocket closed abnormally (1006) - possible network issue or server termination
+ Attempting to reconnect in 3 seconds...
+ Attempting WebSocket connection to: ws://192.168.1.200/ws
+index-eKjH5vKM.js:357 Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+index-eKjH5vKM.js:357 Protocol: ws: Host: 192.168.1.200
+ WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket error: Event
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 Error timestamp: 2025-12-24T12:22:07.604Z
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket closed: code=1006, reason="", wasClean=false
+index-eKjH5vKM.js:357 Reset join state for reconnection
+index-eKjH5vKM.js:357 WebSocket closed abnormally (1006) - possible network issue or server termination
+index-eKjH5vKM.js:357 Attempting to reconnect in 3 seconds...
+index-eKjH5vKM.js:357 Attempting WebSocket connection to: ws://192.168.1.200/ws
+index-eKjH5vKM.js:357 Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+index-eKjH5vKM.js:357 Protocol: ws: Host: 192.168.1.200
+index-eKjH5vKM.js:357 WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket error: Event
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 Error timestamp: 2025-12-24T12:22:10.740Z
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket closed: code=1006, reason="", wasClean=false
+index-eKjH5vKM.js:357 Reset join state for reconnection
+index-eKjH5vKM.js:357 WebSocket closed abnormally (1006) - possible network issue or server termination
+index-eKjH5vKM.js:357 Attempting to reconnect in 3 seconds...
+index-eKjH5vKM.js:357 Attempting WebSocket connection to: ws://192.168.1.200/ws
+index-eKjH5vKM.js:357 Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+index-eKjH5vKM.js:357 Protocol: ws: Host: 192.168.1.200
+index-eKjH5vKM.js:357 WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket error: Event
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 Error timestamp: 2025-12-24T12:22:13.994Z
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket closed: code=1006, reason="", wasClean=false
+index-eKjH5vKM.js:357 Reset join state for reconnection
+index-eKjH5vKM.js:357 WebSocket closed abnormally (1006) - possible network issue or server termination
+index-eKjH5vKM.js:357 Attempting to reconnect in 3 seconds...
+index-eKjH5vKM.js:357 Attempting WebSocket connection to: ws://192.168.1.200/ws
+index-eKjH5vKM.js:357 Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+index-eKjH5vKM.js:357 Protocol: ws: Host: 192.168.1.200
+index-eKjH5vKM.js:357 WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 Error timestamp: 2025-12-24T12:22:17.132Z
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket closed: code=1006, reason="", wasClean=false
+index-eKjH5vKM.js:357 Reset join state for reconnection
+index-eKjH5vKM.js:357 WebSocket closed abnormally (1006) - possible network issue or server termination
+index-eKjH5vKM.js:357 Attempting to reconnect in 3 seconds...
+index-eKjH5vKM.js:357 Attempting WebSocket connection to: ws://192.168.1.200/ws
+index-eKjH5vKM.js:357 Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+index-eKjH5vKM.js:357 Protocol: ws: Host: 192.168.1.200
+index-eKjH5vKM.js:357 WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 Error timestamp: 2025-12-24T12:22:20.250Z
+d.current.onerror @ index-eKjH5vKM.js:357
+index-eKjH5vKM.js:357 WebSocket closed: code=1006, reason="", wasClean=false
+index-eKjH5vKM.js:357 Reset join state for reconnection
+index-eKjH5vKM.js:357 WebSocket closed abnormally (1006) - possible network issue or server termination
+index-eKjH5vKM.js:357 Attempting to reconnect in 3 seconds...
+index-eKjH5vKM.js:357 Attempting WebSocket connection to: ws://192.168.1.200/ws
+ Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+ Protocol: ws: Host: 192.168.1.200
+ WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+ WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+ Error timestamp: 2025-12-24T12:22:23.440Z
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket closed: code=1006, reason="", wasClean=false
+ Reset join state for reconnection
+ WebSocket closed abnormally (1006) - possible network issue or server termination
+ Attempting to reconnect in 3 seconds...
+ Attempting WebSocket connection to: ws://192.168.1.200/ws
+ Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+ Protocol: ws: Host: 192.168.1.200
+ WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+ WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+ Error timestamp: 2025-12-24T12:22:26.580Z
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket closed: code=1006, reason="", wasClean=false
+ Reset join state for reconnection
+ WebSocket closed abnormally (1006) - possible network issue or server termination
+ Attempting to reconnect in 3 seconds...
+ Attempting WebSocket connection to: ws://192.168.1.200/ws
+ Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+ Protocol: ws: Host: 192.168.1.200
+ WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+ WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+ Error timestamp: 2025-12-24T12:22:29.702Z
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket closed: code=1006, reason="", wasClean=false
+ Reset join state for reconnection
+ WebSocket closed abnormally (1006) - possible network issue or server termination
+ Attempting to reconnect in 3 seconds...
+ Attempting WebSocket connection to: ws://192.168.1.200/ws
+ Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+ Protocol: ws: Host: 192.168.1.200
+ WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+ WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+ Error timestamp: 2025-12-24T12:22:32.879Z
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket closed: code=1006, reason="", wasClean=false
+ Reset join state for reconnection
+ WebSocket closed abnormally (1006) - possible network issue or server termination
+ Attempting to reconnect in 3 seconds...
+ Attempting WebSocket connection to: ws://192.168.1.200/ws
+ Current location: http://192.168.1.200:4322/vmode/room/8212f9a8-cc83-45e4-8311-f4bc08c72549?code=66188
+ Protocol: ws: Host: 192.168.1.200
+ WebSocket connection to 'ws://192.168.1.200/ws' failed: 
+v @ index-eKjH5vKM.js:357
+ WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket readyState: 3
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket URL was: ws://192.168.1.200/ws
+d.current.onerror @ index-eKjH5vKM.js:357
+ Error timestamp: 2025-12-24T12:22:36.081Z
+d.current.onerror @ index-eKjH5vKM.js:357
+ WebSocket closed: code=1006, reason="", wasClean=false
+ Reset join state for reconnection
+ WebSocket closed abnormally (1006) - possible network issue or server termination
+ Attempting to reconnect in 3 seconds...

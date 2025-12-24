@@ -1,0 +1,46 @@
+
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c NODE_ENV=production node dist/index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2025-12-24T12_02_50_003Z-debug-0.log
+
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+
+Using SQLite database at: /app/data/qrfun.db
+SQLite database initialized with tables
+WebSocket server created on path /ws
+4:02:51 PM [express] serving on port 4322
+[VIEWER MODE] Room 99166 created - empty lobby waiting for first joiner to become host
+4:03:09 PM [express] POST /api/rooms 200 in 30ms :: {"room":{"code":"99166","hostId":"","status":"wa…
+QR code URL (room state): https://192.168.1.200:4322?room=99166
+4:03:09 PM [express] GET /api/rooms/3a7422c2-71ef-4089-aa3f-63ad9531d02c 200 in 12ms :: {"room":{"co…
+QR code URL (room state): https://192.168.1.200:4322?room=99166
+4:03:52 PM [express] GET /api/rooms/3a7422c2-71ef-4089-aa3f-63ad9531d02c 200 in 7ms :: {"room":{"cod…
+QR code URL (room state): https://192.168.1.200:4322?room=99166
+4:04:02 PM [express] GET /api/rooms/3a7422c2-71ef-4089-aa3f-63ad9531d02c 200 in 5ms :: {"room":{"cod…
+4:04:11 PM [express] POST /api/guru-login 404 in 3ms :: {"error":"User not found"}
+Generated QR code URL: https://192.168.1.200:4322?room=22199
+QR code URL length: 37
+Environment - REPL_SLUG: undefined DEPLOYMENT_ID: undefined
+4:04:11 PM [express] POST /api/rooms 200 in 6ms :: {"room":{"code":"22199","hostId":"6c4f9476-c107-4…
+QR code URL (room state): https://192.168.1.200:4322?room=22199
+4:04:11 PM [express] GET /api/rooms/55b3dbb8-eaa0-42ec-8d83-95ef40f0ce8b 200 in 5ms :: {"room":{"cod…
+
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+
+Using SQLite database at: /app/data/qrfun.db
+SQLite database initialized with tables
+WebSocket server created on path /ws
+4:20:54 PM [express] serving on port 4322
+[VIEWER MODE] Room 66188 created - empty lobby waiting for first joiner to become host
+4:21:18 PM [express] POST /api/rooms 200 in 31ms :: {"room":{"code":"66188","hostId":"","status":"wa…
+QR code URL (room state): https://192.168.1.200:4322?room=66188
+4:21:19 PM [express] GET /api/rooms/8212f9a8-cc83-45e4-8311-f4bc08c72549 200 in 12ms :: {"room":{"co…
+QR code URL (room state): https://192.168.1.200:4322?room=66188
+4:21:43 PM [express] GET /api/rooms/8212f9a8-cc83-45e4-8311-f4bc08c72549 200 in 5ms :: {"room":{"cod…
+QR code URL (room state): https://192.168.1.200:4322?room=66188
+4:21:56 PM [express] GET /api/rooms/8212f9a8-cc83-45e4-8311-f4bc08c72549 200 in 6ms :: {"room":{"cod…
+
